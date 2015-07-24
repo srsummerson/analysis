@@ -32,7 +32,7 @@ def LFPSpectrumSingleChannel(tankname,channel):
  				plt.plot(frq,abs(Y),'r') # plotting the spectrum
 
  				plt.xlabel('Freq (Hz)')
- 				#ylabel('|Y(freq)|')
+ 				plt.ylabel('|Y(freq)|')
  				#title('Channel %f' %channel)
- 				imshow()
+ 				plt.show()
  	return 
