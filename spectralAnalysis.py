@@ -1,6 +1,8 @@
 from neo import io
 from numpy import sin, linspace, pi
-import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('nbagg')
+from matplotlib import pyplot as plt
 from scipy import fft, arange
 
 
