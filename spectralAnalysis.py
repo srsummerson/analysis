@@ -32,6 +32,6 @@ def LFPSpectrumSingleChannel(tankname,channel):
 
  				xlabel('Freq (Hz)')
  				ylabel('|Y(freq)|')
- 				title('Channel %f' %channel)
+ 				#title('Channel %f' %channel)
  				imshow()
  	return 
