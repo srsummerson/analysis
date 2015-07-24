@@ -1,6 +1,6 @@
 from neo import io
 from numpy import sin, linspace, pi
-from pylab import plot, show, title, xlabel, ylabel, subplot
+import matplotlib.pyplot as plt
 from scipy import fft, arange
 
 
@@ -28,9 +28,10 @@ def LFPSpectrumSingleChannel(tankname,channel):
  				Y = fft(data)/n # fft computing and normalization
  				Y = Y[range(n/2)]
  				
- 				plot(frq,abs(Y),'r') # plotting the spectrum
+ 				plt.figure()
+ 				plt.plot(frq,abs(Y),'r') # plotting the spectrum
 
- 				#xlabel('Freq (Hz)')
+ 				plt.xlabel('Freq (Hz)')
  				#ylabel('|Y(freq)|')
  				#title('Channel %f' %channel)
  				imshow()
