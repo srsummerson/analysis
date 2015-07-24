@@ -47,5 +47,4 @@ def gen_spcgrm(tankname,channel,cutoffs=(0,250),binsize=50):
 			data = analogsig
 			srate = analogsig.sampling_rate
 			spec,freqs,bins,im=specgram(data,Fs=srate,NFFT=binsize,noverlap=0)        
-    
-    return spec/len(data),freqs,bins
+    return 
