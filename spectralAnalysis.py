@@ -24,7 +24,7 @@ def LFPSpectrumSingleChannel(tankname,channel):
  				T = n/Fs
  				frq = k/T # two sides frequency range
  				frq = frq[range(n/2)] # one side frequency range
-
+ 				frq = frq
  				Y = fft(data)/n # fft computing and normalization
  				Y = Y[range(n/2)]
  				
