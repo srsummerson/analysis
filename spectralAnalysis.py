@@ -45,10 +45,8 @@ def gen_spcgrm(tankname,channel,cutoffs=(0,250),binsize=50):
 			analogsig.channel_index +=96
 		if (analogsig.name[:3]=='LFP')&(analogsig.channel_index==channel):
 			data = analogsig
+	
 	srate = analogsig.sampling_rate
-    pxxx,freqs,bins,im=specgram(data,Fs=srate,NFFT=binsize,noverlap=0)
-        if i==0:
-            spec = pxxx.copy()
-        spec = pxxx + spec
+    spec,freqs,bins,im=specgram(data,Fs=srate,NFFT=binsize,noverlap=0)        
     
-    return spec/lfpdat.shape[1],freqs,bins
+    return spec/len(data),freqs,bins
