@@ -27,7 +27,7 @@ def LFPSpectrumSingleChannel(tankname,channel):
 
  				Y = fft(data)/n # fft computing and normalization
  				Y = Y[range(n/2)]
- 
+ 				'''
  				plot(frq,abs(Y),'r') # plotting the spectrum
  				xlabel('Freq (Hz)')
  				ylabel('|Y(freq)|')
