@@ -68,8 +68,8 @@ def LFPSpectrumAllChannel(tankname,num_channels):
  					ax1 = plt.subplot(8,12,analogsig.channel_index)
  				else:
  					ax1 = plt.subplot(10,16,analogsig.channel_index)
- 					
- 				plt.loglog(freq,Pxx_den/np.sum(Pxx_den),'r')
+
+ 				plt.plot(freq,Pxx_den/np.sum(Pxx_den),'r')
  				ax1.set_xlim([0, 100])
  				ax1.set_xticklabels([])
 				#ax1.set_ylim([0, 1.0e-8])
