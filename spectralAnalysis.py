@@ -74,7 +74,7 @@ def LFPSpectrumAllChannel(tankname,num_channels):
  					ax2 = plt.subplot(10,16,analogsig.channel_index)
 				plt.plot(freq,Pxx_den,'r')
  				ax2.set_xlim([0, 100])
- 				ax2set_xticklabels([])
+ 				ax2.set_xticklabels([])
 				#ax1.set_ylim([0, 1.0e-8])
 				ax2.set_yticklabels([])
 				plt.title(str(analogsig.channel_index))
