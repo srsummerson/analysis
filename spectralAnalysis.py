@@ -72,16 +72,17 @@ def LFPSpectrumAllChannel(tankname,num_channels):
  					ax2 = plt.subplot(8,12,analogsig.channel_index)
  				else:
  					ax2 = plt.subplot(10,16,analogsig.channel_index)
-				plt.semilogy(freq,Pxx_den/np.sum(Pxx_den),'r')
+				plt.plot(freq,Pxx_den,'r')
  				ax2.set_xlim([0, 100])
  				ax2.set_xticklabels([])
-				#ax2.set_ylim([0, 1.0e-8])
-				#ax2.set_yticklabels([])
+				ax2.set_ylim([0, 1.0e-8])
+				ax2.set_yticklabels([])
 				plt.title(str(analogsig.channel_index))
  		plt.figure(1)
- 		plt.savefig('NormalizedPowerSpec_'+tank+'_'+str(block_num)+'.png')
+ 		plt.title('Normalized')
+ 		plt.savefig('NormalizedPowerSpec_'+tank+'_'+str(block_num)+'.png',transparent=True)
  		plt.figure(2)
- 		plt.savefig('PowerSpec_'+tank+'_'+str(block_num)+'.png')
+ 		plt.savefig('PowerSpec_'+tank+'_'+str(block_num)+'.png',transparent=True)
  	return 
 
 def gen_spcgrm(tankname,channel,cutoffs=(0,250),binsize=50):
