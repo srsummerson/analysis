@@ -85,14 +85,14 @@ def LFPSpectrumAllChannel(tankname,num_channels):
  				plt.plot(freq,Pxx_den,'r')
  				#ax1.set_xlim([0, 100])
  				ax1.set_xticklabels([])
-				ax1.set_ylim([-11, 0])
-				ax1.set_yticklabels([])
+				#ax1.set_ylim([-11, 0])
+				#ax1.set_yticklabels([])
 				plt.title(str(analogsig.channel_index))
  				#plt.yscale('log')
  				#plt.xlabel('Freq (Hz)')
  				#plt.ylabel('|Y(freq)|')
  		plt.savefig('PowerSpec_'+tank+'_'+str(block_num)+'.png')
- 	return 
+ 	return freq
 
 def gen_spcgrm(tankname,channel,cutoffs=(0,250),binsize=50):
 	r = io.TdtIO(dirname=tankname)
