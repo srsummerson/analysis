@@ -28,7 +28,7 @@ def LFPSpectrumSingleChannel(tankname,channel):
  				freq, Pxx_den = signal.welch(data, Fs, nperseg=1024)
  				plt.figure()
  				plt.plot(freq,Pxx_den/np.sum(Pxx_den),'r') # plotting the spectrum
- 				plt.set_xlim([0, 100])
+ 				plt.axis([0, 100,,])
  				plt.xlabel('Freq (Hz)')
  				plt.ylabel('PSD')
  				plt.title('Channel ' +str(channel))
