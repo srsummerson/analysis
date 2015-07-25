@@ -76,7 +76,7 @@ def LFPSpectrumAllChannel(tankname,num_channels):
  				'''
  				freq, Pxx_den = signal.welch(data, Fs, nperseg=1024)
  				print np.amax(Pxx_den)
- 				print len(freq)
+ 				
  				if num_channels==96:
  					ax1 = plt.subplot(8,12,analogsig.channel_index)
  				else:
@@ -88,10 +88,9 @@ def LFPSpectrumAllChannel(tankname,num_channels):
 				ax1.set_ylim([-11, 0])
 				ax1.set_yticklabels([])
 				plt.title(str(analogsig.channel_index))
- 				plt.yscale('log')
+ 				#plt.yscale('log')
  				#plt.xlabel('Freq (Hz)')
  				#plt.ylabel('|Y(freq)|')
- 				
  		plt.savefig('PowerSpec_'+tank+'_'+str(block_num)+'.png')
  	return 
 
