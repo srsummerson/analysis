@@ -61,29 +61,25 @@ def LFPSpectrumAllChannel(tankname,num_channels):
 			if (analogsig.name[:3]=='LFP'):
 				Fs = analogsig.sampling_rate
 				data = analogsig
-				data_times = analogsig.times
-				n = len(data) # length of the signal
-				k = arange(n)
- 				T = n/Fs
- 				'''
- 				frq = k/T # two sides frequency range
- 				#frq = frq[range(n/2)] # one side frequency range
- 				
- 				frq = frq[:100000]
- 				Y = fft(data)/n # fft computing and normalization
- 				#Y = Y[range(n/2)]
- 				Y = Y[:100000]
- 				'''
+				
  				freq, Pxx_den = signal.welch(data, Fs, nperseg=1024)
  				
  				if num_channels==96:
  					ax1 = plt.subplot(8,12,analogsig.channel_index)
+ 					if analogsig.channel_index==(12*7+1):
+ 					else:
+ 						ax1.set_xticklabels([])
+ 						ax1.set_yticklabels([])
  				else:
  					ax1 = plt.subplot(10,16,analogsig.channel_index)
- 				#plt.plot(frq,abs(Y),'r') # plotting the spectrum
+ 					if analogsig.channel_index==(16*9+1):
+ 					else:
+ 						ax1.set_xticklabels([])
+ 						ax1.set_yticklabels([])
+ 				
  				plt.loglog(freq,Pxx_den,'r')
- 				#ax1.set_xlim([0, 100])
- 				ax1.set_xticklabels([])
+ 				ax1.set_xlim([0, 100])
+ 				#ax1.set_xticklabels([])
 				ax1.set_ylim([0, 1.0e-8])
 				#ax1.set_yticklabels([])
 				plt.title(str(analogsig.channel_index))
