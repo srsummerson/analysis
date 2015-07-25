@@ -66,14 +66,12 @@ def LFPSpectrumAllChannel(tankname,num_channels):
  				
  				if num_channels==96:
  					ax1 = plt.subplot(8,12,analogsig.channel_index)
- 					if analogsig.channel_index==(12*7+1):
- 					else:
+ 					if analogsig.channel_index!=(12*7+1):
  						ax1.set_xticklabels([])
  						ax1.set_yticklabels([])
  				else:
  					ax1 = plt.subplot(10,16,analogsig.channel_index)
- 					if analogsig.channel_index==(16*9+1):
- 					else:
+ 					if analogsig.channel_index!=(16*9+1):
  						ax1.set_xticklabels([])
  						ax1.set_yticklabels([])
  				
