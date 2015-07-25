@@ -12,8 +12,10 @@ def LFPSpectrumSingleChannel(tankname,channel):
 	"""
 	r = io.TdtIO(dirname=tankname)
 	bl = r.read_block(lazy=False,cascade=True)
-
+	tank = tankname[-13:]  # extracts last 13 values, which should be LuigiYYYYMMDD
+	block_num = 0
 	for block in bl.segments:
+		block_num += 1
 		for analogsig in block.analogsignals:
 			if analogsig.name[:4]=='LFP2':
 				analogsig.channel_index +=96
@@ -30,7 +32,7 @@ def LFPSpectrumSingleChannel(tankname,channel):
  				plt.xlabel('Freq (Hz)')
  				plt.ylabel('PSD')
  				#title('Channel %f' %channel)
- 				plt.savefig('PowerSpec_Channel'+str(channel)+'.png')
+ 				plt.savefig('PowerSpec_'+tank+'_'+str(block_num)+'_Ch'+str(channel)+'.png',transparent=True)
 
  	return 
 
@@ -76,7 +78,7 @@ def LFPSpectrumAllChannel(tankname,num_channels):
  				ax2.set_xlim([0, 100])
  				ax2.set_xticklabels([])
 				#ax2.set_ylim([0, 1.0e-8])
-				#ax2.set_yticklabels([])
+				ax2.set_yticklabels([])
 				plt.title(str(analogsig.channel_index))
  		plt.figure(1)
  		plt.title('Normalized')
