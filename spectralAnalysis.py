@@ -84,11 +84,11 @@ def LFPSpectrumAllChannel(tankname,num_channels):
  				#plt.plot(frq,abs(Y),'r') # plotting the spectrum
  				plt.plot(freq,Pxx_den,'r')
  				#ax1.set_xlim([0, 100])
- 				#ax1.set_xticklabels([])
-				#ax1.set_ylim([0, 0.000005])
+ 				ax1.set_xticklabels([])
+				ax1.set_ylim([-11, 0])
 				ax1.set_yticklabels([])
 				plt.title(str(analogsig.channel_index))
- 				#plt.yscale('log')
+ 				plt.yscale('log')
  				#plt.xlabel('Freq (Hz)')
  				#plt.ylabel('|Y(freq)|')
  				
