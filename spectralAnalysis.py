@@ -28,10 +28,10 @@ def LFPSpectrumSingleChannel(tankname,channel):
  				freq, Pxx_den = signal.welch(data, Fs, nperseg=1024)
  				plt.figure()
  				plt.plot(freq,Pxx_den/np.sum(Pxx_den),'r') # plotting the spectrum
- 				#plt.yscale('log')
+ 				plt.set_xlim([0, 100])
  				plt.xlabel('Freq (Hz)')
  				plt.ylabel('PSD')
- 				#title('Channel %f' %channel)
+ 				plt.title('Channel ' +str(channel))
  				plt.savefig('PowerSpec_'+tank+'_'+str(block_num)+'_Ch'+str(channel)+'.png',transparent=True)
 
  	return 
