@@ -1,6 +1,7 @@
 from neo import io
 from numpy import sin, linspace, pi
 import matplotlib
+import numpy as np
 from matplotlib import pyplot as plt
 from scipy import fft, arange, signal
 from pylab import specgram
@@ -74,6 +75,7 @@ def LFPSpectrumAllChannel(tankname,num_channels):
  				Y = Y[:100000]
  				'''
  				freq, Pxx_den = signal.welch(data, Fs, nperseg=1024)
+ 				print np.amax(Pxx_den)
  				print len(freq)
  				if num_channels==96:
  					ax1 = plt.subplot(8,12,analogsig.channel_index)
@@ -81,16 +83,15 @@ def LFPSpectrumAllChannel(tankname,num_channels):
  					ax1 = plt.subplot(10,16,analogsig.channel_index)
  				#plt.plot(frq,abs(Y),'r') # plotting the spectrum
  				plt.plot(freq,Pxx_den,'r')
- 				ax1.set_xlim([0, 100])
- 				ax1.set_xticklabels([])
-				ax1.set_ylim([0, 0.000005])
+ 				#ax1.set_xlim([0, 100])
+ 				#ax1.set_xticklabels([])
+				#ax1.set_ylim([0, 0.000005])
 				ax1.set_yticklabels([])
 				plt.title(str(analogsig.channel_index))
  				#plt.yscale('log')
  				#plt.xlabel('Freq (Hz)')
  				#plt.ylabel('|Y(freq)|')
- 				#title('Channel %f' %channel)
- 		
+ 				
  		plt.savefig('PowerSpec_'+tank+'_'+str(block_num)+'.png')
  	return 
 
