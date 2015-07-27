@@ -56,7 +56,7 @@ def LFPSpectrumAllChannel(tankname,num_channels):
 				data = analogsig
 				
  				freq, Pxx_den = signal.welch(data, Fs, nperseg=1024)
- 				plt.figure(1)
+ 				plt.figure(2*block_num-1)
  				if num_channels==96:
  					ax1 = plt.subplot(8,12,analogsig.channel_index)
  				else:
@@ -69,7 +69,7 @@ def LFPSpectrumAllChannel(tankname,num_channels):
 				ax1.set_yticklabels([])
 				plt.title(str(analogsig.channel_index))
  				
- 				plt.figure(2)
+ 				plt.figure(2*block_num)
  				if num_channels==96:
  					ax2 = plt.subplot(8,12,analogsig.channel_index)
  				else:
