@@ -32,7 +32,7 @@ def LFPSpectrumSingleChannel(tankname,channel):
  				plt.xlabel('Freq (Hz)')
  				plt.ylabel('PSD')
  				plt.title('Channel ' +str(channel))
- 				plt.savefig('/home/srsummerson/code/analysis/PowerSpec_'+tank+'_'+str(block_num)+'_Ch'+str(channel)+'.png')
+ 				plt.savefig('/home/srsummerson/code/analysis/Mario_Spectrum_figs/PowerSpec_'+tank+'_'+str(block_num)+'_Ch'+str(channel)+'.png')
 
  	return 
 
@@ -81,11 +81,9 @@ def LFPSpectrumAllChannel(tankname,num_channels):
 				ax2.set_yticklabels([])
 				plt.title(str(analogsig.channel_index))
  		plt.figure(1)
- 		#plt.savefig('NormalizedPowerSpec_'+tank+'_'+str(block_num)+'.png')
- 		plt.savefig('test.png')
+ 		plt.savefig('/home/srsummerson/code/analysis/Mario_Spectrum_figs/NormalizedPowerSpec_'+tank+'_'+str(block_num)+'.png')
  		plt.figure(2)
- 		plt.savefig('test1.png')
- 		#plt.savefig('PowerSpec_'+tank+'_'+str(block_num)+'.png')
+ 		plt.savefig('/home/srsummerson/code/analysis/Mario_Spectrum_figs/PowerSpec_'+tank+'_'+str(block_num)+'.png')
  	return 
 
 def gen_spcgrm(tankname,channel,cutoffs=(0,250),binsize=50):
