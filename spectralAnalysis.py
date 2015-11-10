@@ -83,7 +83,7 @@ def LFPSpectrumAllChannel(tankname,num_channels):
  		plt.figure(1)
  		plt.savefig('NormalizedPowerSpec_'+tank+'_'+str(block_num)+'.png')
  		plt.figure(2)
- 		plt.savefig('PowerSpec_'+tank+'_'+str(block_num)+'.png',transparent=True)
+ 		plt.savefig('PowerSpec_'+tank+'_'+str(block_num)+'.png')
  	return 
 
 def gen_spcgrm(tankname,channel,cutoffs=(0,250),binsize=50):
