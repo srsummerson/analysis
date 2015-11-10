@@ -32,7 +32,7 @@ def LFPSpectrumSingleChannel(tankname,channel):
  				plt.xlabel('Freq (Hz)')
  				plt.ylabel('PSD')
  				plt.title('Channel ' +str(channel))
- 				plt.savefig('/code/analysis/PowerSpec_'+tank+'_'+str(block_num)+'_Ch'+str(channel)+'.png')
+ 				plt.savefig('PowerSpec_'+tank+'_'+str(block_num)+'_Ch'+str(channel)+'.png')
 
  	return 
 
