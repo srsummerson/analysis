@@ -32,7 +32,7 @@ def LFPSpectrumSingleChannel(tankname,channel):
  				plt.xlabel('Freq (Hz)')
  				plt.ylabel('PSD')
  				plt.title('Channel ' +str(channel))
- 				plt.savefig('PowerSpec_'+tank+'_'+str(block_num)+'_Ch'+str(channel)+'.png',transparent=True)
+ 				plt.savefig('PowerSpec_'+tank+'_'+str(block_num)+'_Ch'+str(channel)+'.png')
 
  	return 
 
@@ -81,7 +81,7 @@ def LFPSpectrumAllChannel(tankname,num_channels):
 				ax2.set_yticklabels([])
 				plt.title(str(analogsig.channel_index))
  		plt.figure(1)
- 		plt.savefig('NormalizedPowerSpec_'+tank+'_'+str(block_num)+'.png',transparent=True)
+ 		plt.savefig('NormalizedPowerSpec_'+tank+'_'+str(block_num)+'.png')
  		plt.figure(2)
  		plt.savefig('PowerSpec_'+tank+'_'+str(block_num)+'.png',transparent=True)
  	return 
