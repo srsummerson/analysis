@@ -33,7 +33,7 @@ def LFPSpectrumSingleChannel(tankname,channel):
  				plt.ylabel('PSD')
  				plt.title('Channel ' +str(channel))
  				plt.savefig('/home/srsummerson/code/analysis/Mario_Spectrum_figs/PowerSpec_'+tank+'_'+str(block_num)+'_Ch'+str(channel)+'.png')
-
+ 				plt.close()
  	return 
 
 def LFPSpectrumAllChannel(tankname,num_channels):
@@ -82,8 +82,10 @@ def LFPSpectrumAllChannel(tankname,num_channels):
 				plt.title(str(analogsig.channel_index))
  		plt.figure(1)
  		plt.savefig('/home/srsummerson/code/analysis/Mario_Spectrum_figs/NormalizedPowerSpec_'+tank+'_'+str(block_num)+'.png')
+ 		plt.close()
  		plt.figure(2)
  		plt.savefig('/home/srsummerson/code/analysis/Mario_Spectrum_figs/PowerSpec_'+tank+'_'+str(block_num)+'.png')
+ 		plt.close()
  	return 
 
 def gen_spcgrm(tankname,channel,cutoffs=(0,250),binsize=50):
