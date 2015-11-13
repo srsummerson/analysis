@@ -23,7 +23,7 @@ def LFPSpectrumSingleChannel(tankname,channel):
 				Fs = analogsig.sampling_rate.item()
 				data = analogsig
 				num_timedom_samples = data.size
-				time = float(range(0,num_timedom_samples))/Fs
+				time = range(0,num_timedom_samples)/float(Fs)
  				freq, Pxx_den = signal.welch(data, Fs, nperseg=1024)
 
  				plt.figure()
