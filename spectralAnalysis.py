@@ -20,18 +20,25 @@ def LFPSpectrumSingleChannel(tankname,channel):
 			if analogsig.name[:4]=='LFP2':
 				analogsig.channel_index +=96
 			if (analogsig.name[:3]=='LFP')&(analogsig.channel_index==channel):
-				Fs = analogsig.sampling_rate
+				Fs = analogsig.sampling_rate.item()
 				data = analogsig
-				Fs = analogsig.sampling_rate
-				data = analogsig
-				
+				num_timedom_samples = data.size
+				time = float(range(0,num_samples))/Fs
  				freq, Pxx_den = signal.welch(data, Fs, nperseg=1024)
+
  				plt.figure()
+ 				plt.subplot(2,1,1)
  				plt.plot(freq,Pxx_den/np.sum(Pxx_den),'r') # plotting the spectrum
  				plt.xlim((0, 100))
  				plt.xlabel('Freq (Hz)')
  				plt.ylabel('PSD')
  				plt.title('Channel ' +str(channel))
+ 				
+ 				plt.subplot(2,1,2)
+				plt.plot(time[0:Fs*10],data[0:Fs*10],'r') # plotting LFP snippet
+				plt.xlabel('Time (s)')
+				plt.ylabel('LFP (uv)')
+				plt.title('LFP Snippet')
  				plt.savefig('/home/srsummerson/code/analysis/Mario_Spectrum_figs/PowerSpec_'+tank+'_'+str(block_num)+'_Ch'+str(channel)+'.png')
  				plt.close()
  	return 
