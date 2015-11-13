@@ -35,7 +35,7 @@ def LFPSpectrumSingleChannel(tankname,channel):
  				plt.title('Channel ' +str(channel))
  				
  				plt.subplot(2,1,2)
-				plt.plot(time[0:np.floor(Fs)*10],data[0:np.floor(Fs)*10],'r') # plotting LFP snippet
+				plt.plot(time[0:np.int(Fs)*10],data[0:np.int(Fs)*10],'r') # plotting LFP snippet
 				plt.xlabel('Time (s)')
 				plt.ylabel('LFP (uv)')
 				plt.title('LFP Snippet')
