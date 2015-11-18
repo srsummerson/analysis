@@ -117,7 +117,7 @@ def FreeChoiceTaskPerformance(hdf_file):
 	plt.title('Number of total trials: %f',target_all.size)
 	plt.savefig('FCPerformance_alltrials_%s.svg' % hdf_file[:-4])    # save this filetype for AI editing
 	plt.savefig('FCPerformance_alltrials_%s.svg' % hdf_file[:-4])    # save this filetype for easy viewing
-    plt.close()
+	plt.close()
 
 	plt.figure()
 	plt.subplot(121)
@@ -134,5 +134,5 @@ def FreeChoiceTaskPerformance(hdf_file):
 	plt.title('Number of free-choice trials: %f',target_freechoice.size)
 
 	plt.savefig('FCPerformance_fctrials_%s.svg' % hdf_file[:-4])    # save this filetype for AI editing
-    plt.savefig('FCPerformance_fctrials_%s.svg' % hdf_file[:-4])    # save this filetype for easy viewing
-    plt.close()
+	plt.savefig('FCPerformance_fctrials_%s.svg' % hdf_file[:-4])    # save this filetype for easy viewing
+	plt.close()
