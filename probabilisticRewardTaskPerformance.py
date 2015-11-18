@@ -109,6 +109,7 @@ def FreeChoiceTaskPerformance(hdf_file):
 	plt.axis([1,target_all.size,0, 1])
 	plt.xlabel('Trials')
 	plt.ylabel('Probability of Target Selection')
+	plt.legend()
 	plt.title('All trials')
 
 	plt.subplot(122)
@@ -116,6 +117,7 @@ def FreeChoiceTaskPerformance(hdf_file):
 	plt.axis([1,target_freechoice.size, 0, 1])
 	plt.xlabel('Trials')
 	plt.title('Number of total trials: %f' % target_all.size)
+	plt.legend()
 	plt.savefig('/home/srsummerson/code/analysis/Luigi_Performance_figs/FCPerformance_alltrials_%s.svg' % hdf_file[:-4])    # save this filetype for AI editing
 	plt.savefig('/home/srsummerson/code/analysis/Luigi_Performance_figs/FCPerformance_alltrials_%s.svg' % hdf_file[:-4])    # save this filetype for easy viewing
 	plt.close()
@@ -126,12 +128,14 @@ def FreeChoiceTaskPerformance(hdf_file):
 	plt.axis([1,target_all.size,0, 1])
 	plt.xlabel('Trials')
 	plt.ylabel('Probability of Receiving Large Reward')
+	plt.legend()
 	plt.title('Free-Choice Trials')
 
 	plt.subplot(122)
 	plt.plot(range(1,target_freechoice.size+1),prob_reward_high_freechoice,'b',label='high',range(1,target_freechoice.size+1),prob_reward_low_freechoice,'r',label='low')
 	plt.axis([1,target_freechoice.size, 0, 1])
 	plt.xlabel('Trials')
+	plt.legend()
 	plt.title('Number of free-choice trials: %f' % target_freechoice.size)
 
 	plt.savefig('/home/srsummerson/code/analysis/Luigi_Performance_figs/FCPerformance_fctrials_%s.svg' % hdf_file[:-4])    # save this filetype for AI editing
