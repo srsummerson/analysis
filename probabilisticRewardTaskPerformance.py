@@ -10,6 +10,7 @@ def FreeChoiceTaskPerformance(hdf_file):
 
 	# Task states
 	state = hdf.root.task_msgs[:]['msg']
+	state_time = hdf.root.task_msgs[:]['time']
 	# Target information: high-value target= targetH, low-value target= targetL
 	targetH = hdf.root.task[:]['targetH']
 	targetL = hdf.root.task[:]['targetL']
