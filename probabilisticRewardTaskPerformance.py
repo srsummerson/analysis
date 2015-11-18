@@ -137,3 +137,5 @@ def FreeChoiceTaskPerformance(hdf_file):
 	plt.savefig('FCPerformance_fctrials_%s.svg' % hdf_file[:-4])    # save this filetype for AI editing
 	plt.savefig('FCPerformance_fctrials_%s.svg' % hdf_file[:-4])    # save this filetype for easy viewing
 	plt.close()
+
+	hdf.close()
