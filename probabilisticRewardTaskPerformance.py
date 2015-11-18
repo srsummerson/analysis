@@ -105,14 +105,14 @@ def FreeChoiceTaskPerformance(hdf_file):
 	"""
 	plt.figure()
 	plt.subplot(121)
-	plt.plot(range(1,target_all.size+1),prob_choose_high_all,'b',range(1,target_all.size+1),prob_choose_low_all,'r')
+	plt.plot(range(1,target_all.size+1),prob_choose_high_all,'b',label='high',range(1,target_all.size+1),prob_choose_low_all,'r',label='low')
 	plt.axis([1,target_all.size,0, 1])
 	plt.xlabel('Trials')
 	plt.ylabel('Probability of Target Selection')
 	plt.title('All trials')
 
 	plt.subplot(122)
-	plt.plot(range(1,target_freechoice.size+1),prob_choose_high_freechoice,'b',range(1,target_freechoice.size+1),prob_choose_low_freechoice,'r')
+	plt.plot(range(1,target_freechoice.size+1),prob_choose_high_freechoice,'b',label='high',range(1,target_freechoice.size+1),prob_choose_low_freechoice,'r',label='low')
 	plt.axis([1,target_freechoice.size, 0, 1])
 	plt.xlabel('Trials')
 	plt.title('Number of total trials: %f' % target_all.size)
@@ -122,14 +122,14 @@ def FreeChoiceTaskPerformance(hdf_file):
 
 	plt.figure()
 	plt.subplot(121)
-	plt.plot(range(1,target_all.size+1),prob_reward_high_all,'b',range(1,target_all.size+1),prob_reward_low_all,'r')
+	plt.plot(range(1,target_all.size+1),prob_reward_high_all,'b',label='high',range(1,target_all.size+1),prob_reward_low_all,'r',label='low')
 	plt.axis([1,target_all.size,0, 1])
 	plt.xlabel('Trials')
 	plt.ylabel('Probability of Receiving Large Reward')
 	plt.title('Free-Choice Trials')
 
 	plt.subplot(122)
-	plt.plot(range(1,target_freechoice.size+1),prob_reward_high_freechoice,'b',range(1,target_freechoice.size+1),prob_reward_low_freechoice,'r')
+	plt.plot(range(1,target_freechoice.size+1),prob_reward_high_freechoice,'b',label='high',range(1,target_freechoice.size+1),prob_reward_low_freechoice,'r',label='low')
 	plt.axis([1,target_freechoice.size, 0, 1])
 	plt.xlabel('Trials')
 	plt.title('Number of free-choice trials: %f' % target_freechoice.size)
