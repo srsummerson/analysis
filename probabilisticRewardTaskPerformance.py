@@ -21,11 +21,12 @@ def FreeChoiceTaskPerformance(hdf_file):
 	trial_type = hdf.root.task[:]['target_index']
 
 	ind_wait_states = np.ravel(np.nonzero(state == 'wait'))
-	ind_target_states = np.ravel(np.nonzero(state == 'target'))
+	#ind_target_states = np.ravel(np.nonzero(state == 'target'))
 	ind_check_reward_states = np.ravel(np.nonzero(state == 'check_reward'))
+	ind_target_states = state[ind_check_reward_states - 2] # only look at target targets when the trial was successful
 	num_successful_trials = ind_check_reward_states.size
 	target_times = state_time[ind_target_states]
-	# creates vector same size of state vectors for comparison. instructed (0) and free-choice (1)
+	# creates vector same size of state vectors for comparison. instructed (1) and free-choice (2)
 	instructed_or_freechoice = trial_type[state_time[ind_target_states]]
 	# creates vector of same size of state vectors for comparision. (0) = small reward, (1) = large reward.
 	rewarded_reward_scheduleH = reward_scheduleH[state_time[ind_target_states]]
