@@ -84,8 +84,10 @@ def FreeChoiceTaskPerformance(hdf_file):
 		reward_high_freechoice = np.logical_and(chosen_high_freechoice,reward_freechoice[range(np.maximum(0,i - running_avg_length),i+1)])
 		reward_low_freechoice = np.logical_and(chosen_low_freechoice,reward_freechoice[range(np.maximum(0,i - running_avg_length),i+1)])
     
-		prob_choose_high_freechoice[i] = float(sum(chosen_high_freechoice))/np.minimum(i+1,running_avg_length)
-		prob_choose_low_freechoice[i] = float(sum(chosen_low_freechoice))/np.minimum(i+1,running_avg_length)
+		#prob_choose_high_freechoice[i] = float(sum(chosen_high_freechoice))/np.minimum(i+1,running_avg_length)
+		#prob_choose_low_freechoice[i] = float(sum(chosen_low_freechoice))/np.minimum(i+1,running_avg_length)
+		prob_choose_high_freechoice[i] = float(sum(chosen_high_freechoice))/chosen_high_freechoice.size
+		prob_choose_low_freechoice[i] = float(sum(chosen_low_freechoice))/chosen_low_freechoice.size
 		prob_reward_high_freechoice[i] = float(sum(reward_high_freechoice))/(sum(chosen_high_freechoice) + (sum(chosen_high_freechoice)==0))  # add logic statment to denominator so we never divide by 0
 		prob_reward_low_freechoice[i] = float(sum(reward_low_freechoice))/(sum(chosen_low_freechoice) + (sum(chosen_low_freechoice)==0))
 
