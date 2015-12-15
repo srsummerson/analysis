@@ -65,9 +65,9 @@ def syncHDFwithDIOx(TDT_tank,block_num):
 
 	# find channel index for DIOx 3 and DIOx 4
 	for sig in analogsig:
-		if (sig.name = 'DIOx 3'): # third channel indicates message type
+		if (sig.name == 'DIOx 3'): # third channel indicates message type
 			DIOx3_ind = sig.channel_index
-		if (sig.name = 'DIOx 4'): # fourth channels has row numbers plus other messages
+		if (sig.name == 'DIOx 4'): # fourth channels has row numbers plus other messages
 			DIOx4_ind = sig.channel_index
 	DIOx3 = bl.segments[block_num-1].analogsignals[DIOx3_ind]
 	DIOx4 = bl.segments[block_num-1].analogsignals[DIOx4_ind]
