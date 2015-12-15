@@ -42,7 +42,7 @@ def TrialAverageIBI(hdf, hdf_times, pulse_signal):
 	averageIBI = np.zeros(max_trial_length)
 	count_pulse_samples = np.ones(max_trial_length)
 
-	for ind in pulse_sample_ind
+	for ind in pulse_sample_ind:
 		trialIBI = pulse_detect[ind]
 
 	return trialIBI
