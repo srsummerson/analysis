@@ -38,7 +38,7 @@ def TrialAverageIBI(hdf, hdf_times, pulse_signal):
 		DIOx_sampletime_waitstate = hdf_times['tdt_timestamp'][DIOx_sample]
 		pulse_sample_ind.append((np.abs(pulse_signal.times - DIOx_sampletime_waitstate)).argmin())	# find pulse signal ind closest to this sample time of the wait states
 
-	max_trial_length = np.amax(pulse_sample_ind[1:] - [:-1])
+	max_trial_length = np.amax(pulse_sample_ind[1:] - pulse_sample_ind[:-1])
 	averageIBI = np.zeros(max_trial_length)
 	count_pulse_samples = np.ones(max_trial_length)
 
