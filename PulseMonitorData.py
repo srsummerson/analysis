@@ -75,7 +75,7 @@ def syncHDFwithDIOx(TDT_tank,block_num):
 	hdf_times['tdt_dio_samplerate'] = DIOx3.sampling_rate
 	for ind in range(0,length):
 		if (DIOx3[ind]==21):
-			row = DIOx4[ind]
+			row = DIOx4[ind].item()
 			cycle = row < prev_row # row counter has cycled when the current row number is less than the previous
 			counter += cycle
 			row_number.append(counter*256 + row)
