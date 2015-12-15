@@ -82,6 +82,7 @@ def syncHDFwithDIOx(TDT_tank,block_num):
 			tdt_timestamp.append(DIOx4.times[ind])
 			tdt_samplenumber.append(ind)
 			prev_row = row
+		print float(ind)/length
 
 	hdf_times['row_number'] = row_number
 	hdf_times['tdt_samplenumber'] = tdt_samplenumber
