@@ -8,14 +8,20 @@ def PulseTimes(data):
 
 	return pulse_times
 
-def TrialAverageIBI(hdf, DIOx, pulse_times):
+def TrialAverageIBI(hdf, hdf_times, pulse_signal):
 	# Method to compute average inter-beat interval (IBI) for successful regular trials and stress trials.
 	# Inputs are the hdf file (hdf; used to determine behavior state), the hdf row numbers 
-	# as recorded by the TDT system (DIOx; used to sychronize behavior with recording), and the pulse times
+	# as recorded by the TDT system (output from syncHDFwithDIOx), and the pulse times
 	# (pulse_times; used to determine the per trial IBI). The output of the method is the average IBI per
 	# trial, indexed by the trial number (regardless of whether trial was successful or not).
 
-	counter = 0 	# counter for number of cycles in hdf row numbers
+	pulse_sample_ind = []
+	pulse_sample_rate = pulse_signal.sampling_rate
+
+	pulse_peak_amp = np.amax(pulse_signal)
+	thresholded_pulse = (pulse_signal > 0.7*pulse_peak_amp)
+	pulse_detect = 0.5*(pulse_signal[1:] - pulse_signal[:-1]) + 0.5  # is 1 when pulse crosses threshold
+
 
 	hdf = tables.openFile(hdf_file)
 	state = hdf.root.task_msgs[:]['msg']
@@ -23,23 +29,21 @@ def TrialAverageIBI(hdf, DIOx, pulse_times):
 	ind_wait_states = np.ravel(np.nonzero(state == 'wait'))
 	#ind_check_reward_states = np.ravel(np.nonzero(state == 'check_reward'))
 
-	for ind in DIOx:
-		row = DIOx[ind]
-		cycle = DIOx[ind] < DIOx[ind-1] # row counter has cycled when the current row number is less than the previous
-		counter += cycle
-		DIOx_hdfrow = counter*256 + row
-		# need to add DIOx_hdftimes
+	hdf_times['tdt_timestamp']
 
+	# Get TDT sample times that match the row numbers corresponding to wait states, match this to pulse signal samples
 	for ind in ind_wait_states:
 		hdfrow = ind 	# hdf row number in behavior code
-		hdfrow_next = ind_wait_states[ind+1]
-		DIOx_sample = (np.abs(DIOx_hdfrow-hdfrow)).argmin() 	# find index in DIOx_hdfrow which is closest
-		DIOx_sample_next = (np.abs(DIOx_hdfrow-hdfrow_next)).argmin()  # find index in DIOx_hdfrow which is closest
-		DIOx_sampletime = DIOx_hdftimes[DIOx_sample]
-		DIOx_sampletime_next = DIOx_hdftimes[DIOx_sample_next]
+		DIOx_sample = (np.abs(hdf_times['row_number']-hdfrow)).argmin() 	# find index in DIOx_hdfrow which is closest
+		DIOx_sampletime_waitstate = hdf_times['tdt_timestamp'][DIOx_sample]
+		pulse_sample_ind.append((np.abs(pulse_signal.times - DIOx_sampletime_waitstate)).argmin())	# find pulse signal ind closest to this sample time of the wait states
 
+	max_trial_length = np.amax(pulse_sample_ind[1:] - [:-1])
+	averageIBI = np.zeros(max_trial_length)
+	count_pulse_samples = np.ones(max_trial_length)
 
-
+	for ind in pulse_sample_ind
+		trialIBI = pulse_detect[ind]
 
 	return trialIBI
 
@@ -66,17 +70,15 @@ def syncHDFwithDIOx(TDT_tank,block_num):
 	# find channel index for DIOx 3 and DIOx 4
 	for sig in analogsig:
 		if (sig.name == 'DIOx 3'): # third channel indicates message type
-			DIOx3_ind = sig.channel_index
+			DIOx3 = sig
 		if (sig.name == 'DIOx 4'): # fourth channels has row numbers plus other messages
-			DIOx4_ind = sig.channel_index
-	DIOx3 = bl.segments[block_num-1].analogsignals[DIOx3_ind]
-	DIOx4 = bl.segments[block_num-1].analogsignals[DIOx4_ind]
+			DIOx4 = sig
 	length = DIOx3.size
 	hdf_times['tdt_dio_samplerate'] = DIOx3.sampling_rate
 	for ind in range(0,length):
 		if (DIOx3[ind]==21):
 			row = DIOx4[ind].item()
-			cycle = row < prev_row # row counter has cycled when the current row number is less than the previous
+			cycle = (row < prev_row) # row counter has cycled when the current row number is less than the previous
 			counter += cycle
 			row_number.append(counter*256 + row)
 			tdt_timestamp.append(DIOx4.times[ind])
