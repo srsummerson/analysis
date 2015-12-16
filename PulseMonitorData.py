@@ -4,9 +4,9 @@ from neo import io
 def findIBIs(pulse_signal):
 	# Input to method is pulse data channel extracted from TDT recording file.
 	# Method determines the times of the heart pulses and returns an array of the pulse times.
-	pulse_peak_amp = np.amax(pulse_signal)
+	pulse_peak_amp = np.amax(pulse_signal.item())
 	thresholded_pulse = (pulse_signal > 0.6*pulse_peak_amp)
-	pulse_detect = 0.5*(pulse_signal[1:] - pulse_signal[:-1]) + 0.5*np.ones(pulse_signal.size-1)  # is 1 when pulse crosses threshold
+	pulse_detect = 0.5*(thresholded_pulse[1:] - thresholded_pulse[:-1]) + 0.5*np.ones(pulse_signal.size-1)  # is 1 when pulse crosses threshold
 
 	pulse_indices = np.nonzero(pulse_detect)
 	IBI = float(pulse_indices[1:] - pulse_indices[:-1])/pulse_signal.sampling_rate # IBI is in s
