@@ -28,6 +28,7 @@ def findIBIs(pulse):
 			real_indices.append(pulse_indices[ind])
 	#pulse_indices = pulse_indices[realpulse]
 	#IBI = pulse_indices[1:] - pulse_indices[:-1]
+	real_indices = np.ravel(real_indices)
 	IBI = real_indices[1:] - real_indices[:-1]
 	IBI = IBI/pulse_signal.sampling_rate # IBI is in s
 
