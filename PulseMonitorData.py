@@ -1,10 +1,16 @@
 import numpy as np
 from neo import io
 
-def PulseTimes(data):
-	# Input to method is array of timestamped data already extracted from TDT recording file.
+def findIBIs(pulse_signal):
+	# Input to method is pulse data channel extracted from TDT recording file.
 	# Method determines the times of the heart pulses and returns an array of the pulse times.
-	
+	pulse_peak_amp = np.amax(pulse_signal)
+	thresholded_pulse = (pulse_signal > 0.6*pulse_peak_amp)
+	pulse_detect = 0.5*(pulse_signal[1:] - pulse_signal[:-1]) + 0.5  # is 1 when pulse crosses threshold
+
+	pulse_indices = np.nonzero(pulse_detect)
+	IBI = float(pulse_indices[1:] - pulse_indices[:-1])/pulse_signal.sampling_rate # IBI is in s
+
 
 	return pulse_times
 
@@ -42,8 +48,11 @@ def TrialAverageIBI(hdf, hdf_times, pulse_signal):
 	averageIBI = np.zeros(max_trial_length)
 	count_pulse_samples = np.ones(max_trial_length)
 
-	for ind in pulse_sample_ind:
-		trialIBI = pulse_detect[ind]
+	for ind in range(0,pulse_sample_ind.size-1): # for all but the last wait states
+		pulse_segment = pulse_detect[pulse_sample_ind[ind]:pulse_sample_ind[ind+1]]
+		pulse_indices = np.nonzero(pulse_segment)
+		IBI = float(pulse_indices[1:] - pulse_indices[:-1])/pulse_sample_rate	# interbeat intervals in s
+		trialIBI[ind] = float(sum(IBI))/IBI.size
 
 	return trialIBI
 
