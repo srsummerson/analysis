@@ -9,7 +9,7 @@ def findIBIs(pulse):
 	pulse_trough_amp = np.amin(pulse_signal)
 	thres = pulse_trough_amp + 0.6*(pulse_peak_amp - pulse_trough_amp)
 	thresholded_pulse = (pulse_signal > thres)
-	pulse_detect = (thresholded_pulse[1:] - thresholded_pulse[:-1]) > 0.5)  # is 1 when pulse crosses threshold
+	pulse_detect = ((thresholded_pulse[1:] - thresholded_pulse[:-1]) > 0.5)  # is 1 when pulse crosses threshold
 
 	pulse_indices = np.nonzero(pulse_detect)
 	IBI = pulse_indices[1:] - pulse_indices[:-1]
