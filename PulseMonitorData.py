@@ -21,9 +21,14 @@ def findIBIs(pulse):
 
 	pulse_indices = np.nonzero(pulse_detect)
 	pulse_indices = np.ravel(pulse_indices)
-	realpulse = ((pulse_indices[1:] - pulse_indices[:-1]) > min_ibi_samples)
-	pulse_indices = pulse_indices[realpulse]
-	IBI = pulse_indices[1:] - pulse_indices[:-1]
+	#realpulse = ((pulse_indices[1:] - pulse_indices[:-1]) > min_ibi_samples)
+	real_indices = pulse_indices[0]
+	for ind in range(1,pulse_indices.size):
+		if ((pulse_indices[ind] - real_indices[-1]) > min_ibi_samples):
+			real_indices.append(pulse_indices[ind])
+	#pulse_indices = pulse_indices[realpulse]
+	#IBI = pulse_indices[1:] - pulse_indices[:-1]
+	IBI = real_indices[1:] - real_indices[:-1]
 	IBI = IBI/pulse_signal.sampling_rate # IBI is in s
 
 	return IBI
