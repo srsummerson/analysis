@@ -11,7 +11,15 @@ def findIBIs(pulse):
 	thresholded_pulse = (pulse_signal > thres)
 	pulse_detect = ((thresholded_pulse[1:] - thresholded_pulse[:-1]) > 0.5)  # is 1 when pulse crosses threshold
 
+	max_rate = 250 # beats per min
+	max_rate_hz = float(max_rate)/60 # beats per sec
+	min_ibi = float(1)/max_rate_hz # minimum time between beats in seconds
+	min_ibi_samples = min_ibi*pulse_signal.sampling_rate # minimum time between beats in samples
+
 	pulse_indices = np.nonzero(pulse_detect)
+	pulse_indices = np.ravel(pulse_indices)
+	realpulse = ((pulse_indices[1:] - pulse_indices[:-1]) > min_ibi_samples)
+	pulse_indices = pulse_indices[realpulse]
 	IBI = pulse_indices[1:] - pulse_indices[:-1]
 	IBI = IBI/pulse_signal.sampling_rate # IBI is in s
 
