@@ -15,9 +15,13 @@ def findIBIs(pulse):
 	pulse_detect = ((thresholded_pulse[1:] - thresholded_pulse[:-1]) > 0.5)  # is 1 when pulse crosses threshold
 
 	max_rate = 220 # beats per min
+	min_rate = 100 # beats per min
 	max_rate_hz = float(max_rate)/60 # beats per sec
+	min_rate_hz = float(min_rate)/60
 	min_ibi = float(1)/max_rate_hz # minimum time between beats in seconds
+	max_ibi = float(1)/min_rate_hz
 	min_ibi_samples = min_ibi*pulse_signal.sampling_rate.item() # minimum time between beats in samples
+	max_ibi_samples = max_ibi*pulse_signal.sampling_rate.item()
 
 	pulse_indices = np.nonzero(pulse_detect)
 	pulse_indices = np.ravel(pulse_indices)
@@ -30,9 +34,11 @@ def findIBIs(pulse):
 	#IBI = pulse_indices[1:] - pulse_indices[:-1]
 	real_indices = np.ravel(real_indices)
 	IBI = real_indices[1:] - real_indices[:-1]
-	IBI = IBI/pulse_signal.sampling_rate # IBI is in s
+	not_too_long_IBI = (IBI < max_ibi_samples)
+	realIBI = IBI[np.nonzero(not_too_long_IBI)]
+	realIBI = realIBI/pulse_signal.sampling_rate # IBI is in s
 
-	return IBI
+	return realIBI
 
 def TrialAverageIBI(hdf, hdf_times, pulse_signal):
 	# Method to compute average inter-beat interval (IBI) for successful regular trials and stress trials.
