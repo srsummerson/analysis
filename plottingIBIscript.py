@@ -49,7 +49,7 @@ def plottingIBI(IBI,tankname,block_num):
 	plt.plot(hist_bins[:-1],IBI_hist_second)
 	plt.ylim((0, max_count))
 	plt.title('Second third of time in task')
-	plt.subplot(3,1,2)
+	plt.subplot(3,1,3)
 	plt.plot(hist_bins[:-1],IBI_hist_third)
 	plt.ylim((0, max_count))
 	plt.title('Last third of time in task')
