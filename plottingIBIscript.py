@@ -24,7 +24,7 @@ def plottingIBI(IBI,tankname,block_num):
 
 	IBI_max = np.amax(IBI)
 	IBI_min = np.amin(IBI)
-	nbins = 50
+	nbins = 30
 	hist_bins = np.arange(IBI_min,IBI_max,(IBI_max-IBI_min)/(nbins))
 
 	IBI_div = np.floor(float(IBI.size)/3)
@@ -36,6 +36,9 @@ def plottingIBI(IBI,tankname,block_num):
 	IBI_hist_second, hist_bins = np.histogram(IBI_second,bins=hist_bins)
 	IBI_hist_third, hist_bins = np.histogram(IBI_third,bins=hist_bins)
 
+	IBI_hist_first = IBI_hist_first/IBI_first.size
+	IBI_hist_second = IBI_hist_second/IBI_second.size
+	IBI_hist_third = IBI_hist_third/IBI_third.size
 	max_count = np.amax([IBI_hist_first,IBI_hist_second,IBI_hist_third])
 	max_count = np.amax(max_count)
 
@@ -43,15 +46,15 @@ def plottingIBI(IBI,tankname,block_num):
 	plt.figure()
 	plt.subplot(3,1,1)
 	plt.plot(hist_bins[:-1],IBI_hist_first)
-	plt.ylim((0, max_count))
+	plt.ylim((0, 1))
 	plt.title('First third of time in task')
 	plt.subplot(3,1,2)
 	plt.plot(hist_bins[:-1],IBI_hist_second)
-	plt.ylim((0, max_count))
+	plt.ylim((0, 1))
 	plt.title('Second third of time in task')
 	plt.subplot(3,1,3)
 	plt.plot(hist_bins[:-1],IBI_hist_third)
-	plt.ylim((0, max_count))
+	plt.ylim((0, 1))
 	plt.title('Last third of time in task')
 	plt.xlabel('IBI (s)')
 	plt.ylabel('Frequency (#)')
