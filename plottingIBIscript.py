@@ -36,9 +36,9 @@ def plottingIBI(IBI,tankname,block_num):
 	IBI_hist_second, hist_bins = np.histogram(IBI_second,bins=hist_bins)
 	IBI_hist_third, hist_bins = np.histogram(IBI_third,bins=hist_bins)
 
-	IBI_hist_first = IBI_hist_first/IBI_first.size
-	IBI_hist_second = IBI_hist_second/IBI_second.size
-	IBI_hist_third = IBI_hist_third/IBI_third.size
+	IBI_hist_first = IBI_hist_first/float(IBI_first.size)
+	IBI_hist_second = IBI_hist_second/float(IBI_second.size)
+	IBI_hist_third = IBI_hist_third/float(IBI_third.size)
 	max_count = np.amax([IBI_hist_first,IBI_hist_second,IBI_hist_third])
 	max_count = np.amax(max_count)
 
