@@ -56,7 +56,7 @@ def plottingIBI(IBI,tankname,block_num):
  	plt.close()
 
  	m,b = np.polyfit(range(0,IBI.size),IBI,1)
- 	IBI_fit = m*range(0,IBI.size) + b
+ 	IBI_fit = m*np.arange(0,IBI.size) + b
  	plt.figure()
  	plt.plot(IBI,'b',label = 'IBI')
  	plt.plot(IBI_fit,'r',label='Linear fit')
