@@ -55,9 +55,9 @@ def plottingIBI(IBI,tankname,block_num):
 	plt.title('Last third of time in task')
 	plt.xlabel('IBI (s)')
 	plt.ylabel('Frequency (#)')
-	plt.savefig('~/code/analysis/PulseData/'+tankname+'_b'+str(block_num)+'_IBI_hists.svg')
+	plt.savefig('/home/srsummerson/code/analysis/PulseData/'+tankname+'_b'+str(block_num)+'_IBI_hists.svg')
  	plt.close()
 
  	plt.figure()
  	plt.plot(IBI,'b')
- 	plt.savefig('~/code/analysis/PulseData/'+tankname+'_b'+str(block_num)+'_IBI_signal.svg')
+ 	plt.savefig('/home/srsummerson/code/analysis/PulseData/'+tankname+'_b'+str(block_num)+'_IBI_signal.svg')
