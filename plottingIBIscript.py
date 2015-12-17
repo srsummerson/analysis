@@ -55,6 +55,10 @@ def plottingIBI(IBI,tankname,block_num):
 	plt.savefig('/home/srsummerson/code/analysis/PulseData/'+tankname+'_b'+str(block_num)+'_IBI_hists.svg')
  	plt.close()
 
+ 	m,b = np.polyfit(range(0,IBI.size),IBI,1)
  	plt.figure()
- 	plt.plot(IBI,'b')
+ 	plt.plot(range(0,IBI.size),IBI,'b',label = 'IBI')
+ 	plt.plot(range(0,IBI.size),m*range(0,IBI.size) + b,'r',label='Linear fit')
+ 	plt.legend()
+ 	plt.title("Linear fit - Slope: %f" % (m),fontsize=8)
  	plt.savefig('/home/srsummerson/code/analysis/PulseData/'+tankname+'_b'+str(block_num)+'_IBI_signal.svg')
