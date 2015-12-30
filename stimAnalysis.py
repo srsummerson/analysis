@@ -96,6 +96,11 @@ def PopulationResponse(filename,*args):
 		average_zscored_m1 = np.zeros(num_bins)
 		average_zscored_pmd = np.zeros(num_bins)
 
+		std_zscored_sma = []
+		std_zscored_presma = []
+		std_zscored_m1 = []
+		std_zscored_pmd = []
+
 		n_sma = 0
 		n_presma = 0
 		n_m1 = 0
@@ -127,6 +132,7 @@ def PopulationResponse(filename,*args):
 			population_pmd[epoch][:] = population_pmd[epoch][:] - np.mean(population_pmd[epoch][:])
 			average_zscored_pmd += population_pmd[epoch][:]
 
+
 		average_zscored_sma = average_zscored_sma/float(num_epochs)
 		average_zscored_presma = average_zscored_presma/float(num_epochs)
 		average_zscored_m1 = average_zscored_m1/float(num_epochs)
@@ -135,12 +141,16 @@ def PopulationResponse(filename,*args):
 		for bin in range(0,int(10/bin_size)):
 			t, prob = sp.stats.ttest_1samp(population_sma[:,bin],0)
 			sig_population_sma.append(prob)
+			std_zscored_sma.append(np.std(population_sma[:,bin]))
 			t, prob = sp.stats.ttest_1samp(population_presma[:,bin],0)
 			sig_population_presma.append(prob)
+			std_zscored_presma.append(np.std(population_presma[:,bin]))
 			t, prob = sp.stats.ttest_1samp(population_m1[:,bin],0)
 			sig_population_m1.append(prob)
+			std_zscored_m1.append(np.std(population_m1[:,bin]))
 			t, prob = sp.stats.ttest_1samp(population_pmd[:,bin],0)
 			sig_population_pmd.append(prob)
+			std_zscored_pmd.append(np.std(population_pmd[:,bin]))
 
 		sig_population_presma = (sig_population_presma > 0.05*np.ones(len(sig_population_presma)))
 		sig_population_sma = (sig_population_sma > 0.05*np.ones(len(sig_population_sma)))
@@ -151,6 +161,7 @@ def PopulationResponse(filename,*args):
 		plt.figure()
 		plt.subplot(2,2,1)
 		plt.plot(time,average_zscored_presma,'b')
+		plt.fill_between(time,average_zscored_presma-std_zscored_presma,average_zscored_presma+std_zscored_presma)
 		plt.plot(time,sig_population_presma,'xr')
 		plt.title('Pre-SMA: n = %i' % (n_presma))
 		plt.xlabel('Time (s)')
@@ -163,8 +174,16 @@ def PopulationResponse(filename,*args):
 		plt.ylabel('Mean Population Deviation from Baseline \n [zscore (rate - background)] (Hz)',fontsize=8)
 		plt.subplot(2,2,3)
 		plt.plot(time,average_zscored_m1,'b')
+		plt.plot(time,sig_population_m1,'xr')
+		plt.title('M1: n = %i' % (n_m1))
+		plt.xlabel('Time (s)')
+		plt.ylabel('Mean Population Deviation from Baseline \n [zscore (rate - background)] (Hz)',fontsize=8)
 		plt.subplot(2,2,4)
 		plt.plot(time,average_zscored_pmd,'b')
+		plt.plot(time,sig_population_pmd,'xr')
+		plt.title('PMd: n = %i' % (n_pmd))
+		plt.xlabel('Time (s)')
+		plt.ylabel('Mean Population Deviation from Baseline \n [zscore (rate - background)] (Hz)',fontsize=8)
 		plt.savefig('/home/srsummerson/code/analysis/StimData/'+filename+'_b'+str(block+1)+'_PopulationResponse.svg')
 		plt.close()
 
