@@ -60,7 +60,7 @@ def PopulationResponse(filename,*args):
 
 		channel = 0
 		second_channel_bank = 0
-		bin_size = .2  # .1 s = 100 ms
+		bin_size = .1  # .1 s = 100 ms
 		num_bins = 10/bin_size
 		for train in spiketrains:
 			epoch_rates = np.zeros([num_epochs,num_bins])
@@ -141,20 +141,20 @@ def PopulationResponse(filename,*args):
 		average_zscored_pmd = average_zscored_pmd/float(num_epochs)
 
 		for bin in range(0,int(10/bin_size)):
-			t, prob = sp.stats.ttest_1samp(population_sma[:,bin],0)
+			t, prob = sp.stats.ttest_1samp(population_sma[:,bin],0.0)
 			sig_population_sma.append(prob)
 			std_zscored_sma.append(stats.sem(population_sma[:,bin]))
-			t, prob = sp.stats.ttest_1samp(population_presma[:,bin],0)
+			t, prob = sp.stats.ttest_1samp(population_presma[:,bin],0.0)
 			sig_population_presma.append(prob)
 			std_zscored_presma.append(stats.sem(population_presma[:,bin]))
-			t, prob = sp.stats.ttest_1samp(population_m1[:,bin],0)
+			t, prob = sp.stats.ttest_1samp(population_m1[:,bin],0.0)
 			sig_population_m1.append(prob)
 			std_zscored_m1.append(stats.sem(population_m1[:,bin]))
-			t, prob = sp.stats.ttest_1samp(population_pmd[:,bin],0)
+			t, prob = sp.stats.ttest_1samp(population_pmd[:,bin],0.0)
 			sig_population_pmd.append(prob)
 			std_zscored_pmd.append(stats.sem(population_pmd[:,bin]))
 
-		sig_population_presma = (sig_population_presma < 0.1*np.ones(len(sig_population_presma)))
+		sig_population_presma = (sig_population_presma < 0.05*np.ones(len(sig_population_presma)))
 		sig_population_sma = (sig_population_sma < 0.1*np.ones(len(sig_population_sma)))
 		sig_population_m1 = (sig_population_m1 < 0.1*np.ones(len(sig_population_m1)))
 		sig_population_pmd = (sig_population_pmd < 0.1*np.ones(len(sig_population_pmd)))
@@ -189,6 +189,7 @@ def PopulationResponse(filename,*args):
 		plt.title('PMd: n = %i' % (n_pmd))
 		plt.xlabel('Time (s)')
 		plt.ylabel('Mean Population Deviation from Baseline \n [zscore (rate - background)] (Hz)',fontsize=8)
+		plt.tight_layout()
 		plt.savefig('/home/srsummerson/code/analysis/StimData/'+filename+'_b'+str(block+1)+'_PopulationResponse.svg')
 		plt.close()
 
