@@ -55,7 +55,8 @@ def PopulationResponse(filename,*args):
 				sample += 1
 		#num_epochs = len(stim_start_times)
 		num_epochs = 30
-		stim_times = stim_start_times[0:num_epochs]
+		if len(stim_start_times) > 20:   # only update stim times if vector was repopulated, otherwise use old stim_times
+			stim_times = stim_start_times[0:num_epochs]
 
 		channel = 0
 		second_channel_bank = 0
@@ -153,10 +154,10 @@ def PopulationResponse(filename,*args):
 			sig_population_pmd.append(prob)
 			std_zscored_pmd.append(stats.sem(population_pmd[:,bin]))
 
-		sig_population_presma = (sig_population_presma > 0.05*np.ones(len(sig_population_presma)))
-		sig_population_sma = (sig_population_sma > 0.05*np.ones(len(sig_population_sma)))
-		sig_population_m1 = (sig_population_m1 > 0.05*np.ones(len(sig_population_m1)))
-		sig_population_pmd = (sig_population_pmd > 0.05*np.ones(len(sig_population_pmd)))
+		sig_population_presma = (sig_population_presma < 0.1*np.ones(len(sig_population_presma)))
+		sig_population_sma = (sig_population_sma < 0.1*np.ones(len(sig_population_sma)))
+		sig_population_m1 = (sig_population_m1 < 0.1*np.ones(len(sig_population_m1)))
+		sig_population_pmd = (sig_population_pmd < 0.1*np.ones(len(sig_population_pmd)))
 
 		time = np.arange(0,10,bin_size)
 		plt.figure()
