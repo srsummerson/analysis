@@ -153,10 +153,10 @@ def PopulationResponse(filename,*args):
 			sig_population_pmd.append(prob)
 			std_zscored_pmd.append(stats.sem(population_pmd[:,bin]))
 
-		sig_population_presma = (sig_population_presma < 0.05*np.ones(len(sig_population_presma)))
-		sig_population_sma = (sig_population_sma < 0.05*np.ones(len(sig_population_sma)))
-		sig_population_m1 = (sig_population_m1 < 0.05*np.ones(len(sig_population_m1)))
-		sig_population_pmd = (sig_population_pmd < 0.05*np.ones(len(sig_population_pmd)))
+		sig_population_presma = (sig_population_presma > 0.05*np.ones(len(sig_population_presma)))
+		sig_population_sma = (sig_population_sma > 0.05*np.ones(len(sig_population_sma)))
+		sig_population_m1 = (sig_population_m1 > 0.05*np.ones(len(sig_population_m1)))
+		sig_population_pmd = (sig_population_pmd > 0.05*np.ones(len(sig_population_pmd)))
 
 		time = np.arange(0,10,bin_size)
 		plt.figure()
