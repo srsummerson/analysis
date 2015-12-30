@@ -1,5 +1,6 @@
 from neo import io
 import numpy as np
+import scipy as sp
 import matplotlib.pyplot as plt
 
 sma = [39, 55, 34, 50, 91, 77, 93, 79, 74, 90, 76, 92, 69, 85, 71, 87]
@@ -51,8 +52,9 @@ def PopulationResponse(filename,kwargs):
 		channel = 0
 		second_channel_bank = 0
 		bin_size = .1  # .1 s = 100 ms
+		epoch_counter = 0
 		for train in spiketrains:
-			epoch_rates = []
+			epoch_rates = np.zeros([num_epochs,10/bin_size])
 			if train.name[4:6] < channel:
 				second_channel_bank = 96
 			channel = train.name[4:6] + second_channel_bank
@@ -65,14 +67,21 @@ def PopulationResponse(filename,kwargs):
 					epoch_end = epoch_start + 10 	# epoch to look in
 					epoch_bins = np.arange(epoch_start,epoch_end+bin_size,bin_size)  
 					counts, bins = np.histogram(train,epoch_bins)
-					epoch_rates.append(float(counts)/bin_size)	# collect all rates into a N-dim array
+					epoch_rates[epoch_counter][:] = float(counts)/bin_size	# collect all rates into a N-dim array
+					epoch_counter += 1
 				rate_data[train_name] = epoch_rates
 
-		# add up population responses
-		population_sma = []
-		population_presma = []
-		population_m1 = []
-		population_pmd = []
+		# add up population responses,z-score and find significance
+		num_bins = 10/bin_size
+		population_sma = np.zeros([num_epochs,num_bins])
+		population_presma = np.zeros([num_epochs,num_bins])
+		population_m1 = np.zeros([num_epochs,num_bins])
+		population_pmd = np.zeros([num_epochs,num_bins])
+
+		sig_population_sma = []
+		sig_population_presma = []
+		sig_population_m1 = []
+		sig_population_pmd = []
 
 		average_zscored_sma = []
 		average_zscored_presma = []
@@ -82,43 +91,59 @@ def PopulationResponse(filename,kwargs):
 		for rates in rate_data:
 			channel_num = rates[:-2]
 			if (channel_num in sma):
-				if len(population_sma)==0:
-					population_sma = rate_data[rates]
-				else:
-					population_sma = np.add(population_sma,rate_data[rates])
+				population_sma = population_sma+rate_data[rates]
 			if (channel_num in presma):
-				if len(population_presma)==0:
-					population_presma = rate_data[rates]
-				else:
-					population_presma = np.add(population_presma,rate_data[rates])
+				population_presma = population_presma+rate_data[rates]
 			if (channel_num in m1):
-				if len(population_m1)==0:
-					population_m1 = rate_data[rates]
-				else:
-					population_m1 = np.add(population_m1,rate_data[rates])
+				population_m1 = population_m1+rate_data[rates]
 			if (channel_num in pmd):
-				if len(population_pmd)==0:
-					population_pmd = rate_data[rates]
-				else:
-					population_pmd = np.add(population_pmd,rate_data[rates])
+				population_pmd = population_pmd+rate_data[rates]
 
 		#z score data per epoch by baseline population firing rate
 		for epoch in range(0,num_epochs):
-			population_sma[epoch] = population_sma - np.mean(population_sma[epoch])
-			average_zscored_sma += population_sma[epoch]
-			population_presma[epoch] = population_presma - np.mean(population_presma[epoch])
-			average_zscored_presma += population_presma[epoch]
-			population_m1[epoch] = population_m1 - np.mean(population_m1[epoch])
-			average_zscored_m1 += population_m1[epoch]
-			population_pmd[epoch] = population_pmd - np.mean(population_pmd[epoch])
-			average_zscored_pmd += population_pmd[epoch]
+			population_sma[epoch][:] = population_sma[epoch][:] - np.mean(population_sma[epoch][:])
+			average_zscored_sma += population_sma[epoch][:]
+			population_presma[epoch][:] = population_presma[epoch][:] - np.mean(population_presma[epoch][:])
+			average_zscored_presma += population_presma[epoch][:]
+			population_m1[epoch][:] = population_m1[epoch][:] - np.mean(population_m1[epoch][:])
+			average_zscored_m1 += population_m1[epoch][:]
+			population_pmd[epoch][:] = population_pmd - np.mean(population_pmd[epoch][:])
+			average_zscored_pmd += population_pmd[epoch][:]
 
 		average_zscored_sma = average_zscored_sma/float(num_epochs)
 		average_zscored_presma = average_zscored_presma/float(num_epochs)
 		average_zscored_m1 = average_zscored_m1/float(num_epochs)
 		average_zscored_pmd = average_zscored_pmd/float(num_epochs)
 
-		
+		for bin in range(0,10/bin_size):
+			t, prob = sp.stats.ttest_1samp(population_sma[:][bin],0)
+			sig_population_sma.append(prob)
+			t, prob = sp.stats.ttest_1samp(population_presma[:][bin],0)
+			sig_population_presma.append(prob)
+			t, prob = sp.stats.ttest_1samp(population_m1[:][bin],0)
+			sig_population_m1.append(prob)
+			t, prob = sp.stats.ttest_1samp(population_pmd[:][bin],0)
+			sig_population_pmd.append(prob)
+
+		time = np.arange(0,10,bin_size)
+		plt.figure()
+		plt.subplot(2,2,1)
+		plt.plot(time,average_zscored_presma,'b')
+		plt.plot(time,(sig_population_presma<0.05),'xr')
+		plt.title('Pre-SMA')
+		plt.xlabel('time (s)')
+		plt.ylabel('Population Response')
+		plt.subplot(2,2,2)
+		plt.plot(time,average_zscored_sma,'b')
+		plt.plot(time,(sig_population_sma<0.05),'xr')
+		plt.subplot(2,2,3)
+		plt.plot(time,average_zscored_m1,'b')
+		plt.subplot(2,2,4)
+		plt.plot(time,average_zscored_pmd,'r')
+		plt.savefig('/home/srsummerson/code/analysis/StimData/'+filename+'_b'+num2str(block)+'PopulationResponse.savg')
+
+
+
 
 
 
