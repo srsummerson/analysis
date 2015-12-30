@@ -1,4 +1,5 @@
 from neo import io
+from scipy import stats
 import numpy as np
 import scipy as sp
 import matplotlib.pyplot as plt
@@ -141,16 +142,16 @@ def PopulationResponse(filename,*args):
 		for bin in range(0,int(10/bin_size)):
 			t, prob = sp.stats.ttest_1samp(population_sma[:,bin],0)
 			sig_population_sma.append(prob)
-			std_zscored_sma.append(np.std(population_sma[:,bin]))
+			std_zscored_sma.append(stats.sem(population_sma[:,bin]))
 			t, prob = sp.stats.ttest_1samp(population_presma[:,bin],0)
 			sig_population_presma.append(prob)
-			std_zscored_presma.append(np.std(population_presma[:,bin]))
+			std_zscored_presma.append(stats.sem(population_presma[:,bin]))
 			t, prob = sp.stats.ttest_1samp(population_m1[:,bin],0)
 			sig_population_m1.append(prob)
-			std_zscored_m1.append(np.std(population_m1[:,bin]))
+			std_zscored_m1.append(stats.sem(population_m1[:,bin]))
 			t, prob = sp.stats.ttest_1samp(population_pmd[:,bin],0)
 			sig_population_pmd.append(prob)
-			std_zscored_pmd.append(np.std(population_pmd[:,bin]))
+			std_zscored_pmd.append(stats.sem(population_pmd[:,bin]))
 
 		sig_population_presma = (sig_population_presma > 0.05*np.ones(len(sig_population_presma)))
 		sig_population_sma = (sig_population_sma > 0.05*np.ones(len(sig_population_sma)))
@@ -161,7 +162,7 @@ def PopulationResponse(filename,*args):
 		plt.figure()
 		plt.subplot(2,2,1)
 		plt.plot(time,average_zscored_presma,'b')
-		plt.fill_between(time,average_zscored_presma-std_zscored_presma,average_zscored_presma+std_zscored_presma)
+		plt.fill_between(time,average_zscored_presma-std_zscored_presma,average_zscored_presma+std_zscored_presma,facecolor='blue',alpha=0.5)
 		plt.plot(time,sig_population_presma,'xr')
 		plt.title('Pre-SMA: n = %i' % (n_presma))
 		plt.xlabel('Time (s)')
