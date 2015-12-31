@@ -188,9 +188,9 @@ def PopulationResponse(filename,*args):
 		time = np.arange(0,total_time,bin_size) - prestim_time
 		plt.figure()
 		plt.subplot(2,2,1)
-		plt.plot(time,average_zscored_presma,'b')
-		plt.fill_between(time,average_zscored_presma-std_zscored_presma,average_zscored_presma+std_zscored_presma,facecolor='gray',alpha=0.5,linewidth=0.0)
-		plt.plot(time,max(average_zscored_presma)*sig_population_presma,'xr')
+		plt.plot(time[background_epoch],average_zscored_presma[background_epoch],'b')
+		plt.fill_between(time[background_epoch],average_zscored_presma[background_epoch]-std_zscored_presma,average_zscored_presma[background_epoch]+std_zscored_presma,facecolor='gray',alpha=0.5,linewidth=0.0)
+		plt.plot(time[background_epoch],max(average_zscored_presma[background_epoch])*sig_population_presma[background_epoch],'xr')
 		plt.title('Pre-SMA: n = %i' % (n_presma))
 		plt.xlabel('Time (s)')
 		plt.ylabel('Mean Population Deviation from Baseline \n [zscore(rate - background)] (Hz)',fontsize=8)
