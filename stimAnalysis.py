@@ -88,6 +88,7 @@ def PopulationResponse(filename,*args):
 					epoch_counter += 1
 				rate_data[train_name] = epoch_rates
 
+			background_epoch = np.concatenate((np.arange(0,prestim_time/bin_size), np.arange((prestim_time+stim_time)/bin_size,len(epoch_bins))), axis=0)
 		# add up population responses,z-score and find significance
 		
 		population_sma = np.zeros([num_epochs,num_bins])
@@ -132,32 +133,32 @@ def PopulationResponse(filename,*args):
 
 		#z score data per epoch by baseline population firing rate
 		for epoch in range(0,num_epochs):
-			std_sma = np.std(population_sma[epoch][:])
+			std_sma = np.std(population_sma[epoch][background_epoch])
 			if (std_sma > 0):
-				population_sma[epoch][:] = (population_sma[epoch][:] - np.mean(population_sma[epoch][:]))/std_sma
+				population_sma[epoch][:] = (population_sma[epoch][:] - np.mean(population_sma[epoch][background_epoch]))/std_sma
 			else:
-				population_sma[epoch][:] = population_sma[epoch][:] - np.mean(population_sma[epoch][:])
+				population_sma[epoch][:] = population_sma[epoch][:] - np.mean(population_sma[epoch][background_epoch])
 			average_zscored_sma += population_sma[epoch][:]
 			
-			std_presma = np.std(population_presma[epoch][:])
+			std_presma = np.std(population_presma[epoch][background_epoch])
 			if (std_presma > 0):
-				population_presma[epoch][:] = (population_presma[epoch][:] - np.mean(population_presma[epoch][:]))/std_presma
+				population_presma[epoch][:] = (population_presma[epoch][:] - np.mean(population_presma[epoch][background_epoch]))/std_presma
 			else:
-				population_presma[epoch][:] = population_presma[epoch][:] - np.mean(population_presma[epoch][:])
+				population_presma[epoch][:] = population_presma[epoch][:] - np.mean(population_presma[epoch][background_epoch])
 			average_zscored_presma += population_presma[epoch][:]
 			
-			std_m1 = np.std(population_m1[epoch][:])
+			std_m1 = np.std(population_m1[epoch][background_epoch])
 			if (std_m1 > 0):
-				population_m1[epoch][:] = (population_m1[epoch][:] - np.mean(population_m1[epoch][:]))/std_m1
+				population_m1[epoch][:] = (population_m1[epoch][:] - np.mean(population_m1[epoch][background_epoch]))/std_m1
 			else:
-				population_m1[epoch][:] = population_m1[epoch][:] - np.mean(population_m1[epoch][:])
+				population_m1[epoch][:] = population_m1[epoch][:] - np.mean(population_m1[epoch][background_epoch])
 			average_zscored_m1 += population_m1[epoch][:]
 			
-			std_pmd = np.std(population_pmd[epoch][:])
+			std_pmd = np.std(population_pmd[epoch][background_epoch])
 			if (std_pmd > 0):
-				population_pmd[epoch][:] = (population_pmd[epoch][:] - np.mean(population_pmd[epoch][:]))/std_pmd
+				population_pmd[epoch][:] = (population_pmd[epoch][:] - np.mean(population_pmd[epoch][background_epoch]))/std_pmd
 			else:
-				population_pmd[epoch][:] = population_pmd[epoch][:] - np.mean(population_pmd[epoch][:])
+				population_pmd[epoch][:] = population_pmd[epoch][:] - np.mean(population_pmd[epoch][background_epoch])
 			average_zscored_pmd += population_pmd[epoch][:]
 
 
