@@ -61,7 +61,12 @@ def PopulationResponse(filename,*args):
 		channel = 0
 		second_channel_bank = 0
 		bin_size = .1  # .1 s = 100 ms
-		num_bins = 10/bin_size
+		prestim_time = 5 
+		poststim_time = 10
+		stim_time = 1
+		total_time = prestim_time + stim_time + poststim_time
+		#num_bins = 10/bin_size
+		num_bins = total_time/bin_size
 		for train in spiketrains:
 			epoch_rates = np.zeros([num_epochs,num_bins])
 			if train.name[4:6] < channel:
@@ -73,8 +78,10 @@ def PopulationResponse(filename,*args):
 				epoch_counter = 0
 				for train_start in stim_times:
 					epoch_start = float(train_start)/hpf_sample.sampling_rate.item() # get stim train start time in seconds
-					epoch_start += 1  # add 1 second to account for duration of stimulation
-					epoch_end = epoch_start + 10 	# epoch to look in
+					#epoch_start += 1  # add 1 second to account for duration of stimulation
+					epoch_start = epoch_start - prestim_time   # epoch to include 5 s pre-stim data
+					#epoch_end = epoch_start + 10 	# epoch to look in
+					epoch_end = epoch_start + total_time  # epoch is 5 s pre-stim + 1 s stim + 10 s post-stim
 					epoch_bins = np.arange(epoch_start,epoch_end+bin_size/2,bin_size) 
 					counts, bins = np.histogram(train,epoch_bins)
 					epoch_rates[epoch_counter][:] = counts/bin_size	# collect all rates into a N-dim array
@@ -159,7 +166,7 @@ def PopulationResponse(filename,*args):
 		average_zscored_m1 = average_zscored_m1/float(num_epochs)
 		average_zscored_pmd = average_zscored_pmd/float(num_epochs)
 
-		for bin in range(0,int(10/bin_size)):
+		for bin in range(0,int(total_time/bin_size)):
 			t, prob = sp.stats.ttest_1samp(population_sma[:,bin],0.0)
 			sig_population_sma.append(prob)
 			std_zscored_sma.append(stats.sem(population_sma[:,bin]))
@@ -178,7 +185,7 @@ def PopulationResponse(filename,*args):
 		sig_population_m1 = (sig_population_m1 > 0.05*np.ones(len(sig_population_m1)))
 		sig_population_pmd = (sig_population_pmd > 0.05*np.ones(len(sig_population_pmd)))
 
-		time = np.arange(0,10,bin_size)
+		time = np.arange(0,total_time,bin_size) - prestim_time
 		plt.figure()
 		plt.subplot(2,2,1)
 		plt.plot(time,average_zscored_presma,'b')
