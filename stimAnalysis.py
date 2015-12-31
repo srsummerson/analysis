@@ -126,31 +126,31 @@ def PopulationResponse(filename,*args):
 		#z score data per epoch by baseline population firing rate
 		for epoch in range(0,num_epochs):
 			std_sma = np.std(population_sma[epoch][:])
-			if np.isnan(std_sma) is True:
-				population_sma[epoch][:] = population_sma[epoch][:] - np.mean(population_sma[epoch][:])
-			else:
+			if (std_sma > 0):
 				population_sma[epoch][:] = (population_sma[epoch][:] - np.mean(population_sma[epoch][:]))/std_sma
+			else:
+				population_sma[epoch][:] = population_sma[epoch][:] - np.mean(population_sma[epoch][:])
 			average_zscored_sma += population_sma[epoch][:]
 			
 			std_presma = np.std(population_presma[epoch][:])
-			if np.isnan(std_presma) is True:
-				population_presma[epoch][:] = population_presma[epoch][:] - np.mean(population_presma[epoch][:])
-			else:
+			if (std_presma > 0):
 				population_presma[epoch][:] = (population_presma[epoch][:] - np.mean(population_presma[epoch][:]))/std_presma
+			else:
+				population_presma[epoch][:] = population_presma[epoch][:] - np.mean(population_presma[epoch][:])
 			average_zscored_presma += population_presma[epoch][:]
 			
 			std_m1 = np.std(population_m1[epoch][:])
-			if np.isnan(std_m1) is True:
-				population_m1[epoch][:] = population_m1[epoch][:] - np.mean(population_m1[epoch][:])
-			else:
+			if (std_m1 > 0):
 				population_m1[epoch][:] = (population_m1[epoch][:] - np.mean(population_m1[epoch][:]))/std_m1
+			else:
+				population_m1[epoch][:] = population_m1[epoch][:] - np.mean(population_m1[epoch][:])
 			average_zscored_m1 += population_m1[epoch][:]
 			
 			std_pmd = np.std(population_pmd[epoch][:])
-			if np.isnan(std_pmd) is True:
-				population_pmd[epoch][:] = population_pmd[epoch][:] - np.mean(population_pmd[epoch][:])
-			else:
+			if (std_pmd > 0):
 				population_pmd[epoch][:] = (population_pmd[epoch][:] - np.mean(population_pmd[epoch][:]))/std_pmd
+			else:
+				population_pmd[epoch][:] = population_pmd[epoch][:] - np.mean(population_pmd[epoch][:])
 			average_zscored_pmd += population_pmd[epoch][:]
 
 
