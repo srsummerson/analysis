@@ -125,13 +125,13 @@ def PopulationResponse(filename,*args):
 
 		#z score data per epoch by baseline population firing rate
 		for epoch in range(0,num_epochs):
-			population_sma[epoch][:] = (population_sma[epoch][:] - np.mean(population_sma[epoch][:]))/np.std(population_sma[epoch][:])
+			population_sma[epoch][:] = ((population_sma[epoch][:] - np.mean(population_sma[epoch][:]))/np.std(population_sma[epoch][:]))*(n_sma > 3) + (population_sma[epoch][:] - np.mean(population_sma[epoch][:]))*(n_sma <= 3)
 			average_zscored_sma += population_sma[epoch][:]
-			population_presma[epoch][:] = (population_presma[epoch][:] - np.mean(population_presma[epoch][:]))
+			population_presma[epoch][:] = ((population_presma[epoch][:] - np.mean(population_presma[epoch][:]))/np.std(population_presma[epoch][:]))*(n_presma > 3) + (population_presma[epoch][:] - np.mean(population_presma[epoch][:]))*(n_presma <= 3)
 			average_zscored_presma += population_presma[epoch][:]
-			population_m1[epoch][:] = (population_m1[epoch][:] - np.mean(population_m1[epoch][:]))/np.std(population_m1[epoch][:])
+			population_m1[epoch][:] = ((population_m1[epoch][:] - np.mean(population_m1[epoch][:]))/np.std(population_m1[epoch][:]))*(n_m1 > 3) + (population_m1[epoch][:] - np.mean(population_m1[epoch][:]))*(n_m1 <= 3)
 			average_zscored_m1 += population_m1[epoch][:]
-			population_pmd[epoch][:] = (population_pmd[epoch][:] - np.mean(population_pmd[epoch][:]))/np.std(population_pmd[epoch][:])
+			population_pmd[epoch][:] = ((population_pmd[epoch][:] - np.mean(population_pmd[epoch][:]))/np.std(population_pmd[epoch][:]))*(n_pmd > 3) + (population_pmd[epoch][:] - np.mean(population_pmd[epoch][:]))*(n_pmd <=3)
 			average_zscored_pmd += population_pmd[epoch][:]
 
 
