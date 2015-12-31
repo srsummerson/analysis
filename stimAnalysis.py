@@ -193,7 +193,7 @@ def PopulationResponse(filename,*args):
 		plt.savefig('/home/srsummerson/code/analysis/StimData/'+filename+'_b'+str(block+1)+'_PopulationResponse.svg')
 		plt.close()
 
-	return population_presma
+	return 
 
 
 
