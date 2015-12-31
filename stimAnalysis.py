@@ -127,7 +127,7 @@ def PopulationResponse(filename,*args):
 		for epoch in range(0,num_epochs):
 			population_sma[epoch][:] = (population_sma[epoch][:] - np.mean(population_sma[epoch][:]))/np.std(population_sma[epoch][:])
 			average_zscored_sma += population_sma[epoch][:]
-			population_presma[epoch][:] = (population_presma[epoch][:] - np.mean(population_presma[epoch][:]))/np.std(population_presma[epoch][:])
+			population_presma[epoch][:] = (population_presma[epoch][:] - np.mean(population_presma[epoch][:]))
 			average_zscored_presma += population_presma[epoch][:]
 			population_m1[epoch][:] = (population_m1[epoch][:] - np.mean(population_m1[epoch][:]))/np.std(population_m1[epoch][:])
 			average_zscored_m1 += population_m1[epoch][:]
@@ -154,10 +154,10 @@ def PopulationResponse(filename,*args):
 			sig_population_pmd.append(prob)
 			std_zscored_pmd.append(stats.sem(population_pmd[:,bin]))
 
-		sig_population_presma = (sig_population_presma < 0.05*np.ones(len(sig_population_presma)))
-		sig_population_sma = (sig_population_sma < 0.05*np.ones(len(sig_population_sma)))
-		sig_population_m1 = (sig_population_m1 < 0.05*np.ones(len(sig_population_m1)))
-		sig_population_pmd = (sig_population_pmd < 0.05*np.ones(len(sig_population_pmd)))
+		sig_population_presma = (sig_population_presma > 0.05*np.ones(len(sig_population_presma)))
+		sig_population_sma = (sig_population_sma > 0.05*np.ones(len(sig_population_sma)))
+		sig_population_m1 = (sig_population_m1 > 0.05*np.ones(len(sig_population_m1)))
+		sig_population_pmd = (sig_population_pmd > 0.05*np.ones(len(sig_population_pmd)))
 
 		time = np.arange(0,10,bin_size)
 		plt.figure()
