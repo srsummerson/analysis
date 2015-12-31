@@ -87,7 +87,7 @@ def PopulationResponse(filename,*args):
 					epoch_rates[epoch_counter][:] = counts/bin_size	# collect all rates into a N-dim array
 					epoch_counter += 1
 				rate_data[train_name] = epoch_rates
-				background_epoch = np.concatenate((np.arange(0,int(prestim_time/bin_size)), np.arange(int((prestim_time+stim_time)/bin_size),len(epoch_bins))), axis=0)
+				background_epoch = np.concatenate((np.arange(0,int(prestim_time/bin_size)), np.arange(int((prestim_time+stim_time)/bin_size),len(epoch_bins)-1)), axis=0)
 		# add up population responses,z-score and find significance
 		
 		population_sma = np.zeros([num_epochs,num_bins])
