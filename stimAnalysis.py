@@ -153,7 +153,7 @@ def PopulationResponse(filename,*args):
 			t, prob = sp.stats.ttest_1samp(population_pmd[:,bin],0.0)
 			sig_population_pmd.append(prob)
 			std_zscored_pmd.append(stats.sem(population_pmd[:,bin]))
-		print sig_population_presma
+
 		sig_population_presma = (sig_population_presma < 0.05*np.ones(len(sig_population_presma)))
 		sig_population_sma = (sig_population_sma < 0.1*np.ones(len(sig_population_sma)))
 		sig_population_m1 = (sig_population_m1 < 0.1*np.ones(len(sig_population_m1)))
@@ -193,7 +193,7 @@ def PopulationResponse(filename,*args):
 		plt.savefig('/home/srsummerson/code/analysis/StimData/'+filename+'_b'+str(block+1)+'_PopulationResponse.svg')
 		plt.close()
 
-	return
+	return population_presma
 
 
 
