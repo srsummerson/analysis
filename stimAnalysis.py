@@ -125,13 +125,13 @@ def PopulationResponse(filename,*args):
 
 		#z score data per epoch by baseline population firing rate
 		for epoch in range(0,num_epochs):
-			population_sma[epoch][:] = population_sma[epoch][:] - np.mean(population_sma[epoch][:])
+			population_sma[epoch][:] = (population_sma[epoch][:] - np.mean(population_sma[epoch][:]))/np.std(population_sma[epoch][:])
 			average_zscored_sma += population_sma[epoch][:]
-			population_presma[epoch][:] = population_presma[epoch][:] - np.mean(population_presma[epoch][:])
+			population_presma[epoch][:] = (population_presma[epoch][:] - np.mean(population_presma[epoch][:]))/np.std(population_presma[epoch][:])
 			average_zscored_presma += population_presma[epoch][:]
-			population_m1[epoch][:] = population_m1[epoch][:] - np.mean(population_m1[epoch][:])
+			population_m1[epoch][:] = (population_m1[epoch][:] - np.mean(population_m1[epoch][:]))/np.std(population_m1[epoch][:])
 			average_zscored_m1 += population_m1[epoch][:]
-			population_pmd[epoch][:] = population_pmd[epoch][:] - np.mean(population_pmd[epoch][:])
+			population_pmd[epoch][:] = (population_pmd[epoch][:] - np.mean(population_pmd[epoch][:]))/np.std(population_pmd[epoch][:])
 			average_zscored_pmd += population_pmd[epoch][:]
 
 
@@ -155,36 +155,36 @@ def PopulationResponse(filename,*args):
 			std_zscored_pmd.append(stats.sem(population_pmd[:,bin]))
 
 		sig_population_presma = (sig_population_presma < 0.05*np.ones(len(sig_population_presma)))
-		sig_population_sma = (sig_population_sma < 0.1*np.ones(len(sig_population_sma)))
-		sig_population_m1 = (sig_population_m1 < 0.1*np.ones(len(sig_population_m1)))
-		sig_population_pmd = (sig_population_pmd < 0.1*np.ones(len(sig_population_pmd)))
+		sig_population_sma = (sig_population_sma < 0.05*np.ones(len(sig_population_sma)))
+		sig_population_m1 = (sig_population_m1 < 0.05*np.ones(len(sig_population_m1)))
+		sig_population_pmd = (sig_population_pmd < 0.05*np.ones(len(sig_population_pmd)))
 
 		time = np.arange(0,10,bin_size)
 		plt.figure()
 		plt.subplot(2,2,1)
 		plt.plot(time,average_zscored_presma,'b')
-		plt.fill_between(time,average_zscored_presma-std_zscored_presma,average_zscored_presma+std_zscored_presma,facecolor='gray',alpha=0.5)
+		plt.fill_between(time,average_zscored_presma-std_zscored_presma,average_zscored_presma+std_zscored_presma,facecolor='gray',alpha=0.5,linewidth=0.0)
 		plt.plot(time,max(average_zscored_presma)*sig_population_presma,'xr')
 		plt.title('Pre-SMA: n = %i' % (n_presma))
 		plt.xlabel('Time (s)')
 		plt.ylabel('Mean Population Deviation from Baseline \n [zscore(rate - background)] (Hz)',fontsize=8)
 		plt.subplot(2,2,2)
 		plt.plot(time,average_zscored_sma,'b')
-		plt.fill_between(time,average_zscored_sma-std_zscored_sma,average_zscored_sma+std_zscored_sma,facecolor='gray',alpha=0.5)
+		plt.fill_between(time,average_zscored_sma-std_zscored_sma,average_zscored_sma+std_zscored_sma,facecolor='gray',alpha=0.5,linewidth=0.0)
 		plt.plot(time,max(average_zscored_sma)*sig_population_sma,'xr')
 		plt.title('SMA: n = %i' % (n_sma))
 		plt.xlabel('Time (s)')
 		plt.ylabel('Mean Population Deviation from Baseline \n [zscore (rate - background)] (Hz)',fontsize=8)
 		plt.subplot(2,2,3)
 		plt.plot(time,average_zscored_m1,'b')
-		plt.fill_between(time,average_zscored_m1-std_zscored_m1,average_zscored_m1+std_zscored_m1,facecolor='gray',alpha=0.5)
+		plt.fill_between(time,average_zscored_m1-std_zscored_m1,average_zscored_m1+std_zscored_m1,facecolor='gray',alpha=0.5,linewidth=0.0)
 		plt.plot(time,max(average_zscored_m1)*sig_population_m1,'xr')
 		plt.title('M1: n = %i' % (n_m1))
 		plt.xlabel('Time (s)')
 		plt.ylabel('Mean Population Deviation from Baseline \n [zscore (rate - background)] (Hz)',fontsize=8)
 		plt.subplot(2,2,4)
 		plt.plot(time,average_zscored_pmd,'b')
-		plt.fill_between(time,average_zscored_pmd-std_zscored_pmd,average_zscored_pmd+std_zscored_pmd,facecolor='gray',alpha=0.5)
+		plt.fill_between(time,average_zscored_pmd-std_zscored_pmd,average_zscored_pmd+std_zscored_pmd,facecolor='gray',alpha=0.5,linewidth=0.0)
 		plt.plot(time,max(average_zscored_pmd)*sig_population_pmd,'xr')
 		plt.title('PMd: n = %i' % (n_pmd))
 		plt.xlabel('Time (s)')
