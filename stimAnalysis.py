@@ -218,7 +218,7 @@ def PopulationResponse(filename,*args):
 		plt.subplot(2,2,4)
 		plt.plot(time,average_zscored_pmd,'b')
 		plt.fill_between(time,average_zscored_pmd-std_zscored_pmd,average_zscored_pmd+std_zscored_pmd,facecolor='gray',alpha=0.5,linewidth=0.0)
-		plt.plot(time[[sig_population_pmd_ind],sig_population_pmd[[sig_population_pmd_ind],'xr')
+		plt.plot(time[[sig_population_pmd_ind],sig_population_pmd[sig_population_pmd_ind],'xr')
 		plt.title('PMd: n = %i' % (n_pmd))
 		plt.xlabel('Time (s)')
 		plt.ylabel('Mean Population Deviation from Baseline \n [zscore (rate - background)] (Hz)',fontsize=8)
