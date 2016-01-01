@@ -63,7 +63,12 @@ def PopulationResponse(filename,*args):
 		bin_size = .1  # .1 s = 100 ms
 		prestim_time = 5 
 		poststim_time = 10
-		stim_time = 1
+		if block==0:
+			stim_time = 1
+		if block==1:
+			stim_time = .25
+		if block==2:
+			stim_time = .05
 		total_time = prestim_time + stim_time + poststim_time
 		#num_bins = 10/bin_size
 		num_bins = total_time/bin_size
@@ -228,7 +233,7 @@ def PopulationResponse(filename,*args):
 		plt.ylabel('Mean Population Deviation from Baseline \n [zscore (rate - background)] (Hz)',fontsize=8)
 		plt.ylim((-1,2))
 		plt.tight_layout()
-		plt.savefig('/home/srsummerson/code/analysis/StimData/'+filename+'_b'+str(block+1)+'_PopulationResponse.svg')
+		plt.savefig('/home/srsummerson/code/analysis/StimData/'+filename+'_b'+str(block+1)+'_PopulationResponse.png')
 		plt.close()
 
 	return 
