@@ -87,7 +87,7 @@ def PopulationResponse(filename,*args):
 					epoch_start = epoch_start - prestim_time   # epoch to include 5 s pre-stim data
 					#epoch_end = epoch_start + 10 	# epoch to look in
 					epoch_end = epoch_start + total_time  # epoch is 5 s pre-stim + 1 s stim + 10 s post-stim
-					epoch_bins = np.arange(epoch_start,epoch_end+bin_size/2,bin_size) 
+					epoch_bins = np.arange(epoch_start,epoch_end+bin_size,bin_size) 
 					counts, bins = np.histogram(train,epoch_bins)
 					epoch_rates[epoch_counter][:] = counts/bin_size	# collect all rates into a N-dim array
 					epoch_counter += 1
