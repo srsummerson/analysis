@@ -196,6 +196,8 @@ def PopulationResponse(filename,*args):
 		sig_population_pmd_ind = np.nonzero(sig_population_pmd)
 
 		time = np.arange(0,total_time,bin_size) - prestim_time
+		print time.size
+		print average_zscored_presma
 		plt.figure()
 		plt.subplot(2,2,1)
 		plt.plot(time,average_zscored_presma,'b')
