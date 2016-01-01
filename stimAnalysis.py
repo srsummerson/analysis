@@ -71,7 +71,7 @@ def PopulationResponse(filename,*args):
 			stim_time = .05
 		total_time = prestim_time + stim_time + poststim_time
 		#num_bins = 10/bin_size
-		num_bins = total_time/bin_size
+		num_bins = int(total_time/bin_size)
 		for train in spiketrains:
 			epoch_rates = np.zeros([num_epochs,num_bins])
 			if train.name[4:6] < channel:
