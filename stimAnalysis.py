@@ -89,7 +89,7 @@ def PopulationResponse(filename,*args):
 					epoch_end = epoch_start + total_time  # epoch is 5 s pre-stim + 1 s stim + 10 s post-stim
 					epoch_bins = np.arange(epoch_start,epoch_end+bin_size,bin_size) 
 					counts, bins = np.histogram(train,epoch_bins)
-					epoch_rates[epoch_counter][:] = counts/bin_size	# collect all rates into a N-dim array
+					epoch_rates[epoch_counter][:] = counts[0:num_bins]/bin_size	# collect all rates into a N-dim array
 					epoch_counter += 1
 				rate_data[train_name] = epoch_rates
 				background_epoch = np.concatenate((np.arange(0,int(prestim_time/bin_size)), np.arange(int((prestim_time+stim_time)/bin_size),len(epoch_bins)-1)), axis=0)
