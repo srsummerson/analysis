@@ -63,15 +63,10 @@ def PopulationResponse(filename,*args):
 		bin_size = .1  # .1 s = 100 ms
 		prestim_time = 5 
 		poststim_time = 10
-		if block==0:
-			stim_time = 1
-		if block==1:
-			stim_time = .25
-		if block==2:
-			stim_time = .05
+		stim_time = 1
 		total_time = prestim_time + stim_time + poststim_time
 		#num_bins = 10/bin_size
-		num_bins = int(total_time/bin_size)
+		num_bins = total_time/bin_size
 		for train in spiketrains:
 			epoch_rates = np.zeros([num_epochs,num_bins])
 			if train.name[4:6] < channel:
@@ -87,13 +82,12 @@ def PopulationResponse(filename,*args):
 					epoch_start = epoch_start - prestim_time   # epoch to include 5 s pre-stim data
 					#epoch_end = epoch_start + 10 	# epoch to look in
 					epoch_end = epoch_start + total_time  # epoch is 5 s pre-stim + 1 s stim + 10 s post-stim
-					epoch_bins = np.arange(epoch_start,epoch_end+bin_size,bin_size) 
+					epoch_bins = np.arange(epoch_start,epoch_end+bin_size/2,bin_size) 
 					counts, bins = np.histogram(train,epoch_bins)
-					epoch_rates[epoch_counter][:] = counts[0:num_bins]/bin_size	# collect all rates into a N-dim array
+					epoch_rates[epoch_counter][:] = counts/bin_size	# collect all rates into a N-dim array
 					epoch_counter += 1
 				rate_data[train_name] = epoch_rates
-				background_epoch = np.concatenate((np.arange(0,int(prestim_time/bin_size)), np.arange(num_bins - int(poststim_time/bin_size),num_bins)), axis=0)
-
+				background_epoch = np.concatenate((np.arange(0,int(prestim_time/bin_size)), np.arange(int((prestim_time+stim_time)/bin_size),len(epoch_bins)-1)), axis=0)
 		# add up population responses,z-score and find significance
 		
 		population_sma = np.zeros([num_epochs,num_bins])
@@ -196,7 +190,6 @@ def PopulationResponse(filename,*args):
 		sig_population_pmd_ind = np.nonzero(sig_population_pmd)
 
 		time = np.arange(0,total_time,bin_size) - prestim_time
-		time = time[0:average_zscored_presma.size]
 		plt.figure()
 		plt.subplot(2,2,1)
 		plt.plot(time,average_zscored_presma,'b')
@@ -235,11 +228,10 @@ def PopulationResponse(filename,*args):
 		plt.ylabel('Mean Population Deviation from Baseline \n [zscore (rate - background)] (Hz)',fontsize=8)
 		plt.ylim((-1,2))
 		plt.tight_layout()
-		plt.savefig('/home/srsummerson/code/analysis/StimData/'+filename+'_b'+str(block+1)+'_PopulationResponse.png')
+		plt.savefig('/home/srsummerson/code/analysis/StimData/'+filename+'_b'+str(block+1)+'_PopulationResponse.svg')
 		plt.close()
 
 	return 
-
 
 
 
