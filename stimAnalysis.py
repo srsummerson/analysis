@@ -349,8 +349,7 @@ def PopulationResponseSingleUnit(filename,*args):
 					#rate_data_sma[train_name] = averages_zscored
 					#sig_sma[train_name] = sig_per_bin_ind
 					#std_scored_sma[train_name] = std_scored
-					plt.figure(1)
-					plt.subplot(4,6,count_sma)
+					plt.figure()
 					plt.plot(time,averages_zscored,'b')
 					plt.fill_between(time,averages_zscored-std_scored,averages_zscored+std_scored,facecolor='gray',alpha=0.5,linewidth=0.0)
 					plt.plot(time[sig_per_bin_ind],sig_per_bin[sig_per_bin_ind],'xr')
@@ -359,13 +358,15 @@ def PopulationResponseSingleUnit(filename,*args):
 					plt.xlabel('Time (s)')
 					plt.ylabel('Spike Rate Deviation from Baseline \n [zscore(rate - background)] (Hz)',fontsize=8)
 					plt.ylim((-1,2))
+					plt.tight_layout()
+					plt.savefig('/home/srsummerson/code/analysis/StimData/'+filename+'_b'+str(block+1)+'_'+ train_name +'_SMA_Single_Unit_Response.png')
+					plt.close()
 					count_sma += 1
 				if (channel in presma):
 					#rate_data_presma[train_name] = averages_zscored
 					#sig_presma[train_name] = sig_per_bin_ind
 					#std_scored_presma[train_name] = std_scored
-					plt.figure(2)
-					plt.subplot(4,6,count_presma)
+					plt.figure()
 					plt.plot(time,averages_zscored,'b')
 					plt.fill_between(time,averages_zscored-std_scored,averages_zscored+std_scored,facecolor='gray',alpha=0.5,linewidth=0.0)
 					plt.plot(time[sig_per_bin_ind],sig_per_bin[sig_per_bin_ind],'xr')
@@ -374,13 +375,15 @@ def PopulationResponseSingleUnit(filename,*args):
 					plt.xlabel('Time (s)')
 					plt.ylabel('Spike Rate Deviation from Baseline \n [zscore(rate - background)] (Hz)',fontsize=8)
 					plt.ylim((-1,2))
+					plt.tight_layout()
+					plt.savefig('/home/srsummerson/code/analysis/StimData/'+filename+'_b'+str(block+1)+'_'+ train_name +'_preSMA_Single_Unit_Response.png')
+					plt.close()
 					count_presma += 1
 				if (channel in m1):
 					#rate_data_m1[train_name] = averages_zscored
 					#sig_m1[train_name] = sig_per_bin_ind
 					#std_scored_m1[train_name] = std_scored
-					plt.figure(3)
-					plt.subplot(4,6,count_m1)
+					plt.figure()
 					plt.plot(time,averages_zscored,'b')
 					plt.fill_between(time,averages_zscored-std_scored,averages_zscored+std_scored,facecolor='gray',alpha=0.5,linewidth=0.0)
 					plt.plot(time[sig_per_bin_ind],sig_per_bin[sig_per_bin_ind],'xr')
@@ -389,13 +392,15 @@ def PopulationResponseSingleUnit(filename,*args):
 					plt.xlabel('Time (s)')
 					plt.ylabel('Spike Rate Deviation from Baseline \n [zscore(rate - background)] (Hz)',fontsize=8)
 					plt.ylim((-1,2))
+					plt.tight_layout()
+					plt.savefig('/home/srsummerson/code/analysis/StimData/'+filename+'_b'+str(block+1)+'_'+ train_name +'_M1_Single_Unit_Response.png')
+					plt.close()
 					count_m1 += 1
 				if (channel in pmd):
 					#rate_data_pmd[train_name] = averages_zscored
 					#sig_pmd[train_name] = sig_per_bin_ind
 					#std_scored_pmd[train_name] = std_scored
-					plt.figure(4)
-					plt.subplot(4,6,count_pmd)
+					plt.figure()
 					plt.plot(time,averages_zscored,'b')
 					plt.fill_between(time,averages_zscored-std_scored,averages_zscored+std_scored,facecolor='gray',alpha=0.5,linewidth=0.0)
 					plt.plot(time[sig_per_bin_ind],sig_per_bin[sig_per_bin_ind],'xr')
@@ -404,9 +409,12 @@ def PopulationResponseSingleUnit(filename,*args):
 					plt.xlabel('Time (s)')
 					plt.ylabel('Spike Rate Deviation from Baseline \n [zscore(rate - background)] (Hz)',fontsize=8)
 					plt.ylim((-1,2))
+					plt.tight_layout()
+					plt.savefig('/home/srsummerson/code/analysis/StimData/'+filename+'_b'+str(block+1)+'_'+ train_name +'_PMd_Single_Unit_Response.png')
+					plt.close()
 					count_pmd += 1
 
-### left off here				
+		"""				
 		plt.figure(1)
 		plt.tight_layout()
 		plt.savefig('/home/srsummerson/code/analysis/StimData/'+filename+'_b'+str(block+1)+'_SMA_Single_Unit_Response.svg')
@@ -423,6 +431,7 @@ def PopulationResponseSingleUnit(filename,*args):
 		plt.tight_layout()
 		plt.savefig('/home/srsummerson/code/analysis/StimData/'+filename+'_b'+str(block+1)+'_PMd_Single_Unit_Response.svg')
 		plt.close()
+		"""
 	return 
 
 
