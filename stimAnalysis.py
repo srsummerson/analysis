@@ -365,7 +365,7 @@ def PopulationResponseSingleUnit(filename,*args):
 					#sig_presma[train_name] = sig_per_bin_ind
 					#std_scored_presma[train_name] = std_scored
 					plt.figure(2)
-					plt.subplot(4,5,count_sma)
+					plt.subplot(4,5,count_presma)
 					plt.plot(time,averages_zscored,'b')
 					plt.fill_between(time,averages_zscored-std_scored,averages_zscored+std_scored,facecolor='gray',alpha=0.5,linewidth=0.0)
 					plt.plot(time[sig_per_bin_ind],sig_per_bin[sig_per_bin_ind],'xr')
@@ -380,7 +380,7 @@ def PopulationResponseSingleUnit(filename,*args):
 					#sig_m1[train_name] = sig_per_bin_ind
 					#std_scored_m1[train_name] = std_scored
 					plt.figure(3)
-					plt.subplot(4,5,count_sma)
+					plt.subplot(4,5,count_m1)
 					plt.plot(time,averages_zscored,'b')
 					plt.fill_between(time,averages_zscored-std_scored,averages_zscored+std_scored,facecolor='gray',alpha=0.5,linewidth=0.0)
 					plt.plot(time[sig_per_bin_ind],sig_per_bin[sig_per_bin_ind],'xr')
@@ -395,7 +395,7 @@ def PopulationResponseSingleUnit(filename,*args):
 					#sig_pmd[train_name] = sig_per_bin_ind
 					#std_scored_pmd[train_name] = std_scored
 					plt.figure(4)
-					plt.subplot(4,5,count_sma)
+					plt.subplot(4,5,count_pmd)
 					plt.plot(time,averages_zscored,'b')
 					plt.fill_between(time,averages_zscored-std_scored,averages_zscored+std_scored,facecolor='gray',alpha=0.5,linewidth=0.0)
 					plt.plot(time[sig_per_bin_ind],sig_per_bin[sig_per_bin_ind],'xr')
