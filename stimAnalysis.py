@@ -234,7 +234,196 @@ def PopulationResponse(filename,*args):
 	return 
 
 
+def PopulationResponseSingleUnit(filename,*args):
 
+	sma = [39, 55, 34, 50, 91, 77, 93, 79, 74, 90, 76, 92, 69, 85, 71, 87]
+	presma = [43, 59, 45, 61, 42, 58, 44, 60]
+	m1 = [95, 78, 66, 82, 68, 84, 70, 86, 72, 88, 109, 125, 111, 127, 65, 81, 67, 83, 
+		120, 106, 122, 108, 124, 110, 126, 112, 128, 105, 121, 107, 123, 115, 101, 117,
+		103, 119, 98, 114, 100, 116, 102, 118, 104, 160, 137, 153, 139, 155, 141, 157, 
+		143, 159, 97, 113, 99, 134, 150, 136, 152, 138, 154, 140, 156, 142, 158, 144, 147,
+		133, 149, 135, 151, 130, 146, 132, 148]
+	pmd = [34, 47, 63, 44, 46, 62, 48, 64, 41, 57, 54, 36, 52, 38, 54, 40, 56, 33, 49, 35, 
+		51, 37, 53, 94, 80, 96, 73, 89, 75]
+
+	r = io.TdtIO(filename)
+	bl = r.read_block(lazy=False,cascade=True)
+	rate_data_sma = dict()
+	rate_data_presma = dict()
+	rate_data_m1 = dict()
+	rate_data_pmd = dict()
+	block_num = []
+	"""
+	if args is not None:
+		block_num.append(*args -1)
+		print block_num
+	else:
+		block_num = range(0,len(bl.segments))
+	"""
+	block_num = range(0,len(bl.segments))
+
+	for block in block_num:
+		spiketrains = bl.segments[block].spiketrains
+		count_sma = 0
+		count_presma = 0
+		count_m1 = 0
+		count_pmd = 0
+		# get sample hpf signal to find stimulation times
+		for sig in bl.segments[block].analogsignals:
+			if (sig.name == 'pNe1 33'):
+				hpf_sample = sig
+				hpf_samplingrate = np.floor(sig.sampling_rate).item()	# round to lowest integer
+
+		# get first 10 s of recording
+		hpf_snippet = hpf_sample[0:10*hpf_samplingrate]
+		hpf_mean = np.mean(hpf_snippet)
+		hpf_std = np.std(hpf_snippet)
+		stim_thres = hpf_mean + 3*hpf_std
+
+		# find stim times
+		sample = 0
+		stim_start_times = []
+		while sample < hpf_sample.size:
+			if (hpf_sample[sample] > stim_thres):
+				stim_start_times.append(sample)
+				sample += 11*hpf_samplingrate # advance 11 s = 1 s stim + 10 s minimum pre-train delay
+			else:
+				sample += 1
+		#num_epochs = len(stim_start_times)
+		num_epochs = 30
+		if len(stim_start_times) > 20:   # only update stim times if vector was repopulated, otherwise use old stim_times
+			stim_times = stim_start_times[0:num_epochs]
+
+		channel = 0
+		second_channel_bank = 0
+		bin_size = .1  # .1 s = 100 ms
+		prestim_time = 5 
+		poststim_time = 10
+		stim_time = 1
+		total_time = prestim_time + stim_time + poststim_time
+		#num_bins = 10/bin_size
+		num_bins = total_time/bin_size
+		for train in spiketrains:
+			epoch_rates = np.zeros([num_epochs,num_bins])
+			if train.name[4:6] < channel:
+				second_channel_bank = 96
+			channel = float(train.name[4:6]) + second_channel_bank
+			if (train.name[-5:]!='Code0')&(train.name[-6:0]!='Code31'):
+				code = train.name[-1]
+				train_name = str(channel) +'_'+str(code)
+				epoch_counter = 0
+				averages_zscored = []
+				sig_per_bin = []
+				sig_per_bin_ind = []
+				std_scored = []
+				for train_start in stim_times:
+					epoch_start = float(train_start)/hpf_sample.sampling_rate.item() # get stim train start time in seconds
+					#epoch_start += 1  # add 1 second to account for duration of stimulation
+					epoch_start = epoch_start - prestim_time   # epoch to include 5 s pre-stim data
+					#epoch_end = epoch_start + 10 	# epoch to look in
+					epoch_end = epoch_start + total_time  # epoch is 5 s pre-stim + 1 s stim + 10 s post-stim
+					epoch_bins = np.arange(epoch_start,epoch_end+bin_size/2,bin_size)
+					background_epoch = np.concatenate((np.arange(0,int(prestim_time/bin_size)), np.arange(int((prestim_time+stim_time)/bin_size),len(epoch_bins)-1)), axis=0) 
+					counts, bins = np.histogram(train,epoch_bins)
+					epoch_rates[epoch_counter][:] = counts/bin_size	# collect all rates into a N-dim array
+					epoch_counter += 1
+				# z score data per epoch and then average over epochs
+				for epoch in range(0,num_epochs):
+					std_train = np.std(epoch_rates[epoch][background_epoch])
+					if (std_train > 0):
+						epoch_rates[epoch][:] = (epoch_rates[epoch][:] - np.mean(epoch_rates[epoch][background_epoch]))/std_train
+					else:
+						epoch_rates[epoch][:] = epoch_rates[epoch][:] - np.mean(epoch_rates[epoch][background_epoch])
+					averages_zscored += epoch_rates
+				averages_zscored = averages_zscored/float(num_epochs)
+
+				for bin in range(0,int(total_time/bin_size)):
+					t, prob = sp.stats.ttest_1samp(epoch_rates[:,bin],0.0)
+					sig_per_bin.append(prob)
+					std_scored.append(stats.sem(epoch_rates[:,bin]))
+				sig_per_bin = (sig_per_bin < 0.05*np.ones(len(sig_per_bin)))
+				sig_per_bin_ind = np.nonzero(sig_per_bin)
+				# save/plot associated with the nucleus the channel is in 
+				time = np.arange(0,total_time,bin_size) - prestim_time
+				if (channel in sma):
+					#rate_data_sma[train_name] = averages_zscored
+					#sig_sma[train_name] = sig_per_bin_ind
+					#std_scored_sma[train_name] = std_scored
+					plt.figure(1)
+					plt.subplot(4,5,count_sma)
+					plt.plot(time,averages_zscored,'b')
+					plt.fill_between(time,averages_zscored-std_scored,averages_zscored+std_scored,facecolor='gray',alpha=0.5,linewidth=0.0)
+					plt.plot(time[sig_per_bin_ind],sig_per_bin[sig_per_bin_ind],'xr')
+					plt.plot(time,np.zeros(time.size),'k--')
+					plt.title('SMA: Ch %i - Unit %i' % (channel,code))
+					plt.xlabel('Time (s)')
+					plt.ylabel('Spike Rate Deviation from Baseline \n [zscore(rate - background)] (Hz)',fontsize=8)
+					plt.ylim((-1,2))
+					count_sma += 1
+				if (channel in presma):
+					#rate_data_presma[train_name] = averages_zscored
+					#sig_presma[train_name] = sig_per_bin_ind
+					#std_scored_presma[train_name] = std_scored
+					plt.figure(2)
+					plt.subplot(4,5,count_sma)
+					plt.plot(time,averages_zscored,'b')
+					plt.fill_between(time,averages_zscored-std_scored,averages_zscored+std_scored,facecolor='gray',alpha=0.5,linewidth=0.0)
+					plt.plot(time[sig_per_bin_ind],sig_per_bin[sig_per_bin_ind],'xr')
+					plt.plot(time,np.zeros(time.size),'k--')
+					plt.title('Pre-SMA: Ch %i - Unit %i' % (channel,code))
+					plt.xlabel('Time (s)')
+					plt.ylabel('Spike Rate Deviation from Baseline \n [zscore(rate - background)] (Hz)',fontsize=8)
+					plt.ylim((-1,2))
+					count_presma += 1
+				if (channel in m1):
+					#rate_data_m1[train_name] = averages_zscored
+					#sig_m1[train_name] = sig_per_bin_ind
+					#std_scored_m1[train_name] = std_scored
+					plt.figure(3)
+					plt.subplot(4,5,count_sma)
+					plt.plot(time,averages_zscored,'b')
+					plt.fill_between(time,averages_zscored-std_scored,averages_zscored+std_scored,facecolor='gray',alpha=0.5,linewidth=0.0)
+					plt.plot(time[sig_per_bin_ind],sig_per_bin[sig_per_bin_ind],'xr')
+					plt.plot(time,np.zeros(time.size),'k--')
+					plt.title('M1: Ch %i - Unit %i' % (channel,code))
+					plt.xlabel('Time (s)')
+					plt.ylabel('Spike Rate Deviation from Baseline \n [zscore(rate - background)] (Hz)',fontsize=8)
+					plt.ylim((-1,2))
+					count_m1 += 1
+				if (channel in pmd):
+					#rate_data_pmd[train_name] = averages_zscored
+					#sig_pmd[train_name] = sig_per_bin_ind
+					#std_scored_pmd[train_name] = std_scored
+					plt.figure(4)
+					plt.subplot(4,5,count_sma)
+					plt.plot(time,averages_zscored,'b')
+					plt.fill_between(time,averages_zscored-std_scored,averages_zscored+std_scored,facecolor='gray',alpha=0.5,linewidth=0.0)
+					plt.plot(time[sig_per_bin_ind],sig_per_bin[sig_per_bin_ind],'xr')
+					plt.plot(time,np.zeros(time.size),'k--')
+					plt.title('PMd: Ch %i - Unit %i' % (channel,code))
+					plt.xlabel('Time (s)')
+					plt.ylabel('Spike Rate Deviation from Baseline \n [zscore(rate - background)] (Hz)',fontsize=8)
+					plt.ylim((-1,2))
+					count_pmd += 1
+
+### left off here				
+		plt.figure(1)
+		plt.tight_layout()
+		plt.savefig('/home/srsummerson/code/analysis/StimData/'+filename+'_b'+str(block+1)+'_SMA_Single_Unit_Response.svg')
+		plt.close()
+		plt.figure(2)
+		plt.tight_layout()
+		plt.savefig('/home/srsummerson/code/analysis/StimData/'+filename+'_b'+str(block+1)+'_preSMA_Single_Unit_Response.svg')
+		plt.close()
+		plt.figure(3)
+		plt.tight_layout()
+		plt.savefig('/home/srsummerson/code/analysis/StimData/'+filename+'_b'+str(block+1)+'_M1_Single_Unit_Response.svg')
+		plt.close()
+		plt.figure(4)
+		plt.tight_layout()
+		plt.savefig('/home/srsummerson/code/analysis/StimData/'+filename+'_b'+str(block+1)+'_PMd_Single_Unit_Response.svg')
+		plt.close()
+	return 
 
 
 
