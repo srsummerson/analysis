@@ -312,7 +312,7 @@ def PopulationResponseSingleUnit(filename,*args):
 				code = train.name[-1]
 				train_name = str(channel) +'_'+str(code)
 				epoch_counter = 0
-				averages_zscored = []
+				averages_zscored = np.zeros(num_bins)
 				sig_per_bin = []
 				sig_per_bin_ind = []
 				std_scored = []
