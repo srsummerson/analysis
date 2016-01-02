@@ -334,7 +334,7 @@ def PopulationResponseSingleUnit(filename,*args):
 						epoch_rates[epoch][:] = (epoch_rates[epoch][:] - np.mean(epoch_rates[epoch][background_epoch]))/std_train
 					else:
 						epoch_rates[epoch][:] = epoch_rates[epoch][:] - np.mean(epoch_rates[epoch][background_epoch])
-					averages_zscored += epoch_rates
+					averages_zscored += epoch_rates[epoch][:]
 				averages_zscored = averages_zscored/float(num_epochs)
 
 				for bin in range(0,int(total_time/bin_size)):
