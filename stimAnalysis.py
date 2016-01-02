@@ -355,7 +355,7 @@ def PopulationResponseSingleUnit(filename,*args):
 					plt.fill_between(time,averages_zscored-std_scored,averages_zscored+std_scored,facecolor='gray',alpha=0.5,linewidth=0.0)
 					plt.plot(time[sig_per_bin_ind],sig_per_bin[sig_per_bin_ind],'xr')
 					plt.plot(time,np.zeros(time.size),'k--')
-					plt.title('SMA: Ch %i - Unit %i' % (channel,code))
+					plt.title('SMA: Ch %i - Unit %d' % (channel,code))
 					plt.xlabel('Time (s)')
 					plt.ylabel('Spike Rate Deviation from Baseline \n [zscore(rate - background)] (Hz)',fontsize=8)
 					plt.ylim((-1,2))
