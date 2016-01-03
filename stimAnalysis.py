@@ -335,9 +335,9 @@ def PopulationResponseSingleUnit(filename,*args):
 				# find train spike indices that occur not during the stim period
 				waveform_indices = [ind for ind in range(0,len(train)) if ind not in stim_waveform_indices]
 				avg_waveform = np.mean(train.waveforms[waveform_indices],axis=0)
-				avg_waveform = [val.item() for val in avg_waveform.ravel()]
+				#avg_waveform = [val.item() for val in avg_waveform.ravel()]
 				sem_waveform = np.std(train.waveforms[waveform_indices],axis=0)
-				sem_waveform = [val.item() for val in sem_waveform.ravel()]
+				#sem_waveform = [val.item() for val in sem_waveform.ravel()]
 				# z score data per epoch and then average over epochs
 				for epoch in range(0,num_epochs):
 					std_train = np.std(epoch_rates[epoch][background_epoch])
@@ -373,6 +373,8 @@ def PopulationResponseSingleUnit(filename,*args):
 					plt.subplot(1,2,2)
 					plt.plot(range(0,len(avg_waveform)),avg_waveform)
 					plt.fill_between(range(0,len(avg_waveform)),avg_waveform-sem_waveform,avg_waveform+sem_waveform,facecolor='gray',alpha=0.5,linewidth=0.5)
+					plt.xlabel('Samples')
+					plt.ylabel('Magnitude (V)')
 					plt.tight_layout()
 					plt.savefig('/home/srsummerson/code/analysis/StimData/'+filename+'_b'+str(block+1)+'_'+ train_name +'_SMA_Single_Unit_Response.png')
 					plt.close()
@@ -394,6 +396,8 @@ def PopulationResponseSingleUnit(filename,*args):
 					plt.subplot(1,2,2)
 					plt.plot(range(0,len(avg_waveform)),avg_waveform)
 					plt.fill_between(range(0,len(avg_waveform)),avg_waveform-sem_waveform,avg_waveform+sem_waveform,facecolor='gray',alpha=0.5,linewidth=0.5)
+					plt.xlabel('Samples')
+					plt.ylabel('Magnitude (V)')
 					plt.tight_layout()
 					plt.savefig('/home/srsummerson/code/analysis/StimData/'+filename+'_b'+str(block+1)+'_'+ train_name +'_preSMA_Single_Unit_Response.png')
 					plt.close()
@@ -415,6 +419,8 @@ def PopulationResponseSingleUnit(filename,*args):
 					plt.subplot(1,2,2)
 					plt.plot(range(0,len(avg_waveform)),avg_waveform)
 					plt.fill_between(range(0,len(avg_waveform)),avg_waveform-sem_waveform,avg_waveform+sem_waveform,facecolor='gray',alpha=0.5,linewidth=0.5)
+					plt.xlabel('Samples')
+					plt.ylabel('Magnitude (V)')
 					plt.tight_layout()
 					plt.savefig('/home/srsummerson/code/analysis/StimData/'+filename+'_b'+str(block+1)+'_'+ train_name +'_M1_Single_Unit_Response.png')
 					plt.close()
@@ -436,6 +442,8 @@ def PopulationResponseSingleUnit(filename,*args):
 					plt.subplot(1,2,2)
 					plt.plot(range(0,len(avg_waveform)),avg_waveform)
 					plt.fill_between(range(0,len(avg_waveform)),avg_waveform-sem_waveform,avg_waveform+sem_waveform,facecolor='gray',alpha=0.5,linewidth=0.5)
+					plt.xlabel('Samples')
+					plt.ylabel('Magnitude (V)')
 					plt.tight_layout()
 					plt.savefig('/home/srsummerson/code/analysis/StimData/'+filename+'_b'+str(block+1)+'_'+ train_name +'_PMd_Single_Unit_Response.png')
 					plt.close()
