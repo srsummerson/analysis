@@ -13,7 +13,7 @@ def PopulationResponse(filename,*args):
 		103, 119, 98, 114, 100, 116, 102, 118, 104, 160, 137, 153, 139, 155, 141, 157, 
 		143, 159, 97, 113, 99, 134, 150, 136, 152, 138, 154, 140, 156, 142, 158, 144, 147,
 		133, 149, 135, 151, 130, 146, 132, 148]
-	pmd = [34, 47, 63, 44, 46, 62, 48, 64, 41, 57, 54, 36, 52, 38, 54, 40, 56, 33, 49, 35, 
+	pmd = [47, 63, 46, 62, 48, 64, 41, 57, 54, 36, 52, 38, 54, 40, 56, 33, 49, 35, 
 		51, 37, 53, 94, 80, 96, 73, 89, 75]
 
 	r = io.TdtIO(filename)
@@ -69,7 +69,7 @@ def PopulationResponse(filename,*args):
 		num_bins = total_time/bin_size
 		for train in spiketrains:
 			epoch_rates = np.zeros([num_epochs,num_bins])
-			if train.name[4:6] < channel:
+			if float(train.name[4:6]) < channel:
 				second_channel_bank = 96
 			channel = float(train.name[4:6]) + second_channel_bank
 			if (train.name[-5:]!='Code0')&(train.name[-6:0]!='Code31'):
@@ -235,7 +235,7 @@ def PopulationResponse(filename,*args):
 
 
 def PopulationResponseSingleUnit(filename,*args):
-
+	# 34 is in both
 	sma = [39, 55, 34, 50, 91, 77, 93, 79, 74, 90, 76, 92, 69, 85, 71, 87]
 	presma = [43, 59, 45, 61, 42, 58, 44, 60]
 	m1 = [95, 78, 66, 82, 68, 84, 70, 86, 72, 88, 109, 125, 111, 127, 65, 81, 67, 83, 
@@ -243,7 +243,7 @@ def PopulationResponseSingleUnit(filename,*args):
 		103, 119, 98, 114, 100, 116, 102, 118, 104, 160, 137, 153, 139, 155, 141, 157, 
 		143, 159, 97, 113, 99, 134, 150, 136, 152, 138, 154, 140, 156, 142, 158, 144, 147,
 		133, 149, 135, 151, 130, 146, 132, 148]
-	pmd = [34, 47, 63, 44, 46, 62, 48, 64, 41, 57, 54, 36, 52, 38, 54, 40, 56, 33, 49, 35, 
+	pmd = [47, 63, 46, 62, 48, 64, 41, 57, 54, 36, 52, 38, 54, 40, 56, 33, 49, 35, 
 		51, 37, 53, 94, 80, 96, 73, 89, 75]
 
 	r = io.TdtIO(filename)
@@ -305,7 +305,7 @@ def PopulationResponseSingleUnit(filename,*args):
 		num_bins = total_time/bin_size
 		for train in spiketrains:
 			epoch_rates = np.zeros([num_epochs,num_bins])
-			if train.name[4:6] < channel:
+			if float(train.name[4:6]) < channel:
 				second_channel_bank = 96
 			channel = float(train.name[4:6]) + second_channel_bank
 			if (train.name[-5:]!='Code0')&(train.name[-6:0]!='Code31'):
