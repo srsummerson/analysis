@@ -337,6 +337,7 @@ def PopulationResponseSingleUnit(filename,*args):
 				avg_waveform = np.mean(train.waveforms[waveform_indices],axis=0)
 				avg_waveform = [val.item() for val in avg_waveform.ravel()]
 				sem_waveform = stats.sem(train.waveforms[waveform_indices],axis=0)
+				sem_waveform = sem_waveform.ravel()
 				# z score data per epoch and then average over epochs
 				for epoch in range(0,num_epochs):
 					std_train = np.std(epoch_rates[epoch][background_epoch])
