@@ -335,9 +335,8 @@ def PopulationResponseSingleUnit(filename,*args):
 				# find train spike indices that occur not during the stim period
 				waveform_indices = [ind for ind in range(0,len(train)) if ind not in stim_waveform_indices]
 				avg_waveform = np.mean(train.waveforms[waveform_indices],axis=0)
-				avg_waveform = [val.item() for val in avg_waveform]
+				avg_waveform = [val.item() for val in avg_waveform.ravel()]
 				sem_waveform = stats.sem(train.waveforms[waveform_indices],axis=0)
-				sem_waveform = [val.item() for val in sem_waveform]
 				# z score data per epoch and then average over epochs
 				for epoch in range(0,num_epochs):
 					std_train = np.std(epoch_rates[epoch][background_epoch])
