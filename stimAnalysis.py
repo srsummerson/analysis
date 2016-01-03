@@ -316,8 +316,12 @@ def PopulationResponseSingleUnit(filename,*args):
 				sig_per_bin = []
 				sig_per_bin_ind = []
 				std_scored = []
+				stim_waveform_indices = []
 				for train_start in stim_times:
 					epoch_start = float(train_start)/hpf_sample.sampling_rate.item() # get stim train start time in seconds
+					# find train spike times and indices that occur during stim period
+					find_stim_indices = (epoch_start <= train <= (epoch_start + stim_time))
+					stim_waveform_indices.append(np.nonzero(find_stim_indices))
 					#epoch_start += 1  # add 1 second to account for duration of stimulation
 					epoch_start = epoch_start - prestim_time   # epoch to include 5 s pre-stim data
 					#epoch_end = epoch_start + 10 	# epoch to look in
@@ -327,6 +331,10 @@ def PopulationResponseSingleUnit(filename,*args):
 					counts, bins = np.histogram(train,epoch_bins)
 					epoch_rates[epoch_counter][:] = counts/bin_size	# collect all rates into a N-dim array
 					epoch_counter += 1
+				# find train spike indices that occur not during the stim period
+				waveform_indices = [ind for ind in range(0,len(train)) if ind not in stim_waveform_indices]
+				avg_waveform = np.mean(train.waveforms[waveform_indices],axis=0)
+				sem_waveform = stats.sem(train.waveforms[waveform_indices],axis=0)
 				# z score data per epoch and then average over epochs
 				for epoch in range(0,num_epochs):
 					std_train = np.std(epoch_rates[epoch][background_epoch])
@@ -350,6 +358,7 @@ def PopulationResponseSingleUnit(filename,*args):
 					#sig_sma[train_name] = sig_per_bin_ind
 					#std_scored_sma[train_name] = std_scored
 					plt.figure()
+					plt.subplot(1,2,1)
 					plt.plot(time,averages_zscored,'b')
 					plt.fill_between(time,averages_zscored-std_scored,averages_zscored+std_scored,facecolor='gray',alpha=0.5,linewidth=0.0)
 					plt.plot(time[sig_per_bin_ind],sig_per_bin[sig_per_bin_ind],'xr')
@@ -358,6 +367,9 @@ def PopulationResponseSingleUnit(filename,*args):
 					plt.xlabel('Time (s)')
 					plt.ylabel('Spike Rate Deviation from Baseline \n [zscore(rate - background)] (Hz)',fontsize=8)
 					plt.ylim((-1,2))
+					plt.subplot(1,2,2)
+					plt.plot(range(0,len(avg_waveform)),avg_waveform)
+					plt.fill_between(range(0,len(avg_waveform)),avg_waveform-sem_waveform,avg_waveform+sem_waveform,facecolor='gray',alpha=0.5,linewidth=0.0)
 					plt.tight_layout()
 					plt.savefig('/home/srsummerson/code/analysis/StimData/'+filename+'_b'+str(block+1)+'_'+ train_name +'_SMA_Single_Unit_Response.png')
 					plt.close()
@@ -367,6 +379,7 @@ def PopulationResponseSingleUnit(filename,*args):
 					#sig_presma[train_name] = sig_per_bin_ind
 					#std_scored_presma[train_name] = std_scored
 					plt.figure()
+					plt.subplot(1,2,1)
 					plt.plot(time,averages_zscored,'b')
 					plt.fill_between(time,averages_zscored-std_scored,averages_zscored+std_scored,facecolor='gray',alpha=0.5,linewidth=0.0)
 					plt.plot(time[sig_per_bin_ind],sig_per_bin[sig_per_bin_ind],'xr')
@@ -375,6 +388,9 @@ def PopulationResponseSingleUnit(filename,*args):
 					plt.xlabel('Time (s)')
 					plt.ylabel('Spike Rate Deviation from Baseline \n [zscore(rate - background)] (Hz)',fontsize=8)
 					plt.ylim((-1,2))
+					plt.subplot(1,2,2)
+					plt.plot(range(0,len(avg_waveform)),avg_waveform)
+					plt.fill_between(range(0,len(avg_waveform)),avg_waveform-sem_waveform,avg_waveform+sem_waveform,facecolor='gray',alpha=0.5,linewidth=0.0)
 					plt.tight_layout()
 					plt.savefig('/home/srsummerson/code/analysis/StimData/'+filename+'_b'+str(block+1)+'_'+ train_name +'_preSMA_Single_Unit_Response.png')
 					plt.close()
@@ -384,6 +400,7 @@ def PopulationResponseSingleUnit(filename,*args):
 					#sig_m1[train_name] = sig_per_bin_ind
 					#std_scored_m1[train_name] = std_scored
 					plt.figure()
+					plt.subplot(1,2,1)
 					plt.plot(time,averages_zscored,'b')
 					plt.fill_between(time,averages_zscored-std_scored,averages_zscored+std_scored,facecolor='gray',alpha=0.5,linewidth=0.0)
 					plt.plot(time[sig_per_bin_ind],sig_per_bin[sig_per_bin_ind],'xr')
@@ -392,6 +409,9 @@ def PopulationResponseSingleUnit(filename,*args):
 					plt.xlabel('Time (s)')
 					plt.ylabel('Spike Rate Deviation from Baseline \n [zscore(rate - background)] (Hz)',fontsize=8)
 					plt.ylim((-1,2))
+					plt.subplot(1,2,2)
+					plt.plot(range(0,len(avg_waveform)),avg_waveform)
+					plt.fill_between(range(0,len(avg_waveform)),avg_waveform-sem_waveform,avg_waveform+sem_waveform,facecolor='gray',alpha=0.5,linewidth=0.0)
 					plt.tight_layout()
 					plt.savefig('/home/srsummerson/code/analysis/StimData/'+filename+'_b'+str(block+1)+'_'+ train_name +'_M1_Single_Unit_Response.png')
 					plt.close()
@@ -401,6 +421,7 @@ def PopulationResponseSingleUnit(filename,*args):
 					#sig_pmd[train_name] = sig_per_bin_ind
 					#std_scored_pmd[train_name] = std_scored
 					plt.figure()
+					plt.subplot(1,2,1)
 					plt.plot(time,averages_zscored,'b')
 					plt.fill_between(time,averages_zscored-std_scored,averages_zscored+std_scored,facecolor='gray',alpha=0.5,linewidth=0.0)
 					plt.plot(time[sig_per_bin_ind],sig_per_bin[sig_per_bin_ind],'xr')
@@ -409,6 +430,9 @@ def PopulationResponseSingleUnit(filename,*args):
 					plt.xlabel('Time (s)')
 					plt.ylabel('Spike Rate Deviation from Baseline \n [zscore(rate - background)] (Hz)',fontsize=8)
 					plt.ylim((-1,2))
+					plt.subplot(1,2,2)
+					plt.plot(range(0,len(avg_waveform)),avg_waveform)
+					plt.fill_between(range(0,len(avg_waveform)),avg_waveform-sem_waveform,avg_waveform+sem_waveform,facecolor='gray',alpha=0.5,linewidth=0.0)
 					plt.tight_layout()
 					plt.savefig('/home/srsummerson/code/analysis/StimData/'+filename+'_b'+str(block+1)+'_'+ train_name +'_PMd_Single_Unit_Response.png')
 					plt.close()
