@@ -317,10 +317,11 @@ def PopulationResponseSingleUnit(filename,*args):
 				sig_per_bin_ind = []
 				std_scored = []
 				stim_waveform_indices = []
+				train_times = [time.item() for time in train]
 				for train_start in stim_times:
 					epoch_start = float(train_start)/hpf_sample.sampling_rate.item() # get stim train start time in seconds
 					# find train spike times and indices that occur during stim period
-					find_stim_indices = np.greater_equal(train,epoch_start)&np.less_equal(train,(epoch_start + stim_time))
+					find_stim_indices = np.greater_equal(train_times,epoch_start)&np.less_equal(train_times,(epoch_start + stim_time))
 					stim_waveform_indices.append(np.nonzero(find_stim_indices))
 					#epoch_start += 1  # add 1 second to account for duration of stimulation
 					epoch_start = epoch_start - prestim_time   # epoch to include 5 s pre-stim data
