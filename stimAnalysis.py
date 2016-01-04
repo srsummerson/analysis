@@ -5,7 +5,7 @@ import scipy as sp
 import matplotlib.pyplot as plt
 
 def PopulationResponse(filename,*args):
-
+	'''
 	sma = [39, 55, 34, 50, 91, 77, 93, 79, 74, 90, 76, 92, 69, 85, 71, 87]
 	presma = [43, 59, 45, 61, 42, 58, 44, 60]
 	m1 = [95, 78, 66, 82, 68, 84, 70, 86, 72, 88, 109, 125, 111, 127, 65, 81, 67, 83, 
@@ -15,6 +15,25 @@ def PopulationResponse(filename,*args):
 		133, 149, 135, 151, 130, 146, 132, 148]
 	pmd = [47, 63, 46, 62, 48, 64, 41, 57, 54, 36, 52, 38, 54, 40, 56, 33, 49, 35, 
 		51, 37, 53, 94, 80, 96, 73, 89, 75]
+	'''
+	# Dec 28
+	sma = ['34_2','34_3','90_2','76_1']
+	m1 = ['83_2','66_1','83_1','95_1','97_1','100_1','104_1','106_1','112_1','113_2',
+		'119_1','126_1','132_2','133_1','138_1','149_2','160_1','149_1']
+	'''
+	# Dec 29
+	sma = ['34_2','34_3','69_1','76_1','90_2']
+	m1 = ['66_1','81_1','83_1','83_2','95_1','97_1','100_1','102_1','104_1','106_1',
+		'112_1','126_1','132_2','133_1','149_2']
+	# Dec 30
+	sma = ['34_2','34_3','76_1','90_2']
+	m1 = ['66_1','83_2','100_2','102_1','105_2','106_2','107_1','107_2','107_3','107_4',
+		'111_2','115_2','122_2','125_1','137_2','154_2']
+	# Jan 1
+	sma = ['34_2','90_2']
+	pmd = ['40_2']
+	m1 = ['66_1','83_2','84_2','104_2','110_2','111_2','149_2']
+	'''
 
 	r = io.TdtIO(filename)
 	bl = r.read_block(lazy=False,cascade=True)
@@ -71,7 +90,7 @@ def PopulationResponse(filename,*args):
 			epoch_rates = np.zeros([num_epochs,num_bins])
 			if float(train.name[4:6]) < channel:
 				second_channel_bank = 96
-			channel = float(train.name[4:6]) + second_channel_bank
+			channel = int(train.name[4:6]) + second_channel_bank
 			if (train.name[-5:]!='Code0')&(train.name[-6:0]!='Code31'):
 				code = train.name[-1]
 				train_name = str(channel) +'_'+str(code)
@@ -116,7 +135,8 @@ def PopulationResponse(filename,*args):
 		n_pmd = 0
 
 		for rates in rate_data:
-			channel_num = float(rates[:-2])
+			#channel_num = float(rates[:-2])
+			channel_num = rates
 			if (channel_num in sma):
 				population_sma = population_sma+rate_data[rates]
 				n_sma += 1
@@ -307,7 +327,7 @@ def PopulationResponseSingleUnit(filename,*args):
 			epoch_rates = np.zeros([num_epochs,num_bins])
 			if float(train.name[4:6]) < channel:
 				second_channel_bank = 96
-			channel = float(train.name[4:6]) + second_channel_bank
+			channel = int(train.name[4:6]) + second_channel_bank
 			if (train.name[-5:]!='Code0')&(train.name[-6:0]!='Code31'):
 				code = train.name[-1]
 				train_name = str(channel) +'_'+str(code)
@@ -468,6 +488,3 @@ def PopulationResponseSingleUnit(filename,*args):
 		plt.close()
 		"""
 	return 
-
-
-
