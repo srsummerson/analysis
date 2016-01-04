@@ -29,7 +29,7 @@ def PopulationResponse(filename,*args):
 		'112_1','126_1','132_2','133_1','149_2']
 	presma = []
 	pmd = []
-	'''
+	
 	# Dec 30
 	sma = ['34_2','34_3','76_1','90_2']
 	m1 = ['66_1','83_2','100_2','102_1','105_2','106_2','107_1','107_2','107_3','107_4',
@@ -42,7 +42,7 @@ def PopulationResponse(filename,*args):
 	pmd = ['40_2']
 	m1 = ['66_1','83_2','84_2','104_2','110_2','111_2','149_2']
 	presma = []
-	'''
+	
 
 	r = io.TdtIO(filename)
 	bl = r.read_block(lazy=False,cascade=True)
