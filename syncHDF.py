@@ -27,12 +27,13 @@ def syncHDFwithDIOx(TDT_tank,block_num):
 	for sig in analogsig:
 		if (sig.name == 'DIOx 3'): # third channel indicates message type
 			DIOx3 = [sig[ind].item() for ind in range(0,sig.size)]
+			hdf_times['tdt_dio_samplerate'] = sig.sampling_rate
 		if (sig.name == 'DIOx 4'): # fourth channels has row numbers plus other messages
 			DIOx4 = [sig[ind].item() for ind in range(0,sig.size)]
 	length = len(DIOx3)
 	find_rows = np.equal(DIOx3, 21)
 	find_rows = np.ravel(find_rows)
-	hdf_times['tdt_dio_samplerate'] = DIOx3.sampling_rate
+	
 	#rows = [DIOx4[ind].item() for ind in find_rows] 
 	rows = DIOx4[find_rows]
 	prev_row = rows[0]
