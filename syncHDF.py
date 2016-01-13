@@ -31,11 +31,11 @@ def syncHDFwithDIOx(TDT_tank,block_num):
 		if (sig.name == 'DIOx 4'): # fourth channels has row numbers plus other messages
 			DIOx4 = [sig[ind].item() for ind in range(0,sig.size)]
 	length = len(DIOx3)
-	find_rows = np.equal(DIOx3, 21)
-	find_rows = np.ravel(find_rows)
+	find_rows = np.ravel(np.equal(DIOx3, 21))
+	data_rows = np.ravel(np.nonzero(find_rows))
 	
 	#rows = [DIOx4[ind].item() for ind in find_rows] 
-	rows = DIOx4[find_rows]
+	rows = [DIOx4[row_num] for row_num in data_rows]
 	prev_row = rows[0]
 	for ind in range(1,len(rows)):
 		row = rows[ind]
