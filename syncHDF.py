@@ -29,14 +29,14 @@ def syncHDFwithDIOx(TDT_tank,block_num):
 			DIOx3 = [sig[ind].item() for ind in range(0,sig.size)]
 		if (sig.name == 'DIOx 4'): # fourth channels has row numbers plus other messages
 			DIOx4 = [sig[ind].item() for ind in range(0,sig.size)]
-	length = DIOx3.size
+	length = len(DIOx3)
 	find_rows = np.equal(DIOx3, 21)
 	find_rows = np.ravel(find_rows)
 	hdf_times['tdt_dio_samplerate'] = DIOx3.sampling_rate
 	#rows = [DIOx4[ind].item() for ind in find_rows] 
 	rows = DIOx4[find_rows]
 	prev_row = rows[0]
-	for ind in range(1,rows.size):
+	for ind in range(1,len(rows)):
 		row = rows[ind]
 		cycle = (row < prev_row) # row counter has cycled when the current row number is less than the previous
 		counter += cycle
