@@ -7,6 +7,7 @@ def syncHDFwithDIOx(TDT_tank,block_num):
 
 	r = io.TdtIO(dirname = TDT_tank)	# create a reader
 	bl = r.read_block(lazy=False,cascade=True)
+	print "File read."
 	analogsig = bl.segments[block_num-1].analogsignals
 
 	counter = 0 	# counter for number of cycles in hdf row numbers
@@ -30,12 +31,14 @@ def syncHDFwithDIOx(TDT_tank,block_num):
 			hdf_times['tdt_dio_samplerate'] = sig.sampling_rate
 		if (sig.name == 'DIOx 4'): # fourth channels has row numbers plus other messages
 			DIOx4 = [sig[ind].item() for ind in range(0,sig.size)]
+			DIOx4_times = sig.times
 	length = len(DIOx3)
 	find_rows = np.ravel(np.equal(DIOx3, 21))
 	data_rows = np.ravel(np.nonzero(find_rows))
 	
 	#rows = [DIOx4[ind].item() for ind in find_rows] 
 	rows = [DIOx4[row_num] for row_num in data_rows]
+	times = [DIOx4_times[row_num] for row_num in data_rows]
 	prev_row = rows[0]
 	for ind in range(1,len(rows)):
 		row = rows[ind]
@@ -46,7 +49,10 @@ def syncHDFwithDIOx(TDT_tank,block_num):
 		print float(ind)/length
 
 	hdf_times['row_number'] = rows
-	hdf_times['tdt_samplenumber'] = find_rows
-	#hdf_times['tdt_timestamp'] = tdt_timestamp
+	hdf_times['tdt_samplenumber'] = data_rows
+	hdf_times['tdt_timestamp'] = times
+
+	# if dio sample num is x, then data sample number is R(x-1) + 1 where
+	# R = data_sample_rate/dio_sample_rate
 
 	return hdf_times
