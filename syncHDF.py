@@ -26,9 +26,9 @@ def syncHDFwithDIOx(TDT_tank,block_num):
 	# find channel index for DIOx 3 and DIOx 4
 	for sig in analogsig:
 		if (sig.name == 'DIOx 3'): # third channel indicates message type
-			DIOx3 = [sig[ind].item() for ind in range(0,sig.size)
+			DIOx3 = [sig[ind].item() for ind in range(0,sig.size)]
 		if (sig.name == 'DIOx 4'): # fourth channels has row numbers plus other messages
-			DIOx4 = [sig[ind].item() for ind in range(0,sig.size)
+			DIOx4 = [sig[ind].item() for ind in range(0,sig.size)]
 	length = DIOx3.size
 	find_rows = np.equal(DIOx3, 21)
 	find_rows = np.ravel(find_rows)
