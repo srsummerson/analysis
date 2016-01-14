@@ -498,7 +498,7 @@ def PopulationResponseSingleUnit(filename,*args):
 		"""
 	return 
 
-def PopulationResponseSingleBlock(filename,block,stim_thres,train_length):
+def PopulationResponseSingleBlock(tdt_neo,block,stim_thres,train_length):
 	"""
 	Inputs: filename (string) is the parent folder for all blocks, block is the block number (starting at 1), stim thres is the threshold value in uV for detecting when stimulation
 	was administered, and train_length is the value in s for the stimulation pulse train length.
@@ -543,8 +543,9 @@ def PopulationResponseSingleBlock(filename,block,stim_thres,train_length):
 	presma = []
 	
 
-	r = io.TdtIO(filename)
-	bl = r.read_block(lazy=False,cascade=True)
+	#r = io.TdtIO(filename)
+	#bl = r.read_block(lazy=False,cascade=True)
+	bl = tdt_neo   # data already read in using neo library
 	rate_data = dict()
 	
 
@@ -742,4 +743,4 @@ def PopulationResponseSingleBlock(filename,block,stim_thres,train_length):
 	plt.savefig('/home/srsummerson/code/analysis/StimData/'+filename+'_b'+str(block)+'_PopulationResponse.svg')
 	plt.close()
 
-	return 
+	return stim_times, population_presma, population_sma, population_pmd, population_m1
