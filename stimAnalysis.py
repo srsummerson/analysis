@@ -502,6 +502,15 @@ def PopulationResponseSingleBlock(tdt_neo,block,stim_thres,train_length):
 	"""
 	Inputs: filename (string) is the parent folder for all blocks, block is the block number (starting at 1), stim thres is the threshold value in uV for detecting when stimulation
 	was administered, and train_length is the value in s for the stimulation pulse train length.
+
+	12/28: B1 - 100, B2 - 50, B3 - 100, B4 - 100, B5 - 100, B6 - 100
+	12/29: B1 - 2000, B2 - 1000, B3 - 2000, B4 - 1000, B5 - 1000, B6 - sham, B7 - 1000
+	12/30: B1 - 1000, B2 - 500, B3 - 1000, B4 - 1000, B5 - 1000, B6 - sham, B7 - 1000
+	12/31: B1 - 1000, B2 - 1000, B3 - 1000
+	1/1: B1 - 1000, B2 - 1000, B3 - 1000, B4 - 1000, B5 - 1000
+	1/6: B1 - 200, B2 - sham, B3 - 150, B4 - 100, B5 - can't tell (train too short)
+	1/8: B1 - 500, B2 - 500, B3 - 200
+	1/12: can't read with neo
 	"""
 
 	'''
