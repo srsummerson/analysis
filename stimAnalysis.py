@@ -498,7 +498,7 @@ def PopulationResponseSingleUnit(filename,*args):
 		"""
 	return 
 
-def PopulationResponseSingleBlock(tdt_neo,block,stim_thres,train_length):
+def PopulationResponseSingleBlock(filename,tdt_neo,block,stim_thres,train_length,generate_figs):
 	"""
 	Inputs: filename (string) is the parent folder for all blocks, block is the block number (starting at 1), stim thres is the threshold value in uV for detecting when stimulation
 	was administered, and train_length is the value in s for the stimulation pulse train length.
@@ -513,7 +513,7 @@ def PopulationResponseSingleBlock(tdt_neo,block,stim_thres,train_length):
 	1/12: can't read with neo
 	"""
 
-	'''
+	
 	sma = [39, 55, 34, 50, 91, 77, 93, 79, 74, 90, 76, 92, 69, 85, 71, 87]
 	presma = [43, 59, 45, 61, 42, 58, 44, 60]
 	m1 = [95, 78, 66, 82, 68, 84, 70, 86, 72, 88, 109, 125, 111, 127, 65, 81, 67, 83, 
@@ -523,7 +523,7 @@ def PopulationResponseSingleBlock(tdt_neo,block,stim_thres,train_length):
 		133, 149, 135, 151, 130, 146, 132, 148]
 	pmd = [47, 63, 46, 62, 48, 64, 41, 57, 54, 36, 52, 38, 54, 40, 56, 33, 49, 35, 
 		51, 37, 53, 94, 80, 96, 73, 89, 75]
-	
+	'''
 	# Dec 28
 	sma = ['34_2','34_3','90_2','76_1']
 	m1 = ['83_2','66_1','83_1','95_1','97_1','100_1','104_1','106_1','112_1','113_2',
@@ -544,13 +544,13 @@ def PopulationResponseSingleBlock(tdt_neo,block,stim_thres,train_length):
 		'111_2','115_2','122_2','125_1','137_2','154_2']
 	presma = []
 	pmd = []
-	'''
+	
 	# Jan 1
 	sma = ['34_2','90_2']
 	pmd = ['40_2']
 	m1 = ['66_1','83_2','84_2','104_2','110_2','111_2','149_2']
 	presma = []
-	
+	'''
 
 	#r = io.TdtIO(filename)
 	#bl = r.read_block(lazy=False,cascade=True)
@@ -580,7 +580,7 @@ def PopulationResponseSingleBlock(tdt_neo,block,stim_thres,train_length):
 
 	channel = 0
 	second_channel_bank = 0
-	bin_size = .1  # .1 s = 100 ms
+	bin_size = .2  # .1 s = 100 ms
 	prestim_time = 5 
 	poststim_time = 10
 	stim_time = train_length
@@ -636,8 +636,8 @@ def PopulationResponseSingleBlock(tdt_neo,block,stim_thres,train_length):
 	n_pmd = 0
 
 	for rates in rate_data:
-		#channel_num = float(rates[:-2])
-		channel_num = rates
+		channel_num = float(rates[:-2])
+		#channel_num = rates
 		if (channel_num in sma):
 			population_sma = population_sma+rate_data[rates]
 			n_sma += 1
@@ -710,46 +710,47 @@ def PopulationResponseSingleBlock(tdt_neo,block,stim_thres,train_length):
 	sig_population_pmd = (sig_population_pmd < 0.05*np.ones(len(sig_population_pmd)))
 	sig_population_pmd_ind = np.nonzero(sig_population_pmd)
 
-	time = np.arange(0,total_time,bin_size) - prestim_time
-	plt.figure()
-	plt.subplot(2,2,1)
-	plt.plot(time,average_zscored_presma,'b')
-	plt.fill_between(time,average_zscored_presma-std_zscored_presma,average_zscored_presma+std_zscored_presma,facecolor='gray',alpha=0.5,linewidth=0.0)
-	plt.plot(time[sig_population_presma_ind],sig_population_presma[sig_population_presma_ind],'xr')
-	plt.plot(time,np.zeros(time.size),'k--')
-	plt.title('Pre-SMA: n = %i' % (n_presma))
-	plt.xlabel('Time (s)')
-	plt.ylabel('Mean Population Deviation from Baseline \n [zscore(rate - background)] (Hz)',fontsize=8)
-	plt.ylim((-1,2))
-	plt.subplot(2,2,2)
-	plt.plot(time,average_zscored_sma,'b')
-	plt.fill_between(time,average_zscored_sma-std_zscored_sma,average_zscored_sma+std_zscored_sma,facecolor='gray',alpha=0.5,linewidth=0.0)
-	plt.plot(time[sig_population_sma_ind],sig_population_sma[sig_population_sma_ind],'xr')
-	plt.plot(time,np.zeros(time.size),'k--')
-	plt.title('SMA: n = %i' % (n_sma))
-	plt.xlabel('Time (s)')
-	plt.ylabel('Mean Population Deviation from Baseline \n [zscore (rate - background)] (Hz)',fontsize=8)
-	plt.ylim((-1,2))
-	plt.subplot(2,2,3)
-	plt.plot(time,average_zscored_m1,'b')
-	plt.fill_between(time,average_zscored_m1-std_zscored_m1,average_zscored_m1+std_zscored_m1,facecolor='gray',alpha=0.5,linewidth=0.0)
-	plt.plot(time[sig_population_m1_ind],sig_population_m1[sig_population_m1_ind],'xr')
-	plt.plot(time,np.zeros(time.size),'k--')
-	plt.title('M1: n = %i' % (n_m1))
-	plt.xlabel('Time (s)')
-	plt.ylabel('Mean Population Deviation from Baseline \n [zscore (rate - background)] (Hz)',fontsize=8)
-	plt.ylim((-1,2))
-	plt.subplot(2,2,4)
-	plt.plot(time,average_zscored_pmd,'b')
-	plt.fill_between(time,average_zscored_pmd-std_zscored_pmd,average_zscored_pmd+std_zscored_pmd,facecolor='gray',alpha=0.5,linewidth=0.0)
-	plt.plot(time[sig_population_pmd_ind],sig_population_pmd[sig_population_pmd_ind],'xr')
-	plt.plot(time,np.zeros(time.size),'k--')
-	plt.title('PMd: n = %i' % (n_pmd))
-	plt.xlabel('Time (s)')
-	plt.ylabel('Mean Population Deviation from Baseline \n [zscore (rate - background)] (Hz)',fontsize=8)
-	plt.ylim((-1,2))
-	plt.tight_layout()
-	plt.savefig('/home/srsummerson/code/analysis/StimData/'+filename+'_b'+str(block)+'_PopulationResponse.svg')
-	plt.close()
+	if generate_figs==1:
+		time = np.arange(0,total_time,bin_size) - prestim_time
+		plt.figure()
+		plt.subplot(2,2,1)
+		plt.plot(time,average_zscored_presma,'b')
+		plt.fill_between(time,average_zscored_presma-std_zscored_presma,average_zscored_presma+std_zscored_presma,facecolor='gray',alpha=0.5,linewidth=0.0)
+		plt.plot(time[sig_population_presma_ind],sig_population_presma[sig_population_presma_ind],'xr')
+		plt.plot(time,np.zeros(time.size),'k--')
+		plt.title('Pre-SMA: n = %i' % (n_presma))
+		plt.xlabel('Time (s)')
+		plt.ylabel('Mean Population Deviation from Baseline \n [zscore(rate - background)] (Hz)',fontsize=8)
+		plt.ylim((-1,2))
+		plt.subplot(2,2,2)
+		plt.plot(time,average_zscored_sma,'b')
+		plt.fill_between(time,average_zscored_sma-std_zscored_sma,average_zscored_sma+std_zscored_sma,facecolor='gray',alpha=0.5,linewidth=0.0)
+		plt.plot(time[sig_population_sma_ind],sig_population_sma[sig_population_sma_ind],'xr')
+		plt.plot(time,np.zeros(time.size),'k--')
+		plt.title('SMA: n = %i' % (n_sma))
+		plt.xlabel('Time (s)')
+		plt.ylabel('Mean Population Deviation from Baseline \n [zscore (rate - background)] (Hz)',fontsize=8)
+		plt.ylim((-1,2))
+		plt.subplot(2,2,3)
+		plt.plot(time,average_zscored_m1,'b')
+		plt.fill_between(time,average_zscored_m1-std_zscored_m1,average_zscored_m1+std_zscored_m1,facecolor='gray',alpha=0.5,linewidth=0.0)
+		plt.plot(time[sig_population_m1_ind],sig_population_m1[sig_population_m1_ind],'xr')
+		plt.plot(time,np.zeros(time.size),'k--')
+		plt.title('M1: n = %i' % (n_m1))
+		plt.xlabel('Time (s)')
+		plt.ylabel('Mean Population Deviation from Baseline \n [zscore (rate - background)] (Hz)',fontsize=8)
+		plt.ylim((-1,2))
+		plt.subplot(2,2,4)
+		plt.plot(time,average_zscored_pmd,'b')
+		plt.fill_between(time,average_zscored_pmd-std_zscored_pmd,average_zscored_pmd+std_zscored_pmd,facecolor='gray',alpha=0.5,linewidth=0.0)
+		plt.plot(time[sig_population_pmd_ind],sig_population_pmd[sig_population_pmd_ind],'xr')
+		plt.plot(time,np.zeros(time.size),'k--')
+		plt.title('PMd: n = %i' % (n_pmd))
+		plt.xlabel('Time (s)')
+		plt.ylabel('Mean Population Deviation from Baseline \n [zscore (rate - background)] (Hz)',fontsize=8)
+		plt.ylim((-1,2))
+		plt.tight_layout()
+		plt.savefig('/home/srsummerson/code/analysis/StimData/'+filename+'_b'+str(block)+'_PopulationResponse.svg')
+		plt.close()
 
 	return stim_times, population_presma, population_sma, population_pmd, population_m1

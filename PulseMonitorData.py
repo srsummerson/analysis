@@ -72,7 +72,7 @@ def findPulseTimes(pulse):
 	#pulse_indices = pulse_indices[realpulse]
 	#IBI = pulse_indices[1:] - pulse_indices[:-1]
 	real_indices = np.ravel(real_indices)
-	pulse_times = pulse[real_indices].times
+	pulse_times = pulse.times[real_indices]
 
 	return pulse_times
 
