@@ -31,7 +31,7 @@ for sig in bl.segments[block-1].analogsignals:
 		pupil_data = sig
 
 # Get pupil dilation time vector without units
-pupil_data_times = [pupil_data.times[ind].item() for ind in range(0,len(pupil_data))]
+pupil_data_times = np.ravel(pupil_data.times)
 
 # Get pulse times
 pulse_times = findPulseTimes(pulse_data)
@@ -45,6 +45,7 @@ total_time = prestim_time + stim_time + poststim_time
 num_bins = total_time/bin_size
 num_epochs = len(stim_times)
 epoch_rates = np.zeros([num_epochs,num_bins])
+epoch_pupil = np.zeros([num_epochs,num_bins])
 epoch_counter = 0
 
 for train_start in stim_times:
