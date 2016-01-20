@@ -4,6 +4,10 @@ from neo import io
 
 #def syncHDFwithDIOx(TDT_tank,block_num):
 
+'''
+Update so that it only starts saving row numbers after trigger goes on and stops after trigger turns off.
+'''
+
 filename = 'Luigi20151204_HDEEG'
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 block_num = 1
@@ -21,7 +25,7 @@ prev_row = 0
 
 hdf_times = dict()
 hdf_times['row_number'] = []
-hdf_times['tdt_timestamp'] = []
+#hdf_times['tdt_timestamp'] = []
 hdf_times['tdt_samplenumber'] = []
 hdf_times['tdt_dio_samplerate'] = []
 
@@ -55,7 +59,7 @@ for ind in range(1,len(rows)):
 
 hdf_times['row_number'] = rows
 hdf_times['tdt_samplenumber'] = data_rows
-hdf_times['tdt_timestamp'] = times
+#hdf_times['tdt_timestamp'] = times
 
 mat_filename = filename+'_b'+str(block_num)+'_syncHDF.mat'
 sp.io.savemat('syncHDF/'+mat_filename,hdf_times)
