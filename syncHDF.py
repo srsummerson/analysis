@@ -4,7 +4,7 @@ from neo import io
 
 #def syncHDFwithDIOx(TDT_tank,block_num):
 
-filename = 'Luigi20151124_HDEEG'
+filename = 'Luigi20151204_HDEEG'
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 block_num = 1
 
@@ -58,7 +58,7 @@ hdf_times['tdt_samplenumber'] = data_rows
 hdf_times['tdt_timestamp'] = times
 
 mat_filename = filename+'_b'+str(block_num)+'_syncHDF.mat'
-sp.io.savemat(mat_filename,hdf_times)
+sp.io.savemat('syncHDF/'+mat_filename,hdf_times)
 
 # if dio sample num is x, then data sample number is R(x-1) + 1 where
 # R = data_sample_rate/dio_sample_rate
