@@ -10,7 +10,7 @@ Update so that it only starts saving row numbers after trigger goes on and stops
 
 filename = 'Luigi20151204_HDEEG'
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
-block_num = 1
+block_num = 2
 
 # Can we get timestamps directly?
 
@@ -71,7 +71,7 @@ hdf_times['tdt_samplenumber'] = data_rows
 mat_filename = filename+'_b'+str(block_num)+'_syncHDF.mat'
 sp.io.savemat('/home/srsummerson/storage/syncHDF/'+mat_filename,hdf_times)
 
-# if dio sample num is x, then data sample number is R(x-1) + 1 where
+# if dio sample num is x, then data sample number is R*(x-1) + 1 where
 # R = data_sample_rate/dio_sample_rate
 
 
