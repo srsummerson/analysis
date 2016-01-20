@@ -1,5 +1,5 @@
 import numpy as np
-import scipy and sp
+import scipy as sp
 from neo import io
 
 #def syncHDFwithDIOx(TDT_tank,block_num):
