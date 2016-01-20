@@ -35,19 +35,26 @@ tdt_samplenumber = []
 
 # find channel index for DIOx 3 and DIOx 4
 for sig in analogsig:
+	if (sig.name == 'DIOx 1'):
+		DIOx1 = np.ravel(sig)	# using ravel gets rid of quantities
 	if (sig.name == 'DIOx 3'): # third channel indicates message type
-		DIOx3 = [sig[ind].item() for ind in range(0,sig.size)]
+		#DIOx3 = [sig[ind].item() for ind in range(0,sig.size)]
+		DIOx3 = np.ravel(sig)
 		hdf_times['tdt_dio_samplerate'] = sig.sampling_rate
 	if (sig.name == 'DIOx 4'): # fourth channels has row numbers plus other messages
-		DIOx4 = [sig[ind].item() for ind in range(0,sig.size)]
-		DIOx4_times = sig.times
+		DIOx4 = np.ravel(sig)
+		#DIOx4 = [sig[ind].item() for ind in range(0,sig.size)]
+		##DIOx4_times = sig.times
 length = len(DIOx3)
-find_rows = np.ravel(np.equal(DIOx3, 21))
-data_rows = np.ravel(np.nonzero(find_rows))
+find_triggered_data = np.ravel(np.equal(DIOx1,1))
+triggered_rows = np.ravel(np.nonzero(find_triggered_data))
+find_rows = np.ravel(np.equal(DIOx3[triggered_rows], 21))
+data_rows = np.ravel(np.nonzero(find_rows))	  # returns which indices in triggered_row array also correspond to times when a real row number was sent
+data_rows = triggered_rows[data_rows]	
 
-#rows = [DIOx4[ind].item() for ind in find_rows] 
-rows = [DIOx4[row_num] for row_num in data_rows]
-times = [DIOx4_times[row_num] for row_num in data_rows]
+rows = DIOx4[data_rows]
+#rows = [DIOx4[row_num] for row_num in data_rows]
+#times = [DIOx4_times[row_num] for row_num in data_rows]
 prev_row = rows[0]
 for ind in range(1,len(rows)):
 	row = rows[ind]
@@ -62,7 +69,7 @@ hdf_times['tdt_samplenumber'] = data_rows
 #hdf_times['tdt_timestamp'] = times
 
 mat_filename = filename+'_b'+str(block_num)+'_syncHDF.mat'
-sp.io.savemat('syncHDF/'+mat_filename,hdf_times)
+sp.io.savemat('/home/srsummerson/storage/syncHDF/'+mat_filename,hdf_times)
 
 # if dio sample num is x, then data sample number is R(x-1) + 1 where
 # R = data_sample_rate/dio_sample_rate
