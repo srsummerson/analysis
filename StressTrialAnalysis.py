@@ -44,7 +44,7 @@ hdf_filename = 'luig20151204_05.hdf'
 filename = 'Luigi20151204_HDEEG'
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
-block_num = 1
+block_num = 3
 
 # Load behavior data
 ## self.target_index = 1 for instructed, 2 for free choice
