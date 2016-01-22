@@ -8,9 +8,9 @@ from neo import io
 Update so that it only starts saving row numbers after trigger goes on and stops after trigger turns off.
 '''
 
-filename = 'Luigi20151204_HDEEG'
+filename = 'Luigi20151206_HDEEG'
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
-block_num = 2
+block_num = 1
 
 # Can we get timestamps directly?
 
@@ -62,7 +62,7 @@ for ind in range(1,len(rows)):
 	counter += cycle
 	rows[ind] = counter*256 + row
 	prev_row = row
-	print float(ind)/length
+	#print float(ind)/length
 
 hdf_times['row_number'] = rows
 hdf_times['tdt_samplenumber'] = data_rows
