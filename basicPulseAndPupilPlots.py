@@ -1,5 +1,6 @@
 import numpy as np 
 import scipy as sp
+from scipy import signal
 from neo import io
 from PulseMonitorData import findIBIs
 import matplotlib.pyplot as plt
@@ -54,13 +55,18 @@ sliding_avg_ibi = running_mean(pulse_ibi,savg_pulse)
 ibi_hist, ibi_bins = np.histogram(pulse_ibi,bins=nbins_pulse)
 ibi_hist = ibi_hist/float(len(pulse_ibi))
 
+# Filter pupil data
+cutoff_f = 50
+cutoff_f = float(cutoff_f)/(pupil_samplingrate/2)
+num_taps = 100
+lpf = signal.firwin(num_taps,cutoff_f,window='hamming')
+pupil_data_filtered = signal.lfilter(lpf,1,pupil_data)
+
+
 # Compute sliding average and pupil diameter distribution
-min_diameter = np.min(pupil_data)
-eyes_open = np.nonzero(np.greater(pupil_data,min_diameter))
-eyes_open = np.ravel(eyes_open)
-sliding_avg_pupil_diameter = running_mean(pupil_data[eyes_open],savg_pupil)
-pupil_hist, pupil_bins = np.histogram(pupil_data[eyes_open],bins=nbins_pupil)
-pupil_hist = pupil_hist/float(len(pupil_data[eyes_open]))
+sliding_avg_pupil_diameter = running_mean(pupil_data_filtered,savg_pupil)
+pupil_hist, pupil_bins = np.histogram(pupil_data_filtered,bins=nbins_pupil)
+pupil_hist = pupil_hist/float(len(pupil_data_filtered))
 
 # Plot results
 plt.figure(1)
