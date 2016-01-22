@@ -14,8 +14,7 @@ def running_mean(x, N):
 	return (cumsum[N:] - cumsum[:-N]) / N 
 
 # Set up code for particular day and block
-hdf_filename = 'luig20151204_05.hdf'
-filename = 'Luigi20151204_HDEEG'
+filename = 'Luigi20151217_HDEEG'
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 block_num = 1
 
@@ -28,7 +27,7 @@ nbins_pupil = 10
 r = io.Tdt(filename)
 bl = r.read_block(lazy=False,cascade=True)
 
-for sig in bl.segments[0].analogsignals:
+for sig in bl.segments[block_num-1].analogsignals:
 	if (sig.name == 'DIOx 1'):
 		DIOx1 = sig
 	if (sig.name == 'HrtR 1'):
