@@ -11,7 +11,7 @@ def running_mean(x, N):
 	return (cumsum[N:] - cumsum[:-N]) / N 
 
 # Set up code for particular day and block
-filename = 'Mario20160106'
+filename = 'Mario20160122'
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 block_num = 1
 
