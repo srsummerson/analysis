@@ -11,7 +11,7 @@ def running_mean(x, N):
 	return (cumsum[N:] - cumsum[:-N]) / N 
 
 # Set up code for particular day and block
-filename = 'Mario20160118'
+filename = 'Mario20160106'
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 block_num = 1
 
@@ -108,7 +108,7 @@ plt.plot(pulse_times[0:10*np.ceil(pulse_samplingrate)],pulse_data[0:10*np.ceil(p
 plt.autoscale(enable=True, axis='x', tight=True)
 plt.xlabel('Time (s)', fontsize=8)
 plt.ylabel('Amplitude (V)',fontsize=8)
-plt.title('Pulse Data: %s Block %i' % (filename,block_num))
+#plt.title('Pulse Data: %s Block %i' % (filename,block_num))
 plt.subplot(4,1,2)
 plt.plot(pulse_ibi[0:100])
 plt.autoscale(enable=True, axis='x', tight=True)
@@ -128,7 +128,7 @@ plt.text(ibi_bins[-5],np.max(ibi_hist)-0.1,'m=%f \n $\sigma$=%f' % (mean_ibi,std
 plt.xlabel('IBI (s)',fontsize=8)
 plt.ylabel('Density',fontsize=8)
 #plt.tight_layout()
-plt.savefig('/home/srsummerson/code/analysis/PulseData/'+filename+'_b'+str(block_num)+'_SingleDayPulseData.svg')
+plt.savefig('/home/srsummerson/code/analysis/PulseData/'+filename+'_b'+str(block_num)+'_SingleDayPulseData.pdf')
 plt.show()
 
 plt.figure(2)
@@ -137,7 +137,7 @@ plt.plot(pulse_times[0:10*np.ceil(pulse_samplingrate)],pulse_data[0:10*np.ceil(p
 plt.autoscale(enable=True, axis='x', tight=True)
 plt.xlabel('Time (s)', fontsize=8)
 plt.ylabel('Amplitude (V)',fontsize=8)
-plt.title('Z-scored Pulse Data: %s Block %i' % (filename,block_num))
+#plt.title('Z-scored Pulse Data: %s Block %i' % (filename,block_num))
 plt.subplot(4,1,2)
 plt.plot(zscored_pulse_ibi[0:100])
 plt.autoscale(enable=True, axis='x', tight=True)
@@ -157,7 +157,7 @@ plt.text(zscored_ibi_bins[-2],np.max(zscored_ibi_hist)-0.1,'m=%f \n $\sigma$=%f'
 plt.xlabel('Z-scored IBI (s)',fontsize=8)
 plt.ylabel('Density',fontsize=8)
 #plt.tight_layout()
-plt.savefig('/home/srsummerson/code/analysis/PulseData/'+filename+'_b'+str(block_num)+'_SingleDayPulseDataZscored.svg')
+plt.savefig('/home/srsummerson/code/analysis/PulseData/'+filename+'_b'+str(block_num)+'_SingleDayPulseDataZscored.pdf')
 plt.show()
 
 plt.figure(3)
@@ -166,7 +166,7 @@ plt.plot(pupil_times[0:10*np.ceil(pupil_samplingrate)],pupil_data[0:10*np.ceil(p
 plt.autoscale(enable=True, axis='x', tight=True)
 plt.xlabel('Time (s)',fontsize=8)
 plt.ylabel('Diameter (AU)',fontsize=8)
-plt.title('Pupil Data: %s Block %i' % (filename,block_num))
+#plt.title('Pupil Data: %s Block %i' % (filename,block_num))
 plt.subplot(3,1,2)
 plt.plot(sliding_avg_pupil_diameter)
 plt.autoscale(enable=True, axis='x', tight=True)
@@ -181,7 +181,7 @@ plt.text(pupil_bins[-2],np.max(pupil_hist)-0.1,'m=%f \n $\sigma$=%f' % (mean_pup
 plt.xlabel('Diameter (AU)',fontsize=8)
 plt.ylabel('Density',fontsize=8)
 #plt.tight_layout()
-plt.savefig('/home/srsummerson/code/analysis/PulseData/'+filename+'_b'+str(block_num)+'_SingleDayPupilData.svg')
+plt.savefig('/home/srsummerson/code/analysis/PulseData/'+filename+'_b'+str(block_num)+'_SingleDayPupilData.pdf')
 plt.show()
 
 plt.figure(4)
@@ -190,7 +190,7 @@ plt.plot(pupil_times[0:10*np.ceil(pupil_samplingrate)],zscored_pupil_data_filter
 plt.autoscale(enable=True, axis='x', tight=True)
 plt.xlabel('Time (s)',fontsize=8)
 plt.ylabel('Z-scored Diameter (AU)',fontsize=8)
-plt.title('Pupil Data: %s Block %i' % (filename,block_num))
+#plt.title('Pupil Data: %s Block %i' % (filename,block_num))
 plt.subplot(3,1,2)
 plt.plot(sliding_avg_zscored_pupil_diameter)
 plt.autoscale(enable=True, axis='x', tight=True)
@@ -205,5 +205,5 @@ plt.text(zscored_pupil_bins[-2],np.max(zscored_pupil_hist)-0.1,'m=%f \n $\sigma$
 plt.xlabel('Z-scored Diameter (AU)',fontsize=8)
 plt.ylabel('Density',fontsize=8)
 #plt.tight_layout()
-plt.savefig('/home/srsummerson/code/analysis/PulseData/'+filename+'_b'+str(block_num)+'_SingleDayPupilDataZscored.svg')
+plt.savefig('/home/srsummerson/code/analysis/PulseData/'+filename+'_b'+str(block_num)+'_SingleDayPupilDataZscored.pdf')
 plt.show()
