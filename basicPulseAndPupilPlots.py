@@ -11,7 +11,7 @@ def running_mean(x, N):
 	return (cumsum[N:] - cumsum[:-N]) / N 
 
 # Set up code for particular day and block
-filename = 'Mario20160122'
+filename = 'Mario20160119'
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 block_num = 1
 
@@ -22,6 +22,7 @@ savg_pupil = 100
 
 r = io.TdtIO(TDT_tank)
 bl = r.read_block(lazy=False,cascade=True)
+print "Data read."
 
 for sig in bl.segments[block_num-1].analogsignals:
 	if (sig.name == 'DIOx 1'):
@@ -49,6 +50,7 @@ pulse_times = pulse_times[record_on:record_off]
 pupil_data = pupil_data[record_on:record_off]
 pupil_times = pupil_times[record_on:record_off]
 
+print "Processing pulse data."
 # Compute sliding average and IBI distribution
 pulse_ibi = findIBIs(pulse_data)
 zscored_pulse_ibi = (pulse_ibi - np.mean(pulse_ibi))/float(np.std(pulse_ibi))
@@ -69,7 +71,7 @@ zscored_ibi_hist = zscored_ibi_hist/float(len(zscored_pulse_ibi))
 
 #print ibi_bins
 #print mean_ibi
-
+print "Processing pupil data"
 # Filter pupil data
 eyes_open = np.nonzero(np.greater(pupil_data,0.5))
 eyes_open = np.ravel(eyes_open)
@@ -100,7 +102,7 @@ ibi_bins = ibi_bins[1:]
 zscored_ibi_bins = zscored_ibi_bins[1:]
 pupil_bins = pupil_bins[1:]
 zscored_pupil_bins = zscored_pupil_bins[1:]
-
+"Plotting results."
 # Plot results
 plt.figure(1)
 plt.subplot(4,1,1)
@@ -129,7 +131,7 @@ plt.xlabel('IBI (s)',fontsize=8)
 plt.ylabel('Density',fontsize=8)
 #plt.tight_layout()
 plt.savefig('/home/srsummerson/code/analysis/PulseData/'+filename+'_b'+str(block_num)+'_SingleDayPulseData.pdf')
-plt.show()
+plt.close()
 
 plt.figure(2)
 plt.subplot(4,1,1)
@@ -158,7 +160,7 @@ plt.xlabel('Z-scored IBI (s)',fontsize=8)
 plt.ylabel('Density',fontsize=8)
 #plt.tight_layout()
 plt.savefig('/home/srsummerson/code/analysis/PulseData/'+filename+'_b'+str(block_num)+'_SingleDayPulseDataZscored.pdf')
-plt.show()
+plt.close()
 
 plt.figure(3)
 plt.subplot(3,1,1)
@@ -182,7 +184,7 @@ plt.xlabel('Diameter (AU)',fontsize=8)
 plt.ylabel('Density',fontsize=8)
 #plt.tight_layout()
 plt.savefig('/home/srsummerson/code/analysis/PulseData/'+filename+'_b'+str(block_num)+'_SingleDayPupilData.pdf')
-plt.show()
+plt.close()
 
 plt.figure(4)
 plt.subplot(3,1,1)
@@ -206,4 +208,4 @@ plt.xlabel('Z-scored Diameter (AU)',fontsize=8)
 plt.ylabel('Density',fontsize=8)
 #plt.tight_layout()
 plt.savefig('/home/srsummerson/code/analysis/PulseData/'+filename+'_b'+str(block_num)+'_SingleDayPupilDataZscored.pdf')
-plt.show()
+plt.close()
