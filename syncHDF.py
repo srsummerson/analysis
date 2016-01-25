@@ -29,7 +29,7 @@ tdt_samplenumber = []
 # find channel index for DIOx 3 and DIOx 4
 for sig in analogsig:
 	if (sig.name == 'DIOx 2'):
-		DIOx2 = np.ravel(sig):
+		DIOx2 = np.ravel(sig)
 	if (sig.name == 'DIOx 3'): # third channel indicates message type
 		#DIOx3 = [sig[ind].item() for ind in range(0,sig.size)]
 		DIOx3 = np.ravel(sig)
