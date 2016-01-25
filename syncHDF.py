@@ -4,10 +4,6 @@ from neo import io
 
 #def syncHDFwithDIOx(TDT_tank,block_num):
 
-'''
-Update so that it only starts saving row numbers after trigger goes on and stops after trigger turns off.
-'''
-
 filename = 'Luigi20151228_HDEEG'
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 block_num = 1
@@ -43,7 +39,7 @@ for sig in analogsig:
 		#DIOx4 = [sig[ind].item() for ind in range(0,sig.size)]
 		##DIOx4_times = sig.times
 
-find_data_rows = np.logical_and(np.ravel(np.equal(DIOx3,13)),np.ravel(np.greater(DIOx2,0)))
+find_data_rows = np.logical_and(np.ravel(np.equal(DIOx3,13)),np.ravel(np.greater(DIOx2,0))) # when data corresponds to a row and strobe is on
 find_data_rows_ind = np.ravel(np.nonzero(find_data_rows))	
 
 rows = DIOx4[find_data_rows_ind]
