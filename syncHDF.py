@@ -8,7 +8,7 @@ from neo import io
 Update so that it only starts saving row numbers after trigger goes on and stops after trigger turns off.
 '''
 
-filename = 'Luigi20151206_HDEEG'
+filename = 'Luigi20151228_HDEEG'
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 block_num = 1
 
