@@ -108,8 +108,8 @@ def FreeChoiceTaskPerformance(hdf_file):
 	"""
 	plt.figure()
 	plt.subplot(121)
-	plt.plot(range(1,target_all.size+1),prob_choose_high_all,'b',label='high')
-	plt.plot(range(1,target_all.size+1),prob_choose_low_all,'r',label='low')
+	plt.plot(range(1,target_all.size+1),prob_choose_high_all,'b',label='High-value target')
+	plt.plot(range(1,target_all.size+1),prob_choose_low_all,'r',label='Low-value target')
 	plt.axis([1,target_all.size,0, 1])
 	plt.xlabel('Trials')
 	plt.ylabel('Probability of Target Selection')
@@ -117,36 +117,36 @@ def FreeChoiceTaskPerformance(hdf_file):
 	plt.title('All trials')
 
 	plt.subplot(122)
-	plt.plot(range(1,target_freechoice.size+1),prob_choose_high_freechoice,'b',label='high')
-	plt.plot(range(1,target_freechoice.size+1),prob_choose_low_freechoice,'r',label='low')
+	plt.plot(range(1,target_freechoice.size+1),prob_choose_high_freechoice,'b',label='High-value target')
+	plt.plot(range(1,target_freechoice.size+1),prob_choose_low_freechoice,'r',label='Low-value target')
 	plt.axis([1,target_freechoice.size, 0, 1])
 	plt.xlabel('Trials')
 	plt.title('Free-Choice Trials')
 	plt.legend()
-	plt.savefig('/home/srsummerson/code/analysis/Luigi_Performance_figs/FCPerformance_targets_%s.svg' % hdf_file[:-4])    # save this filetype for AI editing
-	plt.savefig('/home/srsummerson/code/analysis/Luigi_Performance_figs/FCPerformance_targets_%s.svg' % hdf_file[:-4])    # save this filetype for easy viewing
+	plt.savefig('/home/srsummerson/code/analysis/Luigi_Performance_figs/FCPerformance_targets_%s.png' % hdf_file[:-4])    # save this filetype for AI editing
+	#plt.savefig('/home/srsummerson/code/analysis/Luigi_Performance_figs/FCPerformance_targets_%s.svg' % hdf_file[:-4])    # save this filetype for easy viewing
 	plt.close()
 
 	plt.figure()
 	plt.subplot(121)
-	plt.plot(range(1,target_all.size+1),prob_reward_high_all,'b',label='high')
-	plt.plot(range(1,target_all.size+1),prob_reward_low_all,'r',label='low')
+	plt.plot(range(1,target_all.size+1),prob_reward_high_all,'b',label='High-value target')
+	plt.plot(range(1,target_all.size+1),prob_reward_low_all,'r',label='Low-value target')
 	plt.axis([1,target_all.size,0, 1])
 	plt.xlabel('Trials')
-	plt.ylabel('Probability of Receiving Large Reward')
+	plt.ylabel('Probability of Reward')
 	plt.legend()
 	plt.title('All Trials')
 
 	plt.subplot(122)
-	plt.plot(range(1,target_freechoice.size+1),prob_reward_high_freechoice,'b',label='high')
-	plt.plot(range(1,target_freechoice.size+1),prob_reward_low_freechoice,'r',label='low')
+	plt.plot(range(1,target_freechoice.size+1),prob_reward_high_freechoice,'b',label='High-value target')
+	plt.plot(range(1,target_freechoice.size+1),prob_reward_low_freechoice,'r',label='Low-value target')
 	plt.axis([1,target_freechoice.size, 0, 1])
 	plt.xlabel('Trials')
 	plt.legend()
 	plt.title('Free-Choice Trials')
 
-	plt.savefig('/home/srsummerson/code/analysis/Luigi_Performance_figs/FCPerformance_rewards_%s.svg' % hdf_file[:-4])    # save this filetype for AI editing
-	plt.savefig('/home/srsummerson/code/analysis/Luigi_Performance_figs/FCPerformance_rewards_%s.svg' % hdf_file[:-4])    # save this filetype for easy viewing
+	plt.savefig('/home/srsummerson/code/analysis/Luigi_Performance_figs/FCPerformance_rewards_%s.png' % hdf_file[:-4])    # save this filetype for AI editing
+	#plt.savefig('/home/srsummerson/code/analysis/Luigi_Performance_figs/FCPerformance_rewards_%s.svg' % hdf_file[:-4])    # save this filetype for easy viewing
 	plt.close()
 
 	hdf.close()
