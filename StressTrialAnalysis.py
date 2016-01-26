@@ -49,8 +49,8 @@ def running_mean(x, N):
 hdf_filename = 'luig20151228_09.hdf'
 filename = 'Luigi20151204_HDEEG'
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
-#hdf_location = '/storage/rawdata/hdf/'+hdf_filename
-hdf_location = hdf_filename
+hdf_location = '/storage/rawdata/hdf/'+hdf_filename
+#hdf_location = hdf_filename
 block_num = 3
 
 num_avg = 10 	# number of trials to compute running average of trial statistics over
@@ -69,7 +69,7 @@ reward_scheduleH = hdf.root.task[:]['reward_scheduleH']
 reward_scheduleL = hdf.root.task[:]['reward_scheduleL']
   
 ind_wait_states = np.ravel(np.nonzero(state == 'wait'))   # total number of unique trials
-ind_center_states = np.ravel(no.nonzero(state == 'center'))   # total number of totals (includes repeats if trial was incomplete)
+ind_center_states = np.ravel(np.nonzero(state == 'center'))   # total number of totals (includes repeats if trial was incomplete)
 ind_target_states = np.ravel(np.nonzero(state == 'target'))
 ind_check_reward_states = np.ravel(np.nonzero(state == 'check_reward'))
 instructed_or_freechoice = trial_type[state_time[ind_check_reward_states]]	# free choice trial = 2, instructed = 1
@@ -110,7 +110,7 @@ for i in range(0,num_trials):
 
 # Number of successful stress trials
 tot_successful_stress = np.logical_and(trial_success,all_stress_or_not)
-success_stress_trials = float(np.sum(tot_successful_stress))/np.sum(all_stress_or_not)
+successful_stress_trials = float(np.sum(tot_successful_stress))/np.sum(all_stress_or_not)
 
 # Number of successful non-stress trials
 tot_successful_reg = np.logical_and(trial_success,np.logical_not(all_stress_or_not))
@@ -150,12 +150,104 @@ reward_successful_reg = reward[ind_successful_fc_reg]
 prob_reward_low_successful_reg = running_mean(np.equal(reward_successful_reg,1),num_avg)
 prob_reward_high_successful_reg = running_mean(np.equal(reward_successful_reg,1),num_avg)
 
+plt.figure()
+plt.subplot(1,2,1)
+plt.plot(range(0,len(prob_choose_low_successful_stress)),prob_choose_low_successful_stress,'r',label='Target - Low')
+plt.plot(range(0,len(prob_choose_low_successful_stress)),prob_reward_low_successful_stress,'r--',label='Reward - Low')
+plt.plot(range(0,len(prob_choose_low_successful_stress)),prob_choose_high_successful_stress,'b',label='Target - High')
+plt.plot(range(0,len(prob_choose_low_successful_stress)),prob_reward_high_successful_stress,'b--',label='Reward - High')
+plt.title('Stress Trial Performance: Trial Completion Rate %f \%', % successful_stress_trials)
+plt.xlabel('Trial Number')
+plt.ylabel('Probability')
+plt.ylim((0,1.1))
+plt.xlim((0,len(prob_choose_low_successful_stress)))
+plt.legend()
+plt.subplot(1,2,2)
+plt.plot(range(0,len(prob_choose_low_successful_reg)),prob_choose_low_successful_reg,'r',label='Target - Low')
+plt.plot(range(0,len(prob_choose_low_successful_reg)),prob_reward_low_successful_reg,'r--',label='Reward - Low')
+plt.plot(range(0,len(prob_choose_low_successful_reg)),prob_choose_high_successful_reg,'b',label='Target - High')
+plt.plot(range(0,len(prob_choose_low_successful_reg)),prob_reward_high_successful_reg,'b--',label='Reward - High')
+plt.title('Regular Trial Performance: Trial Completion Rate %f \%', % successful_reg_trials)
+plt.xlabel('Trial Number')
+plt.ylabel('Probability')
+plt.ylim((0,1.1))
+plt.xlim((0,len(prob_choose_low_successful_reg)))
+plt.legend()
 
 
 # Load syncing data for hdf file and TDT recording
 hdf_times = dict()
 mat_filename = filename+'_b'+str(block_num)+'_syncHDF.mat'
 sp.io.loadmat('/home/srsummerson/storage/syncHDF/'+mat_filename,hdf_times)
+
+r = io.TdtIO(TDT_tank)
+bl = r.read_block(lazy=False,cascade=True)
+
+# Get Pulse and Pupil Data
+for sig in bl.segments[block_num-1].analogsignals:
+	if (sig.name == 'PupD 1'):
+		pupil_data = np.ravel(sig)
+		pupil_samprate = sig.sampling_rate.item()
+	if (sig.name == 'HrtR 1'):
+		pulse_data = np.ravel(sig)
+		pulse_samprate = sig.sampling_rate.item()
+
+
+
+# divide up analysis for regular trials before stress trials, stress trials, and regular trials after stress trials are introduced
+hdf_rows = np.ravel(hdf_times['row_number'])
+hdf_rows = [val for val in hdf_rows]	# turn into a list so that the index method can be used later
+dio_tdt_sample = np.ravel(hdf_times['tdt_samplenumber'])
+dio_freq = np.ravel(hdf_times['tdt_dio_samplerate'])
+
+# Convert DIO TDT sample numbers to for pupil and pulse data:
+# if dio sample num is x, then data sample number is R*(x-1) + 1 where
+# R = data_sample_rate/dio_sample_rate
+pulse_dio_sample_num = (float(pulse_samprate)/float(dio_freq))*(dio_tdt_sample - 1) + 1
+pupil_dio_sample_num = (float(pupil_samprate)/float(dio_freq))*(dio_tdt_sample - 1) + 1
+
+state_row_ind_successful_stress = state_time[row_ind_successful_stress]
+state_row_ind_successful_reg = state_time[row_ind_successful_reg]
+pulse_ind_successful_stress = np.zeros(row_ind_successful_stress)
+pupil_ind_successful_stress = np.zeros(row_ind_successful_stress)
+pulse_ind_successful_reg_before = []
+pulse_ind_successful_reg_after = []
+pupil_ind_successful_reg_before = []
+pupil_ind_successful_reg_after = []
+
+for i in range(0,len(row_ind_successful_stress)):
+	hdf_index = np.argmin(np.abs(hdf_rows - state_row_ind_successful_stress[i]))
+	pulse_ind_successful_stress[i] = pulse_dio_sample_num[hdf_index]
+	pupil_ind_successful_stress[i] = pupil_dio_sample_num[hdf_index]
+
+ind_start_stress = row_ind_successful_stress[0]
+for i in range(0,len(row_ind_successful_reg)):
+	if (row_ind_successful_reg[i] < ind_start_stress):
+		hdf_index = np.argmin(np.abs(hdf_rows - state_row_ind_successful_reg[i]))
+		pulse_ind_successful_reg_before.append(pulse_dio_sample_num[hdf_index])
+		pupil_ind_successful_reg_before.append(pupil_dio_sample_num[hdf_index])
+	else:
+		hdf_index = np.argmin(np.abs(hdf_rows - state_row_ind_successful_stress[i]))
+		pulse_ind_successful_reg_after.append(pulse_dio_sample_num[hdf_index])
+		pupil_ind_successful_reg_after.append(pupil_dio_sample_num[hdf_index])
+
+# Find IBIs for all stress trials. Compute distribution.
+samples_pulse_successful_stress = np.floor(response_time_successful_stress*pulse_samprate) 	#number of samples in trial interval for pulse signal
+samples_pupil_successful_stress = np.floot(response_time_successful_stress*pupil_samprate)
+ibi_stress = dict()
+pupil_stress = dict()
+for i in range(0,len(row_ind_successful_stress)):
+	pulse_snippet = pulse_data[pulse_ind_successful_stress[i]:pulse_ind_successful_stress[i]+samples_pulse_successful_stress[i]]
+	ibi_snippet = findIBIs(pulse_snippet,pulse_samprate)
+	ibi_stress['i'] = ibi_snippet
+	pupil_snippet = pupil_data[pupil_ind_successful_stress[i]:pupil_ind_successful_stress[i]+samples_pupil_successful_stress[i]]
+	pupil_stress['i'] = pupil_snippet
+
+# Find IBIs for all regular trials. Compute distribution.
+
+
+
+hdf.close()
 
 
 

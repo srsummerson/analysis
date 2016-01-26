@@ -1,7 +1,7 @@
 import numpy as np
 from neo import io
 
-def findIBIs(pulse):
+def findIBIs(pulse,sampling_rate):
 	# Input to method is pulse data channel extracted from TDT recording file.
 	# Method determines the times of the heart pulses and returns an array of the pulse times.
 	pulse_signal = pulse[np.nonzero(pulse)] # only look at pulse signal when it was saving
@@ -20,8 +20,8 @@ def findIBIs(pulse):
 	min_rate_hz = float(min_rate)/60
 	min_ibi = float(1)/max_rate_hz # minimum time between beats in seconds
 	max_ibi = float(1)/min_rate_hz
-	min_ibi_samples = min_ibi*pulse_signal.sampling_rate.item() # minimum time between beats in samples
-	max_ibi_samples = max_ibi*pulse_signal.sampling_rate.item()
+	min_ibi_samples = min_ibi*sampling_rate # minimum time between beats in samples
+	max_ibi_samples = max_ibi*sampling_rate
 
 	pulse_indices = np.nonzero(pulse_detect)
 	pulse_indices = np.ravel(pulse_indices)
@@ -36,7 +36,7 @@ def findIBIs(pulse):
 	IBI = real_indices[1:] - real_indices[:-1]
 	not_too_long_IBI = (IBI < max_ibi_samples)
 	realIBI = IBI[np.nonzero(not_too_long_IBI)]
-	realIBI = realIBI/pulse_signal.sampling_rate # IBI is in s
+	realIBI = realIBI/sampling_rate # IBI is in s
 
 	return realIBI
 
