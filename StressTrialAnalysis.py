@@ -231,7 +231,7 @@ for i in range(0,len(row_ind_successful_reg)):
 		pulse_ind_successful_reg_after.append(pulse_dio_sample_num[hdf_index])
 		pupil_ind_successful_reg_after.append(pupil_dio_sample_num[hdf_index])
 
-# Find IBIs for all stress trials. Compute distribution.
+# Find IBIs and pupil data for all stress trials. 
 samples_pulse_successful_stress = np.floor(response_time_successful_stress*pulse_samprate) 	#number of samples in trial interval for pulse signal
 samples_pupil_successful_stress = np.floot(response_time_successful_stress*pupil_samprate)
 ibi_stress = dict()
@@ -243,8 +243,28 @@ for i in range(0,len(row_ind_successful_stress)):
 	pupil_snippet = pupil_data[pupil_ind_successful_stress[i]:pupil_ind_successful_stress[i]+samples_pupil_successful_stress[i]]
 	pupil_stress['i'] = pupil_snippet
 
-# Find IBIs for all regular trials. Compute distribution.
-
+# Find IBIs and pupil data for all regular trials. 
+samples_pulse_successful_reg = np.floor(response_time_successful_reg*pulse_samprate)
+samples_pupil_successful_reg = np.floor(response_time_successful_reg*pupil_samprate)
+ibi_reg_before = dict()
+pupil_reg_before = dict()
+ibi_reg_after = dict()
+pupil_reg_after = dict()
+count_before = 0
+for i in range(0,len(row_ind_successful_reg)):
+	if (row_ind_successful_reg[i] < ind_start_stress):
+		pulse_snippet = pulse_data[pulse_ind_successful_reg_before[i]:pulse_ind_successful_reg_before[i]+samples_pulse_successful_reg[i]]
+		ibi_snippet = findIBIs(pulse_snippet,pulse_samprate)
+		ibi_reg_before['i'] = ibi_snippet
+		pupil_snippet = pupil_data[pupil_ind_successful_reg_before[i]:pupil_ind_successful_reg_before[i]+samples_pupil_successful_reg[i]]
+		pupil_reg_before['i'] = pupil_snippet
+		count_before += 1
+	else:
+		pulse_snippet = pulse_data[pulse_ind_successful_reg_after[i-count_before]:pulse_ind_successful_reg_after[i-count_before]+samples_pulse_successful_reg[i]]
+		ibi_snippet = findIBIs(pulse_snippet,pulse_samprate)
+		ibi_reg_after['i-count_before'] = ibi_snippet
+		pupil_snippet = pupil_data[pupil_ind_successful_reg_after[i-count_before]:pupil_ind_successful_reg_after[i-count_before]+samples_pupil_successful_reg[i]]
+		pupil_reg_after['i-count_before'] = pupil_snippet
 
 
 hdf.close()
