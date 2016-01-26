@@ -43,7 +43,7 @@ import matplotlib.pyplot as plt
 
 def running_mean(x, N):
 	cumsum = np.cumsum(np.insert(x, 0, 0)) 
-	return (cumsum[N:] - cumsum[:-N]) / N 
+	return (cumsum[N:] - cumsum[:-N]) / float(N) 
 
 # Set up code for particular day and block
 hdf_filename = 'luig20151228_09.hdf'
@@ -53,7 +53,7 @@ hdf_location = '/storage/rawdata/hdf/'+hdf_filename
 #hdf_location = hdf_filename
 block_num = 3
 
-num_avg = 10 	# number of trials to compute running average of trial statistics over
+num_avg = 50 	# number of trials to compute running average of trial statistics over
 
 # Load behavior data
 ## self.target_index = 1 for instructed, 2 for free choice
@@ -90,19 +90,16 @@ ind_successful_center_states = []
 counter = 0 	# counter increments for all successful trials
 
 for i in range(0,num_trials):
-	# Want to know: successful or not, stress or not (can just use all_stress_or_not?), target selection, instructed or not 
-	# (can use all_instructed_or_freechoice), rewarded or not
 	if (state[np.minimum(ind_center_states[i]+5,total_states-1)] == 'check_reward'):	 
 		trial_success[i] = 1
-		ind_successful_center_states.append(ind_center_states[i])  # save row for successful trials
 		target_state = state[ind_center_states[i] + 3]
 		if (target_state == 'hold_targetL'):
-        	target[i] = 1
-        	reward[i] = rewarded_reward_scheduleL[counter]
-    	else:
-        	target[i] = 2
-        	reward[i] = rewarded_reward_scheduleH[counter]
-        counter += 1
+			target[i] = 1
+			reward[i] = rewarded_reward_scheduleL[counter]
+		else:
+			target[i] = 2
+			reward[i] = rewarded_reward_scheduleH[counter]
+		counter += 1
 	else:
 		trial_success[i] = 0
 		target[i] = 0 	# no target selected
@@ -135,20 +132,24 @@ tot_successful_fc_stress = np.logical_and(tot_successful_stress,np.ravel(np.equa
 ind_successful_fc_stress = np.ravel(np.nonzero(tot_successful_fc_stress))
 target_choice_successful_stress = target[ind_successful_fc_stress]
 prob_choose_low_successful_stress = running_mean(np.equal(target_choice_successful_stress,1),num_avg)
-prob_choose_high_successful_stress = running_mean(np,equal(target_choice_successful_stress,2),num_avg)
+prob_choose_high_successful_stress = running_mean(np.equal(target_choice_successful_stress,2),num_avg)
 reward_successful_stress = reward[ind_successful_fc_stress]
-prob_reward_low_successful_stress = running_mean(np.equal(reward_successful_stress,1),num_avg)
-prob_reward_high_successful_stress = running_mean(np.equal(reward_successful_stress,1),num_avg)
+reward_low_successful_stress = np.ravel(np.logical_and(np.equal(reward_successful_stress,1),np.equal(target_choice_successful_stress,1)))
+reward_high_successful_stress = np.ravel(np.logical_and(np.equal(reward_successful_stress,1),np.equal(target_choice_successful_stress,2)))
+prob_reward_low_successful_stress = running_mean(reward_low_successful_stress,num_avg)
+prob_reward_high_successful_stress = running_mean(np.equal(reward_high_successful_stress,1),num_avg)
 
 # Target choice for successful regular trials - look at free-choice trials only
 tot_successful_fc_reg = np.logical_and(tot_successful_reg,np.ravel(np.equal(all_instructed_or_freechoice,2)))
 ind_successful_fc_reg = np.ravel(np.nonzero(tot_successful_fc_reg))
 target_choice_successful_reg = target[ind_successful_fc_reg]
 prob_choose_low_successful_reg = running_mean(np.equal(target_choice_successful_reg,1),num_avg)
-prob_choose_high_successful_reg = running_mean(np.equal(target_choice_successful_reg,1),num_avg)
+prob_choose_high_successful_reg = running_mean(np.equal(target_choice_successful_reg,2),num_avg)
 reward_successful_reg = reward[ind_successful_fc_reg]
-prob_reward_low_successful_reg = running_mean(np.equal(reward_successful_reg,1),num_avg)
-prob_reward_high_successful_reg = running_mean(np.equal(reward_successful_reg,1),num_avg)
+reward_low_successful_reg = np.ravel(np.logical_and(np.equal(reward_successful_reg,1),np.equal(target_choice_successful_reg,1)))
+reward_high_successful_reg = np.ravel(np.logical_and(np.equal(reward_successful_reg,1),np.equal(target_choice_successful_reg,2)))
+prob_reward_low_successful_reg = running_mean(np.equal(reward_low_successful_reg,1),num_avg)
+prob_reward_high_successful_reg = running_mean(np.equal(reward_high_successful_reg,1),num_avg)
 
 plt.figure()
 plt.subplot(1,2,1)
@@ -156,7 +157,7 @@ plt.plot(range(0,len(prob_choose_low_successful_stress)),prob_choose_low_success
 plt.plot(range(0,len(prob_choose_low_successful_stress)),prob_reward_low_successful_stress,'r--',label='Reward - Low')
 plt.plot(range(0,len(prob_choose_low_successful_stress)),prob_choose_high_successful_stress,'b',label='Target - High')
 plt.plot(range(0,len(prob_choose_low_successful_stress)),prob_reward_high_successful_stress,'b--',label='Reward - High')
-plt.title('Stress Trial Performance: Trial Completion Rate %f \%', % successful_stress_trials)
+plt.title('Stress Trial Performance: Trial Completion Rate %d' % (successful_stress_trials))
 plt.xlabel('Trial Number')
 plt.ylabel('Probability')
 plt.ylim((0,1.1))
@@ -167,12 +168,13 @@ plt.plot(range(0,len(prob_choose_low_successful_reg)),prob_choose_low_successful
 plt.plot(range(0,len(prob_choose_low_successful_reg)),prob_reward_low_successful_reg,'r--',label='Reward - Low')
 plt.plot(range(0,len(prob_choose_low_successful_reg)),prob_choose_high_successful_reg,'b',label='Target - High')
 plt.plot(range(0,len(prob_choose_low_successful_reg)),prob_reward_high_successful_reg,'b--',label='Reward - High')
-plt.title('Regular Trial Performance: Trial Completion Rate %f \%', % successful_reg_trials)
+plt.title('Regular Trial Performance: Trial Completion Rate %d' % successful_reg_trials)
 plt.xlabel('Trial Number')
 plt.ylabel('Probability')
 plt.ylim((0,1.1))
 plt.xlim((0,len(prob_choose_low_successful_reg)))
 plt.legend()
+plt.show()
 
 
 # Load syncing data for hdf file and TDT recording
