@@ -33,7 +33,8 @@ Physiological:
 - Average pupil diameter during stress trials, regular trials before stress trials are introduced, and regular trials after stress 
   is introduced -- divide up between successful and unsuccessful trials
 Neurological:
-- Average power in different bands for all channels, divided up by target
+- Average power in beta over time of trial (aligned to target hold) (trial x time x power plot)
+- Power over all frequencies for entire trial (trial x freq x power plot)
 '''
 
 import numpy as np 
@@ -209,7 +210,7 @@ sp.io.loadmat('/home/srsummerson/storage/syncHDF/'+mat_filename,hdf_times)
 
 r = io.TdtIO(TDT_tank)
 bl = r.read_block(lazy=False,cascade=True)
-
+hdeeg = dict()
 # Get Pulse and Pupil Data
 for sig in bl.segments[block_num-1].analogsignals:
 	if (sig.name == 'PupD 1'):
@@ -218,7 +219,10 @@ for sig in bl.segments[block_num-1].analogsignals:
 	if (sig.name == 'HrtR 1'):
 		pulse_data = np.ravel(sig)
 		pulse_samprate = sig.sampling_rate.item()
-
+	if (sig.name[0:4] == 'EEGx'):
+		channel = sig.channel_index
+		hdeeg_samprate = sig.sampling_rate.item()
+		hdeeg[channel] = np.ravel(sig)
 
 cutoff_f = 50
 cutoff_f = float(cutoff_f)/(pupil_samprate/2)
@@ -238,20 +242,25 @@ dio_freq = np.ravel(hdf_times['tdt_dio_samplerate'])
 # R = data_sample_rate/dio_sample_rate
 pulse_dio_sample_num = (float(pulse_samprate)/float(dio_freq))*(dio_tdt_sample - 1) + 1
 pupil_dio_sample_num = (float(pupil_samprate)/float(dio_freq))*(dio_tdt_sample - 1) + 1
+hdeeg_dio_sample_num = (float(hdeeg_samprate)/float(dio_freq))*(dio_tdt_sample - 1) + 1
 
 state_row_ind_successful_stress = state_time[row_ind_successful_stress]
 state_row_ind_successful_reg = state_time[row_ind_successful_reg]
 pulse_ind_successful_stress = np.zeros(row_ind_successful_stress.size)
 pupil_ind_successful_stress = np.zeros(row_ind_successful_stress.size)
+hdeeg_ind_successful_stress = np.zeros(row_ind_successful_stress.size)
 pulse_ind_successful_reg_before = []
 pulse_ind_successful_reg_after = []
 pupil_ind_successful_reg_before = []
 pupil_ind_successful_reg_after = []
+hdeeg_ind_successful_reg_before = []
+hdeeg_ind_successful_reg_after = []
 
 for i in range(0,len(row_ind_successful_stress)):
 	hdf_index = np.argmin(np.abs(hdf_rows - state_row_ind_successful_stress[i]))
 	pulse_ind_successful_stress[i] = pulse_dio_sample_num[hdf_index]
 	pupil_ind_successful_stress[i] = pupil_dio_sample_num[hdf_index]
+	hdeeg_ind_successful_stress[i] = hdeeg_dio_sample_num[hdf_index]
 
 ind_start_stress = row_ind_successful_stress[0]
 for i in range(0,len(state_row_ind_successful_reg)):
@@ -259,14 +268,17 @@ for i in range(0,len(state_row_ind_successful_reg)):
 		hdf_index = np.argmin(np.abs(hdf_rows - state_row_ind_successful_reg[i]))
 		pulse_ind_successful_reg_before.append(pulse_dio_sample_num[hdf_index])
 		pupil_ind_successful_reg_before.append(pupil_dio_sample_num[hdf_index])
+		hdeeg_ind_successful_reg_before.append(hdeeg_dio_sample_num[hdf_index])
 	else:
 		hdf_index = np.argmin(np.abs(hdf_rows - state_row_ind_successful_reg[i]))
 		pulse_ind_successful_reg_after.append(pulse_dio_sample_num[hdf_index])
 		pupil_ind_successful_reg_after.append(pupil_dio_sample_num[hdf_index])
+		hdeeg_ind_successful_reg_after.append(hdeeg_dio_sample_num[hdf_index])
 
 # Find IBIs and pupil data for all stress trials. 
 samples_pulse_successful_stress = np.floor(response_time_successful_stress*pulse_samprate) 	#number of samples in trial interval for pulse signal
 samples_pupil_successful_stress = np.floor(response_time_successful_stress*pupil_samprate)
+samples_hdeeg_successful_stress = np.floor(response_time_successful_stress*hdeeg_samprate)
 #ibi_stress = dict()
 #pupil_stress = dict()
 ibi_stress_mean = []
@@ -291,6 +303,23 @@ for i in range(0,len(row_ind_successful_stress)):
 	pupil_stress_mean.append(np.mean(pupil_snippet))
 	pupil_stress_std.append(np.mean(pupil_snippet))
 
+Fs = hdeeg_samprate
+for chann in hdeeg.keys:
+	trial_power = dict() 	# power computed per frequency over all time
+	beta_power = dict()		# power computed per time interval over beta band
+	for i in range(0,len(row_ind_successful_stress)):	
+		hdeeg_snippet = hdeeg[channel][hdeeg_ind_successful_stress[i]:hdeeg_ind_successful_stress[i]+samples_hdeeg_successful_stress[i]]
+		num_timedom_samples = hdeeg_snippet.size
+		time = [float(t)/Fs for t in range(0,num_timedom_samples)]
+ 		freq, Pxx_den = signal.welch(hdeeg_snippet, Fs, nperseg=1024)
+ 		trial_power[num2str(i)] = Pxx_den
+ 		hdeeg_snippet_aligned_to_end = hdeeg_snippet[-hdeeg_samprate:]
+ 		num_timedom_samples = hdeeg_snippet_aligned_to_end.size
+ 		time = [float(t)/Fs for t in range(0,num_timedom_samples)]
+ 		Pxx, freqs, bins, im = plt.specgram(x, NFFT=512, Fs=Fs, noverlap=256)
+'''
+Stopped here.
+'''
 
 mean_ibi_stress = np.mean(all_ibi_stress)
 std_ibi_stress = np.std(all_ibi_stress)
