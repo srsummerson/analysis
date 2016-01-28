@@ -44,6 +44,7 @@ from neo import io
 from PulseMonitorData import findIBIs
 from scipy import signal
 from scipy import stats
+from matplotlib import mlab
 import matplotlib.pyplot as plt
 
 def running_mean(x, N):
@@ -221,8 +222,9 @@ for sig in bl.segments[block_num-1].analogsignals:
 		pulse_samprate = sig.sampling_rate.item()
 	if (sig.name[0:4] == 'EEGx'):
 		channel = sig.channel_index
-		hdeeg_samprate = sig.sampling_rate.item()
-		hdeeg[channel] = np.ravel(sig)
+		if channel not in [4,6,8]:
+			hdeeg_samprate = sig.sampling_rate.item()
+			hdeeg[channel] = np.ravel(sig)
 
 cutoff_f = 50
 cutoff_f = float(cutoff_f)/(pupil_samprate/2)
@@ -307,45 +309,51 @@ Fs = hdeeg_samprate
 density_length = 30
 for chann in hdeeg.keys():
 	trial_power = np.zeros([density_length,len(row_ind_successful_stress)])
-	beta_power = np.zeros([10,len(row_ind_successful_stress)])
+	beta_power = np.zeros([len(row_ind_successful_stress),10])
+	low_power = np.zeros([len(row_ind_successful_stress),10])
 	for i in range(0,len(row_ind_successful_stress)):	
 		hdeeg_snippet = hdeeg[channel][hdeeg_ind_successful_stress[i]:hdeeg_ind_successful_stress[i]+samples_hdeeg_successful_stress[i]]
-		num_timedom_samples = hdeeg_snippet.size
-		time = [float(t)/Fs for t in range(0,num_timedom_samples)]
- 		freq, Pxx_den = signal.welch(hdeeg_snippet, Fs, nperseg=1024)
- 		trial_power[:,i] = Pxx_den[0:density_length]
+		#num_timedom_samples = hdeeg_snippet.size
+		#time = [float(t)/Fs for t in range(0,num_timedom_samples)]
+ 		#freq, Pxx_den = signal.welch(hdeeg_snippet, Fs, nperseg=1024)
+ 		#trial_power[:,i] = Pxx_den[0:density_length]
  		hdeeg_snippet_aligned_to_end = hdeeg_snippet[-hdeeg_samprate:]
+ 		hdeeg_snippet_aligned_to_beginning = hdeeg_snippet[0:hdeeg_samprate]
  		num_timedom_samples = hdeeg_snippet_aligned_to_end.size
  		time = [float(t)/Fs for t in range(0,num_timedom_samples)]
- 		Pxx, freqs, bins, im = plt.specgram(hdeeg_snippet_aligned_to_end, NFFT=512, Fs=Fs, noverlap=256)
- 		freq_beta = np.logical_and(np.greater(freqs,10),np.less(freqs,30))
+ 		#Pxx, freqs, bins, im = plt.specgram(hdeeg_snippet_aligned_to_beginning, NFFT=512, Fs=Fs, noverlap=256)
+ 		Pxx, freqs, bins = mlab.specgram(hdeeg_snippet_aligned_to_end, NFFT=512, Fs=Fs, noverlap=256)
+ 		#plt.pcolor(Pxx)
+ 		freq_low = np.less_equal(freqs,5)
+ 		freq_beta = np.logical_and(np.greater(freqs,50),np.less(freqs,100))
+ 		freq_low_ind = np.ravel(np.nonzero(freq_low))
  		freq_beta_ind = np.ravel(np.nonzero(freq_beta))
- 		Pxx_beta = np.sum(Pxx[freq_beta_ind],axis=0)
- 		beta_power[:,i] = Pxx_beta
+ 		Pxx_low = np.sum(Pxx[freq_low_ind],axis=0)/np.sum(Pxx,axis=0)
+ 		Pxx_beta = np.sum(Pxx[freq_beta_ind],axis=0)/np.sum(Pxx,axis=0)
+ 		beta_power[i,:] = Pxx_beta
+ 		low_power[i,:] = Pxx_low
  	# plot figures here
  	z_min, z_max = -np.abs(trial_power).max(), np.abs(trial_power).max()
 	plt.figure()
 	plt.subplot(1, 2, 1)
-	plt.pcolor(trial_power, cmap='RdBu')
-	plt.xticks(np.arange(0.5,density_length+0.5),freq[0:density_length])
-	plt.yticks(range(0,len(row_ind_successful_stress)))
-	plt.title('Trial Power')
+	plt.imshow(low_power, cmap='RdBu')
+	#plt.xticks(np.arange(0.5,density_length+0.5),freq[0:density_length])
+	#plt.yticks(range(0,len(row_ind_successful_stress)))
+	plt.title('Channel %i - Spectrogram: 0 - 10 Hz power' % (chann))
+	plt.axis('auto')
 	plt.colorbar()
-	z_min, z_max = -np.abs(beta_power).max(), np.abs(beta_power).max()
+	#z_min, z_max = -np.abs(beta_power).max(), np.abs(beta_power).max()
 	plt.subplot(1, 2, 2)
-	plt.pcolor(beta_power, cmap='RdBu', vmin=z_min, vmax=z_max)
-	plt.xticks(np.arange(0.5,len(bins)+0.5),bins)
-	plt.yticks(range(0,len(row_ind_successful_stress)))
+	plt.imshow(beta_power, cmap='RdBu')
+	#plt.xticks(np.arange(0.5,len(bins)+0.5),bins)
+	#plt.yticks(range(0,len(row_ind_successful_stress)))
 	plt.title('Spectrogram: 10 - 30 Hz power')
+	plt.axis('auto')
 	# set the limits of the plot to the limits of the data
 	#plt.axis([x.min(), x.max(), y.min(), y.max()])
 	plt.colorbar()
 	#plt.show()
-	plt.close()
-'''
-Stopped here.
-'''
-print 'Finished EEG data.'
+	#plt.close()
 
 mean_ibi_stress = np.mean(all_ibi_stress)
 std_ibi_stress = np.std(all_ibi_stress)
@@ -575,7 +583,7 @@ if (p_pupil < 0.05):
 plt.legend()
 #plt.show()
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_PupilDistribution.png')
-
+plt.close("all")
 hdf.close()
 
 
