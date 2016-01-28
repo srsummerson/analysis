@@ -317,7 +317,7 @@ for chann in hdeeg.keys():
  		hdeeg_snippet_aligned_to_end = hdeeg_snippet[-hdeeg_samprate:]
  		num_timedom_samples = hdeeg_snippet_aligned_to_end.size
  		time = [float(t)/Fs for t in range(0,num_timedom_samples)]
- 		Pxx, freqs, bins, im = plt.specgram(x, NFFT=512, Fs=Fs, noverlap=256)
+ 		Pxx, freqs, bins, im = plt.specgram(hdeeg_snippet_aligned_to_end, NFFT=512, Fs=Fs, noverlap=256)
  		freq_beta = np.logical_and(np.greater(freqs,10),np.less(freqs,30))
  		freq_beta_ind = np.ravel(np.nonzero(freq_beta))
  		Pxx_beta = np.sum(Pxx[freq_beta_ind],axis=0)
