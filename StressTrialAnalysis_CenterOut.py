@@ -53,7 +53,7 @@ def running_mean(x, N):
 
 # Set up code for particular day and block
 hdf_filename = 'luig20160127_11_te1320.hdf'
-filename = 'Luigi20160111_HDEEG'
+filename = 'Luigi20160127_HDEEG'
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
 #hdf_location = hdf_filename
@@ -90,10 +90,7 @@ num_successful_trials = ind_reward_states.size
 total_states = state.size
 
 trial_success = np.zeros(num_trials)
-target = np.zeros(num_trials)
 reward = np.zeros(num_trials)
-ind_successful_center_states = []
-counter = 0 	# counter increments for all successful trials
 
 for i in range(0,num_trials):
 	if (state[np.minimum(ind_target_states[i]+3,total_states-1)] == 'reward'):	 
@@ -106,7 +103,7 @@ for i in range(0,num_trials):
 # Number of successful stress trials
 tot_successful_stress = np.logical_and(trial_success,all_stress_or_not)
 successful_stress_trials = float(np.sum(tot_successful_stress))/np.sum(all_stress_or_not)
-print len(tot_successful_stress)
+
 # Number of successful non-stress trials
 tot_successful_reg = np.logical_and(trial_success,np.logical_not(all_stress_or_not))
 successful_reg_trials = float(np.sum(tot_successful_reg))/(num_trials - np.sum(all_stress_or_not))
