@@ -306,14 +306,14 @@ for i in range(0,len(row_ind_successful_stress)):
 Fs = hdeeg_samprate
 density_length = 30
 for chann in hdeeg.keys():
-	trial_power = np.zeros([len(row_ind_successful_stress),density_length])
+	trial_power = np.zeros([density_length,len(row_ind_successful_stress)])
 	beta_power = np.zeros([len(row_ind_successful_stress),10])
 	for i in range(0,len(row_ind_successful_stress)):	
 		hdeeg_snippet = hdeeg[channel][hdeeg_ind_successful_stress[i]:hdeeg_ind_successful_stress[i]+samples_hdeeg_successful_stress[i]]
 		num_timedom_samples = hdeeg_snippet.size
 		time = [float(t)/Fs for t in range(0,num_timedom_samples)]
  		freq, Pxx_den = signal.welch(hdeeg_snippet, Fs, nperseg=1024)
- 		trial_power[i][:] = Pxx_den[0:density_length]
+ 		trial_power[:,i] = Pxx_den[0:density_length]
  		hdeeg_snippet_aligned_to_end = hdeeg_snippet[-hdeeg_samprate:]
  		num_timedom_samples = hdeeg_snippet_aligned_to_end.size
  		time = [float(t)/Fs for t in range(0,num_timedom_samples)]
