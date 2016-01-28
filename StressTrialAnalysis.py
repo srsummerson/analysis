@@ -324,7 +324,7 @@ for chann in hdeeg.keys():
  		beta_power[i][:] = Pxx_beta
  	# plot figures here
  	z_min, z_max = -np.abs(trial_power).max(), np.abs(trial_power).max()
- 	print z_min, z_max
+ 	print freq.size, len(row_ind_successful_stress), trial_power.shape
 	plt.figure()
 	plt.subplot(1, 2, 1)
 	plt.pcolor(freq[0:density_length],range(0,len(row_ind_successful_stress)),trial_power, cmap='RdBu')
