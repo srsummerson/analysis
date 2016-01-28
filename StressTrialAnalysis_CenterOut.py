@@ -113,8 +113,10 @@ successful_reg_trials = float(np.sum(tot_successful_reg))/(num_trials - np.sum(a
 
 # Response times for successful stress trials
 ind_successful_stress = np.ravel(np.nonzero(tot_successful_stress))   	# gives trial index, not row index
+print len(ind_successful_stress)
 row_ind_successful_stress = ind_target_states[ind_successful_stress]		# gives row index
 ind_successful_stress_reward = np.ravel(np.nonzero(successful_stress_or_not))
+print len(ind_successful_stress_reward)
 row_ind_successful_stress_reward = ind_reward_states[ind_successful_stress_reward]
 response_time_successful_stress = (state_time[row_ind_successful_stress_reward] - state_time[row_ind_successful_stress])/float(60)		# hdf rows are written at a rate of 60 Hz
 
