@@ -327,7 +327,7 @@ for chann in hdeeg.keys():
  	print z_min, z_max
 	plt.figure()
 	plt.subplot(1, 2, 1)
-	plt.pcolor(freq[0:density_length],range(0,len(row_ind_successful_stress)),trial_power, cmap='RdBu', vmin=z_min, vmax=z_max)
+	plt.pcolor(freq[0:density_length],range(0,len(row_ind_successful_stress)),trial_power, cmap='RdBu')
 	plt.title('Trial Power')
 	plt.colorbar()
 	z_min, z_max = -np.abs(beta_power).max(), np.abs(beta_power).max()
