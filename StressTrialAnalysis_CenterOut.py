@@ -52,7 +52,7 @@ def running_mean(x, N):
 	return (cumsum[N:] - cumsum[:-N]) / float(N) 
 
 # Set up code for particular day and block
-hdf_filename = 'luig20160111_06.hdf'
+hdf_filename = 'luig20160127_11_te1320.hdf'
 filename = 'Luigi20160111_HDEEG'
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
@@ -106,14 +106,14 @@ for i in range(0,num_trials):
 # Number of successful stress trials
 tot_successful_stress = np.logical_and(trial_success,all_stress_or_not)
 successful_stress_trials = float(np.sum(tot_successful_stress))/np.sum(all_stress_or_not)
-
+print len(tot_successful_stress)
 # Number of successful non-stress trials
 tot_successful_reg = np.logical_and(trial_success,np.logical_not(all_stress_or_not))
 successful_reg_trials = float(np.sum(tot_successful_reg))/(num_trials - np.sum(all_stress_or_not))
 
 # Response times for successful stress trials
 ind_successful_stress = np.ravel(np.nonzero(tot_successful_stress))   	# gives trial index, not row index
-print len(ind_successful_stress)
+
 row_ind_successful_stress = ind_target_states[ind_successful_stress]		# gives row index
 ind_successful_stress_reward = np.ravel(np.nonzero(successful_stress_or_not))
 print len(ind_successful_stress_reward)
