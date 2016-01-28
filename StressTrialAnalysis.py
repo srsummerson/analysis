@@ -336,10 +336,12 @@ for chann in hdeeg.keys:
 	# set the limits of the plot to the limits of the data
 	#plt.axis([x.min(), x.max(), y.min(), y.max()])
 	plt.colorbar()
-	plt.show()
+	#plt.show()
+	plt.close()
 '''
 Stopped here.
 '''
+print 'Finished EEG data.'
 
 mean_ibi_stress = np.mean(all_ibi_stress)
 std_ibi_stress = np.std(all_ibi_stress)
