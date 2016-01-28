@@ -324,7 +324,6 @@ for chann in hdeeg.keys():
  		beta_power[i][:] = Pxx_beta
  	# plot figures here
  	z_min, z_max = -np.abs(trial_power).max(), np.abs(trial_power).max()
- 	print trial_power.type()
 	plt.figure()
 	plt.subplot(1, 2, 1)
 	plt.pcolor(trial_power, cmap='RdBu')
