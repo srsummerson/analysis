@@ -77,7 +77,7 @@ stress_type = hdf.root.task[:]['stress_trial']
 ind_wait_states = np.ravel(np.nonzero(state == 'wait'))   # total number of unique trials
 #ind_center_states = np.ravel(np.nonzero(state == 'center'))   
 ind_target_states = np.ravel(np.nonzero(state == 'target')) # total number of trials (includes repeats if trial was incomplete)
-ind_check_reward_states = np.ravel(np.nonzero(state == 'reward'))  # reward instead of check_reward
+ind_reward_states = np.ravel(np.nonzero(state == 'reward'))  # reward instead of check_reward
 #instructed_or_freechoice = trial_type[state_time[ind_check_reward_states]]	# free choice trial = 2, instructed = 1
 #all_instructed_or_freechoice = trial_type[state_time[ind_center_states]]
 successful_stress_or_not = np.ravel(stress_type[state_time[ind_check_reward_states]])
