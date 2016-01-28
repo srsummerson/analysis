@@ -86,7 +86,7 @@ all_stress_or_not = np.ravel(stress_type[state_time[ind_target_states]])
 #rewarded_reward_scheduleL = reward_scheduleL[state_time[ind_check_reward_states]]
 
 num_trials = ind_target_states.size
-num_successful_trials = ind_check_reward_states.size
+num_successful_trials = ind_reward_states.size
 total_states = state.size
 
 trial_success = np.zeros(num_trials)
