@@ -307,7 +307,7 @@ Fs = hdeeg_samprate
 density_length = 30
 for chann in hdeeg.keys():
 	trial_power = np.zeros([density_length,len(row_ind_successful_stress)])
-	beta_power = np.zeros([len(row_ind_successful_stress),10])
+	beta_power = np.zeros([10,len(row_ind_successful_stress)])
 	for i in range(0,len(row_ind_successful_stress)):	
 		hdeeg_snippet = hdeeg[channel][hdeeg_ind_successful_stress[i]:hdeeg_ind_successful_stress[i]+samples_hdeeg_successful_stress[i]]
 		num_timedom_samples = hdeeg_snippet.size
@@ -321,7 +321,7 @@ for chann in hdeeg.keys():
  		freq_beta = np.logical_and(np.greater(freqs,10),np.less(freqs,30))
  		freq_beta_ind = np.ravel(np.nonzero(freq_beta))
  		Pxx_beta = np.sum(Pxx[freq_beta_ind],axis=0)
- 		beta_power[i][:] = Pxx_beta
+ 		beta_power[:,i] = Pxx_beta
  	# plot figures here
  	z_min, z_max = -np.abs(trial_power).max(), np.abs(trial_power).max()
 	plt.figure()
@@ -333,7 +333,9 @@ for chann in hdeeg.keys():
 	plt.colorbar()
 	z_min, z_max = -np.abs(beta_power).max(), np.abs(beta_power).max()
 	plt.subplot(1, 2, 2)
-	plt.pcolor(bins,range(0,len(row_ind_successful_stress)),beta_power, cmap='RdBu', vmin=z_min, vmax=z_max)
+	plt.pcolor(beta_power, cmap='RdBu', vmin=z_min, vmax=z_max)
+	plt.xticks(np.arange(0.5,len(bins)+0.5),bins)
+	plt.yticks(range(0,len(row_ind_successful_stress)))
 	plt.title('Spectrogram: 10 - 30 Hz power')
 	# set the limits of the plot to the limits of the data
 	#plt.axis([x.min(), x.max(), y.min(), y.max()])
