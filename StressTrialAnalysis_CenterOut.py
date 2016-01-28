@@ -80,7 +80,7 @@ ind_target_states = np.ravel(np.nonzero(state == 'target')) # total number of tr
 ind_reward_states = np.ravel(np.nonzero(state == 'reward'))  # reward instead of check_reward
 #instructed_or_freechoice = trial_type[state_time[ind_check_reward_states]]	# free choice trial = 2, instructed = 1
 #all_instructed_or_freechoice = trial_type[state_time[ind_center_states]]
-successful_stress_or_not = np.ravel(stress_type[state_time[ind_check_reward_states]])
+successful_stress_or_not = np.ravel(stress_type[state_time[ind_reward_states]])
 all_stress_or_not = np.ravel(stress_type[state_time[ind_target_states]])
 #rewarded_reward_scheduleH = reward_scheduleH[state_time[ind_check_reward_states]]
 #rewarded_reward_scheduleL = reward_scheduleL[state_time[ind_check_reward_states]]
