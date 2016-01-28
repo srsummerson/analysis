@@ -305,7 +305,7 @@ for i in range(0,len(row_ind_successful_stress)):
 
 Fs = hdeeg_samprate
 density_length = 30
-for chann in hdeeg.keys:
+for chann in hdeeg.keys():
 	trial_power = np.zeros([len(row_ind_successful_stress),density_length])
 	beta_power = np.zeros([len(row_ind_successful_stress),10])
 	for i in range(0,len(row_ind_successful_stress)):	
