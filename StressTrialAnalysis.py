@@ -328,7 +328,7 @@ for chann in hdeeg.keys():
 	plt.subplot(1, 2, 1)
 	plt.pcolor(trial_power, cmap='RdBu')
 	plt.xticks(np.arange(0.5,density_length+0.5),freq[0:density_length])
-	plt.yticks(range(0,len(row_ind_successful_stress))+0.5,range(0,len(row_ind_successful_stress)))
+	plt.yticks(range(0,len(row_ind_successful_stress)))
 	plt.title('Trial Power')
 	plt.colorbar()
 	z_min, z_max = -np.abs(beta_power).max(), np.abs(beta_power).max()
