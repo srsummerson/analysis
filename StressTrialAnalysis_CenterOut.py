@@ -52,7 +52,7 @@ def running_mean(x, N):
 	return (cumsum[N:] - cumsum[:-N]) / float(N) 
 
 # Set up code for particular day and block
-hdf_filename = 'luig20160127_11_te1320.hdf'
+hdf_filename = 'luig20160127_06_te1315.hdf'
 filename = 'Luigi20160127_HDEEG'
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
@@ -113,7 +113,6 @@ ind_successful_stress = np.ravel(np.nonzero(tot_successful_stress))   	# gives t
 
 row_ind_successful_stress = ind_target_states[ind_successful_stress]		# gives row index
 ind_successful_stress_reward = np.ravel(np.nonzero(successful_stress_or_not))
-print len(ind_successful_stress_reward)
 row_ind_successful_stress_reward = ind_reward_states[ind_successful_stress_reward]
 response_time_successful_stress = (state_time[row_ind_successful_stress_reward] - state_time[row_ind_successful_stress])/float(60)		# hdf rows are written at a rate of 60 Hz
 
