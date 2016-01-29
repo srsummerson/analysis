@@ -52,8 +52,8 @@ def running_mean(x, N):
 	return (cumsum[N:] - cumsum[:-N]) / float(N) 
 
 # Set up code for particular day and block
-hdf_filename = 'mari20160127_14_te1323.hdf'
-filename = 'Mario20160127'
+hdf_filename = 'luig20160129_02_te1329.hdf'
+filename = 'Luigi20160129_HDEEG'
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
 #hdf_location = hdf_filename
@@ -268,7 +268,7 @@ for i in range(0,len(row_ind_successful_stress)):
 	ibi_stress_std.append(np.std(ibi_snippet))
 	#ibi_stress['i'] = ibi_snippet
 	pupil_snippet = pupil_data[pupil_ind_successful_stress[i]:pupil_ind_successful_stress[i]+samples_pupil_successful_stress[i]]
-	eyes_open = np.nonzero(np.greater(pupil_snippet,0.5))
+	eyes_open = np.nonzero(np.greater(pupil_snippet,-0.5))
 	eyes_open = np.ravel(eyes_open)
 	pupil_snippet = signal.lfilter(lpf,1,pupil_snippet[eyes_open])
 	all_pupil_stress += pupil_snippet.tolist()
@@ -296,7 +296,7 @@ for i in range(0,len(row_ind_stress)):
 	ibi_all_stress_std.append(np.std(ibi_snippet))
 	#ibi_stress['i'] = ibi_snippet
 	pupil_snippet = pupil_data[pupil_ind_stress[i]:pupil_ind_stress[i]+samples_pupil_stress[i]]
-	eyes_open = np.nonzero(np.greater(pupil_snippet,0.5))
+	eyes_open = np.nonzero(np.greater(pupil_snippet,-0.5))
 	eyes_open = np.ravel(eyes_open)
 	pupil_snippet = signal.lfilter(lpf,1,pupil_snippet[eyes_open])
 	all_pupil_all_stress += pupil_snippet.tolist()
@@ -419,7 +419,7 @@ for i in range(0,len(row_ind_successful_reg)):
 		ibi_reg_before_std.append(np.std(ibi_snippet))
 		#ibi_reg_before[num2str(i)] = ibi_snippet
 		pupil_snippet = pupil_data[pupil_ind_successful_reg_before[i]:pupil_ind_successful_reg_before[i]+samples_pupil_successful_reg[i]]
-		eyes_open = np.nonzero(np.greater(pupil_snippet,0.5))
+		eyes_open = np.nonzero(np.greater(pupil_snippet,-0.5))
 		eyes_open = np.ravel(eyes_open)
 		pupil_snippet = signal.lfilter(lpf,1,pupil_snippet[eyes_open])
 		all_pupil_reg_before += pupil_snippet.tolist()
@@ -435,7 +435,7 @@ for i in range(0,len(row_ind_successful_reg)):
 		ibi_reg_after_std.append(np.mean(ibi_snippet))
 		#ibi_reg_after['i-count_before'] = ibi_snippet
 		pupil_snippet = pupil_data[pupil_ind_successful_reg_after[i-count_before]:pupil_ind_successful_reg_after[i-count_before]+samples_pupil_successful_reg[i]]
-		eyes_open = np.nonzero(np.greater(pupil_snippet,0.5))
+		eyes_open = np.nonzero(np.greater(pupil_snippet,-0.5))
 		eyes_open = np.ravel(eyes_open)
 		pupil_snippet = signal.lfilter(lpf,1,pupil_snippet[eyes_open])
 		all_pupil_reg_after += pupil_snippet.tolist()
@@ -465,7 +465,7 @@ for i in range(0,len(row_ind_reg)):
 		ibi_all_reg_before_std.append(np.std(ibi_snippet))
 		#ibi_reg_before[num2str(i)] = ibi_snippet
 		pupil_snippet = pupil_data[pupil_ind_reg_before[i]:pupil_ind_reg_before[i]+samples_pupil_reg[i]]
-		eyes_open = np.nonzero(np.greater(pupil_snippet,0.5))
+		eyes_open = np.nonzero(np.greater(pupil_snippet,-0.5))
 		eyes_open = np.ravel(eyes_open)
 		pupil_snippet = signal.lfilter(lpf,1,pupil_snippet[eyes_open])
 		all_pupil_all_reg_before += pupil_snippet.tolist()
@@ -481,7 +481,7 @@ for i in range(0,len(row_ind_reg)):
 		ibi_all_reg_after_std.append(np.std(ibi_snippet))
 		#ibi_reg_after['i-count_before'] = ibi_snippet
 		pupil_snippet = pupil_data[pupil_ind_reg_after[i-count_before]:pupil_ind_reg_after[i-count_before]+samples_pupil_reg[i]]
-		eyes_open = np.nonzero(np.greater(pupil_snippet,0.5))
+		eyes_open = np.nonzero(np.greater(pupil_snippet,-0.5))
 		eyes_open = np.ravel(eyes_open)
 		pupil_snippet = signal.lfilter(lpf,1,pupil_snippet[eyes_open])
 		all_pupil_all_reg_after += pupil_snippet.tolist()
@@ -657,7 +657,7 @@ plt.plot(range(1,len(pupil_stress_mean)+1),pupil_stress_mean_fit,'r--')
 #plt.xlabel('Trial')
 #plt.ylabel('Average Pupil Diameter')
 #plt.ylim((0.70,1.15))
-plt.ylim((0.75,2.0))
+plt.ylim((-0.5,0.5))
 plt.title('Pupil Diameter in Succesful Stress Trials')
 
 plt.subplot(3,2,1)
@@ -666,7 +666,7 @@ plt.plot(range(1,len(pupil_reg_before_mean)+1),pupil_reg_before_mean_fit,'b--')
 #plt.xlabel('Trial')
 #plt.ylabel('Average Pupil Diameter')
 #plt.ylim((0.70,1.15))
-plt.ylim((0.75,2.0))
+plt.ylim((-0.5,0.5))
 plt.title('Pupil Diameter in Succesful Regular Trials before Stress')
 
 plt.subplot(3,2,5)
@@ -675,7 +675,7 @@ plt.plot(range(1,len(pupil_reg_after_mean)+1),pupil_reg_after_mean_fit,'k--')
 plt.xlabel('Trial')
 plt.ylabel('Average Pupil Diameter')
 #plt.ylim((0.70,1.15))
-plt.ylim((0.75,2.0))
+plt.ylim((-0.5,0.5))
 plt.title('Pupil Diameter in Successful Regular Trials after Stress')
 #plt.tight_layout()
 
@@ -685,7 +685,7 @@ plt.plot(range(1,len(pupil_all_stress_mean)+1),pupil_all_stress_mean_fit,'r--')
 #plt.xlabel('Trial')
 #plt.ylabel('Average Pupil Diameter')
 #plt.ylim((0.70,1.15))
-plt.ylim((0.75,2.0))
+plt.ylim((-0.5,0.5))
 plt.title('Pupil Diameter in Stress Trials')
 
 plt.subplot(3,2,2)
@@ -694,7 +694,7 @@ plt.plot(range(1,len(pupil_all_reg_before_mean)+1),pupil_all_reg_before_mean_fit
 #plt.xlabel('Trial')
 #plt.ylabel('Average Pupil Diameter')
 #plt.ylim((0.70,1.15))
-plt.ylim((0.75,2.0))
+plt.ylim((-0.5,0.5))
 plt.title('Pupil Diameter in Regular Trials before Stress')
 
 plt.subplot(3,2,6)
@@ -703,7 +703,7 @@ plt.plot(range(1,len(pupil_all_reg_after_mean)+1),pupil_all_reg_after_mean_fit,'
 plt.xlabel('Trial')
 plt.ylabel('Average Pupil Diameter')
 #plt.ylim((0.70,1.15))
-plt.ylim((0.75,2.0))
+plt.ylim((-0.5,0.5))
 plt.title('Pupil Diameter in Regular Trials after Stress')
 plt.tight_layout()
 #plt.show()
@@ -765,6 +765,7 @@ plt.legend()
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_IBIDistribution.svg')
 
 plt.figure()
+'''
 plt.subplot(1,2,1)
 plt.plot(nbins_pupil_reg_before,pupil_reg_before_hist,'b',label='Regular Before')
 plt.fill_between(nbins_pupil_reg_before[17:22],pupil_reg_before_hist[17:22],np.zeros(5),facecolor='blue',linewidth=0.1,alpha=0.5)
@@ -785,7 +786,7 @@ if (p_pupil < 0.05):
 	t_before_after,p_before_after = stats.ttest_ind(all_pupil_reg_before,all_pupil_reg_after,axis=0,equal_var=True)
 	plt.text(nbins_pupil_reg_after[1],np.max(pupil_reg_after_hist)-0.05,'Before v. Stress:p=%f \n Before v. After: p=%f \n Stress v. After: p=%f' % (p_before_stress,p_before_after,p_after_stress))
 plt.legend()
-
+'''
 plt.subplot(1,2,2)
 plt.plot(nbins_pupil_all_reg_before,pupil_all_reg_before_hist,'b',label='Regular Before')
 plt.fill_between(nbins_pupil_all_reg_before[17:22],pupil_all_reg_before_hist[17:22],np.zeros(5),facecolor='blue',linewidth=0.1,alpha=0.5)

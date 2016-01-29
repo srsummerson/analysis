@@ -52,8 +52,8 @@ def running_mean(x, N):
 	return (cumsum[N:] - cumsum[:-N]) / float(N) 
 
 # Set up code for particular day and block
-hdf_filename = 'luig20160111_06.hdf'
-filename = 'Luigi20160111_HDEEG'
+hdf_filename = 'luig20151222_05.hdf'
+filename = 'Luigi20151222_HDEEG'
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
 #hdf_location = hdf_filename
@@ -201,7 +201,7 @@ plt.xlim((0,len(prob_choose_low_successful_reg)))
 plt.legend()
 plt.tight_layout()
 #plt.show()
-plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_TrialPerformance.png')
+plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_TrialPerformance.svg')
 
 
 # Load syncing data for hdf file and TDT recording
@@ -499,7 +499,7 @@ plt.ylim((0.28,0.5))
 plt.title('Pulse in Regular Trials after Stress')
 plt.tight_layout()
 #plt.show()
-plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_TrialIBI.png')
+plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_TrialIBI.svg')
 
 plt.figure()
 plt.subplot(3,1,2)
@@ -508,7 +508,7 @@ plt.plot(range(1,len(pupil_stress_mean)+1),pupil_stress_mean_fit,'r--')
 #plt.xlabel('Trial')
 #plt.ylabel('Average Pupil Diameter')
 #plt.ylim((0.70,1.15))
-plt.ylim((1.0,2.0))
+plt.ylim((0.5,1.25))
 plt.title('Pupil Diameter in Stress Trials')
 
 plt.subplot(3,1,1)
@@ -517,7 +517,7 @@ plt.plot(range(1,len(pupil_reg_before_mean)+1),pupil_reg_before_mean_fit,'b--')
 #plt.xlabel('Trial')
 #plt.ylabel('Average Pupil Diameter')
 #plt.ylim((0.70,1.15))
-plt.ylim((1.0,2.0))
+plt.ylim((0.5,1.25))
 plt.title('Pupil Diameter in Regular Trials before Stress')
 
 plt.subplot(3,1,3)
@@ -526,11 +526,11 @@ plt.plot(range(1,len(pupil_reg_after_mean)+1),pupil_reg_after_mean_fit,'k--')
 plt.xlabel('Trial')
 plt.ylabel('Average Pupil Diameter')
 #plt.ylim((0.70,1.15))
-plt.ylim((1.0,2.0))
+plt.ylim((0.5,1.25))
 plt.title('Pupil Diameter in Regular Trials after Stress')
 plt.tight_layout()
 #plt.show()
-plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_TrialPupil.png')
+plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_TrialPupil.svg')
 
 # IBI plots
 # Compute significance
@@ -559,7 +559,7 @@ if (p_ibi < 0.05):
 	plt.text(0.12,np.max(ibi_reg_after_hist),'Before v. Stress:p=%f \n Before v. After: p=%f \n Stress v. After: p=%f' % (p_before_stress,p_before_after,p_after_stress))
 plt.legend()
 #plt.show()
-plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_IBIDistribution.png')
+plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_IBIDistribution.svg')
 
 plt.figure()
 plt.plot(nbins_pupil_reg_before,pupil_reg_before_hist,'b',label='Regular Before')
@@ -582,7 +582,7 @@ if (p_pupil < 0.05):
 	plt.text(nbins_pupil_reg_after[1],np.max(pupil_reg_after_hist)-0.05,'Before v. Stress:p=%f \n Before v. After: p=%f \n Stress v. After: p=%f' % (p_before_stress,p_before_after,p_after_stress))
 plt.legend()
 #plt.show()
-plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_PupilDistribution.png')
+plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_PupilDistribution.svg')
 plt.close("all")
 hdf.close()
 
