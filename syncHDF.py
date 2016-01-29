@@ -4,7 +4,7 @@ from neo import io
 
 #def syncHDFwithDIOx(TDT_tank,block_num):
 
-filename = 'Mario20160127'
+filename = 'Mario20160128'
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 block_num = 1
 
