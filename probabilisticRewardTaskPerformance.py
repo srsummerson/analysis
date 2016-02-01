@@ -150,3 +150,5 @@ def FreeChoiceTaskPerformance(hdf_file):
 	plt.close()
 
 	hdf.close()
+
+	return
