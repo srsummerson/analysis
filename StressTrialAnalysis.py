@@ -55,8 +55,8 @@ def running_mean(x, N):
 	return (cumsum[N:] - cumsum[:-N]) / float(N) 
 
 # Set up code for particular day and block
-hdf_filename = 'luig20160111_06.hdf'
-filename = 'Luigi20160111_HDEEG'
+hdf_filename = 'luig20151223_03.hdf'
+filename = 'Luigi20151223_HDEEG'
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
 #hdf_location = hdf_filename
@@ -574,7 +574,7 @@ plt.plot(range(1,len(pupil_stress_mean)+1),pupil_stress_mean_fit,'r--')
 #plt.xlabel('Trial')
 #plt.ylabel('Average Pupil Diameter')
 #plt.ylim((0.70,1.15))
-plt.ylim((0.5,1.25))
+plt.ylim((-3,3))
 plt.title('Pupil Diameter in Stress Trials')
 
 plt.subplot(3,1,1)
@@ -583,7 +583,7 @@ plt.plot(range(1,len(pupil_reg_before_mean)+1),pupil_reg_before_mean_fit,'b--')
 #plt.xlabel('Trial')
 #plt.ylabel('Average Pupil Diameter')
 #plt.ylim((0.70,1.15))
-plt.ylim((0.5,1.25))
+plt.ylim((-3,3))
 plt.title('Pupil Diameter in Regular Trials before Stress')
 
 plt.subplot(3,1,3)
@@ -592,7 +592,7 @@ plt.plot(range(1,len(pupil_reg_after_mean)+1),pupil_reg_after_mean_fit,'k--')
 plt.xlabel('Trial')
 plt.ylabel('Average Pupil Diameter')
 #plt.ylim((0.70,1.15))
-plt.ylim((0.5,1.25))
+plt.ylim((-3,3))
 plt.title('Pupil Diameter in Regular Trials after Stress')
 plt.tight_layout()
 #plt.show()
