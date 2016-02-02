@@ -52,12 +52,12 @@ def running_mean(x, N):
 	return (cumsum[N:] - cumsum[:-N]) / float(N) 
 
 # Set up code for particular day and block
-hdf_filename = 'luig20151222_05.hdf'
-filename = 'Luigi20151222_HDEEG'
+hdf_filename = 'luig20151204_07.hdf'
+filename = 'Luigi20151204_HDEEG'
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
 #hdf_location = hdf_filename
-block_num = 1
+block_num = 2
 
 num_avg = 50 	# number of trials to compute running average of trial statistics over
 
@@ -297,9 +297,24 @@ for i in range(0,len(row_ind_successful_stress)):
 	ibi_stress_std.append(np.mean(ibi_snippet))
 	#ibi_stress['i'] = ibi_snippet
 	pupil_snippet = pupil_data[pupil_ind_successful_stress[i]:pupil_ind_successful_stress[i]+samples_pupil_successful_stress[i]]
-	eyes_open = np.nonzero(np.greater(pupil_snippet,0.5))
-	eyes_open = np.ravel(eyes_open)
-	pupil_snippet = signal.lfilter(lpf,1,pupil_snippet[eyes_open])
+	pupil_snippet_range = range(0,len(pupil_snippet))
+	eyes_closed = np.nonzero(np.less(pupil_snippet,-3.3))
+	eyes_closed = np.ravel(eyes_closed)
+	if len(eyes_closed) > 1:
+		find_blinks = eyes_closed[1:] - eyes_closed[:-1]
+		blink_inds = np.ravel(np.nonzero(np.not_equal(find_blinks,1)))
+		eyes_closed_ind = [eyes_closed[0]]
+		eyes_closed_ind += eyes_closed[blink_inds].tolist()
+		eyes_closed_ind += eyes_closed[blink_inds+1].tolist()
+		eyes_closed_ind += [eyes_closed[-1]]
+		eyes_closed_ind.sort()
+		for i in np.arange(1,len(eyes_closed_ind),2):
+			rm_range = range(np.maximum(eyes_closed_ind[i-1]-20,0),np.minimum(eyes_closed_ind[i] + 20,len(pupil_snippet)-1))
+			rm_indices = [pupil_snippet_range.index(rm_range[ind]) for ind in range(0,len(rm_range)) if (rm_range[ind] in pupil_snippet_range)]
+			pupil_snippet_range = np.delete(pupil_snippet_range,rm_indices)
+			pupil_snippet_range = pupil_snippet_range.tolist()
+	#pupil_snippet = signal.lfilter(lpf,1,pupil_snippet[eyes_open])
+	pupil_snippet = pupil_snippet[pupil_snippet_range]
 	all_pupil_stress += pupil_snippet.tolist()
 	#pupil_stress['i'] = pupil_snippet
 	pupil_stress_mean.append(np.mean(pupil_snippet))
@@ -399,9 +414,27 @@ for i in range(0,len(row_ind_successful_reg)):
 		ibi_reg_before_std.append(np.std(ibi_snippet))
 		#ibi_reg_before[num2str(i)] = ibi_snippet
 		pupil_snippet = pupil_data[pupil_ind_successful_reg_before[i]:pupil_ind_successful_reg_before[i]+samples_pupil_successful_reg[i]]
-		eyes_open = np.nonzero(np.greater(pupil_snippet,0.5))
-		eyes_open = np.ravel(eyes_open)
-		pupil_snippet = signal.lfilter(lpf,1,pupil_snippet[eyes_open])
+		pupil_snippet_range = range(0,len(pupil_snippet))
+		eyes_closed = np.nonzero(np.less(pupil_snippet,-3.3))
+		eyes_closed = np.ravel(eyes_closed)
+		if len(eyes_closed) > 1:
+			find_blinks = eyes_closed[1:] - eyes_closed[:-1]
+			blink_inds = np.ravel(np.nonzero(np.not_equal(find_blinks,1)))
+			eyes_closed_ind = [eyes_closed[0]]
+			eyes_closed_ind += eyes_closed[blink_inds].tolist()
+			eyes_closed_ind += eyes_closed[blink_inds+1].tolist()
+			eyes_closed_ind += [eyes_closed[-1]]
+			eyes_closed_ind.sort()
+			for i in np.arange(1,len(eyes_closed_ind),2):
+				rm_range = range(np.maximum(eyes_closed_ind[i-1]-20,0),np.minimum(eyes_closed_ind[i] + 20,len(pupil_snippet)-1))
+				rm_indices = [pupil_snippet_range.index(rm_range[ind]) for ind in range(0,len(rm_range)) if (rm_range[ind] in pupil_snippet_range)]
+				pupil_snippet_range = np.delete(pupil_snippet_range,rm_indices)
+				pupil_snippet_range = pupil_snippet_range.tolist()
+	
+		pupil_snippet = pupil_snippet[pupil_snippet_range]
+		#eyes_open = np.nonzero(np.greater(pupil_snippet,0.5))
+		#eyes_open = np.ravel(eyes_open)
+		#pupil_snippet = signal.lfilter(lpf,1,pupil_snippet[eyes_open])
 		all_pupil_reg_before += pupil_snippet.tolist()
 		pupil_reg_before_mean.append(np.mean(pupil_snippet))
 		pupil_reg_before_std.append(np.std(pupil_snippet))
@@ -415,9 +448,27 @@ for i in range(0,len(row_ind_successful_reg)):
 		ibi_reg_after_std.append(np.mean(ibi_snippet))
 		#ibi_reg_after['i-count_before'] = ibi_snippet
 		pupil_snippet = pupil_data[pupil_ind_successful_reg_after[i-count_before]:pupil_ind_successful_reg_after[i-count_before]+samples_pupil_successful_reg[i]]
-		eyes_open = np.nonzero(np.greater(pupil_snippet,0.5))
-		eyes_open = np.ravel(eyes_open)
-		pupil_snippet = signal.lfilter(lpf,1,pupil_snippet[eyes_open])
+		#eyes_open = np.nonzero(np.greater(pupil_snippet,0.5))
+		#eyes_open = np.ravel(eyes_open)
+		pupil_snippet_range = range(0,len(pupil_snippet))
+		eyes_closed = np.nonzero(np.less(pupil_snippet,-3.3))
+		eyes_closed = np.ravel(eyes_closed)
+		if len(eyes_closed) > 1:
+			find_blinks = eyes_closed[1:] - eyes_closed[:-1]
+			blink_inds = np.ravel(np.nonzero(np.not_equal(find_blinks,1)))
+			eyes_closed_ind = [eyes_closed[0]]
+			eyes_closed_ind += eyes_closed[blink_inds].tolist()
+			eyes_closed_ind += eyes_closed[blink_inds+1].tolist()
+			eyes_closed_ind += [eyes_closed[-1]]
+			eyes_closed_ind.sort()
+			for i in np.arange(1,len(eyes_closed_ind),2):
+				rm_range = range(np.maximum(eyes_closed_ind[i-1]-20,0),np.minimum(eyes_closed_ind[i] + 20,len(pupil_snippet)-1))
+				rm_indices = [pupil_snippet_range.index(rm_range[ind]) for ind in range(0,len(rm_range)) if (rm_range[ind] in pupil_snippet_range)]
+				pupil_snippet_range = np.delete(pupil_snippet_range,rm_indices)
+				pupil_snippet_range = pupil_snippet_range.tolist()
+	
+		pupil_snippet = pupil_snippet[pupil_snippet_range]
+		#pupil_snippet = signal.lfilter(lpf,1,pupil_snippet[eyes_open])
 		all_pupil_reg_after += pupil_snippet.tolist()
 		#pupil_reg_after['i-count_before'] = pupil_snippet
 		pupil_reg_after_mean.append(np.mean(pupil_snippet))
@@ -530,7 +581,7 @@ plt.ylim((0.5,1.25))
 plt.title('Pupil Diameter in Regular Trials after Stress')
 plt.tight_layout()
 #plt.show()
-plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_TrialPupil.svg')
+plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_TrialPupil-DeleteBlinks.svg')
 
 # IBI plots
 # Compute significance
@@ -582,7 +633,7 @@ if (p_pupil < 0.05):
 	plt.text(nbins_pupil_reg_after[1],np.max(pupil_reg_after_hist)-0.05,'Before v. Stress:p=%f \n Before v. After: p=%f \n Stress v. After: p=%f' % (p_before_stress,p_before_after,p_after_stress))
 plt.legend()
 #plt.show()
-plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_PupilDistribution.svg')
+plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_PupilDistribution-DeleteBlinks.svg')
 plt.close("all")
 hdf.close()
 
