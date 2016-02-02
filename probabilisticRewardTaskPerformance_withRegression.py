@@ -64,8 +64,8 @@ hdf_list_stim2 = ['\papa20150508_12.hdf','\papa20150508_13.hdf','\papa20150518_0
 #hdf_list_stim = np.sum([hdf_list_stim,hdf_list_stim2])
 
 #hdf_list = np.sum([hdf_list_stim,hdf_list_sham])
-hdf_list = ['papa20150530_01.hdf']
-hdf_prefix = '/storage/rawdata/hdf/'
+hdf_list = ['\papa20150530_01.hdf']
+hdf_prefix = 'C:\Users\Samantha Summerson\Dropbox\Carmena Lab\Papa\hdf'
 
 
 global_max_trial_dist = 0
