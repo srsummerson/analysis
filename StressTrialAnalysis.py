@@ -517,6 +517,11 @@ pupil_reg_after_hist,nbins_pupil_reg_after = np.histogram(all_pupil_reg_after,bi
 nbins_pupil_reg_after = nbins_pupil_reg_after[1:]
 pupil_reg_after_hist = pupil_reg_after_hist/float(len(all_pupil_reg_after))
 
+# Pearson correlations
+r_before, r_p_before = stats.pearsonr(ibi_reg_before_mean, pupil_reg_before_mean)
+r_stress, r_p_stress = stats.pearsonr(ibi_stress_mean,pupil_stress_mean)
+r_after, r_p_after = stats.pearsonr(ibi_reg_after_mean,pupil_reg_after_mean)
+
 # Linear fits to go along with plots
 m,b = np.polyfit(range(1,len(ibi_stress_mean)+1), ibi_stress_mean, 1)
 ibi_stress_mean_fit = m*np.arange(1,len(ibi_stress_mean)+1) + b
@@ -576,6 +581,7 @@ plt.plot(range(1,len(pupil_stress_mean)+1),pupil_stress_mean_fit,'r--')
 #plt.ylim((0.70,1.15))
 plt.ylim((-3,3))
 plt.title('Pupil Diameter in Stress Trials')
+plt.text(1,np.max(pupil_stress_mean),'Pulse v. Pupil:r=%f \n p=%f' % (r_stress,r_p_stress))
 
 plt.subplot(3,1,1)
 plt.plot(range(1,len(pupil_reg_before_mean)+1),pupil_reg_before_mean,'b')
@@ -585,6 +591,7 @@ plt.plot(range(1,len(pupil_reg_before_mean)+1),pupil_reg_before_mean_fit,'b--')
 #plt.ylim((0.70,1.15))
 plt.ylim((-3,3))
 plt.title('Pupil Diameter in Regular Trials before Stress')
+plt.text(1,np.max(pupil_reg_before_mean),'Pulse v. Pupil:r=%f \n p=%f' % (r_before,r_p_before))
 
 plt.subplot(3,1,3)
 plt.plot(range(1,len(pupil_reg_after_mean)+1),pupil_reg_after_mean,'k')
@@ -594,6 +601,7 @@ plt.ylabel('Average Pupil Diameter')
 #plt.ylim((0.70,1.15))
 plt.ylim((-3,3))
 plt.title('Pupil Diameter in Regular Trials after Stress')
+plt.text(1,np.max(pupil_reg_after_mean),'Pulse v. Pupil:r=%f \n p=%f' % (r_after,r_p_after))
 plt.tight_layout()
 #plt.show()
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_TrialPupil-DeleteBlinks.svg')
