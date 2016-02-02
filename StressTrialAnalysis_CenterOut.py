@@ -13,6 +13,11 @@ Stress Trial Days:
 1/6/2016 - Block 1 (luig20160106_03.hdf)
 1/11/2016 - Block 1 (luig20160111_06.hdf)
 
+Center Out:
+1/27/2016 - Block 1 (luig20160127_06_te1315.hdf), Block 3 (luig20160127_11_te1320.hdf)
+1/28/2016 - Block 1 (luig20160128_02_te1325.hdf)
+1/29/2016 - Block 1 (luig20160129_02_te1329.hdf)
+
 Trial types:
 1. Regular (before stress) and rewarded
 2. Regular (before stress) and unrewarded
@@ -52,12 +57,12 @@ def running_mean(x, N):
 	return (cumsum[N:] - cumsum[:-N]) / float(N) 
 
 # Set up code for particular day and block
-hdf_filename = 'luig20160129_02_te1329.hdf'
-filename = 'Luigi20160129_HDEEG'
+hdf_filename = 'luig20160127_11_te1320.hdf'
+filename = 'Luigi20160127_HDEEG'
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
 #hdf_location = hdf_filename
-block_num = 1
+block_num = 3
 
 num_avg = 50 	# number of trials to compute running average of trial statistics over
 
@@ -289,6 +294,10 @@ for i in range(0,len(row_ind_successful_stress)):
 	
 	pupil_snippet = pupil_snippet[pupil_snippet_range]
 	#pupil_snippet = signal.lfilter(lpf,1,pupil_snippet[eyes_open])
+	pupil_snippet_mean = np.mean(pupil_snippet)
+	pupil_snippet_std = np.std(pupil_snippet)
+	window = np.floor(pupil_samprate/10) # sample window equal to ~100 ms
+	pupil_snippet = (pupil_snippet[0:window]- pupil_snippet_mean)/float(pupil_snippet_std)
 	all_pupil_stress += pupil_snippet.tolist()
 	#pupil_stress['i'] = pupil_snippet
 	pupil_stress_mean.append(np.mean(pupil_snippet))
@@ -334,6 +343,10 @@ for i in range(0,len(row_ind_stress)):
 			pupil_snippet_range = pupil_snippet_range.tolist()
 	
 	pupil_snippet = pupil_snippet[pupil_snippet_range]
+	pupil_snippet_mean = np.mean(pupil_snippet)
+	pupil_snippet_std = np.std(pupil_snippet)
+	window = np.floor(pupil_samprate/10) # sample window equal to ~100 ms
+	pupil_snippet = (pupil_snippet[0:window]- pupil_snippet_mean)/float(pupil_snippet_std)
 	#pupil_snippet = signal.lfilter(lpf,1,pupil_snippet[eyes_open])
 	all_pupil_all_stress += pupil_snippet.tolist()
 	#pupil_stress['i'] = pupil_snippet
@@ -475,6 +488,10 @@ for i in range(0,len(row_ind_successful_reg)):
 				pupil_snippet_range = pupil_snippet_range.tolist()
 	
 		pupil_snippet = pupil_snippet[pupil_snippet_range]
+		pupil_snippet_mean = np.mean(pupil_snippet)
+		pupil_snippet_std = np.std(pupil_snippet)
+		window = np.floor(pupil_samprate/10) # sample window equal to ~100 ms
+		pupil_snippet = (pupil_snippet[0:window]- pupil_snippet_mean)/float(pupil_snippet_std)
 		#pupil_snippet = signal.lfilter(lpf,1,pupil_snippet[eyes_open])
 		all_pupil_reg_before += pupil_snippet.tolist()
 		pupil_reg_before_mean.append(np.mean(pupil_snippet))
@@ -509,6 +526,10 @@ for i in range(0,len(row_ind_successful_reg)):
 				pupil_snippet_range = pupil_snippet_range.tolist()
 	
 		pupil_snippet = pupil_snippet[pupil_snippet_range]
+		pupil_snippet_mean = np.mean(pupil_snippet)
+		pupil_snippet_std = np.std(pupil_snippet)
+		window = np.floor(pupil_samprate/10) # sample window equal to ~100 ms
+		pupil_snippet = (pupil_snippet[0:window]- pupil_snippet_mean)/float(pupil_snippet_std)
 		#pupil_snippet = signal.lfilter(lpf,1,pupil_snippet[eyes_open])
 		all_pupil_reg_after += pupil_snippet.tolist()
 		#pupil_reg_after['i-count_before'] = pupil_snippet
@@ -557,6 +578,10 @@ for i in range(0,len(row_ind_reg)):
 				pupil_snippet_range = pupil_snippet_range.tolist()
 	
 		pupil_snippet = pupil_snippet[pupil_snippet_range]
+		pupil_snippet_mean = np.mean(pupil_snippet)
+		pupil_snippet_std = np.std(pupil_snippet)
+		window = np.floor(pupil_samprate/10) # sample window equal to ~100 ms
+		pupil_snippet = (pupil_snippet[0:window]- pupil_snippet_mean)/float(pupil_snippet_std)
 		#pupil_snippet = signal.lfilter(lpf,1,pupil_snippet[eyes_open])
 		all_pupil_all_reg_before += pupil_snippet.tolist()
 		pupil_all_reg_before_mean.append(np.mean(pupil_snippet))
@@ -591,6 +616,10 @@ for i in range(0,len(row_ind_reg)):
 				pupil_snippet_range = pupil_snippet_range.tolist()
 	
 		pupil_snippet = pupil_snippet[pupil_snippet_range]
+		pupil_snippet_mean = np.mean(pupil_snippet)
+		pupil_snippet_std = np.std(pupil_snippet)
+		window = np.floor(pupil_samprate/10) # sample window equal to ~100 ms
+		pupil_snippet = (pupil_snippet[0:window]- pupil_snippet_mean)/float(pupil_snippet_std)
 		#pupil_snippet = signal.lfilter(lpf,1,pupil_snippet[eyes_open])
 		all_pupil_all_reg_after += pupil_snippet.tolist()
 		#pupil_reg_after['i-count_before'] = pupil_snippet
