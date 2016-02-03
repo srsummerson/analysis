@@ -4,9 +4,9 @@ from neo import io
 
 #def syncHDFwithDIOx(TDT_tank,block_num):
 
-filename = 'Luigi20160129_HDEEG'
+filename = 'Luigi20160127_HDEEG'
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
-block_num = 1
+block_num = 3
 
 # Can we get timestamps directly?
 
