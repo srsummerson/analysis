@@ -39,7 +39,7 @@ def FreeChoiceTaskPerformance(hdf_file):
 	# Initialize variables use for in performance computation
 	counter = 0	# counter for counting number of free-choice trials
 	time_counter = 0
-	running_avg_length = 50
+	running_avg_length = 10
 	target_all = np.zeros(ind_check_reward_states.size) # vector for recording target selection on all trials regardless of type
 	reward_all = np.zeros(target_all.size)	# vector for recording whether rewards was allocated on all trials regardless of type
 	target_freechoice = np.zeros(num_free_choice_trials)	# vector for recording target selection on free-choice trials only
@@ -126,13 +126,13 @@ def FreeChoiceTaskPerformance(hdf_file):
 	plt.plot(range(1,target_freechoice.size+1),prob_choose_high_freechoice,'b',label='High-value target')
 	plt.plot(range(1,target_freechoice.size+1),prob_choose_low_freechoice,'r',label='Low-value target')
 	plt.axis([1,target_freechoice.size,0,1])
-	#plt.axis([1,target_freechoice.size, -0.5, 1.5])
-	#plt.plot(chose_high,0.2*chose_high_reward+1.1,'b*')
-	#plt.plot(chose_low,-0.2*chose_low_reward-0.1,'r*')
+	plt.axis([1,target_freechoice.size, -0.5, 1.5])
+	plt.plot(chose_high,0.2*chose_high_reward+1.1,'b*')
+	plt.plot(chose_low,-0.2*chose_low_reward-0.1,'r*')
 	plt.xlabel('Trials')
 	plt.title('Free-Choice Trials')
 	plt.legend()
-	plt.savefig('C:/Users/Samantha Summerson/Documents/GitHub/analysis/Papa_Performance_figs/FCPerformance_targets_longavg_%s.svg' % hdf_file[:-4])    # save this filetype for AI editing
+	plt.savefig('C:/Users/Samantha Summerson/Documents/GitHub/analysis/Papa_Performance_figs/FCPerformance_targets_%s.svg' % hdf_file[:-4])    # save this filetype for AI editing
 	#plt.savefig('/home/srsummerson/code/analysis/Luigi_Performance_figs/FCPerformance_targets_%s.png' % hdf_file[:-4])    # save this filetype for easy viewing
 	plt.close()
 
@@ -157,7 +157,7 @@ def FreeChoiceTaskPerformance(hdf_file):
 	plt.legend()
 	plt.title('Free-Choice Trials')
 
-	plt.savefig('C:/Users/Samantha Summerson/Documents/GitHub/analysis/Luigi_Performance_figs/FCPerformance_rewards_longavg_%s.svg' % hdf_file[:-4])    # save this filetype for AI editing
+	plt.savefig('C:/Users/Samantha Summerson/Documents/GitHub/analysis/Papa_Performance_figs/FCPerformance_rewards_%s.svg' % hdf_file[:-4])    # save this filetype for AI editing
 	#plt.savefig('/home/srsummerson/code/analysis/Luigi_Performance_figs/FCPerformance_rewards_%s.png' % hdf_file[:-4])    # save this filetype for easy viewing
 	plt.close()
 
