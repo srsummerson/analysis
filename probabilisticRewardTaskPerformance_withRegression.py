@@ -208,15 +208,20 @@ for name in hdf_list:
     '''
     const_logit_block1 = np.ones(num_regress_block1)
     const_logit_all = np.ones(fc_target_high.size)
-    x = np.vstack((prev_reward1,prev_reward2,prev_reward3,prev_reward4,prev_reward5,prev_noreward1,prev_noreward2,prev_noreward3,prev_noreward4,prev_noreward5,prev_stim1))
+    x = np.vstack((prev_reward1[:num_regress_block1],prev_reward2[:num_regress_block1],prev_reward3[:num_regress_block1],prev_reward4[:num_regress_block1],prev_reward5[:num_regress_block1],
+        prev_noreward1[:num_regress_block1],prev_noreward2[:num_regress_block1],prev_noreward3[:num_regress_block1],prev_noreward4[:num_regress_block1],prev_noreward5[:num_regress_block1],
+        prev_stim1[:num_regress_block1]))
     x = np.transpose(x)
     x = sm.add_constant(x,prepend='False')
-    d = {'FC Target Selection': fc_target_high, 'Prev Reward 1': prev_reward1, 'Prev Reward 2': prev_reward2, 'Prev Reward 3': prev_reward3, 
-            'Prev Reward 4': prev_reward4, 'Prev Reward 5': prev_reward5, 'Prev No Reward 1': prev_noreward1, 'Prev No Reward 2': prev_noreward2,
-            'Prev No Reward 3': prev_noreward3, 'Prev No Reward 4': prev_noreward4, 'Prev No Reward 5': prev_noreward5, 'Prev Stim': prev_stim1,
-            'Const': const_logit_all}
+    d = {'FC Target Selection': fc_target_high[:num_regress_block1], 'Prev Reward 1': prev_reward1[:num_regress_block1], 'Prev Reward 2': prev_reward2[:num_regress_block1], 
+            'Prev Reward 3': prev_reward3[:num_regress_block1], 
+            'Prev Reward 4': prev_reward4[:num_regress_block1], 'Prev Reward 5': prev_reward5[:num_regress_block1], 'Prev No Reward 1': prev_noreward1[:num_regress_block1], 
+            'Prev No Reward 2': prev_noreward2[:num_regress_block1],
+            'Prev No Reward 3': prev_noreward3[:num_regress_block1], 'Prev No Reward 4': prev_noreward4[:num_regress_block1], 'Prev No Reward 5': prev_noreward5[:num_regress_block1], 
+            'Prev Stim': prev_stim1[:num_regress_block1],
+            'Const': const_logit_all[:num_regress_block1]}
     df = pd.DataFrame(d)
 
-    model_glm = sm.GLM(fc_target_high,x,family = sm.families.Binomial())
+    model_glm = sm.GLM(fc_target_high[:num_regress_block1],x,family = sm.families.Binomial())
     fit_glm = model_glm.fit()
-    fit_glm.summary()
+    print fit_glm.summary()
