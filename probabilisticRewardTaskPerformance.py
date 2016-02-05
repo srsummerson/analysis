@@ -195,7 +195,7 @@ def FreeChoicePilotTaskPerformance(hdf_file):
     target_freechoice_block1 = np.zeros(70)
     reward_freechoice_block1 = np.zeros(70)
     target_freechoice_block3 = []
-    reward_freechoice_block3 = np.zeros(num_successful_trials-200)
+    reward_freechoice_block3 = []
     #reward_freechoice_block3 = np.zeros(np.min([num_successful_trials-200,100]))
     trial1 = np.zeros(target1.size)
     trial3 = np.zeros(target3.size)
@@ -234,9 +234,10 @@ def FreeChoicePilotTaskPerformance(hdf_file):
             stim_trials[i-200] = 0
         if trial3[i-200] == 2:
             target_freechoice_block3.append(target3[i-200])
-            reward_freechoice_block3[counter_block3] = reward3[i-200]
+            reward_freechoice_block3.append(reward3[i-200])
             counter_block3 += 1
-
+    target_freechoice_block3 = np.array(target_freechoice_block3)
+    reward_freechoice_block3 = np.array(reward_freechoice_block3)
     prob_choose_high_freechoice_block1 = np.zeros(len(target_freechoice_block1))
     prob_choose_low_freechoice_block1 = np.zeros(len(target_freechoice_block1))
     prob_reward_high_freechoice_block1 = np.zeros(len(target_freechoice_block1))
@@ -259,7 +260,7 @@ def FreeChoicePilotTaskPerformance(hdf_file):
         prob_reward_high_freechoice_block1[i] = float(sum(reward_high_freechoice))/(sum(chosen_high_freechoice) + (sum(chosen_high_freechoice)==0))  # add logic statment to denominator so we never divide by 0
         prob_reward_low_freechoice_block1[i] = float(sum(reward_low_freechoice))/(sum(chosen_low_freechoice) + (sum(chosen_low_freechoice)==0))
 
-    for i in range(0,len(target_freechoice_block3)):
+    for i in range(0,len(target_freechoice_block1)):
         chosen_high_freechoice = target_freechoice_block3[range(np.maximum(0,i - running_avg_length),i+1)] == 2
         chosen_low_freechoice = target_freechoice_block3[range(np.maximum(0,i - running_avg_length),i+1)] == 1
         reward_high_freechoice = np.logical_and(chosen_high_freechoice,reward_freechoice_block3[range(np.maximum(0,i - running_avg_length),i+1)])
