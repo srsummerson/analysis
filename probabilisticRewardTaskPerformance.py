@@ -236,16 +236,16 @@ def FreeChoicePilotTaskPerformance(hdf_file):
             reward_freechoice_block3[counter_block3] = reward3[i-200]
             counter_block3 += 1
 
-    prob_choose_high_freechoice_block1 = np.zeros(target_freechoice_block1.size)
-    prob_choose_low_freechoice_block1 = np.zeros(target_freechoice_block1.size)
-    prob_reward_high_freechoice_block1 = np.zeros(target_freechoice_block1.size)
-    prob_reward_low_freechoice_block1 = np.zeros(target_freechoice_block1.size)
-    prob_choose_high_freechoice_block3 = np.zeros(target_freechoice_block3.size)
-    prob_choose_low_freechoice_block3 = np.zeros(target_freechoice_block3.size)
-    prob_reward_high_freechoice_block3 = np.zeros(target_freechoice_block3.size)
-    prob_reward_low_freechoice_block3 = np.zeros(target_freechoice_block3.size)
+    prob_choose_high_freechoice_block1 = np.zeros(len(target_freechoice_block1))
+    prob_choose_low_freechoice_block1 = np.zeros(len(target_freechoice_block1))
+    prob_reward_high_freechoice_block1 = np.zeros(len(target_freechoice_block1))
+    prob_reward_low_freechoice_block1 = np.zeros(len(target_freechoice_block1))
+    prob_choose_high_freechoice_block3 = np.zeros(len(target_freechoice_block3))
+    prob_choose_low_freechoice_block3 = np.zeros(len(target_freechoice_block3))
+    prob_reward_high_freechoice_block3 = np.zeros(len(target_freechoice_block3))
+    prob_reward_low_freechoice_block3 = np.zeros(len(target_freechoice_block3))
 
-    for i in range(0,target_freechoice_block1.size):
+    for i in range(0,len(target_freechoice_block1)):
         chosen_high_freechoice = target_freechoice_block1[range(np.maximum(0,i - running_avg_length),i+1)] == 2
         chosen_low_freechoice = target_freechoice_block1[range(np.maximum(0,i - running_avg_length),i+1)] == 1
         reward_high_freechoice = np.logical_and(chosen_high_freechoice,reward_freechoice_block1[range(np.maximum(0,i - running_avg_length),i+1)])
@@ -258,7 +258,7 @@ def FreeChoicePilotTaskPerformance(hdf_file):
         prob_reward_high_freechoice_block1[i] = float(sum(reward_high_freechoice))/(sum(chosen_high_freechoice) + (sum(chosen_high_freechoice)==0))  # add logic statment to denominator so we never divide by 0
         prob_reward_low_freechoice_block1[i] = float(sum(reward_low_freechoice))/(sum(chosen_low_freechoice) + (sum(chosen_low_freechoice)==0))
 
-    for i in range(0,target_freechoice_block3.size):
+    for i in range(0,len(target_freechoice_block3)):
         chosen_high_freechoice = target_freechoice_block3[range(np.maximum(0,i - running_avg_length),i+1)] == 2
         chosen_low_freechoice = target_freechoice_block3[range(np.maximum(0,i - running_avg_length),i+1)] == 1
         reward_high_freechoice = np.logical_and(chosen_high_freechoice,reward_freechoice_block3[range(np.maximum(0,i - running_avg_length),i+1)])
@@ -273,8 +273,8 @@ def FreeChoicePilotTaskPerformance(hdf_file):
 
     plt.figure()
     plt.subplot(2,2,1)
-    plt.plot(range(1,target_freechoice_block1.size+1),prob_choose_high_freechoice_block1,'b',label='High-value target')
-    plt.plot(range(1,target_freechoice_block1.size+1),prob_choose_low_freechoice_block1,'r',label='Low-value target')
+    plt.plot(range(1,len(target_freechoice_block1)+1),prob_choose_high_freechoice_block1,'b',label='High-value target')
+    plt.plot(range(1,len(target_freechoice_block1)+1),prob_choose_low_freechoice_block1,'r',label='Low-value target')
     plt.axis([1,target_freechoice_block1.size,0,1])
     plt.axis([1,target_freechoice_block1.size, 0,1])
     plt.xlabel('Trials')
@@ -283,8 +283,8 @@ def FreeChoicePilotTaskPerformance(hdf_file):
     plt.legend()
 
     plt.subplot(2,2,2)
-    plt.plot(range(1,target_freechoice_block3.size+1),prob_choose_high_freechoice_block3,'b',label='High-value target')
-    plt.plot(range(1,target_freechoice_block3.size+1),prob_choose_low_freechoice_block3,'r',label='Low-value target')
+    plt.plot(range(1,len(target_freechoice_block3)+1),prob_choose_high_freechoice_block3,'b',label='High-value target')
+    plt.plot(range(1,len(target_freechoice_block3)+1),prob_choose_low_freechoice_block3,'r',label='Low-value target')
     plt.axis([1,target_freechoice_block3.size,0,1])
     plt.axis([1,target_freechoice_block3.size, 0,1])
     plt.xlabel('Trials')
@@ -293,8 +293,8 @@ def FreeChoicePilotTaskPerformance(hdf_file):
     plt.legend()
 
     plt.subplot(2,2,3)
-    plt.plot(range(1,target_freechoice_block1.size+1),prob_reward_high_freechoice_block1,'b',label='High-value target')
-    plt.plot(range(1,target_freechoice_block1.size+1),prob_reward_low_freechoice_block1,'r',label='Low-value target')
+    plt.plot(range(1,len(target_freechoice_block1)+1),prob_reward_high_freechoice_block1,'b',label='High-value target')
+    plt.plot(range(1,len(target_freechoice_block1)+1),prob_reward_low_freechoice_block1,'r',label='Low-value target')
     plt.axis([1,target_freechoice_block1.size,0,1])
     plt.axis([1,target_freechoice_block1.size, 0,1])
     plt.xlabel('Trials')
@@ -303,8 +303,8 @@ def FreeChoicePilotTaskPerformance(hdf_file):
     plt.legend()
 
     plt.subplot(2,2,4)
-    plt.plot(range(1,target_freechoice_block3.size+1),prob_reward_high_freechoice_block3,'b',label='High-value target')
-    plt.plot(range(1,target_freechoice_block3.size+1),prob_reward_low_freechoice_block3,'r',label='Low-value target')
+    plt.plot(range(1,len(target_freechoice_block3)+1),prob_reward_high_freechoice_block3,'b',label='High-value target')
+    plt.plot(range(1,len(target_freechoice_block3)+1),prob_reward_low_freechoice_block3,'r',label='Low-value target')
     plt.axis([1,target_freechoice_block3.size,0,1])
     plt.axis([1,target_freechoice_block3.size, 0,1])
     plt.xlabel('Trials')
