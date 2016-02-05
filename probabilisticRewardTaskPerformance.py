@@ -165,3 +165,157 @@ def FreeChoiceTaskPerformance(hdf_file):
 	hdf.close()
 
 	return
+
+
+def FreeChoicePilotTaskPerformance(hdf_file):
+    hdf = tables.openFile(hdf_file)
+
+    state = hdf.root.task_msgs[:]['msg']
+    state_time = hdf.root.task_msgs[:]['time']
+    trial_type = hdf.root.task[:]['target_index']
+    # reward schedules
+    reward_scheduleH = hdf.root.task[:]['reward_scheduleH']
+    reward_scheduleL = hdf.root.task[:]['reward_scheduleL']
+      
+    ind_wait_states = np.ravel(np.nonzero(state == 'wait'))
+    ind_target_states = np.ravel(np.nonzero(state == 'target'))
+    ind_check_reward_states = np.ravel(np.nonzero(state == 'check_reward'))
+    num_successful_trials = ind_check_reward_states.size
+    instructed_or_freechoice = trial_type[state_time[ind_check_reward_states]]
+    rewarded_reward_scheduleH = reward_scheduleH[state_time[ind_target_states]]
+    rewarded_reward_scheduleL = reward_scheduleL[state_time[ind_target_states]]
+
+    target1 = np.zeros(100)
+    reward1 = np.zeros(target1.size)
+    target3 = np.zeros(ind_check_reward_states.size-200)
+    #target3 = np.zeros(np.min([num_successful_trials-200,100]))
+    reward3 = np.zeros(target3.size)
+    target_freechoice_block1 = np.zeros(70)
+    reward_freechoice_block1 = np.zeros(70)
+    target_freechoice_block3 = []
+    reward_freechoice_block3 = np.zeros(num_successful_trials-200)
+    #reward_freechoice_block3 = np.zeros(np.min([num_successful_trials-200,100]))
+    trial1 = np.zeros(target1.size)
+    trial3 = np.zeros(target3.size)
+    stim_trials = np.zeros(target3.size)
+
+    '''
+    Target choices for all (free-choice only) and associated reward assignments
+    '''
+    for i in range(0,100):
+        target_state1 = state[ind_check_reward_states[i] - 2]
+        trial1[i] = instructed_or_freechoice[i]
+        if target_state1 == 'hold_targetL':
+            target1[i] = 1
+            reward1[i] = rewarded_reward_scheduleL[i]
+        else:
+            target1[i] = 2
+            reward1[i] = rewarded_reward_scheduleH[i]
+        if trial1[i] == 2:
+            target_freechoice_block1[counter_block1] = target1[i]
+            reward_freechoice_block1[counter_block1] = reward1[i]
+            counter_block1 += 1
+    for i in range(200,num_successful_trials):
+    #for i in range(200,np.min([num_successful_trials,300])):
+        target_state3 = state[ind_check_reward_states[i] - 2]
+        trial3[i-200] = instructed_or_freechoice[i]
+        if target_state3 == 'hold_targetL':
+            target3[i-200] = 1
+            reward3[i-200] = rewarded_reward_scheduleL[i]
+            if trial3[i-200]==1:   # instructed trial to low-value targer paired with stim
+                stim_trials[i-200] = 1
+            else:
+                stim_trials[i-200] = 0
+        else:
+            target3[i-200] = 2
+            reward3[i-200] = rewarded_reward_scheduleH[i]
+            stim_trials[i-200] = 0
+        if trial3[i-200] == 2:
+            target_freechoice_block3.append(target3[i-200])
+            reward_freechoice_block3[counter_block3] = reward3[i-200]
+            counter_block3 += 1
+
+    prob_choose_high_freechoice_block1 = np.zeros(target_freechoice_block1.size)
+    prob_choose_low_freechoice_block1 = np.zeros(target_freechoice_block1.size)
+    prob_reward_high_freechoice_block1 = np.zeros(target_freechoice_block1.size)
+    prob_reward_low_freechoice_block1 = np.zeros(target_freechoice_block1.size)
+    prob_choose_high_freechoice_block3 = np.zeros(target_freechoice_block3.size)
+    prob_choose_low_freechoice_block3 = np.zeros(target_freechoice_block3.size)
+    prob_reward_high_freechoice_block3 = np.zeros(target_freechoice_block3.size)
+    prob_reward_low_freechoice_block3 = np.zeros(target_freechoice_block3.size)
+
+    for i in range(0,target_freechoice_block1.size):
+        chosen_high_freechoice = target_freechoice_block1[range(np.maximum(0,i - running_avg_length),i+1)] == 2
+        chosen_low_freechoice = target_freechoice_block1[range(np.maximum(0,i - running_avg_length),i+1)] == 1
+        reward_high_freechoice = np.logical_and(chosen_high_freechoice,reward_freechoice_block1[range(np.maximum(0,i - running_avg_length),i+1)])
+        reward_low_freechoice = np.logical_and(chosen_low_freechoice,reward_freechoice_block1[range(np.maximum(0,i - running_avg_length),i+1)])
+    
+        #prob_choose_high_freechoice[i] = float(sum(chosen_high_freechoice))/np.minimum(i+1,running_avg_length)
+        #prob_choose_low_freechoice[i] = float(sum(chosen_low_freechoice))/np.minimum(i+1,running_avg_length)
+        prob_choose_high_freechoice_block1[i] = float(sum(chosen_high_freechoice))/chosen_high_freechoice.size
+        prob_choose_low_freechoice_block1[i] = float(sum(chosen_low_freechoice))/chosen_low_freechoice.size
+        prob_reward_high_freechoice_block1[i] = float(sum(reward_high_freechoice))/(sum(chosen_high_freechoice) + (sum(chosen_high_freechoice)==0))  # add logic statment to denominator so we never divide by 0
+        prob_reward_low_freechoice_block1[i] = float(sum(reward_low_freechoice))/(sum(chosen_low_freechoice) + (sum(chosen_low_freechoice)==0))
+
+    for i in range(0,target_freechoice_block3.size):
+        chosen_high_freechoice = target_freechoice_block3[range(np.maximum(0,i - running_avg_length),i+1)] == 2
+        chosen_low_freechoice = target_freechoice_block3[range(np.maximum(0,i - running_avg_length),i+1)] == 1
+        reward_high_freechoice = np.logical_and(chosen_high_freechoice,reward_freechoice_block3[range(np.maximum(0,i - running_avg_length),i+1)])
+        reward_low_freechoice = np.logical_and(chosen_low_freechoice,reward_freechoice_block3[range(np.maximum(0,i - running_avg_length),i+1)])
+    
+        #prob_choose_high_freechoice[i] = float(sum(chosen_high_freechoice))/np.minimum(i+1,running_avg_length)
+        #prob_choose_low_freechoice[i] = float(sum(chosen_low_freechoice))/np.minimum(i+1,running_avg_length)
+        prob_choose_high_freechoice_block3[i] = float(sum(chosen_high_freechoice))/chosen_high_freechoice.size
+        prob_choose_low_freechoice_block3[i] = float(sum(chosen_low_freechoice))/chosen_low_freechoice.size
+        prob_reward_high_freechoice_block3[i] = float(sum(reward_high_freechoice))/(sum(chosen_high_freechoice) + (sum(chosen_high_freechoice)==0))  # add logic statment to denominator so we never divide by 0
+        prob_reward_low_freechoice_block3[i] = float(sum(reward_low_freechoice))/(sum(chosen_low_freechoice) + (sum(chosen_low_freechoice)==0))
+
+    plt.figure()
+    plt.subplot(2,2,1)
+    plt.plot(range(1,target_freechoice_block1.size+1),prob_choose_high_freechoice_block1,'b',label='High-value target')
+    plt.plot(range(1,target_freechoice_block1.size+1),prob_choose_low_freechoice_block1,'r',label='Low-value target')
+    plt.axis([1,target_freechoice_block1.size,0,1])
+    plt.axis([1,target_freechoice_block1.size, 0,1])
+    plt.xlabel('Trials')
+    plt.ylabel('Probability of Target Selection')
+    plt.title('Block A: Free-Choice Trials')
+    plt.legend()
+
+    plt.subplot(2,2,2)
+    plt.plot(range(1,target_freechoice_block3.size+1),prob_choose_high_freechoice_block3,'b',label='High-value target')
+    plt.plot(range(1,target_freechoice_block3.size+1),prob_choose_low_freechoice_block3,'r',label='Low-value target')
+    plt.axis([1,target_freechoice_block3.size,0,1])
+    plt.axis([1,target_freechoice_block3.size, 0,1])
+    plt.xlabel('Trials')
+    plt.ylabel('Probability of Target Selection')
+    plt.title("Block A': Free-Choice Trials")
+    plt.legend()
+
+    plt.subplot(2,2,3)
+    plt.plot(range(1,target_freechoice_block1.size+1),prob_reward_high_freechoice_block1,'b',label='High-value target')
+    plt.plot(range(1,target_freechoice_block1.size+1),prob_reward_low_freechoice_block1,'r',label='Low-value target')
+    plt.axis([1,target_freechoice_block1.size,0,1])
+    plt.axis([1,target_freechoice_block1.size, 0,1])
+    plt.xlabel('Trials')
+    plt.ylabel('Probability of Reward')
+    plt.title('Block A: Free-Choice Trials')
+    plt.legend()
+
+    plt.subplot(2,2,4)
+    plt.plot(range(1,target_freechoice_block3.size+1),prob_reward_high_freechoice_block3,'b',label='High-value target')
+    plt.plot(range(1,target_freechoice_block3.size+1),prob_reward_low_freechoice_block3,'r',label='Low-value target')
+    plt.axis([1,target_freechoice_block3.size,0,1])
+    plt.axis([1,target_freechoice_block3.size, 0,1])
+    plt.xlabel('Trials')
+    plt.ylabel('Probability of Reward')
+    plt.title("Block A': Free-Choice Trials")
+    plt.legend()
+
+
+    #plt.savefig('C:/Users/Samantha Summerson/Documents/GitHub/analysis/Papa_Performance_figs/FCPerformance_targets_%s.svg' % hdf_file[:-4])    # save this filetype for AI editing
+    plt.savefig('/home/srsummerson/code/analysis/Luigi_Performance_figs/FCPerformance_targets_%s.png' % hdf_file[:-4])    # save this filetype for easy viewing
+    plt.close()
+
+
+
+	return

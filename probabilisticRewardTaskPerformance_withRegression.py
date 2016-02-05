@@ -141,7 +141,7 @@ for name in hdf_list:
             target_freechoice_block3.append(target3[i-200])
             reward_freechoice_block3[counter_block3] = reward3[i-200]
             counter_block3 += 1
-
+    """
     prob_choose_high_freechoice_block1 = np.zeros(target_freechoice_block1.size)
     prob_choose_low_freechoice_block1 = np.zeros(target_freechoice_block1.size)
     prob_reward_high_freechoice_block1 = np.zeros(target_freechoice_block1.size)
@@ -222,7 +222,8 @@ for name in hdf_list:
     #plt.savefig('C:/Users/Samantha Summerson/Documents/GitHub/analysis/Papa_Performance_figs/FCPerformance_targets_%s.svg' % hdf_file[:-4])    # save this filetype for AI editing
     plt.savefig('/home/srsummerson/code/analysis/Luigi_Performance_figs/FCPerformance_targets_%s.png' % hdf_file[:-4])    # save this filetype for easy viewing
     plt.close()
-    
+    """
+
 
     '''
     Previous rewards and no rewards
