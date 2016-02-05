@@ -1,7 +1,7 @@
 '''
 Stress Trial Days:
 *11/24/2015 - Blocks 1, 2 (DIO data didn't save to recording)
-12/4/2015 - Blocks 1 (luig20151204_05.hdf), 2 (luig20151204_07.hdf), 3 (luig20151204_08.hdf)
+*12/4/2015 - Blocks 1 (luig20151204_05.hdf), 2 (luig20151204_07.hdf), 3 (luig20151204_08.hdf)
 12/6/2015 - Block 1 (luig20151206_04.hdf)
 12/7/2015 - Block 1 (luig20151207_03.hdf)
 12/17/2015 - Block 1 (luig20151217_05.hdf; reversal, not stress)
@@ -55,8 +55,8 @@ def running_mean(x, N):
 	return (cumsum[N:] - cumsum[:-N]) / float(N) 
 
 # Set up code for particular day and block
-hdf_filename = 'luig20151223_03.hdf'
-filename = 'Luigi20151223_HDEEG'
+hdf_filename = 'luig20151206_04.hdf'
+filename = 'Luigi20151206_HDEEG'
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
 #hdf_location = hdf_filename
