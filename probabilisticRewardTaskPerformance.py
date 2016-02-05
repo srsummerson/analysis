@@ -168,6 +168,8 @@ def FreeChoiceTaskPerformance(hdf_file):
 
 def FreeChoicePilotTaskPerformance(hdf_file):
     hdf = tables.openFile(hdf_file)
+    counter_block1 = 0
+    counter_block3 = 0
 
     state = hdf.root.task_msgs[:]['msg']
     state_time = hdf.root.task_msgs[:]['time']
