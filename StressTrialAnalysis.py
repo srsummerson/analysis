@@ -209,8 +209,8 @@ plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(blo
 
 # Load syncing data for hdf file and TDT recording
 hdf_times = dict()
-#mat_filename = filename+'_b'+str(block_num)+'_syncHDF.mat'
-mat_filename = 'Luigi20151229_HDEEG'+ '_b'+str(block_num)+'_syncHDF.mat'
+mat_filename = filename+'_b'+str(block_num)+'_syncHDF.mat'
+#mat_filename = 'Luigi20151229_HDEEG'+ '_b'+str(block_num)+'_syncHDF.mat'
 sp.io.loadmat('/home/srsummerson/storage/syncHDF/'+mat_filename,hdf_times)
 
 r = io.TdtIO(TDT_tank)
