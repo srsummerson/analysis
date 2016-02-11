@@ -274,7 +274,7 @@ def FreeChoicePilotTaskPerformance(hdf_file):
         prob_reward_low_freechoice_block3[i] = float(sum(reward_low_freechoice))/(sum(chosen_low_freechoice) + (sum(chosen_low_freechoice)==0))
 
     plt.figure()
-    plt.subplot(1,2,1)
+    plt.subplot(2,2,1)
     plt.plot(range(1,len(target_freechoice_block1)+1),prob_choose_high_freechoice_block1,'b',label='High-value target')
     plt.plot(range(1,len(target_freechoice_block1)+1),prob_choose_low_freechoice_block1,'r',label='Low-value target')
     plt.axis([1,target_freechoice_block1.size,0,1])
@@ -284,7 +284,7 @@ def FreeChoicePilotTaskPerformance(hdf_file):
     plt.title('Block A: Free-Choice Trials')
     plt.legend()
 
-    plt.subplot(1,2,2)
+    plt.subplot(2,2,2)
     plt.plot(range(1,len(target_freechoice_block3)+1),prob_choose_high_freechoice_block3,'b',label='High-value target')
     plt.plot(range(1,len(target_freechoice_block3)+1),prob_choose_low_freechoice_block3,'r',label='Low-value target')
     plt.axis([1,target_freechoice_block3.size,0,1])
@@ -293,7 +293,7 @@ def FreeChoicePilotTaskPerformance(hdf_file):
     plt.ylabel('Probability of Target Selection')
     plt.title("Block A': Free-Choice Trials")
     plt.legend()
-    '''
+    
     plt.subplot(2,2,3)
     plt.plot(range(1,len(target_freechoice_block1)+1),prob_reward_high_freechoice_block1,'b',label='High-value target')
     plt.plot(range(1,len(target_freechoice_block1)+1),prob_reward_low_freechoice_block1,'r',label='Low-value target')
@@ -313,9 +313,9 @@ def FreeChoicePilotTaskPerformance(hdf_file):
     plt.ylabel('Probability of Reward')
     plt.title("Block A': Free-Choice Trials")
     plt.legend()
-    '''
+    
     #plt.savefig('C:/Users/Samantha Summerson/Documents/GitHub/analysis/Papa_Performance_figs/FCPerformance_targets_%s.svg' % hdf_file[:-4])    # save this filetype for AI editing
-    plt.savefig('/home/srsummerson/code/analysis/Luigi_Performance_figs/FCPerformance_targets_%s.svg' % hdf_file[:-4])    # save this filetype for easy viewing
+    #plt.savefig('/home/srsummerson/code/analysis/Luigi_Performance_figs/FCPerformance_targets_%s.svg' % hdf_file[:-4])    # save this filetype for easy viewing
     plt.savefig('/home/srsummerson/code/analysis/Luigi_Performance_figs/FCPerformance_targets_%s.png' % hdf_file[:-4])    # save this filetype for easy viewing
     plt.close()
     hdf.close()
