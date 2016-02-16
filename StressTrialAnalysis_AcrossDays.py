@@ -475,11 +475,11 @@ plt.xlabel('Sessions')
 plt.ylabel('IBI (s)')
 plt.title('Inter-beat Intervals')
 plt.legend()
-plt.show()
+#plt.show()
 
 
 
-#plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_PupilDistribution-DeleteBlinks.svg')
+plt.savefig('/home/srsummerson/code/analysis/StressPlots/summary_stresstrial_figure.svg')
 #plt.close("all")
 
 
