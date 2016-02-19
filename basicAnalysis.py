@@ -23,16 +23,18 @@ def computeSTA(spike_file,tdt_signal,channel,t_start,t_stop):
 	for unit in unit_vals:
 		sta = 0
 		spike_times = [spike[0] for spike in channel_spikes if (spike[2]==unit)]
-		start_avg = spike_times - 1 	# look 1 s back in time until 1 s forward in time from spike
-		stop_avg = spike_times + 1
+		start_avg = [(time - 1) for time in spike_times] 	# look 1 s back in time until 1 s forward in time from spike
+		stop_avg = [(time + 1) for time in spike_times]
 		num_spikes = len(spike_times)
 		for i in range(0,num_spikes):
-			epoch = np.logical_and(np.greater(tdt_times,start_avg[i]),np.less(tdt_times,stop_avg))
+			epoch = np.logical_and(np.greater(tdt_times,start_avg[i]),np.less(tdt_times,stop_avg[i]))
 			epoch_inds = np.ravel(np.nonzero(epoch))
 			sta += tdt_data[epoch_inds]
 		unit_sta[unit] = sta/float(num_spikes)
 
 	return unit_sta
+
+
 
 
 
