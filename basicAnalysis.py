@@ -35,6 +35,8 @@ def computeSTA(spike_file,tdt_signal,channel,t_start,t_stop):
 			if (len(epoch) < len_epoch):
 				sta = sta
 			else:
+				print len(sta)
+				print len(tdt_data[epoch_inds])
 				sta += tdt_data[epoch_inds]
 		unit_sta[unit] = sta/float(num_spikes)
 
