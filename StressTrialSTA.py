@@ -32,6 +32,7 @@ import numpy as np
 import scipy as sp
 import tables
 from neo import io
+from plexon import plexfile
 from PulseMonitorData import findIBIs
 from basicAnalysis import computeSTA
 from scipy import signal
