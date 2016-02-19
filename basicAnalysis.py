@@ -33,6 +33,7 @@ def computeSTA(spike_file,tdt_signal,channel,t_start,t_stop):
 			epoch = np.logical_and(np.greater(tdt_times,start_avg[i]),np.less(tdt_times,stop_avg[i]))
 			epoch_inds = np.ravel(np.nonzero(epoch))
 			if (len(epoch) < len_epoch):
+				sta = sta
 			else:
 				sta += tdt_data[epoch_inds]
 		unit_sta[unit] = sta/float(num_spikes)
