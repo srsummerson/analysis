@@ -21,10 +21,12 @@ def computeSTA(spike_file,tdt_signal,channel,t_start,t_stop):
 	tdt_data = np.ravel(tdt_signal)
 
 	for unit in unit_vals:
-		sta = 0
+		
 		spike_times = [spike[0] for spike in channel_spikes if (spike[2]==unit)]
 		start_avg = [(time - 1) for time in spike_times] 	# look 1 s back in time until 1 s forward in time from spike
 		stop_avg = [(time + 1) for time in spike_times]
+		epoch = np.logical_and(np.greater(tdt_times,start_avg[0]),np.less(tdt_times,stop_avg[0]))
+		sta = np.zeros(len(epoch))
 		num_spikes = len(spike_times)
 		for i in range(0,num_spikes):
 			epoch = np.logical_and(np.greater(tdt_times,start_avg[i]),np.less(tdt_times,stop_avg[i]))
