@@ -146,7 +146,7 @@ lfp = dict()
 channels = [9,10,11,12,25,26,27,28]
 # Get Pulse and Pupil Data
 for sig in bl.segments[block_num-1].analogsignals:
-	if (sig.name[0:3] == 'LFP1')&(sig.channel_index in channels):
+	if (sig.name[0:4] == 'LFP1')&(sig.channel_index in channels):
 		lfp[sig.channel_index] = sig
 		lfp_samprate = sig.sampling_rate.item()
 
