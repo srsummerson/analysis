@@ -212,13 +212,20 @@ for channel in channels:
 	sta_reg_before = computeSTA(spike_file,lfp[channel],channel,t_start_reg_before,t_stop_reg_before)
 	sta_stress = computeSTA(spike_file,lfp[channel],channel,t_start_stress,t_stop_stress)
 	sta_reg_after = computeSTA(spike_file,lfp[channel],channel,t_start_reg_after,t_stop_reg_after)
-	plt.figure()
-	plt.plot(sta_reg_before,'r',label='Reg Before')
-	plt.plot(sta_stress,'b',label='Stress')
-	plt.plot(sta_reg_after,'m',label='Reg After')
-	plt.ylabel('STA (V)')
-	plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+str(channel)+'_STA.svg')
+	all_units = sta_reg_before.keys() + sta_stress.keys() + sta_reg_after.keys()
+	all_units = set(all_units)
+	for unit in all_units:
+		plt.figure()
+		if unit in sta_reg_before.keys():
+			plt.plot(sta_reg_before[unit],'r',label='Reg Before')
+		if unit in sta_stress.keys():
+			plt.plot(sta_stress[unit],'b',label='Stress')
+		if unit in sta_reg_after.keys():
+			plt.plot(sta_reg_after[unit],'m',label='Reg After')
+		plt.ylabel('STA (V)')
+		plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_'+str(channel)+'-'+str(unit)+'_STA.svg')
 
+hdf.close()
 '''
 plots: hists of response times
 '''
