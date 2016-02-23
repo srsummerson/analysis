@@ -399,3 +399,157 @@ def FreeChoicePilotTask_LowValueChoiceProb(hdf_file):
     hdf.close()
 
     return	block1_prob_choose_low,block3_prob_choose_low
+
+def FreeChoiceTask_Behavior(hdf_file):
+	hdf = tables.openFile(hdf_file)
+
+	# Task states
+	state = hdf.root.task_msgs[:]['msg']
+	state_time = hdf.root.task_msgs[:]['time']
+	# Target information: high-value target= targetH, low-value target= targetL
+	targetH = hdf.root.task[:]['targetH']
+	targetL = hdf.root.task[:]['targetL']
+	# Reward schedules for each target
+	reward_scheduleH = hdf.root.task[:]['reward_scheduleH']
+	reward_scheduleL = hdf.root.task[:]['reward_scheduleL']
+	# Trial type: instructed (1) or free-choice (2) trial 
+	trial_type = hdf.root.task[:]['target_index']
+
+	ind_wait_states = np.ravel(np.nonzero(state == 'wait'))
+	#ind_target_states = np.ravel(np.nonzero(state == 'target'))
+	ind_check_reward_states = np.ravel(np.nonzero(state == 'check_reward'))
+	ind_target_states = ind_check_reward_states - 3 # only look at target targets when the trial was successful (2 states before reward state)
+	num_successful_trials = ind_check_reward_states.size
+	target_times = state_time[ind_target_states]
+	# creates vector same size of state vectors for comparison. instructed (1) and free-choice (2)
+	instructed_or_freechoice = trial_type[state_time[ind_target_states]]
+	# creates vector of same size of state vectors for comparision. (0) = small reward, (1) = large reward.
+	rewarded_reward_scheduleH = reward_scheduleH[state_time[ind_target_states]]
+	rewarded_reward_scheduleL = reward_scheduleL[state_time[ind_target_states]]
+	num_free_choice_trials = sum(instructed_or_freechoice) - num_successful_trials
+	# creates vector of same size of target info: maxtrix of num_successful_trials x 3; (position_offset, reward_prob, left/right)
+	targetH_info = targetH[state_time[ind_target_states]]
+	targetL_info = targetL[state_time[ind_target_states]]
+
+	# Initialize variables use for in performance computation
+	counter = 0	# counter for counting number of free-choice trials
+	time_counter = 0
+	running_avg_length = 20
+	target_all = np.zeros(ind_check_reward_states.size) # vector for recording target selection on all trials regardless of type
+	reward_all = np.zeros(target_all.size)	# vector for recording whether rewards was allocated on all trials regardless of type
+	target_freechoice = np.zeros(num_free_choice_trials)	# vector for recording target selection on free-choice trials only
+	reward_freechoice = np.zeros(num_free_choice_trials)	# vector for recording reward allocation on free-choice trials only
+	prob_choose_high_freechoice = np.zeros(target_freechoice.size)
+	prob_choose_low_freechoice = np.zeros(target_freechoice.size)
+	prob_reward_high_freechoice = np.zeros(target_freechoice.size)
+	prob_reward_low_freechoice = np.zeros(target_freechoice.size)
+	#prob_lowR_switchH = np.zeros(target_freechoice.size)
+	#prob_lowNR_switchH = np.zeros(target_freechoice.size)
+	#prob_highR_switchL = np.zeros(target_freechoice.size)
+	#prob_highNR_switchL = np.zeros(target_freechoice.size)
+	prob_choose_high_all = np.zeros(target_all.size)
+	prob_choose_low_all = np.zeros(target_all.size)
+	prob_reward_high_all = np.zeros(target_all.size)
+	prob_reward_low_all = np.zeros(target_all.size)
+
+	"""
+	Find target choices for all (instructed and free-choice) and free-choice trials only.
+	"""
+	for i in range(0,ind_check_reward_states.size):
+		target_state = state[ind_check_reward_states[i] - 2]
+		trial = instructed_or_freechoice[i]
+		if target_state == 'hold_targetL':
+			target_all[i] = 1
+			reward_all[i] = rewarded_reward_scheduleL[i]
+		else:
+			target_all[i] = 2
+			reward_all[i] = rewarded_reward_scheduleH[i]
+
+		#reward_all[i] = state[ind_check_reward_states[i]+1] == 'reward'
+		if trial == 2:
+			target_freechoice[counter] = target_all[i]
+			reward_freechoice[counter] = reward_all[i]
+			counter += 1
+	
+	hdf.close()
+
+	return reward_all, target_all, instructed_or_freechoice
+
+def FreeChoicePilotTask_Behavior(hdf_file):
+    hdf = tables.openFile(hdf_file)
+    counter_block1 = 0
+    counter_block3 = 0
+    running_avg_length = 20
+
+    state = hdf.root.task_msgs[:]['msg']
+    state_time = hdf.root.task_msgs[:]['time']
+    trial_type = hdf.root.task[:]['target_index']
+    # reward schedules
+    reward_scheduleH = hdf.root.task[:]['reward_scheduleH']
+    reward_scheduleL = hdf.root.task[:]['reward_scheduleL']
+      
+    ind_wait_states = np.ravel(np.nonzero(state == 'wait'))
+    ind_target_states = np.ravel(np.nonzero(state == 'target'))
+    ind_check_reward_states = np.ravel(np.nonzero(state == 'check_reward'))
+    num_successful_trials = ind_check_reward_states.size
+    instructed_or_freechoice = trial_type[state_time[ind_check_reward_states]]
+    rewarded_reward_scheduleH = reward_scheduleH[state_time[ind_target_states]]
+    rewarded_reward_scheduleL = reward_scheduleL[state_time[ind_target_states]]
+
+    target1 = np.zeros(100)
+    reward1 = np.zeros(target1.size)
+    target3 = np.zeros(ind_check_reward_states.size-200)
+    #target3 = np.zeros(np.min([num_successful_trials-200,100]))
+    reward3 = np.zeros(target3.size)
+    target_freechoice_block1 = np.zeros(70)
+    reward_freechoice_block1 = np.zeros(70)
+    target_freechoice_block3 = []
+    reward_freechoice_block3 = []
+    #reward_freechoice_block3 = np.zeros(np.min([num_successful_trials-200,100]))
+    trial1 = np.zeros(target1.size)
+    trial3 = np.zeros(target3.size)
+    stim_trials = np.zeros(target3.size)
+
+    '''
+    Target choices for all (free-choice only) and associated reward assignments
+    '''
+    for i in range(0,100):
+        target_state1 = state[ind_check_reward_states[i] - 2]
+        trial1[i] = instructed_or_freechoice[i]
+        if target_state1 == 'hold_targetL':
+            target1[i] = 1
+            reward1[i] = rewarded_reward_scheduleL[i]
+        else:
+            target1[i] = 2
+            reward1[i] = rewarded_reward_scheduleH[i]
+        if trial1[i] == 2:
+            target_freechoice_block1[counter_block1] = target1[i]
+            reward_freechoice_block1[counter_block1] = reward1[i]
+            counter_block1 += 1
+    for i in range(200,num_successful_trials):
+    #for i in range(200,np.min([num_successful_trials,300])):
+        target_state3 = state[ind_check_reward_states[i] - 2]
+        trial3[i-200] = instructed_or_freechoice[i]
+        if target_state3 == 'hold_targetL':
+            target3[i-200] = 1
+            reward3[i-200] = rewarded_reward_scheduleL[i]
+            if trial3[i-200]==1:   # instructed trial to low-value targer paired with stim
+                stim_trials[i-200] = 1
+            else:
+                stim_trials[i-200] = 0
+        else:
+            target3[i-200] = 2
+            reward3[i-200] = rewarded_reward_scheduleH[i]
+            stim_trials[i-200] = 0
+        if trial3[i-200] == 2:
+            target_freechoice_block3.append(target3[i-200])
+            reward_freechoice_block3.append(reward3[i-200])
+            counter_block3 += 1
+    target_freechoice_block3 = np.array(target_freechoice_block3)
+    reward_freechoice_block3 = np.array(reward_freechoice_block3)
+
+    instructed_or_freechoice_block1 = instructed_or_freechoice[0:100]
+    instructed_or_freechoice_block3 = instructed_or_freechoice[200:num_successful_trials]
+    
+    hdf.close()
+    return reward1, target1, instructed_or_freechoice_block1, reward3, target3, instructed_or_freechoice_block3
