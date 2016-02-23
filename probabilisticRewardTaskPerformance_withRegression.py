@@ -131,7 +131,6 @@ for name in hdf_list:
     for i in range(5,100):
         if trial1[i] == 2:
             fc_target_low_block1.append(2 - target1[i])   # = 1 if selected low-value, = 0 if selected high-value
-            fc_prob_low_block1.append(prob_low_block1[i])
             prev_reward1_block1.append((2*target1[i-1] - 3)*reward1[i-1])  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
             prev_reward2_block1.append((2*target1[i-2] - 3)*reward1[i-2])  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
             prev_reward3_block1.append((2*target1[i-3] - 3)*reward1[i-3])  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
@@ -147,7 +146,6 @@ for name in hdf_list:
     for i in range(5,num_block3):
         if trial3[i] == 2:
             fc_target_low_block3.append(2 - target3[i])   # = 1 if selected low-value, = 0 if selected high-value
-            fc_prob_low_block3.append(prob_low_block3[i])
             prev_reward1_block3.append((2*target3[i-1] - 3)*reward3[i-1])  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
             prev_reward2_block3.append((2*target3[i-2] - 3)*reward3[i-2])  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
             prev_reward3_block3.append((2*target3[i-3] - 3)*reward3[i-3])  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
@@ -165,7 +163,6 @@ for name in hdf_list:
     Turn everything into an array
     '''
     fc_target_low_block1 = np.array(fc_target_low_block1)
-    fc_prob_low_block1 = np.array(fc_prob_low_block1)
     prev_reward1_block1 = np.array(prev_reward1_block1)
     prev_reward2_block1 = np.array(prev_reward2_block1)
     prev_reward3_block1 = np.array(prev_reward3_block1)
@@ -179,7 +176,6 @@ for name in hdf_list:
     prev_stim_block1 = np.array(prev_stim_block1)
 
     fc_target_low_block3 = np.array(fc_target_low_block3)
-    fc_prob_low_block3 = np.array(fc_prob_low_block3)
     fc_log_probs_block3 = np.array(fc_log_probs_block3)
     prev_reward1_block3 = np.array(prev_reward1_block3)
     prev_reward2_block3 = np.array(prev_reward2_block3)
