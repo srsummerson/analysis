@@ -196,8 +196,7 @@ for name in hdf_list:
     Oraganize data and regress with GLM 
     '''
     x = np.vstack((prev_reward1_block1,prev_reward2_block1,prev_reward3_block1,prev_reward4_block1,prev_reward5_block1,
-        prev_noreward1_block1,prev_noreward2_block1,prev_noreward3_block1,prev_noreward4_block1,prev_noreward5_block1,
-        prev_stim_block1))
+        prev_noreward1_block1,prev_noreward2_block1,prev_noreward3_block1,prev_noreward4_block1,prev_noreward5_block1))
     x = np.transpose(x)
     x = sm.add_constant(x,prepend='False')
 
@@ -212,7 +211,7 @@ for name in hdf_list:
     fit_glm_block1 = model_glm_block1.fit()
     fit_glm_block3 = model_glm_block3.fit()
     print fit_glm_block1.summary()
-    #print fit_glm_block3.summary()
+    print fit_glm_block3.summary()
     
 
     '''
