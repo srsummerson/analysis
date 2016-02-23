@@ -188,27 +188,20 @@ for name in hdf_list:
     prev_noreward5_block3 = np.array(prev_noreward5_block3)
     prev_stim_block3 = np.array(prev_stim_block3)
 
-    '''
-    Oraganize data and regress 
-    '''
     const_logit_block1 = np.ones(fc_target_low_block1.size)
     const_logit_block3 = np.ones(fc_target_low_block3.size)
+
+    """
+    '''
+    Oraganize data and regress with GLM 
+    '''
     x = np.vstack((prev_reward1_block1,prev_reward2_block1,prev_reward3_block1,prev_reward4_block1,prev_reward5_block1,
         prev_noreward1_block1,prev_noreward2_block1,prev_noreward3_block1,prev_noreward4_block1,prev_noreward5_block1,
         prev_stim_block1))
     x = np.transpose(x)
     x = sm.add_constant(x,prepend='False')
-    '''
-    d = {'FC Target Selection': fc_target_high[:num_regress_block1], 'Prev Reward 1': prev_reward1[:num_regress_block1], 'Prev Reward 2': prev_reward2[:num_regress_block1], 
-            'Prev Reward 3': prev_reward3[:num_regress_block1], 
-            'Prev Reward 4': prev_reward4[:num_regress_block1], 'Prev Reward 5': prev_reward5[:num_regress_block1], 'Prev No Reward 1': prev_noreward1[:num_regress_block1], 
-            'Prev No Reward 2': prev_noreward2[:num_regress_block1],
-            'Prev No Reward 3': prev_noreward3[:num_regress_block1], 'Prev No Reward 4': prev_noreward4[:num_regress_block1], 'Prev No Reward 5': prev_noreward5[:num_regress_block1], 
-            'Prev Stim': prev_stim1[:num_regress_block1],
-            'Const': const_logit_all[:num_regress_block1]}
-    df = pd.DataFrame(d)
-    '''
-    y = np.vstack((prev_reward1_block3,prev_reward2_block3,prev_reward3_block3,prev_reward4_block3,prev_reward5_block3,
+
+     y = np.vstack((prev_reward1_block3,prev_reward2_block3,prev_reward3_block3,prev_reward4_block3,prev_reward5_block3,
         prev_noreward1_block3,prev_noreward2_block3,prev_noreward3_block3,prev_noreward4_block3,prev_noreward5_block3,
         prev_stim_block3))
     y = np.transpose(y)
@@ -220,3 +213,64 @@ for name in hdf_list:
     fit_glm_block3 = model_glm_block3.fit()
     print fit_glm_block1.summary()
     print fit_glm_block3.summary()
+    """
+
+    '''
+    Oraganize data and regress with LogisticRegression
+    '''
+
+    d_block1 = {'target_selection': fc_target_low_block1, 
+            'prev_reward1': prev_reward1_block1, 
+            'prev_reward2': prev_reward2_block1, 
+            'prev_reward3': prev_reward3_block1, 
+            'prev_reward4': prev_reward4_block1, 
+            'prev_reward5': prev_reward5_block1, 
+            'prev_noreward1': prev_noreward1_block1, 
+            'prev_noreward2': prev_noreward2_block1,
+            'prev_noreward3': prev_noreward3_block1, 
+            'prev_noreward4': prev_noreward4_block1, 
+            'prev_noreward5': prev_noreward5_block1, 
+            'prev_stim': prev_stim_block1}
+    df_block1 = pd.DataFrame(d_block1)
+
+    y_block1, X_block1 = dmatrices('target_selection ~ prev_reward1 + prev_reward2 + prev_reward3 + \
+                                    prev_reward4 + prev_reward5 + prev_noreward1 + prev_noreward2 + \
+                                    prev_noreward3 + prev_noreward4 + prev_noreward5 + prev_stim', df_block1,
+                                    return_type = "dataframe")
+    print X_block1.columns
+    # flatten y_block1 into 1-D array
+    y_block1 = np.ravel(y_block1)
+    
+    d_block3 = {'target_selection': fc_target_low_block3, 
+            'prev_reward1': prev_reward1_block3, 
+            'prev_reward2': prev_reward2_block3, 
+            'prev_reward3': prev_reward3_block3, 
+            'prev_reward4': prev_reward4_block3, 
+            'prev_reward5': prev_reward5_block3, 
+            'prev_noreward1': prev_noreward1_block3, 
+            'prev_noreward2': prev_noreward2_block3,
+            'prev_noreward3': prev_noreward3_block3, 
+            'prev_noreward4': prev_noreward4_block3, 
+            'prev_noreward5': prev_noreward5_block3, 
+            'prev_stim': prev_stim_block3}
+    df_block3 = pd.DataFrame(d_block3)
+
+    y_block3, X_block3 = dmatrices('target_selection ~ prev_reward1 + prev_reward2 + prev_reward3 + \
+                                    prev_reward4 + prev_reward5 + prev_noreward1 + prev_noreward2 + \
+                                    prev_noreward3 + prev_noreward4 + prev_noreward5 + prev_stim', df_block3,
+                                    return_type = "dataframe")
+    # flatten y_block3 into 1-D array
+    y_block3 = np.ravel(y_block3)
+
+    # instantiate a logistic regression model, and fit with X and y
+    model_block1 = LogisticRegression()
+    model_block3 = LogisticRegression()
+    model_block1 = model_block1.fit(X_block1, y_block1)
+    model_block3 = model_block3.fit(X_block3, y_block3)
+
+    # check the accuracy on the training set
+    print 'Model accuracy for Block1:',model_block1.score(X_block1, y_block1)
+    print 'Null accuracy rate:',np.max([y_block1.mean(),1 - y_block1.mean()])
+
+    # examine the coefficients
+    print pd.DataFrame(zip(X_block1.columns, np.transpose(model_block1.coef_)))
