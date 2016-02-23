@@ -130,7 +130,7 @@ for name in hdf_list:
 
     for i in range(5,100):
         if trial1[i] == 2:
-            fc_target_low.append(2 - target1[i])   # = 1 if selected low-value, = 0 if selected high-value
+            fc_target_low_block1.append(2 - target1[i])   # = 1 if selected low-value, = 0 if selected high-value
             fc_prob_low_block1.append(prob_low_block1[i])
             prev_reward1_block1.append((2*target1[i-1] - 3)*reward1[i-1])  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
             prev_reward2_block1.append((2*target1[i-2] - 3)*reward1[i-2])  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
