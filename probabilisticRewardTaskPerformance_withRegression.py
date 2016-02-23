@@ -176,7 +176,6 @@ for name in hdf_list:
     prev_stim_block1 = np.array(prev_stim_block1)
 
     fc_target_low_block3 = np.array(fc_target_low_block3)
-    fc_log_probs_block3 = np.array(fc_log_probs_block3)
     prev_reward1_block3 = np.array(prev_reward1_block3)
     prev_reward2_block3 = np.array(prev_reward2_block3)
     prev_reward3_block3 = np.array(prev_reward3_block3)
