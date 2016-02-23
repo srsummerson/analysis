@@ -75,13 +75,8 @@ Q_initial = [0.5, 0.5]
 alpha_true = 0.2
 beta_true = 0.2
 
-for name in hdf_list:
-    print name
-    full_name = hdf_prefix + name
+def probabilisticFreeChoicePilotTask_logisticRegression(hdf_filname):
 
-    '''
-    Get task-relevant variables: reward schedule, choices, and indicators of instructed or not instructed (trial1/trial3)
-    '''
     reward1, target1, trial1, reward3, target3, trial3, stim_trials = FreeChoicePilotTask_Behavior(full_name)
     '''
     Get soft-max decision fit
@@ -128,7 +123,11 @@ for name in hdf_list:
     prev_noreward3_block3 = []
     prev_noreward4_block3 = []
     prev_noreward5_block3 = []
-    prev_stim_block3 = []
+    prev_stim1_block3 = []
+    prev_stim2_block3 = []
+    prev_stim3_block3 = []
+    prev_stim4_block3 = []
+    prev_stim5_block3 = []
 
     for i in range(5,100):
         if trial1[i] == 2:
@@ -160,7 +159,11 @@ for name in hdf_list:
             prev_noreward3_block3.append((2*target3[i-3] - 3)*(1 - reward3[i-3]))  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
             prev_noreward4_block3.append((2*target3[i-4] - 3)*(1 - reward3[i-4]))  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
             prev_noreward5_block3.append((2*target3[i-5] - 3)*(1 - reward3[i-5]))  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
-            prev_stim_block3.append(stim_trials[i - 1])
+            prev_stim1_block3.append(stim_trials[i - 1])
+            prev_stim2_block3.append(stim_trials[i - 2])
+            prev_stim3_block3.append(stim_trials[i - 3])
+            prev_stim4_block3.append(stim_trials[i - 4])
+            prev_stim5_block3.append(stim_trials[i - 5])
 
 
     '''
@@ -192,7 +195,11 @@ for name in hdf_list:
     prev_noreward3_block3 = np.array(prev_noreward3_block3)
     prev_noreward4_block3 = np.array(prev_noreward4_block3)
     prev_noreward5_block3 = np.array(prev_noreward5_block3)
-    prev_stim_block3 = np.array(prev_stim_block3)
+    prev_stim1_block3 = np.array(prev_stim1_block3)
+    prev_stim2_block3 = np.array(prev_stim2_block3)
+    prev_stim3_block3 = np.array(prev_stim3_block3)
+    prev_stim4_block3 = np.array(prev_stim4_block3)
+    prev_stim5_block3 = np.array(prev_stim5_block3)
 
     const_logit_block1 = np.ones(fc_target_low_block1.size)
     const_logit_block3 = np.ones(fc_target_low_block3.size)
@@ -208,18 +215,15 @@ for name in hdf_list:
 
     y = np.vstack((prev_reward1_block3,prev_reward2_block3,prev_reward3_block3,prev_reward4_block3,prev_reward5_block3,
         prev_noreward1_block3,prev_noreward2_block3,prev_noreward3_block3,prev_noreward4_block3,prev_noreward5_block3,
-        prev_stim_block3))
+        prev_stim1_block3, prev_stim2_block3, prev_stim3_block3, prev_stim4_block3, prev_stim5_block3))
     y = np.transpose(y)
     y = sm.add_constant(y,prepend='False')
 
-    model_glm_block1 = sm.GLM(fc_target_high_block1,x,family = sm.families.Binomial())
-    model_glm_block3 = sm.GLM(fc_target_high_block3,y,family = sm.families.Binomial())
+    model_glm_block1 = sm.GLM(fc_target_low_block1,x,family = sm.families.Binomial())
+    model_glm_block3 = sm.GLM(fc_target_low_block3,y,family = sm.families.Binomial())
     fit_glm_block1 = model_glm_block1.fit()
     fit_glm_block3 = model_glm_block3.fit()
-    print fit_glm_block1.summary()
-    print fit_glm_block3.summary()
     
-
     '''
     Oraganize data and regress with LogisticRegression
     '''
@@ -280,3 +284,18 @@ for name in hdf_list:
     # examine the coefficients
     print pd.DataFrame(zip(X_block1.columns, np.transpose(model_block1.coef_)))
     """
+    return fit_glm_block1, fit_glm_block3
+
+
+
+for name in hdf_list:
+    print name
+    full_name = hdf_prefix + name
+
+    fit_glm_block1, fit_glm_block3 = probabilisticFreeChoicePilotTask_logisticRegression(full_name)
+    print fit_glm_block1.summary()
+    print fit_glm_block3.summary()
+    '''
+    fit_glm_block1: const, prev_reward1, prev_reward2, prev_reward3, prev_reward4, prev_reward5, prev_noreward1, prev_noreward2, prev_noreward3, prev_noreward4, prev_noreward5
+    fit_glm_block3: const, prev_reward1, prev_reward2, prev_reward3, prev_reward4, prev_reward5, prev_noreward1, prev_noreward2, prev_noreward3, prev_noreward4, prev_noreward5, prev_stim
+    '''
