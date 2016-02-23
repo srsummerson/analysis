@@ -9,6 +9,7 @@ import tables
 import numpy as np
 import matplotlib.pyplot as plt
 from logLikelihoodRLPerformance import RLPerformance, logLikelihoodRLPerformance
+from probabilisticRewardTaskPerformance import FreeChoicePilotTask_Behavior
 
 
 
