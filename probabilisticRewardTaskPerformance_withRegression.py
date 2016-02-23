@@ -201,7 +201,7 @@ for name in hdf_list:
     x = np.transpose(x)
     x = sm.add_constant(x,prepend='False')
 
-     y = np.vstack((prev_reward1_block3,prev_reward2_block3,prev_reward3_block3,prev_reward4_block3,prev_reward5_block3,
+    y = np.vstack((prev_reward1_block3,prev_reward2_block3,prev_reward3_block3,prev_reward4_block3,prev_reward5_block3,
         prev_noreward1_block3,prev_noreward2_block3,prev_noreward3_block3,prev_noreward4_block3,prev_noreward5_block3,
         prev_stim_block3))
     y = np.transpose(y)
