@@ -191,7 +191,7 @@ for name in hdf_list:
     const_logit_block1 = np.ones(fc_target_low_block1.size)
     const_logit_block3 = np.ones(fc_target_low_block3.size)
 
-    """
+    
     '''
     Oraganize data and regress with GLM 
     '''
@@ -212,8 +212,8 @@ for name in hdf_list:
     fit_glm_block1 = model_glm_block1.fit()
     fit_glm_block3 = model_glm_block3.fit()
     print fit_glm_block1.summary()
-    print fit_glm_block3.summary()
-    """
+    #print fit_glm_block3.summary()
+    
 
     '''
     Oraganize data and regress with LogisticRegression
