@@ -552,4 +552,4 @@ def FreeChoicePilotTask_Behavior(hdf_file):
     instructed_or_freechoice_block3 = instructed_or_freechoice[200:num_successful_trials]
     
     hdf.close()
-    return reward1, target1, instructed_or_freechoice_block1, reward3, target3, instructed_or_freechoice_block3
+    return reward1, target1, instructed_or_freechoice_block1, reward3, target3, instructed_or_freechoice_block3, stim_trials

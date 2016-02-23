@@ -8,6 +8,7 @@ import scipy.optimize as op
 import tables
 import numpy as np
 import matplotlib.pyplot as plt
+from logLikelihoodRLPerformance import RLPerformance, logLikelihoodRLPerformance
 
 
 
@@ -69,233 +70,139 @@ hdf_prefix = 'C:\Users\Samantha Summerson\Dropbox\Carmena Lab\Papa\hdf'
 
 
 global_max_trial_dist = 0
+Q_initial = [0.5, 0.5]
+alpha_true = 0.2
+beta_true = 0.2
 
 for name in hdf_list:
-    counter_block1 = 0.0
-    counter_block3 = 0.0
     print name
     full_name = hdf_prefix + name
-    hdf = tables.openFile(full_name)
-
-    state = hdf.root.task_msgs[:]['msg']
-    state_time = hdf.root.task_msgs[:]['time']
-    trial_type = hdf.root.task[:]['target_index']
-    # reward schedules
-    reward_scheduleH = hdf.root.task[:]['reward_scheduleH']
-    reward_scheduleL = hdf.root.task[:]['reward_scheduleL']
-      
-    ind_wait_states = np.ravel(np.nonzero(state == 'wait'))
-    ind_target_states = np.ravel(np.nonzero(state == 'target'))
-    ind_check_reward_states = np.ravel(np.nonzero(state == 'check_reward'))
-    num_successful_trials = ind_check_reward_states.size
-    instructed_or_freechoice = trial_type[state_time[ind_check_reward_states]]
-    rewarded_reward_scheduleH = reward_scheduleH[state_time[ind_target_states]]
-    rewarded_reward_scheduleL = reward_scheduleL[state_time[ind_target_states]]
-
-    target1 = np.zeros(100)
-    reward1 = np.zeros(target1.size)
-    target3 = np.zeros(ind_check_reward_states.size-200)
-    #target3 = np.zeros(np.min([num_successful_trials-200,100]))
-    reward3 = np.zeros(target3.size)
-    target_freechoice_block1 = np.zeros(70)
-    reward_freechoice_block1 = np.zeros(70)
-    target_freechoice_block3 = []
-    reward_freechoice_block3 = np.zeros(num_successful_trials-200)
-    #reward_freechoice_block3 = np.zeros(np.min([num_successful_trials-200,100]))
-    trial1 = np.zeros(target1.size)
-    trial3 = np.zeros(target3.size)
-    stim_trials = np.zeros(target3.size)
 
     '''
-    Target choices for all (free-choice only) and associated reward assignments
+    Get task-relevant variables: reward schedule, choices, and indicators of instructed or not instructed (trial1/trial3)
     '''
-    for i in range(0,100):
-        target_state1 = state[ind_check_reward_states[i] - 2]
-        trial1[i] = instructed_or_freechoice[i]
-        if target_state1 == 'hold_targetL':
-            target1[i] = 1
-            reward1[i] = rewarded_reward_scheduleL[i]
-        else:
-            target1[i] = 2
-            reward1[i] = rewarded_reward_scheduleH[i]
-        if trial1[i] == 2:
-            target_freechoice_block1[counter_block1] = target1[i]
-            reward_freechoice_block1[counter_block1] = reward1[i]
-            counter_block1 += 1
-    for i in range(200,num_successful_trials):
-    #for i in range(200,np.min([num_successful_trials,300])):
-        target_state3 = state[ind_check_reward_states[i] - 2]
-        trial3[i-200] = instructed_or_freechoice[i]
-        if target_state3 == 'hold_targetL':
-            target3[i-200] = 1
-            reward3[i-200] = rewarded_reward_scheduleL[i]
-            if trial3[i-200]==1:   # instructed trial to low-value targer paired with stim
-                stim_trials[i-200] = 1
-            else:
-                stim_trials[i-200] = 0
-        else:
-            target3[i-200] = 2
-            reward3[i-200] = rewarded_reward_scheduleH[i]
-            stim_trials[i-200] = 0
-        if trial3[i-200] == 2:
-            target_freechoice_block3.append(target3[i-200])
-            reward_freechoice_block3[counter_block3] = reward3[i-200]
-            counter_block3 += 1
-    """
-    prob_choose_high_freechoice_block1 = np.zeros(target_freechoice_block1.size)
-    prob_choose_low_freechoice_block1 = np.zeros(target_freechoice_block1.size)
-    prob_reward_high_freechoice_block1 = np.zeros(target_freechoice_block1.size)
-    prob_reward_low_freechoice_block1 = np.zeros(target_freechoice_block1.size)
-    prob_choose_high_freechoice_block3 = np.zeros(target_freechoice_block3.size)
-    prob_choose_low_freechoice_block3 = np.zeros(target_freechoice_block3.size)
-    prob_reward_high_freechoice_block3 = np.zeros(target_freechoice_block3.size)
-    prob_reward_low_freechoice_block3 = np.zeros(target_freechoice_block3.size)
-
-    for i in range(0,target_freechoice_block1.size):
-        chosen_high_freechoice = target_freechoice_block1[range(np.maximum(0,i - running_avg_length),i+1)] == 2
-        chosen_low_freechoice = target_freechoice_block1[range(np.maximum(0,i - running_avg_length),i+1)] == 1
-        reward_high_freechoice = np.logical_and(chosen_high_freechoice,reward_freechoice_block1[range(np.maximum(0,i - running_avg_length),i+1)])
-        reward_low_freechoice = np.logical_and(chosen_low_freechoice,reward_freechoice_block1[range(np.maximum(0,i - running_avg_length),i+1)])
+    reward1, target1, trial1, reward3, target3, trial3, stim_trials = FreeChoicePilotTask_Behavior(full_name)
+    '''
+    Get soft-max decision fit
+    '''
+    nll = lambda *args: -logLikelihoodRLPerformance(*args)
+    result1 = op.minimize(nll, [alpha_true, beta_true], args=(Q_initial, reward1, target1, trial1), bounds=[(0,1),(0,None)])
+    alpha_ml_block1, beta_ml_block1 = result1["x"]
+    Qlow_block1, Qhigh_block1, prob_low_block1, max_loglikelihood1 = RLPerformance([alpha_ml_block1,beta_ml_block1],Q_initial,reward1,target1, trial1)
     
-        #prob_choose_high_freechoice[i] = float(sum(chosen_high_freechoice))/np.minimum(i+1,running_avg_length)
-        #prob_choose_low_freechoice[i] = float(sum(chosen_low_freechoice))/np.minimum(i+1,running_avg_length)
-        prob_choose_high_freechoice_block1[i] = float(sum(chosen_high_freechoice))/chosen_high_freechoice.size
-        prob_choose_low_freechoice_block1[i] = float(sum(chosen_low_freechoice))/chosen_low_freechoice.size
-        prob_reward_high_freechoice_block1[i] = float(sum(reward_high_freechoice))/(sum(chosen_high_freechoice) + (sum(chosen_high_freechoice)==0))  # add logic statment to denominator so we never divide by 0
-        prob_reward_low_freechoice_block1[i] = float(sum(reward_low_freechoice))/(sum(chosen_low_freechoice) + (sum(chosen_low_freechoice)==0))
-
-    for i in range(0,target_freechoice_block3.size):
-        chosen_high_freechoice = target_freechoice_block3[range(np.maximum(0,i - running_avg_length),i+1)] == 2
-        chosen_low_freechoice = target_freechoice_block3[range(np.maximum(0,i - running_avg_length),i+1)] == 1
-        reward_high_freechoice = np.logical_and(chosen_high_freechoice,reward_freechoice_block3[range(np.maximum(0,i - running_avg_length),i+1)])
-        reward_low_freechoice = np.logical_and(chosen_low_freechoice,reward_freechoice_block3[range(np.maximum(0,i - running_avg_length),i+1)])
+    result3 = op.minimize(nll, [alpha_true, beta_true], args=(Q_initial, reward3, target3, trial3), bounds=[(0,1),(0,None)])
+    alpha_ml_block3, beta_ml_block3 = result3["x"]
+    Qlow_block3, Qhigh_block3, prob_low_block3, max_loglikelihood3 = RLPerformance([alpha_ml_block3,beta_ml_block3],[Qlow_block1[-1],Qhigh_block1[-1]],reward3,target3, trial3)
     
-        #prob_choose_high_freechoice[i] = float(sum(chosen_high_freechoice))/np.minimum(i+1,running_avg_length)
-        #prob_choose_low_freechoice[i] = float(sum(chosen_low_freechoice))/np.minimum(i+1,running_avg_length)
-        prob_choose_high_freechoice_block3[i] = float(sum(chosen_high_freechoice))/chosen_high_freechoice.size
-        prob_choose_low_freechoice_block3[i] = float(sum(chosen_low_freechoice))/chosen_low_freechoice.size
-        prob_reward_high_freechoice_block3[i] = float(sum(reward_high_freechoice))/(sum(chosen_high_freechoice) + (sum(chosen_high_freechoice)==0))  # add logic statment to denominator so we never divide by 0
-        prob_reward_low_freechoice_block3[i] = float(sum(reward_low_freechoice))/(sum(chosen_low_freechoice) + (sum(chosen_low_freechoice)==0))
-
-    plt.figure()
-    plt.subplot(2,2,1)
-    plt.plot(range(1,target_freechoice_block1.size+1),prob_choose_high_freechoice_block1,'b',label='High-value target')
-    plt.plot(range(1,target_freechoice_block1.size+1),prob_choose_low_freechoice_block1,'r',label='Low-value target')
-    plt.axis([1,target_freechoice_block1.size,0,1])
-    plt.axis([1,target_freechoice_block1.size, 0,1])
-    plt.xlabel('Trials')
-    plt.ylabel('Probability of Target Selection')
-    plt.title('Block A: Free-Choice Trials')
-    plt.legend()
-
-    plt.subplot(2,2,2)
-    plt.plot(range(1,target_freechoice_block3.size+1),prob_choose_high_freechoice_block3,'b',label='High-value target')
-    plt.plot(range(1,target_freechoice_block3.size+1),prob_choose_low_freechoice_block3,'r',label='Low-value target')
-    plt.axis([1,target_freechoice_block3.size,0,1])
-    plt.axis([1,target_freechoice_block3.size, 0,1])
-    plt.xlabel('Trials')
-    plt.ylabel('Probability of Target Selection')
-    plt.title("Block A': Free-Choice Trials")
-    plt.legend()
-
-    plt.subplot(2,2,3)
-    plt.plot(range(1,target_freechoice_block1.size+1),prob_reward_high_freechoice_block1,'b',label='High-value target')
-    plt.plot(range(1,target_freechoice_block1.size+1),prob_reward_low_freechoice_block1,'r',label='Low-value target')
-    plt.axis([1,target_freechoice_block1.size,0,1])
-    plt.axis([1,target_freechoice_block1.size, 0,1])
-    plt.xlabel('Trials')
-    plt.ylabel('Probability of Reward')
-    plt.title('Block A: Free-Choice Trials')
-    plt.legend()
-
-    plt.subplot(2,2,4)
-    plt.plot(range(1,target_freechoice_block3.size+1),prob_reward_high_freechoice_block3,'b',label='High-value target')
-    plt.plot(range(1,target_freechoice_block3.size+1),prob_reward_low_freechoice_block3,'r',label='Low-value target')
-    plt.axis([1,target_freechoice_block3.size,0,1])
-    plt.axis([1,target_freechoice_block3.size, 0,1])
-    plt.xlabel('Trials')
-    plt.ylabel('Probability of Reward')
-    plt.title("Block A': Free-Choice Trials")
-    plt.legend()
-
-
-    #plt.savefig('C:/Users/Samantha Summerson/Documents/GitHub/analysis/Papa_Performance_figs/FCPerformance_targets_%s.svg' % hdf_file[:-4])    # save this filetype for AI editing
-    plt.savefig('/home/srsummerson/code/analysis/Luigi_Performance_figs/FCPerformance_targets_%s.png' % hdf_file[:-4])    # save this filetype for easy viewing
-    plt.close()
-    """
 
 
     '''
     Previous rewards and no rewards
     '''
-    fc_target_high = []
-    prev_reward1 = []
-    prev_reward2 = []
-    prev_reward3 = []
-    prev_reward4 = []
-    prev_reward5 = []
-    prev_noreward1 = []
-    prev_noreward2 = []
-    prev_noreward3 = []
-    prev_noreward4 = []
-    prev_noreward5 = []
-    prev_stim1 = []
+    fc_target_low_block1 = []
+    fc_prob_low_block1 = []
+    prev_reward1_block1 = []
+    prev_reward2_block1 = []
+    prev_reward3_block1 = []
+    prev_reward4_block1 = []
+    prev_reward5_block1 = []
+    prev_noreward1_block1 = []
+    prev_noreward2_block1 = []
+    prev_noreward3_block1 = []
+    prev_noreward4_block1 = []
+    prev_noreward5_block1 = []
+    prev_stim_block1 = []
+
+    fc_target_low_block3 = []
+    fc_prob_low_block3 = []
+    prev_reward1_block3 = []
+    prev_reward2_block3 = []
+    prev_reward3_block3 = []
+    prev_reward4_block3 = []
+    prev_reward5_block3 = []
+    prev_noreward1_block3 = []
+    prev_noreward2_block3 = []
+    prev_noreward3_block3 = []
+    prev_noreward4_block3 = []
+    prev_noreward5_block3 = []
+    prev_stim_block3 = []
+
     for i in range(5,100):
         if trial1[i] == 2:
-            fc_target_high.append(target1[i] - 1)   # = 0 if selected low-value, = 1 if selected high-value
-            prev_reward1.append((2*target1[i-1] - 3)*reward1[i-1])  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
-            prev_reward2.append((2*target1[i-2] - 3)*reward1[i-2])  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
-            prev_reward3.append((2*target1[i-3] - 3)*reward1[i-3])  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
-            prev_reward4.append((2*target1[i-4] - 3)*reward1[i-4])  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
-            prev_reward5.append((2*target1[i-5] - 3)*reward1[i-5])  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
-            prev_noreward1.append((2*target1[i-1] - 3)*(1 - reward1[i-1]))  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
-            prev_noreward2.append((2*target1[i-2] - 3)*(1 - reward1[i-2]))  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
-            prev_noreward3.append((2*target1[i-3] - 3)*(1 - reward1[i-3]))  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
-            prev_noreward4.append((2*target1[i-4] - 3)*(1 - reward1[i-4]))  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
-            prev_noreward5.append((2*target1[i-5] - 3)*(1 - reward1[i-5]))  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
-            prev_stim1.append(0)
-    num_regress_block1 = len(fc_target_high)
-    for i in range(205,num_successful_trials):
-        if trial3[i - 200] == 2:
-            fc_target_high.append(target3[i - 200] - 1)   # = 0 if selected low-value, = 1 if selected high-value
-            prev_reward1.append((2*target3[i-201] - 3)*reward3[i-201])  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
-            prev_reward2.append((2*target3[i-202] - 3)*reward3[i-202])  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
-            prev_reward3.append((2*target3[i-203] - 3)*reward3[i-203])  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
-            prev_reward4.append((2*target3[i-204] - 3)*reward3[i-204])  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
-            prev_reward5.append((2*target3[i-205] - 3)*reward3[i-205])  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
-            prev_noreward1.append((2*target3[i-201] - 3)*(1 - reward3[i-201]))  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
-            prev_noreward2.append((2*target3[i-202] - 3)*(1 - reward3[i-202]))  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
-            prev_noreward3.append((2*target3[i-203] - 3)*(1 - reward3[i-203]))  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
-            prev_noreward4.append((2*target3[i-204] - 3)*(1 - reward3[i-204]))  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
-            prev_noreward5.append((2*target3[i-205] - 3)*(1 - reward3[i-205]))  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
-            prev_stim1.append(stim_trials[i - 201])
+            fc_target_low.append(2 - target1[i])   # = 1 if selected low-value, = 0 if selected high-value
+            fc_prob_low_block1.append(prob_low_block1[i])
+            prev_reward1_block1.append((2*target1[i-1] - 3)*reward1[i-1])  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
+            prev_reward2_block1.append((2*target1[i-2] - 3)*reward1[i-2])  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
+            prev_reward3_block1.append((2*target1[i-3] - 3)*reward1[i-3])  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
+            prev_reward4_block1.append((2*target1[i-4] - 3)*reward1[i-4])  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
+            prev_reward5_block1.append((2*target1[i-5] - 3)*reward1[i-5])  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
+            prev_noreward1_block1.append((2*target1[i-1] - 3)*(1 - reward1[i-1]))  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
+            prev_noreward2_block1.append((2*target1[i-2] - 3)*(1 - reward1[i-2]))  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
+            prev_noreward3_block1.append((2*target1[i-3] - 3)*(1 - reward1[i-3]))  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
+            prev_noreward4_block1.append((2*target1[i-4] - 3)*(1 - reward1[i-4]))  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
+            prev_noreward5_block1.append((2*target1[i-5] - 3)*(1 - reward1[i-5]))  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
+            prev_stim_block1.append(0)
+    num_block3 = len(trial3)
+    for i in range(5,num_block3):
+        if trial3[i] == 2:
+            fc_target_low_block3.append(2 - target3[i])   # = 1 if selected low-value, = 0 if selected high-value
+            fc_prob_low_block3.append(prob_low_block3[i])
+            prev_reward1_block3.append((2*target3[i-1] - 3)*reward3[i-1])  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
+            prev_reward2_block3.append((2*target3[i-2] - 3)*reward3[i-2])  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
+            prev_reward3_block3.append((2*target3[i-3] - 3)*reward3[i-3])  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
+            prev_reward4_block3.append((2*target3[i-4] - 3)*reward3[i-4])  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
+            prev_reward5_block3.append((2*target3[i-5] - 3)*reward3[i-5])  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
+            prev_noreward1_block3.append((2*target3[i-1] - 3)*(1 - reward3[i-1]))  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
+            prev_noreward2_block3.append((2*target3[i-2] - 3)*(1 - reward3[i-2]))  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
+            prev_noreward3_block3.append((2*target3[i-3] - 3)*(1 - reward3[i-3]))  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
+            prev_noreward4_block3.append((2*target3[i-4] - 3)*(1 - reward3[i-4]))  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
+            prev_noreward5_block3.append((2*target3[i-5] - 3)*(1 - reward3[i-5]))  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
+            prev_stim_block3.append(stim_trials[i - 1])
+
 
     '''
     Turn everything into an array
     '''
-    fc_target_high = np.array(fc_target_high)
-    prev_reward1 = np.array(prev_reward1)
-    prev_reward2 = np.array(prev_reward2)
-    prev_reward3 = np.array(prev_reward3)
-    prev_reward4 = np.array(prev_reward4)
-    prev_reward5 = np.array(prev_reward5)
-    prev_noreward1 = np.array(prev_noreward1)
-    prev_noreward2 = np.array(prev_noreward2)
-    prev_noreward3 = np.array(prev_noreward3)
-    prev_noreward4 = np.array(prev_noreward4)
-    prev_noreward5 = np.array(prev_noreward5)
-    prev_stim1 = np.array(prev_stim1)
+    fc_target_low_block1 = np.array(fc_target_low_block1)
+    fc_prob_low_block1 = np.array(fc_prob_low_block1)
+    prev_reward1_block1 = np.array(prev_reward1_block1)
+    prev_reward2_block1 = np.array(prev_reward2_block1)
+    prev_reward3_block1 = np.array(prev_reward3_block1)
+    prev_reward4_block1 = np.array(prev_reward4_block1)
+    prev_reward5_block1 = np.array(prev_reward5_block1)
+    prev_noreward1_block1 = np.array(prev_noreward1_block1)
+    prev_noreward2_block1 = np.array(prev_noreward2_block1)
+    prev_noreward3_block1 = np.array(prev_noreward3_block1)
+    prev_noreward4_block1 = np.array(prev_noreward4_block1)
+    prev_noreward5_block1 = np.array(prev_noreward5_block1)
+    prev_stim_block1 = np.array(prev_stim_block1)
+
+    fc_target_low_block3 = np.array(fc_target_low_block3)
+    fc_prob_low_block3 = np.array(fc_prob_low_block3)
+    fc_log_probs_block3 = np.array(fc_log_probs_block3)
+    prev_reward1_block3 = np.array(prev_reward1_block3)
+    prev_reward2_block3 = np.array(prev_reward2_block3)
+    prev_reward3_block3 = np.array(prev_reward3_block3)
+    prev_reward4_block3 = np.array(prev_reward4_block3)
+    prev_reward5_block3 = np.array(prev_reward5_block3)
+    prev_noreward1_block3 = np.array(prev_noreward1_block3)
+    prev_noreward2_block3 = np.array(prev_noreward2_block3)
+    prev_noreward3_block3 = np.array(prev_noreward3_block3)
+    prev_noreward4_block3 = np.array(prev_noreward4_block3)
+    prev_noreward5_block3 = np.array(prev_noreward5_block3)
+    prev_stim_block3 = np.array(prev_stim_block3)
 
     '''
     Oraganize data and regress 
     '''
-    const_logit_block1 = np.ones(num_regress_block1)
-    const_logit_all = np.ones(fc_target_high.size)
-    x = np.vstack((prev_reward1[:num_regress_block1],prev_reward2[:num_regress_block1],prev_reward3[:num_regress_block1],prev_reward4[:num_regress_block1],prev_reward5[:num_regress_block1],
-        prev_noreward1[:num_regress_block1],prev_noreward2[:num_regress_block1],prev_noreward3[:num_regress_block1],prev_noreward4[:num_regress_block1],prev_noreward5[:num_regress_block1],
-        prev_stim1[:num_regress_block1]))
+    const_logit_block1 = np.ones(fc_target_low_block1.size)
+    const_logit_block3 = np.ones(fc_target_low_block3.size)
+    x = np.vstack((prev_reward1_block1,prev_reward2_block1,prev_reward3_block1,prev_reward4_block1,prev_reward5_block1,
+        prev_noreward1_block1,prev_noreward2_block1,prev_noreward3_block1,prev_noreward4_block1,prev_noreward5_block1,
+        prev_stim_block1))
     x = np.transpose(x)
     x = sm.add_constant(x,prepend='False')
+    '''
     d = {'FC Target Selection': fc_target_high[:num_regress_block1], 'Prev Reward 1': prev_reward1[:num_regress_block1], 'Prev Reward 2': prev_reward2[:num_regress_block1], 
             'Prev Reward 3': prev_reward3[:num_regress_block1], 
             'Prev Reward 4': prev_reward4[:num_regress_block1], 'Prev Reward 5': prev_reward5[:num_regress_block1], 'Prev No Reward 1': prev_noreward1[:num_regress_block1], 
@@ -304,7 +211,16 @@ for name in hdf_list:
             'Prev Stim': prev_stim1[:num_regress_block1],
             'Const': const_logit_all[:num_regress_block1]}
     df = pd.DataFrame(d)
+    '''
+    y = np.vstack((prev_reward1_block3,prev_reward2_block3,prev_reward3_block3,prev_reward4_block3,prev_reward5_block3,
+        prev_noreward1_block3,prev_noreward2_block3,prev_noreward3_block3,prev_noreward4_block3,prev_noreward5_block3,
+        prev_stim_block3))
+    y = np.transpose(y)
+    y = sm.add_constant(y,prepend='False')
 
-    model_glm = sm.GLM(fc_target_high[:num_regress_block1],x,family = sm.families.Binomial())
-    fit_glm = model_glm.fit()
-    print fit_glm.summary()
+    model_glm_block1 = sm.GLM(fc_target_low_block1,x,family = sm.families.Binomial())
+    model_glm_block3 = sm.GLM(fc_target_low_block3,y,family = sm.families.Binomial())
+    fit_glm_block1 = model_glm_block1.fit()
+    fit_glm_block3 = model_glm_block3.fit()
+    print fit_glm_block1.summary()
+    print fit_glm_block3.summary()
