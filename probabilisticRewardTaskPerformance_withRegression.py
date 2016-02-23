@@ -101,6 +101,7 @@ for name in hdf_list:
     Previous rewards and no rewards
     '''
     fc_target_low_block1 = []
+    fc_target_high_block1 = []
     fc_prob_low_block1 = []
     prev_reward1_block1 = []
     prev_reward2_block1 = []
@@ -115,6 +116,7 @@ for name in hdf_list:
     prev_stim_block1 = []
 
     fc_target_low_block3 = []
+    fc_target_high_block3 = []
     fc_prob_low_block3 = []
     prev_reward1_block3 = []
     prev_reward2_block3 = []
@@ -130,7 +132,8 @@ for name in hdf_list:
 
     for i in range(5,100):
         if trial1[i] == 2:
-            fc_target_low_block1.append(2 - target1[i])   # = 1 if selected low-value, = 0 if selected high-value
+            fc_target_low_block1.append(2 -target1[i])   # = 1 if selected low-value, = 0 if selected high-value
+            fc_target_high_block1.append(target1[i] - 1)  # = 1 if selected high-value, =  0 if selected low-value
             prev_reward1_block1.append((2*target1[i-1] - 3)*reward1[i-1])  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
             prev_reward2_block1.append((2*target1[i-2] - 3)*reward1[i-2])  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
             prev_reward3_block1.append((2*target1[i-3] - 3)*reward1[i-3])  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
@@ -146,6 +149,7 @@ for name in hdf_list:
     for i in range(5,num_block3):
         if trial3[i] == 2:
             fc_target_low_block3.append(2 - target3[i])   # = 1 if selected low-value, = 0 if selected high-value
+            fc_target_high_block3.append(target3[i] - 1)
             prev_reward1_block3.append((2*target3[i-1] - 3)*reward3[i-1])  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
             prev_reward2_block3.append((2*target3[i-2] - 3)*reward3[i-2])  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
             prev_reward3_block3.append((2*target3[i-3] - 3)*reward3[i-3])  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
@@ -163,6 +167,7 @@ for name in hdf_list:
     Turn everything into an array
     '''
     fc_target_low_block1 = np.array(fc_target_low_block1)
+    fc_target_high_block1 = np.array(fc_target_high_block1)
     prev_reward1_block1 = np.array(prev_reward1_block1)
     prev_reward2_block1 = np.array(prev_reward2_block1)
     prev_reward3_block1 = np.array(prev_reward3_block1)
@@ -176,6 +181,7 @@ for name in hdf_list:
     prev_stim_block1 = np.array(prev_stim_block1)
 
     fc_target_low_block3 = np.array(fc_target_low_block3)
+    fc_target_high_block3 = np.array(fc_target_high_block3)
     prev_reward1_block3 = np.array(prev_reward1_block3)
     prev_reward2_block3 = np.array(prev_reward2_block3)
     prev_reward3_block3 = np.array(prev_reward3_block3)
@@ -206,8 +212,8 @@ for name in hdf_list:
     y = np.transpose(y)
     y = sm.add_constant(y,prepend='False')
 
-    model_glm_block1 = sm.GLM(fc_target_low_block1,x,family = sm.families.Binomial())
-    model_glm_block3 = sm.GLM(fc_target_low_block3,y,family = sm.families.Binomial())
+    model_glm_block1 = sm.GLM(fc_target_high_block1,x,family = sm.families.Binomial())
+    model_glm_block3 = sm.GLM(fc_target_high_block3,y,family = sm.families.Binomial())
     fit_glm_block1 = model_glm_block1.fit()
     fit_glm_block3 = model_glm_block3.fit()
     print fit_glm_block1.summary()
@@ -217,7 +223,7 @@ for name in hdf_list:
     '''
     Oraganize data and regress with LogisticRegression
     '''
-
+    """
     d_block1 = {'target_selection': fc_target_low_block1, 
             'prev_reward1': prev_reward1_block1, 
             'prev_reward2': prev_reward2_block1, 
@@ -273,3 +279,4 @@ for name in hdf_list:
 
     # examine the coefficients
     print pd.DataFrame(zip(X_block1.columns, np.transpose(model_block1.coef_)))
+    """
