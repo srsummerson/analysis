@@ -12,7 +12,6 @@ import scipy.optimize as op
 import tables
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.pyplot import cm
 from logLikelihoodRLPerformance import RLPerformance, logLikelihoodRLPerformance
 from probabilisticRewardTaskPerformance import FreeChoicePilotTask_Behavior
 
@@ -69,15 +68,7 @@ hdf_list_stim2 = ['\papa20150508_12.hdf','\papa20150508_13.hdf','\papa20150518_0
     '\papa20150602_04.hdf']
 
 #hdf_list = np.sum([hdf_list_stim,hdf_list_stim2])
-
-hdf_list = ['\papa20150211_11.hdf',
-    '\papa20150223_02.hdf','\papa20150224_02.hdf',
-    '\papa20150306_07.hdf','\papa20150309_04.hdf','\papa20150508_12.hdf','\papa20150508_13.hdf','\papa20150518_03.hdf',
-    '\papa20150518_05.hdf','\papa20150518_06.hdf',
-    '\papa20150524_04.hdf','\papa20150525_01.hdf',
-    '\papa20150602_04.hdf']
-
-#hdf_list = hdf_list_sham
+hdf_list = hdf_list_sham
 #hdf_list = np.sum([hdf_list_stim,hdf_list_sham])
 # Exceptions: 5/25 - 2, 5/30 - 1, 2/18 - 4, 6/2 - 3, 2/19 - 9 (if doing first 100 trials), 3/3 - 3 (if doing first 100 trials)
 '''
@@ -90,85 +81,12 @@ hdf_list = ['\papa20150211_11.hdf',
     '\papa20150602_04.hdf']
 '''
 hdf_prefix = 'C:\Users\Samantha Summerson\Dropbox\Carmena Lab\Papa\hdf'
-stim_hdf_list = hdf_list
-sham_hdf_list = hdf_list_sham
 
 
 global_max_trial_dist = 0
 Q_initial = [0.5, 0.5]
 alpha_true = 0.2
 beta_true = 0.2
-
-def computeProbabilityChoiceWithRegressors(params_block1, params_block3,reward1, target1, trial1, reward3, target3, trial3, stim_trials):
-
-
-    '''
-    Previous rewards and no rewards
-    '''
-    relative_action_value_block1 = []
-    prob_choice_block1 = []
-    relative_action_value_block3 = []
-    prob_choice_block3 = []
-
-
-    for i in range(5,len(trial1)):
-        if trial1[i] == 2:
-            #fc_target_low_block1.append(2 -target1[i])   # = 1 if selected low-value, = 0 if selected high-value
-            fc_target_high_block1 = (target1[i] - 1)  # = 1 if selected high-value, =  0 if selected low-value
-            prev_reward1_block1= (2*target1[i-1] - 3)*reward1[i-1]  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
-            prev_reward2_block1 = ((2*target1[i-2] - 3)*reward1[i-2])  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
-            prev_reward3_block1 = ((2*target1[i-3] - 3)*reward1[i-3])  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
-            prev_reward4_block1 = ((2*target1[i-4] - 3)*reward1[i-4])  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
-            prev_reward5_block1 = ((2*target1[i-5] - 3)*reward1[i-5])  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
-            prev_noreward1_block1 = ((2*target1[i-1] - 3)*(1 - reward1[i-1]))  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
-            prev_noreward2_block1 = ((2*target1[i-2] - 3)*(1 - reward1[i-2]))  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
-            prev_noreward3_block1 = ((2*target1[i-3] - 3)*(1 - reward1[i-3]))  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
-            prev_noreward4_block1 = ((2*target1[i-4] - 3)*(1 - reward1[i-4]))  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
-            prev_noreward5_block1 = ((2*target1[i-5] - 3)*(1 - reward1[i-5]))  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
-    
-            relative_action_value_block1.append(params_block1[1]*prev_reward1_block1 + params_block1[2]*prev_reward2_block1 + params_block1[3]*prev_reward3_block1 + \
-                            params_block1[4]*prev_reward4_block1 + params_block1[5]*prev_reward5_block1 + params_block1[6]*prev_noreward1_block1 + \
-                           params_block1[7]*prev_noreward2_block1 + params_block1[8]*prev_noreward3_block1 + params_block1[9]*prev_noreward4_block1 + \
-                           params_block1[10]*prev_noreward5_block1)
-
-    log_prob = relative_action_value_block1 + params_block1[0]  # add intercept
-    prob_choice_block1 = (float(1)/(np.exp(-log_prob) + 1))
-
-    num_block3 = len(trial3)
-    for i in range(5,num_block3):
-        if (trial3[i] == 2):
-            #fc_target_low_block3.append(2 - target3[i])   # = 1 if selected low-value, = 0 if selected high-value
-            fc_target_high_block3 = (target3[i] - 1)
-            prev_reward1_block3 = ((2*target3[i-1] - 3)*reward3[i-1])  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
-            prev_reward2_block3 = ((2*target3[i-2] - 3)*reward3[i-2])  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
-            prev_reward3_block3 = ((2*target3[i-3] - 3)*reward3[i-3])  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
-            prev_reward4_block3 = ((2*target3[i-4] - 3)*reward3[i-4])  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
-            prev_reward5_block3 = ((2*target3[i-5] - 3)*reward3[i-5])  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
-            prev_noreward1_block3 = ((2*target3[i-1] - 3)*(1 - reward3[i-1]))  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
-            prev_noreward2_block3 = ((2*target3[i-2] - 3)*(1 - reward3[i-2]))  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
-            prev_noreward3_block3 = ((2*target3[i-3] - 3)*(1 - reward3[i-3]))  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
-            prev_noreward4_block3 = ((2*target3[i-4] - 3)*(1 - reward3[i-4]))  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
-            prev_noreward5_block3 = ((2*target3[i-5] - 3)*(1 - reward3[i-5]))  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
-            prev_stim1_block3 = (stim_trials[i - 1])  # = 1 if stim was delivered with HV target and = -1 if stim was delivered with the LV target
-            prev_stim2_block3 = (stim_trials[i - 2])
-            prev_stim3_block3 = (stim_trials[i - 3])
-            prev_stim4_block3 = (stim_trials[i - 4])
-            prev_stim5_block3 = (stim_trials[i - 5])
-
-            relative_action_value_block3.append( params_block3[1]*prev_reward1_block3 + params_block3[2]*prev_reward2_block3 + params_block3[3]*prev_reward3_block3 + \
-                                            params_block3[4]*prev_reward4_block3 + params_block3[5]*prev_reward5_block3 + params_block3[6]*prev_noreward1_block3 + \
-                                            params_block3[7]*prev_noreward2_block3 + \
-                                            params_block3[8]*prev_noreward3_block3 + \
-                                            params_block3[9]*prev_noreward4_block3 + params_block3[10]*prev_noreward5_block3 + \
-                                            params_block3[11]*prev_stim1_block3 + \
-                                            params_block3[12]*prev_stim2_block3 + params_block3[13]*prev_stim3_block3 + params_block3[14]*prev_stim4_block3 + \
-                                            params_block3[15]*prev_stim5_block3)
-
-    log_prob = relative_action_value_block3 + params_block3[0]  
-    prob_choice_block3 = (float(1)/(np.exp(-log_prob) + 1))
-
-
-    return relative_action_value_block1, relative_action_value_block3, prob_choice_block1, prob_choice_block3
 
 def probabilisticFreeChoicePilotTask_logisticRegression(reward1, target1, trial1, reward3, target3, trial3, stim_trials):
 
@@ -240,11 +158,11 @@ def probabilisticFreeChoicePilotTask_logisticRegression(reward1, target1, trial1
             prev_noreward3_block3.append((2*target3[i-3] - 3)*(1 - reward3[i-3]))  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
             prev_noreward4_block3.append((2*target3[i-4] - 3)*(1 - reward3[i-4]))  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
             prev_noreward5_block3.append((2*target3[i-5] - 3)*(1 - reward3[i-5]))  # = -1 if selected low-value and rewarded, = 1 if selected high-value and rewarded
-            prev_stim1_block3.append(stim_trials[i - 1])  # = 1 if stim was delivered and = -1 if stim was not delivered
-            prev_stim2_block3.append(stim_trials[i - 2])
-            prev_stim3_block3.append(stim_trials[i - 3])
-            prev_stim4_block3.append(stim_trials[i - 4])
-            prev_stim5_block3.append(stim_trials[i - 5])
+            prev_stim1_block3.append(2*stim_trials[i - 1] - 1)  # = 1 if stim was delivered and = -1 if stim was not delivered
+            prev_stim2_block3.append(2*stim_trials[i - 2] - 1)
+            prev_stim3_block3.append(2*stim_trials[i - 3] - 1)
+            prev_stim4_block3.append(2*stim_trials[i - 4] - 1)
+            prev_stim5_block3.append(2*stim_trials[i - 5] - 1)
 
 
     '''
@@ -285,7 +203,7 @@ def probabilisticFreeChoicePilotTask_logisticRegression(reward1, target1, trial1
     const_logit_block1 = np.ones(fc_target_low_block1.size)
     const_logit_block3 = np.ones(fc_target_low_block3.size)
 
-    """
+    
     '''
     Oraganize data and regress with GLM 
     '''
@@ -300,16 +218,16 @@ def probabilisticFreeChoicePilotTask_logisticRegression(reward1, target1, trial1
     y = np.transpose(y)
     y = sm.add_constant(y,prepend='False')
 
-    model_glm_block1 = sm.GLM(fc_target_low_block1,x,family = sm.families.Binomial())
-    model_glm_block3 = sm.GLM(fc_target_low_block3,y,family = sm.families.Binomial())
+    model_glm_block1 = sm.GLM(fc_target_high_block1,x,family = sm.families.Binomial())
+    model_glm_block3 = sm.GLM(fc_target_high_block3,y,family = sm.families.Binomial())
     fit_glm_block1 = model_glm_block1.fit()
     fit_glm_block3 = model_glm_block3.fit()
-    print fit_glm_block1.predict()
-    """
+    #print fit_glm_block1.predict()
+    
     '''
     Oraganize data and regress with LogisticRegression
     '''
-    
+    """
     d_block1 = {'target_selection': fc_target_high_block1, 
             'prev_reward1': prev_reward1_block1, 
             'prev_reward2': prev_reward2_block1, 
@@ -434,22 +352,24 @@ def probabilisticFreeChoicePilotTask_logisticRegression(reward1, target1, trial1
     print "Block 1 Avg CV score:", scores_block1.mean()
     print "Block 3 CV scores:", scores_block3
     print "Block 3 Avg CV score:", scores_block3.mean()
+    """
 
-    '''
+    """
     # check the accuracy on the training set
-    print 'Model accuracy for Block1:',model_block1.score(X_block1, y_block1)
+    print 'Model accuracy for Block1:',fit_glm_block1.score(X_block1, y_block1)
     print 'Null accuracy rate for Block1:',np.max([y_block1.mean(),1 - y_block1.mean()])
 
-    print 'Model accuracy for Block3:',model_block3.score(X_block3, y_block3)
+    print 'Model accuracy for Block3:',fit_glm_block3.score(X_block3, y_block3)
     print 'Null accuracy rate for Block3:',np.max([y_block3.mean(),1 - y_block3.mean()])
-    '''
-
+    
+    
     # examine the coefficients
     print pd.DataFrame(zip(X_block1.columns, np.transpose(model_block1.coef_)))
     print pd.DataFrame(zip(X_block3.columns, np.transpose(model_block3.coef_)))
+    """
     
-    #return fit_glm_block1, fit_glm_block3
-    return model_block1, model_block3, predicted_block1, predicted_block3
+    return fit_glm_block1, fit_glm_block3
+    #return model_block1, model_block3, predicted_block1, predicted_block3
 
 def probabilisticFreeChoicePilotTask_logisticRegression_sepRegressors(reward1, target1, trial1, reward3, target3, trial3, stim_trials):
 
@@ -564,7 +484,7 @@ def probabilisticFreeChoicePilotTask_logisticRegression_sepRegressors(reward1, t
     const_logit_block1 = np.ones(fc_target_low_block1.size)
     const_logit_block3 = np.ones(fc_target_low_block3.size)
 
-    """
+    
     '''
     Oraganize data and regress with GLM 
     '''
@@ -579,8 +499,8 @@ def probabilisticFreeChoicePilotTask_logisticRegression_sepRegressors(reward1, t
     y = np.transpose(y)
     y = sm.add_constant(y,prepend='False')
 
-    model_glm_block1 = sm.GLM(fc_target_low_block1,x,family = sm.families.Binomial())
-    model_glm_block3 = sm.GLM(fc_target_low_block3,y,family = sm.families.Binomial())
+    model_glm_block1 = sm.GLM(fc_target_high_block1,x,family = sm.families.Binomial())
+    model_glm_block3 = sm.GLM(fc_target_high_block3,y,family = sm.families.Binomial())
     fit_glm_block1 = model_glm_block1.fit()
     fit_glm_block3 = model_glm_block3.fit()
     """
@@ -700,23 +620,24 @@ def probabilisticFreeChoicePilotTask_logisticRegression_sepRegressors(reward1, t
     print "Block 1 Avg CV score:", scores_block1.mean()
     print "Block 3 CV scores:", scores_block3
     print "Block 3 Avg CV score:", scores_block3.mean()
+    """
 
-    '''
+    """
     # check the accuracy on the training set
     print 'Model accuracy for Block1:',model_block1.score(X_block1, y_block1)
     print 'Null accuracy rate for Block1:',np.max([y_block1.mean(),1 - y_block1.mean()])
 
     print 'Model accuracy for Block3:',model_block3.score(X_block3, y_block3)
     print 'Null accuracy rate for Block3:',np.max([y_block3.mean(),1 - y_block3.mean()])
-    '''
-
+    
+    
     # examine the coefficients
     print pd.DataFrame(zip(X_block1.columns, np.transpose(model_block1.coef_)))
     print pd.DataFrame(zip(X_block3.columns, np.transpose(model_block3.coef_)))
-
+    """
     
-    #return fit_glm_block1, fit_glm_block3
-    return model_block1, model_block3, predicted_block1, predicted_block3
+    return fit_glm_block1, fit_glm_block3
+    #return model_block1, model_block3, predicted_block1, predicted_block3
 
 num_days = len(hdf_list)
 
@@ -737,31 +658,7 @@ trial3 = []
 stim_trials = []
 
 
-stim_num_days = len(stim_hdf_list)
-sham_num_days = len(sham_hdf_list)
-
-stim_counter_hdf = 0
-stim_reward1 = []
-stim_target1 = []
-stim_trial1 = []
-stim_reward3 = []
-stim_target3 = []
-stim_trial3 = []
-stim_stim_trials = []
-
-sham_counter_hdf = 0
-sham_reward1 = []
-sham_target1 = []
-sham_trial1 = []
-sham_reward3 = []
-sham_target3 = []
-sham_trial3 = []
-sham_stim_trials = []
-
-color_stim =iter(cm.rainbow(np.linspace(0,1,stim_num_days)))
-color_sham = iter(cm.rainbow(np.linspace(0,1,sham_num_days)))
-
-for name in stim_hdf_list:
+for name in hdf_list:
     
     print name
     full_name = hdf_prefix + name
@@ -771,96 +668,14 @@ for name in stim_hdf_list:
     '''
     reward_block1, target_block1, trial_block1, reward_block3, target_block3, trial_block3, stim_trials_block = FreeChoicePilotTask_Behavior(full_name)
 
-    '''
-    Build vector for cumulative regression
-    '''
+    reward1.extend(reward_block1.tolist())
+    target1.extend(target_block1.tolist())
+    trial1.extend(trial_block1.tolist())
+    reward3.extend(reward_block3.tolist())
+    target3.extend(target_block3.tolist())
+    trial3.extend(trial_block3.tolist())
+    stim_trials.extend(stim_trials_block.tolist()) 
 
-    stim_reward1.extend(reward_block1.tolist())
-    stim_target1.extend(target_block1.tolist())
-    stim_trial1.extend(trial_block1.tolist())
-    stim_reward3.extend(reward_block3.tolist())
-    stim_target3.extend(target_block3.tolist())
-    stim_trial3.extend(trial_block3.tolist())
-    stim_stim_trials.extend(stim_trials_block.tolist()) 
-
-    """
-    '''
-    Do per day regression
-    '''
-    c = next(color_stim)
-
-    fit_glm_block1, fit_glm_block3 = probabilisticFreeChoicePilotTask_logisticRegression(reward_block1, target_block1, trial_block1, reward_block3, target_block3, trial_block3, stim_trials_block)
-    params_block1 = fit_glm_block1.params
-    params_block3 = fit_glm_block3.params
-
-    relative_action_value_block1, relative_action_value_block3, prob_choice_block1, prob_choice_block3 = computeProbabilityChoiceWithRegressors(params_block1, params_block3, reward_block1, target_block1, trial_block1, reward_block3, target_block3, trial_block3, stim_trials_block)
-
-    sorted_ind = np.argsort(relative_action_value_block3)
-    relative_action_value_block3 = np.array(relative_action_value_block3)
-
-    plt.figure(0)
-    plt.plot(relative_action_value_block3[sorted_ind],prob_choice_block3[sorted_ind],color=c,marker='*',label='Stim - %s' % name)
-    plt.legend(loc=4)
-    plt.xlabel('Relative Action Value')
-    plt.ylabel('P(Choose High-Value Target)')
-    plt.xlim([-5,5])
-    plt.ylim([0.0,1.05])
-    """
-
-    """
-    '''
-    Get soft-max decision fit
-    '''
-    nll = lambda *args: -logLikelihoodRLPerformance(*args)
-    result1 = op.minimize(nll, [alpha_true, beta_true], args=(Q_initial, reward1, target1, trial1), bounds=[(0,1),(0,None)])
-    alpha_ml_block1, beta_ml_block1 = result1["x"]
-    Qlow_block1, Qhigh_block1, prob_low_block1, max_loglikelihood1 = RLPerformance([alpha_ml_block1,beta_ml_block1],Q_initial,reward1,target1, trial1)
-    
-    result3 = op.minimize(nll, [alpha_true, beta_true], args=(Q_initial, reward3, target3, trial3), bounds=[(0,1),(0,None)])
-    alpha_ml_block3, beta_ml_block3 = result3["x"]
-    Qlow_block3, Qhigh_block3, prob_low_block3, max_loglikelihood3 = RLPerformance([alpha_ml_block3,beta_ml_block3],[Qlow_block1[-1],Qhigh_block1[-1]],reward3,target3, trial3)
-    """
-for name in sham_hdf_list:
-    
-    print name
-    full_name = hdf_prefix + name
-
-    '''
-    Compute task performance.
-    '''
-    reward_block1, target_block1, trial_block1, reward_block3, target_block3, trial_block3, stim_trials_block = FreeChoicePilotTask_Behavior(full_name)
-
-    sham_reward1.extend(reward_block1.tolist())
-    sham_target1.extend(target_block1.tolist())
-    sham_trial1.extend(trial_block1.tolist())
-    sham_reward3.extend(reward_block3.tolist())
-    sham_target3.extend(target_block3.tolist())
-    sham_trial3.extend(trial_block3.tolist())
-    sham_stim_trials.extend(stim_trials_block.tolist()) 
-
-    """
-    '''
-    Do per day regression
-    '''
-    c = next(color_sham)
-
-    fit_glm_block1, fit_glm_block3 = probabilisticFreeChoicePilotTask_logisticRegression(reward_block1, target_block1, trial_block1, reward_block3, target_block3, trial_block3, stim_trials_block)
-    params_block1 = fit_glm_block1.params
-    params_block3 = fit_glm_block3.params
-
-    relative_action_value_block1, relative_action_value_block3, prob_choice_block1, prob_choice_block3 = computeProbabilityChoiceWithRegressors(params_block1, params_block3, reward_block1, target_block1, trial_block1, reward_block3, target_block3, trial_block3, stim_trials_block)
-
-    sorted_ind = np.argsort(relative_action_value_block3)
-    relative_action_value_block3 = np.array(relative_action_value_block3)
-
-    plt.figure(0)
-    plt.plot(relative_action_value_block3[sorted_ind],prob_choice_block3[sorted_ind],color=c,marker='o',label='Sham - %s' % name)
-    plt.legend(loc=4)
-    plt.xlabel('Relative Action Value')
-    plt.ylabel('P(Choose High-Value Target)')
-    plt.xlim([-5,5])
-    plt.ylim([0.0,1.05])
-    """
     """
     '''
     Get soft-max decision fit
@@ -879,64 +694,36 @@ for name in sham_hdf_list:
 Perform logistic regression
 '''
 
-stim_reward1 = np.ravel(stim_reward1)
-stim_target1 = np.ravel(stim_target1)
-stim_trial1 = np.ravel(stim_trial1)
-stim_reward3 = np.ravel(stim_reward3)
-stim_target3 = np.ravel(stim_target3)
-stim_trial3 = np.ravel(stim_trial3)
-stim_stim_trials = np.ravel(stim_stim_trials)
+reward1 = np.ravel(reward1)
+target1 = np.ravel(target1)
+trial1 = np.ravel(trial1)
+reward3 = np.ravel(reward3)
+target3 = np.ravel(target3)
+trial3 = np.ravel(trial3)
+stim_trials = np.ravel(stim_trials)
 
-sham_reward1 = np.ravel(sham_reward1)
-sham_target1 = np.ravel(sham_target1)
-sham_trial1 = np.ravel(sham_trial1)
-sham_reward3 = np.ravel(sham_reward3)
-sham_target3 = np.ravel(sham_target3)
-sham_trial3 = np.ravel(sham_trial3)
-sham_stim_trials = np.ravel(sham_stim_trials)
-    
 
-stim_fit_glm_block1, stim_fit_glm_block3, stim_predicted_block1, stim_predicted_block3 = probabilisticFreeChoicePilotTask_logisticRegression(stim_reward1, stim_target1, stim_trial1, stim_reward3, stim_target3, stim_trial3, stim_stim_trials)
-sham_fit_glm_block1, sham_fit_glm_block3, sham_predicted_block1, sham_predicted_block3 = probabilisticFreeChoicePilotTask_logisticRegression(sham_reward1, sham_target1, sham_trial1, sham_reward3, sham_target3, sham_trial3, sham_stim_trials)
+#len_regress = np.min([len(reward3),100])
+len_regress = len(reward3)
 
-#fit_glm_block1, fit_glm_block3, predicted_block1, predicted_block3 = probabilisticFreeChoicePilotTask_logisticRegression_sepRegressors(reward1, target1, trial1, reward3, target3, trial3, stim_trials)
+fit_glm_block1, fit_glm_block3 = probabilisticFreeChoicePilotTask_logisticRegression(reward1, target1, trial1, reward3, target3, trial3, stim_trials)
+#fit_glm_block1, fit_glm_block3 = probabilisticFreeChoicePilotTask_logisticRegression_sepRegressors(reward1, target1, trial1, reward3, target3, trial3, stim_trials)
 
-#print fit_glm_block1.summary()
-#print fit_glm_block3.summary()
+print fit_glm_block1.summary()
+print fit_glm_block3.summary()
 
 '''
 fit_glm_block1: const, prev_reward1, prev_reward2, prev_reward3, prev_reward4, prev_reward5, prev_noreward1, prev_noreward2, prev_noreward3, prev_noreward4, prev_noreward5
 fit_glm_block3: const, prev_reward1, prev_reward2, prev_reward3, prev_reward4, prev_reward5, prev_noreward1, prev_noreward2, prev_noreward3, prev_noreward4, prev_noreward5, prev_stim1, prev_stim2, prev_stim3, prev_stim4_prev_stim5
 '''
-stim_params_block1 = np.ravel(stim_fit_glm_block1.coef_)
-stim_params_block3 = np.ravel(stim_fit_glm_block3.coef_)
-sham_params_block1 = np.ravel(sham_fit_glm_block1.coef_)
-sham_params_block3 = np.ravel(sham_fit_glm_block3.coef_)
+params_block1[counter_hdf,:] = fit_glm_block1.params
+pvalues_block1[counter_hdf,:] = fit_glm_block1.pvalues
+numtrials_block1[counter_hdf] = int(fit_glm_block1.nobs)
 
-stim_relative_action_value_block1, stim_relative_action_value_block3, stim_prob_choice_block1, stim_prob_choice_block3 = computeProbabilityChoiceWithRegressors(stim_params_block1, stim_params_block3,stim_reward1, stim_target1, stim_trial1, stim_reward3, stim_target3, stim_trial3, stim_stim_trials)
-sham_relative_action_value_block1, sham_relative_action_value_block3, sham_prob_choice_block1, sham_prob_choice_block3 = computeProbabilityChoiceWithRegressors(sham_params_block1, sham_params_block3,sham_reward1, sham_target1, sham_trial1, sham_reward3, sham_target3, sham_trial3, sham_stim_trials)
+params_block3[counter_hdf,0:len(fit_glm_block3.params)] = fit_glm_block3.params
+pvalues_block3[counter_hdf,0:len(fit_glm_block3.params)] = fit_glm_block3.pvalues
+numtrials_block3[counter_hdf] = int(fit_glm_block3.nobs)
 
-stim_sorted_ind = np.argsort(stim_relative_action_value_block3)
-sham_sorted_ind = np.argsort(sham_relative_action_value_block3)
-
-stim_relative_action_value_block3 = np.array(stim_relative_action_value_block3)
-sham_relative_action_value_block3 = np.array(sham_relative_action_value_block3)
-
-xval = np.arange(-5,5,0.1)
-stim_fit_block3 = (float(1)/(np.exp(-stim_params_block3[0] - xval) + 1))
-sham_fit_block3 = (float(1)/(np.exp(-sham_params_block3[0] - xval) + 1))
-
-plt.figure(1)
-plt.plot(stim_relative_action_value_block3[stim_sorted_ind],stim_prob_choice_block3[stim_sorted_ind],'r-*',label='LV Stim')
-plt.plot(xval,stim_fit_block3,'r')
-plt.plot(sham_relative_action_value_block3[sham_sorted_ind],sham_prob_choice_block3[sham_sorted_ind],'b-*',label='Sham')
-plt.plot(xval,sham_fit_block3,'b')
-plt.legend(loc=4)
-plt.xlabel('Relative Action Value')
-plt.ylabel('P(Choose High-Value Target)')
-plt.xlim([-5,5])
-plt.ylim([0.0,1.05])
-plt.show()
 
 """
 counter_hdf += 1
@@ -970,12 +757,12 @@ plt.errorbar(np.arange(-1,-6,-1),avg_prev_noreward_block3,color='r',linestyle='-
 plt.errorbar(np.arange(-1,-6,-1),avg_prev_stim,color='m',linestyle='--',yerr=sem_prev_stim,label='Stim')
 plt.legend()
 
-"""
-prev_reward_block1 = stim_params_block1[1:6]
-prev_noreward_block1 = stim_params_block1[6:11]
-prev_reward_block3 = stim_params_block3[1:6]
-prev_noreward_block3 = stim_params_block3[6:11]
-prev_stim = stim_params_block3[11:16]
+
+prev_reward_block1 = params_block1[1:6]
+prev_noreward_block1 = params_block1[6:11]
+prev_reward_block3 = params_block3[1:6]
+prev_noreward_block3 = params_block3[6:11]
+prev_stim = params_block3[11:16]
 
 plt.figure()
 plt.plot(np.arange(-1,-6,-1),prev_reward_block1,color='b',label='Reward-Block 1')
@@ -985,7 +772,7 @@ plt.plot(np.arange(-1,-6,-1),prev_noreward_block3,color='r',linestyle='--',label
 plt.plot(np.arange(-1,-6,-1),prev_stim,color='m',linestyle='--',label='Stim')
 plt.legend()
 
-
+"""
 '''
 1. look at decsion rule and classification for trials  - not equal to null model
 2. do regression for not separate regressors - better model
