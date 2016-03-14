@@ -55,8 +55,8 @@ def running_mean(x, N):
 	return (cumsum[N:] - cumsum[:-N]) / float(N) 
 
 # Set up code for particular day and block
-hdf_filename = 'luig20151229_02.hdf'
-filename = 'Luigi201512292015'
+hdf_filename = 'mari20160309_21_te1668.hdf'
+filename = 'Mario20160309'
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
 #hdf_location = hdf_filename
@@ -530,8 +530,8 @@ ibi_stress_mean_fit = m*np.arange(1,len(ibi_stress_mean)+1) + b
 m,b = np.polyfit(range(1,len(ibi_reg_before_mean)+1), ibi_reg_before_mean, 1)
 ibi_reg_before_mean_fit = m*np.arange(1,len(ibi_reg_before_mean)+1) + b
 
-m,b = np.polyfit(range(1,len(ibi_reg_after_mean)+1), ibi_reg_after_mean, 1)
-ibi_reg_after_mean_fit = m*np.arange(1,len(ibi_reg_after_mean)+1) + b
+#m,b = np.polyfit(range(1,len(ibi_reg_after_mean)+1), ibi_reg_after_mean, 1)
+#ibi_reg_after_mean_fit = m*np.arange(1,len(ibi_reg_after_mean)+1) + b
 
 m,b = np.polyfit(range(1,len(pupil_stress_mean)+1), pupil_stress_mean, 1)
 pupil_stress_mean_fit = m*np.arange(1,len(pupil_stress_mean)+1) + b
@@ -539,11 +539,11 @@ pupil_stress_mean_fit = m*np.arange(1,len(pupil_stress_mean)+1) + b
 m,b = np.polyfit(range(1,len(pupil_reg_before_mean)+1), pupil_reg_before_mean, 1)
 pupil_reg_before_mean_fit = m*np.arange(1,len(pupil_reg_before_mean)+1) + b
 
-m,b = np.polyfit(range(1,len(pupil_reg_after_mean)+1), pupil_reg_after_mean, 1)
-pupil_reg_after_mean_fit = m*np.arange(1,len(pupil_reg_after_mean)+1) + b
+#m,b = np.polyfit(range(1,len(pupil_reg_after_mean)+1), pupil_reg_after_mean, 1)
+#pupil_reg_after_mean_fit = m*np.arange(1,len(pupil_reg_after_mean)+1) + b
 
 plt.figure()
-plt.subplot(3,1,2)
+plt.subplot(2,1,2)
 plt.plot(range(1,len(ibi_stress_mean)+1),ibi_stress_mean,'r')
 plt.plot(range(1,len(ibi_stress_mean)+1),ibi_stress_mean_fit,'r--')
 #plt.xlabel('Trial')
@@ -552,7 +552,7 @@ plt.ylim((0.28,0.5))
 #plt.ylim((0.32,0.5))
 plt.title('Pulse in Stress Trials')
 
-plt.subplot(3,1,1)
+plt.subplot(2,1,1)
 plt.plot(range(1,len(ibi_reg_before_mean)+1),ibi_reg_before_mean,'b')
 plt.plot(range(1,len(ibi_reg_before_mean)+1),ibi_reg_before_mean_fit,'b--')
 #plt.xlabel('Trial')
@@ -561,20 +561,20 @@ plt.ylim((0.28,0.5))
 #plt.ylim((0.32,0.5))
 plt.title('Pulse in Regular Trials before Stress')
 
-plt.subplot(3,1,3)
-plt.plot(range(1,len(ibi_reg_after_mean)+1),ibi_reg_after_mean,'k')
-plt.plot(range(1,len(ibi_reg_after_mean)+1),ibi_reg_after_mean_fit,'k--')
-plt.xlabel('Trial')
-plt.ylabel('Average IBI')
-plt.ylim((0.28,0.5))
-#plt.ylim((0.32,0.5))
-plt.title('Pulse in Regular Trials after Stress')
+#plt.subplot(3,1,3)
+#plt.plot(range(1,len(ibi_reg_after_mean)+1),ibi_reg_after_mean,'k')
+#plt.plot(range(1,len(ibi_reg_after_mean)+1),ibi_reg_after_mean_fit,'k--')
+#plt.xlabel('Trial')
+#plt.ylabel('Average IBI')
+#plt.ylim((0.28,0.5))
+##plt.ylim((0.32,0.5))
+#plt.title('Pulse in Regular Trials after Stress')
 plt.tight_layout()
 #plt.show()
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_TrialIBI.svg')
 
 plt.figure()
-plt.subplot(3,1,2)
+plt.subplot(2,1,2)
 plt.plot(range(1,len(pupil_stress_mean)+1),pupil_stress_mean,'r')
 plt.plot(range(1,len(pupil_stress_mean)+1),pupil_stress_mean_fit,'r--')
 #plt.xlabel('Trial')
@@ -584,7 +584,7 @@ plt.ylim((-3,3))
 plt.title('Pupil Diameter in Stress Trials')
 plt.text(1,np.max(pupil_stress_mean),'Pulse v. Pupil:r=%f \n p=%f' % (r_stress,r_p_stress))
 
-plt.subplot(3,1,1)
+plt.subplot(2,1,1)
 plt.plot(range(1,len(pupil_reg_before_mean)+1),pupil_reg_before_mean,'b')
 plt.plot(range(1,len(pupil_reg_before_mean)+1),pupil_reg_before_mean_fit,'b--')
 #plt.xlabel('Trial')
@@ -594,15 +594,15 @@ plt.ylim((-3,3))
 plt.title('Pupil Diameter in Regular Trials before Stress')
 plt.text(1,np.max(pupil_reg_before_mean),'Pulse v. Pupil:r=%f \n p=%f' % (r_before,r_p_before))
 
-plt.subplot(3,1,3)
-plt.plot(range(1,len(pupil_reg_after_mean)+1),pupil_reg_after_mean,'k')
-plt.plot(range(1,len(pupil_reg_after_mean)+1),pupil_reg_after_mean_fit,'k--')
-plt.xlabel('Trial')
-plt.ylabel('Average Pupil Diameter')
-#plt.ylim((0.70,1.15))
-plt.ylim((-3,3))
-plt.title('Pupil Diameter in Regular Trials after Stress')
-plt.text(1,np.max(pupil_reg_after_mean),'Pulse v. Pupil:r=%f \n p=%f' % (r_after,r_p_after))
+#plt.subplot(3,1,3)
+#plt.plot(range(1,len(pupil_reg_after_mean)+1),pupil_reg_after_mean,'k')
+#plt.plot(range(1,len(pupil_reg_after_mean)+1),pupil_reg_after_mean_fit,'k--')
+#plt.xlabel('Trial')
+#plt.ylabel('Average Pupil Diameter')
+##plt.ylim((0.70,1.15))
+#plt.ylim((-3,3))
+#plt.title('Pupil Diameter in Regular Trials after Stress')
+#plt.text(1,np.max(pupil_reg_after_mean),'Pulse v. Pupil:r=%f \n p=%f' % (r_after,r_p_after))
 plt.tight_layout()
 #plt.show()
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_TrialPupil-DeleteBlinks.svg')
@@ -624,14 +624,14 @@ plt.ylabel('Frequency')
 plt.xlim((0.1,0.6))
 plt.title('IBI Distribtions')
 
-plt.plot(nbins_ibi_reg_after,ibi_reg_after_hist,'k',label='After Stress')
-plt.fill_between(nbins_ibi_reg_after[17:22],ibi_reg_after_hist[17:22],np.zeros(5),facecolor='gray',linewidth=0.1,alpha=0.5)
-plt.plot([nbins_ibi_reg_after[19],nbins_ibi_reg_after[19]],[0,ibi_reg_after_hist[19]],'k--')
-if (p_ibi < 0.05):
-	t_before_stress,p_before_stress = stats.ttest_ind(all_ibi_reg_before,all_ibi_stress, axis=0, equal_var=True)
-	t_after_stress,p_after_stress = stats.ttest_ind(all_ibi_reg_after,all_ibi_stress,axis=0,equal_var=True)
-	t_before_after,p_before_after = stats.ttest_ind(all_ibi_reg_before,all_ibi_reg_after,axis=0,equal_var=True)
-	plt.text(0.12,np.max(ibi_reg_after_hist),'Before v. Stress:p=%f \n Before v. After: p=%f \n Stress v. After: p=%f' % (p_before_stress,p_before_after,p_after_stress))
+#plt.plot(nbins_ibi_reg_after,ibi_reg_after_hist,'k',label='After Stress')
+#plt.fill_between(nbins_ibi_reg_after[17:22],ibi_reg_after_hist[17:22],np.zeros(5),facecolor='gray',linewidth=0.1,alpha=0.5)
+#plt.plot([nbins_ibi_reg_after[19],nbins_ibi_reg_after[19]],[0,ibi_reg_after_hist[19]],'k--')
+#if (p_ibi < 0.05):
+#	t_before_stress,p_before_stress = stats.ttest_ind(all_ibi_reg_before,all_ibi_stress, axis=0, equal_var=True)
+#	t_after_stress,p_after_stress = stats.ttest_ind(all_ibi_reg_after,all_ibi_stress,axis=0,equal_var=True)
+#	t_before_after,p_before_after = stats.ttest_ind(all_ibi_reg_before,all_ibi_reg_after,axis=0,equal_var=True)
+#	plt.text(0.12,np.max(ibi_reg_after_hist),'Before v. Stress:p=%f \n Before v. After: p=%f \n Stress v. After: p=%f' % (p_before_stress,p_before_after,p_after_stress))
 plt.legend()
 #plt.show()
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_IBIDistribution.svg')
@@ -647,14 +647,14 @@ plt.xlabel('Diameter (AU)')
 plt.ylabel('Frequency')
 plt.title('Distribution of Pupil Diameters')
 
-plt.plot(nbins_pupil_reg_after,pupil_reg_after_hist,'k',label='Regular After')
-plt.fill_between(nbins_pupil_reg_after[17:22],pupil_reg_after_hist[17:22],np.zeros(5),facecolor='gray',linewidth=0.1,alpha=0.5)
-plt.plot([nbins_pupil_reg_after[19],nbins_pupil_reg_after[19]],[0,pupil_reg_after_hist[19]],'k--')
-if (p_pupil < 0.05):
-	t_before_stress,p_before_stress = stats.ttest_ind(all_pupil_reg_before,all_pupil_stress, axis=0, equal_var=True)
-	t_after_stress,p_after_stress = stats.ttest_ind(all_pupil_reg_after,all_pupil_stress,axis=0,equal_var=True)
-	t_before_after,p_before_after = stats.ttest_ind(all_pupil_reg_before,all_pupil_reg_after,axis=0,equal_var=True)
-	plt.text(nbins_pupil_reg_after[1],np.max(pupil_reg_after_hist)-0.05,'Before v. Stress:p=%f \n Before v. After: p=%f \n Stress v. After: p=%f' % (p_before_stress,p_before_after,p_after_stress))
+#plt.plot(nbins_pupil_reg_after,pupil_reg_after_hist,'k',label='Regular After')
+#plt.fill_between(nbins_pupil_reg_after[17:22],pupil_reg_after_hist[17:22],np.zeros(5),facecolor='gray',linewidth=0.1,alpha=0.5)
+#plt.plot([nbins_pupil_reg_after[19],nbins_pupil_reg_after[19]],[0,pupil_reg_after_hist[19]],'k--')
+#if (p_pupil < 0.05):
+#	t_before_stress,p_before_stress = stats.ttest_ind(all_pupil_reg_before,all_pupil_stress, axis=0, equal_var=True)
+#	t_after_stress,p_after_stress = stats.ttest_ind(all_pupil_reg_after,all_pupil_stress,axis=0,equal_var=True)
+#	t_before_after,p_before_after = stats.ttest_ind(all_pupil_reg_before,all_pupil_reg_after,axis=0,equal_var=True)
+#	plt.text(nbins_pupil_reg_after[1],np.max(pupil_reg_after_hist)-0.05,'Before v. Stress:p=%f \n Before v. After: p=%f \n Stress v. After: p=%f' % (p_before_stress,p_before_after,p_after_stress))
 plt.legend()
 #plt.show()
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_PupilDistribution-DeleteBlinks.svg')
