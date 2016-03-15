@@ -55,8 +55,8 @@ def running_mean(x, N):
 	return (cumsum[N:] - cumsum[:-N]) / float(N) 
 
 # Set up code for particular day and block
-hdf_filename = 'mari20160309_21_te1668.hdf'
-filename = 'Mario20160309'
+hdf_filename = 'mari20160314_03_te1725.hdf'
+filename = 'Mario20160314'
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
 #hdf_location = hdf_filename
