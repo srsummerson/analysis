@@ -329,33 +329,35 @@ for i in range(0,len(row_ind_successful_stress)):
 	pupil_stress_std.append(np.mean(pupil_snippet))
 
 Fs = hdeeg_samprate
-density_length = 30
+density_length = 50
 for chann in hdeeg.keys():
 	trial_power = np.zeros([density_length,len(row_ind_successful_stress)])
 	beta_power = np.zeros([len(row_ind_successful_stress),10])
 	low_power = np.zeros([len(row_ind_successful_stress),10])
 	for i in range(0,len(row_ind_successful_stress)):	
 		hdeeg_snippet = hdeeg[chann][hdeeg_ind_successful_stress[i]:hdeeg_ind_successful_stress[i]+samples_hdeeg_successful_stress[i]]
-		#num_timedom_samples = hdeeg_snippet.size
-		#time = [float(t)/Fs for t in range(0,num_timedom_samples)]
- 		#freq, Pxx_den = signal.welch(hdeeg_snippet, Fs, nperseg=1024)
- 		#trial_power[:,i] = Pxx_den[0:density_length]
- 		hdeeg_snippet_aligned_to_end = hdeeg_snippet[-hdeeg_samprate:]
- 		hdeeg_snippet_aligned_to_beginning = hdeeg_snippet[0:hdeeg_samprate]
- 		num_timedom_samples = hdeeg_snippet_aligned_to_end.size
- 		time = [float(t)/Fs for t in range(0,num_timedom_samples)]
+		num_timedom_samples = hdeeg_snippet.size
+		time = [float(t)/Fs for t in range(0,num_timedom_samples)]
+ 		freq, Pxx_den = signal.welch(hdeeg_snippet, Fs, nperseg=1024)
+ 		print freq[0:3]
+ 		trial_power[i,:] = Pxx_den[0:density_length]
+ 		#hdeeg_snippet_aligned_to_end = hdeeg_snippet[-hdeeg_samprate:]
+ 		#hdeeg_snippet_aligned_to_beginning = hdeeg_snippet[0:hdeeg_samprate]
+ 		#num_timedom_samples = hdeeg_snippet_aligned_to_end.size
+ 		#time = [float(t)/Fs for t in range(0,num_timedom_samples)]
  		#Pxx, freqs, bins, im = plt.specgram(hdeeg_snippet_aligned_to_beginning, NFFT=512, Fs=Fs, noverlap=256)
- 		Pxx, freqs, bins = mlab.specgram(hdeeg_snippet_aligned_to_end, NFFT=512, Fs=Fs, noverlap=256)
+ 		#Pxx, freqs, bins = mlab.specgram(hdeeg_snippet_aligned_to_end, NFFT=512, Fs=Fs, noverlap=256)
  		#plt.pcolor(Pxx)
- 		freq_low = np.less_equal(freqs,10)
- 		freq_beta = np.logical_and(np.greater(freqs,50),np.less(freqs,100))
- 		freq_low_ind = np.ravel(np.nonzero(freq_low))
- 		freq_beta_ind = np.ravel(np.nonzero(freq_beta))
- 		Pxx_low = np.sum(Pxx[freq_low_ind],axis=0)/np.sum(Pxx,axis=0)
- 		Pxx_beta = np.sum(Pxx[freq_beta_ind],axis=0)/np.sum(Pxx,axis=0)
- 		beta_power[i,:] = Pxx_beta
- 		low_power[i,:] = Pxx_low
+ 		#freq_low = np.less_equal(freqs,10)
+ 		#freq_beta = np.logical_and(np.greater(freqs,50),np.less(freqs,100))
+ 		#freq_low_ind = np.ravel(np.nonzero(freq_low))
+ 		#freq_beta_ind = np.ravel(np.nonzero(freq_beta))
+ 		#Pxx_low = np.sum(Pxx[freq_low_ind],axis=0)/np.sum(Pxx,axis=0)
+ 		#Pxx_beta = np.sum(Pxx[freq_beta_ind],axis=0)/np.sum(Pxx,axis=0)
+ 		#beta_power[i,:] = Pxx_beta
+ 		#low_power[i,:] = Pxx_low
  	# plot figures here
+ 	'''
  	z_min, z_max = -np.abs(trial_power).max(), np.abs(trial_power).max()
 	plt.figure()
 	plt.subplot(1, 2, 1)
@@ -375,6 +377,14 @@ for chann in hdeeg.keys():
 	# set the limits of the plot to the limits of the data
 	#plt.axis([x.min(), x.max(), y.min(), y.max()])
 	plt.colorbar()
+	'''
+
+	plt.figure()
+	plt.plot(freq,Pxx_den/np.sum(Pxx_den),'r') # plotting the spectrum
+ 	plt.xlim((0, 100))
+ 	plt.xlabel('Freq (Hz)')
+ 	plt.ylabel('PSD')
+ 	plt.title('Channel ' +str(channel))
 	plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_Spectrogram_Ch'+str(chann)+'.svg')
 	#plt.show()
 	#plt.close()
