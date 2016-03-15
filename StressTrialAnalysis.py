@@ -339,7 +339,6 @@ for chann in hdeeg.keys():
 		num_timedom_samples = hdeeg_snippet.size
 		time = [float(t)/Fs for t in range(0,num_timedom_samples)]
  		freq, Pxx_den = signal.welch(hdeeg_snippet, Fs, nperseg=1024)
- 		print freq[0:3]
  		trial_power[:,i] = Pxx_den[0:density_length]
  		#hdeeg_snippet_aligned_to_end = hdeeg_snippet[-hdeeg_samprate:]
  		#hdeeg_snippet_aligned_to_beginning = hdeeg_snippet[0:hdeeg_samprate]
@@ -378,9 +377,10 @@ for chann in hdeeg.keys():
 	#plt.axis([x.min(), x.max(), y.min(), y.max()])
 	plt.colorbar()
 	'''
-
+	trial_power_avg = np.mean(trial_power,axis=2)
+	print len(trial_power_avg)
 	plt.figure()
-	plt.plot(freq,Pxx_den/np.sum(Pxx_den),'r') # plotting the spectrum
+	plt.plot(freq[0:density_length],trial_power_avg,'r') # plotting the spectrum
  	plt.xlim((0, 100))
  	plt.xlabel('Freq (Hz)')
  	plt.ylabel('PSD')
