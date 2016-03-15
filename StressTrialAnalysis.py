@@ -388,7 +388,7 @@ for chann in hdeeg.keys():
 	plt.colorbar()
 	'''
 	trial_power_avg_stress = np.mean(trial_power_stress,axis=1)
-	trial_power_avg_reg = np.mean(trial_power_avg_reg,axis=1)
+	trial_power_avg_reg = np.mean(trial_power_reg,axis=1)
 	print len(trial_power_avg)
 	plt.figure()
 	plt.plot(freq[0:density_length],trial_power_avg_stress,'r',label='Stress Trials') # plotting the spectrum
