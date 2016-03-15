@@ -285,6 +285,9 @@ for i in range(0,len(state_row_ind_successful_reg)):
 samples_pulse_successful_stress = np.floor(response_time_successful_stress*pulse_samprate) 	#number of samples in trial interval for pulse signal
 samples_pupil_successful_stress = np.floor(response_time_successful_stress*pupil_samprate)
 samples_hdeeg_successful_stress = np.floor(response_time_successful_stress*hdeeg_samprate)
+
+samples_hdeeg_successful_reg = np.floor(response_time_successful_reg*hdeeg_samprate)
+
 #ibi_stress = dict()
 #pupil_stress = dict()
 ibi_stress_mean = []
@@ -415,7 +418,7 @@ pupil_stress_hist = pupil_stress_hist/float(len(all_pupil_stress))
 # Find IBIs and pupil data for all regular trials. 
 samples_pulse_successful_reg = np.floor(response_time_successful_reg*pulse_samprate)
 samples_pupil_successful_reg = np.floor(response_time_successful_reg*pupil_samprate)
-samples_hdeeg_successful_reg = np.floor(response_time_successful_reg*hdeeg_samprate)
+
 #ibi_reg_before = dict()
 #pupil_reg_before = dict()
 #ibi_reg_after = dict()
