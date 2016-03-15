@@ -375,7 +375,7 @@ for chann in hdeeg.keys():
 	# set the limits of the plot to the limits of the data
 	#plt.axis([x.min(), x.max(), y.min(), y.max()])
 	plt.colorbar()
-	plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_Spectrogram'+'Ch'+str(chann)'.svg')
+	plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_Spectrogram_Ch'+str(chann)'.svg')
 	#plt.show()
 	#plt.close()
 
