@@ -329,17 +329,18 @@ for i in range(0,len(row_ind_successful_stress)):
 	pupil_stress_std.append(np.mean(pupil_snippet))
 
 Fs = hdeeg_samprate
-density_length = 50
+density_length = 30
 for chann in hdeeg.keys():
-	trial_power = np.zeros([density_length,len(row_ind_successful_stress)])
+	trial_power_stress = np.zeros([density_length,len(row_ind_successful_stress)])
+	trial_power_reg = np.zeros([density_length,len(hdeeg_ind_successful_reg_before)])
 	beta_power = np.zeros([len(row_ind_successful_stress),10])
 	low_power = np.zeros([len(row_ind_successful_stress),10])
 	for i in range(0,len(row_ind_successful_stress)):	
 		hdeeg_snippet = hdeeg[chann][hdeeg_ind_successful_stress[i]:hdeeg_ind_successful_stress[i]+samples_hdeeg_successful_stress[i]]
 		num_timedom_samples = hdeeg_snippet.size
 		time = [float(t)/Fs for t in range(0,num_timedom_samples)]
- 		freq, Pxx_den = signal.welch(hdeeg_snippet, Fs, nperseg=1024)
- 		trial_power[:,i] = Pxx_den[0:density_length]
+ 		freq, Pxx_den = signal.welch(hdeeg_snippet, Fs, nperseg=512, noverlap=256)
+ 		trial_power_stress[:,i] = Pxx_den[0:density_length]
  		#hdeeg_snippet_aligned_to_end = hdeeg_snippet[-hdeeg_samprate:]
  		#hdeeg_snippet_aligned_to_beginning = hdeeg_snippet[0:hdeeg_samprate]
  		#num_timedom_samples = hdeeg_snippet_aligned_to_end.size
@@ -355,6 +356,12 @@ for chann in hdeeg.keys():
  		#Pxx_beta = np.sum(Pxx[freq_beta_ind],axis=0)/np.sum(Pxx,axis=0)
  		#beta_power[i,:] = Pxx_beta
  		#low_power[i,:] = Pxx_low
+ 	for i in range(0,len(hdeeg_ind_successful_reg_before)):
+		hdeeg_snippet = hdeeg[chann][hdeeg_ind_successful_reg_before[i]:hdeeg_ind_successful_reg_before[i]+samples_hdeeg_successful_reg[i]]
+		num_timedom_samples = hdeeg_snippet.size
+		time = [float(t)/Fs for t in range(0,num_timedom_samples)]
+ 		freq, Pxx_den = signal.welch(hdeeg_snippet, Fs, nperseg=512, noverlap=256)
+ 		trial_power_reg[:,i] = Pxx_den[0:density_length]
  	# plot figures here
  	'''
  	z_min, z_max = -np.abs(trial_power).max(), np.abs(trial_power).max()
@@ -377,14 +384,16 @@ for chann in hdeeg.keys():
 	#plt.axis([x.min(), x.max(), y.min(), y.max()])
 	plt.colorbar()
 	'''
-	trial_power_avg = np.mean(trial_power,axis=1)
+	trial_power_avg_stress = np.mean(trial_power_stress,axis=1)
+	trial_power_avg_reg = np.mean(trial_power_avg_reg,axis=1)
 	print len(trial_power_avg)
 	plt.figure()
-	plt.plot(freq[0:density_length],trial_power_avg,'r') # plotting the spectrum
- 	plt.xlim((0, 100))
+	plt.plot(freq[0:density_length],trial_power_avg_stress,'r',label='Stress Trials') # plotting the spectrum
+	plt.plot(freq[0:density_length],trial_power_avg_reg,'b',label='Regular Trials')
+ 	plt.xlim((0, 50))
  	plt.xlabel('Freq (Hz)')
- 	plt.ylabel('PSD')
- 	plt.title('Channel ' +str(channel))
+ 	plt.ylabel('Average PSD')
+ 	plt.title('Channel ' +str(chann))
 	plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_Spectrogram_Ch'+str(chann)+'.svg')
 	#plt.show()
 	#plt.close()
@@ -406,6 +415,7 @@ pupil_stress_hist = pupil_stress_hist/float(len(all_pupil_stress))
 # Find IBIs and pupil data for all regular trials. 
 samples_pulse_successful_reg = np.floor(response_time_successful_reg*pulse_samprate)
 samples_pupil_successful_reg = np.floor(response_time_successful_reg*pupil_samprate)
+samples_hdeeg_successful_reg = np.floor(response_time_successful_reg*hdeeg_samprate)
 #ibi_reg_before = dict()
 #pupil_reg_before = dict()
 #ibi_reg_after = dict()
