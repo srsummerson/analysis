@@ -224,9 +224,9 @@ for sig in bl.segments[block_num-1].analogsignals:
 	if (sig.name == 'HrtR 1'):
 		pulse_data = np.ravel(sig)
 		pulse_samprate = sig.sampling_rate.item()
-	if (sig.name[0:4] == 'EEGx'):
+	if (sig.name[0:4] == 'LFP1'):
 		channel = sig.channel_index
-		if channel not in [4,6,8]:
+		if channel in [9, 25, 11, 27, 10, 12, 28]:
 			hdeeg_samprate = sig.sampling_rate.item()
 			hdeeg[channel] = np.ravel(sig)
 
@@ -347,7 +347,7 @@ for chann in hdeeg.keys():
  		#Pxx, freqs, bins, im = plt.specgram(hdeeg_snippet_aligned_to_beginning, NFFT=512, Fs=Fs, noverlap=256)
  		Pxx, freqs, bins = mlab.specgram(hdeeg_snippet_aligned_to_end, NFFT=512, Fs=Fs, noverlap=256)
  		#plt.pcolor(Pxx)
- 		freq_low = np.less_equal(freqs,5)
+ 		freq_low = np.less_equal(freqs,10)
  		freq_beta = np.logical_and(np.greater(freqs,50),np.less(freqs,100))
  		freq_low_ind = np.ravel(np.nonzero(freq_low))
  		freq_beta_ind = np.ravel(np.nonzero(freq_beta))
@@ -370,11 +370,12 @@ for chann in hdeeg.keys():
 	plt.imshow(beta_power, cmap='RdBu')
 	#plt.xticks(np.arange(0.5,len(bins)+0.5),bins)
 	#plt.yticks(range(0,len(row_ind_successful_stress)))
-	plt.title('Spectrogram: 10 - 30 Hz power')
+	plt.title('Spectrogram: 50 - 100 Hz power')
 	plt.axis('auto')
 	# set the limits of the plot to the limits of the data
 	#plt.axis([x.min(), x.max(), y.min(), y.max()])
 	plt.colorbar()
+	plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_Spectrogram.svg')
 	#plt.show()
 	#plt.close()
 
