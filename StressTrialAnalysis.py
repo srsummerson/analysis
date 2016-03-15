@@ -340,7 +340,7 @@ for chann in hdeeg.keys():
 		time = [float(t)/Fs for t in range(0,num_timedom_samples)]
  		freq, Pxx_den = signal.welch(hdeeg_snippet, Fs, nperseg=1024)
  		print freq[0:3]
- 		trial_power[i,:] = Pxx_den[0:density_length]
+ 		trial_power[:,i] = Pxx_den[0:density_length]
  		#hdeeg_snippet_aligned_to_end = hdeeg_snippet[-hdeeg_samprate:]
  		#hdeeg_snippet_aligned_to_beginning = hdeeg_snippet[0:hdeeg_samprate]
  		#num_timedom_samples = hdeeg_snippet_aligned_to_end.size
