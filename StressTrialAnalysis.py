@@ -377,7 +377,7 @@ for chann in hdeeg.keys():
 	#plt.axis([x.min(), x.max(), y.min(), y.max()])
 	plt.colorbar()
 	'''
-	trial_power_avg = np.mean(trial_power,axis=2)
+	trial_power_avg = np.mean(trial_power,axis=1)
 	print len(trial_power_avg)
 	plt.figure()
 	plt.plot(freq[0:density_length],trial_power_avg,'r') # plotting the spectrum
