@@ -335,7 +335,7 @@ for chann in hdeeg.keys():
 	beta_power = np.zeros([len(row_ind_successful_stress),10])
 	low_power = np.zeros([len(row_ind_successful_stress),10])
 	for i in range(0,len(row_ind_successful_stress)):	
-		hdeeg_snippet = hdeeg[channel][hdeeg_ind_successful_stress[i]:hdeeg_ind_successful_stress[i]+samples_hdeeg_successful_stress[i]]
+		hdeeg_snippet = hdeeg[chann][hdeeg_ind_successful_stress[i]:hdeeg_ind_successful_stress[i]+samples_hdeeg_successful_stress[i]]
 		#num_timedom_samples = hdeeg_snippet.size
 		#time = [float(t)/Fs for t in range(0,num_timedom_samples)]
  		#freq, Pxx_den = signal.welch(hdeeg_snippet, Fs, nperseg=1024)
