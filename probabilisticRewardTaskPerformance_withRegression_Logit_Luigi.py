@@ -19,13 +19,14 @@ from probabilisticRewardTaskPerformance import FreeChoicePilotTask_Behavior
 
 
 hdf_list_stim = ['\luig20160204_15_te1382.hdf','\luig20160208_07_te1401.hdf','\luig20160212_08_te1429.hdf','\luig20160217_06_te1451.hdf',
-                '\luig20160229_11_te1565.hdf','\luig20160301_07_te1572.hdf','\luig20160301_09_te1574.hdf', '\luig20160223_09_te1506.hdf']
+                '\luig20160229_11_te1565.hdf','\luig20160301_07_te1572.hdf','\luig20160301_09_te1574.hdf', '\luig20160311_08_te1709.hdf',
+                '\luig20160313_07_te1722.hdf', '\luig20160315_14_te1739.hdf']
 hdf_list_sham = ['\luig20160213_05_te1434.hdf','\luig20160219_04_te1473.hdf','\luig20160221_05_te1478.hdf', '\luig20160305_26_te1617.hdf', \
                  '\luig20160306_11_te1628.hdf', '\luig20160307_13_te1641.hdf']
 #hdf_list_hv = ['\luig20160218_10_te1469.hdf','\luig20160223_09_te1506.hdf','\luig20160223_11_te1508.hdf','\luig20160224_11_te1519.hdf',
-#                '\luig20160224_15_te1523.hdf', '\luig20160302_06_te1580.hdf, '\luig20160303_09_te1589.hdf'']
-hdf_list_hv = ['\luig20160218_10_te1469.hdf','\luig20160223_11_te1508.hdf','\luig20160224_15_te1523.hdf','\luig20160302_06_te1580.hdf', \
-                '\luig20160303_11_te1591.hdf']
+#                '\luig20160224_15_te1523.hdf', '\luig20160302_06_te1580.hdf, '\luig20160303_09_te1589.hdf', '\luig20160302_06_te1580.hdf']
+hdf_list_hv = ['\luig20160218_10_te1469.hdf','\luig20160223_11_te1508.hdf','\luig20160224_15_te1523.hdf', \
+                '\luig20160303_11_te1591.hdf', '\luig20160308_06_te1647.hdf','\luig20160309_25_te1672.hdf']
 
 hdf_prefix = 'C:\Users\Samantha Summerson\Dropbox\Carmena Lab\Luigi\hdf'
 stim_hdf_list = hdf_list_stim
@@ -114,8 +115,7 @@ def computeProbabilityChoiceWithRegressors(params_block1, params_block3,reward1,
                                             params_block3[9]*prev_noreward4_block3 + params_block3[10]*prev_noreward5_block3 + \
                                             params_block3[11]*prev_stim1_block3 + \
                                             params_block3[12]*prev_stim2_block3 + params_block3[13]*prev_stim3_block3 + params_block3[14]*prev_stim4_block3 + \
-                                            params_block3[15]*prev_stim5_block3 + \
-                                            params_block3[16]*fc_target_high_side_block3)
+                                            params_block3[15]*prev_stim5_block3)
 
     log_prob = relative_action_value_block3 + params_block3[0]  
     prob_choice_block3 = (float(1)/(np.exp(-log_prob) + 1))
@@ -471,7 +471,7 @@ def probabilisticFreeChoicePilotTask_logisticRegression(reward1, target1, trial1
 
     y = np.vstack((prev_reward1_block3,prev_reward2_block3,prev_reward3_block3,prev_reward4_block3,prev_reward5_block3,
         prev_noreward1_block3,prev_noreward2_block3,prev_noreward3_block3,prev_noreward4_block3,prev_noreward5_block3,
-        prev_stim1_block3, prev_stim2_block3, prev_stim3_block3, prev_stim4_block3, prev_stim5_block3, fc_target_high_side_block3))
+        prev_stim1_block3, prev_stim2_block3, prev_stim3_block3, prev_stim4_block3, prev_stim5_block3))
     y = np.transpose(y)
     y = sm.add_constant(y,prepend='False')
 
