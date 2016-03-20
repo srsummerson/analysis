@@ -566,6 +566,12 @@ pupil_reg_before_mean_fit = m*np.arange(1,len(pupil_reg_before_mean)+1) + b
 #pupil_reg_after_mean_fit = m*np.arange(1,len(pupil_reg_after_mean)+1) + b
 
 plt.figure()
+plt.subplot(1,2,1)
+plt.plot(all_ibi_reg_before,'c')
+plt.plot(all_ibi_stress,'m')
+plt.show()
+
+plt.figure()
 plt.subplot(2,1,2)
 plt.plot(range(1,len(ibi_stress_mean)+1),ibi_stress_mean,'r')
 plt.plot(range(1,len(ibi_stress_mean)+1),ibi_stress_mean_fit,'r--')
