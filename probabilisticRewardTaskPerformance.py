@@ -318,12 +318,12 @@ def FreeChoicePilotTaskPerformance(hdf_file):
     plt.title("Block A': Free-Choice Trials")
     plt.legend()
     
-    #plt.savefig('C:/Users/Samantha Summerson/Documents/GitHub/analysis/Papa_Performance_figs/FCPerformance_targets_%s.svg' % hdf_file[:-4])    # save this filetype for AI editing
-    plt.savefig('/home/srsummerson/code/analysis/Papa_Performance_figs/FCPerformance_targets_%s.svg' % hdf_file[:-4])    # save this filetype for easy viewing
-    plt.savefig('/home/srsummerson/code/analysis/Papa_Performance_figs/FCPerformance_targets_%s.png' % hdf_file[:-4])    # save this filetype for easy viewing
+    plt.savefig('C:/Users/Samantha Summerson/Documents/GitHub/analysis/Papa_Performance_figs/FCPerformance_targets_%s.svg' % hdf_file[:-4])    # save this filetype for AI editing
+    #plt.savefig('/home/srsummerson/code/analysis/Luigi_Performance_figs/FCPerformance_targets_%s.svg' % hdf_file[:-4])    # save this filetype for easy viewing
+    #plt.savefig('/home/srsummerson/code/analysis/Luigi_Performance_figs/FCPerformance_targets_%s.png' % hdf_file[:-4])    # save this filetype for easy viewing
     plt.close()
     hdf.close()
-    return
+    return 
 
 def FreeChoicePilotTask_LowValueChoiceProb(hdf_file):
     hdf = tables.openFile(hdf_file)
@@ -570,3 +570,88 @@ def FreeChoicePilotTask_Behavior(hdf_file):
     
     hdf.close()
     return reward1, target1, instructed_or_freechoice_block1, target_side1, reward3, target3, instructed_or_freechoice_block3, target_side3, stim_trials
+
+def FreeChoicePilotTask_Behavior_ProbChooseLow(hdf_file):
+	running_avg_length = 20
+	reward1, target1, instructed_or_freechoice_block1, target_side1, reward3, target3, instructed_or_freechoice_block3, target_side3, stim_trials = FreeChoicePilotTask_Behavior(hdf_file)
+
+	free_choice_ind = np.ravel(np.nonzero(np.equal(np.ravel(instructed_or_freechoice_block3),2)))
+	target_freechoice_block3 = target3[free_choice_ind]
+	reward_freechoice_block3 = reward3[free_choice_ind]
+	
+	prob_choose_low_freechoice_block3 = np.zeros(len(target_freechoice_block3))
+	prob_reward_low_freechoice_block3 = np.zeros(len(target_freechoice_block3))
+
+
+	for i in range(0,len(target_freechoice_block3)):
+		chosen_low_freechoice = target_freechoice_block3[range(np.maximum(0,i - running_avg_length),i+1)] == 1
+		reward_low_freechoice = np.logical_and(chosen_low_freechoice,reward_freechoice_block3[range(np.maximum(0,i - running_avg_length),i+1)])
+		prob_choose_low_freechoice_block3[i] = float(np.sum(chosen_low_freechoice))/len(chosen_low_freechoice)
+		prob_reward_low_freechoice_block3[i] = float(np.sum(reward_low_freechoice))/(np.sum(chosen_low_freechoice) + (np.sum(chosen_low_freechoice)==0))
+	
+	return prob_choose_low_freechoice_block3, prob_reward_low_freechoice_block3
+
+
+def PeriStimulusFreeChoiceBehavior(hdf_file):
+	reward1, target1, instructed_or_freechoice_block1, target_side1, reward3, target3, instructed_or_freechoice_block3, target_side3, stim_trials = FreeChoicePilotTask_Behavior(hdf_file)
+
+	stim_ind = np.ravel(np.nonzero(stim_trials))
+	first_100 = np.less(stim_ind,100)
+	stim_trial_ind = stim_ind[0:np.sum(first_100)]
+
+	num_stim_trials = len(stim_trial_ind)
+	aligned_lv_choices = np.zeros((num_stim_trials,5))  # look at most five free-choice trials out of from stim trial
+	aligned_lv_choices_rewarded = np.zeros((num_stim_trials,5))   # look at five free-choice trials out from stim trial when stim trial was rewarded
+	aligned_lv_choices_unrewarded = np.zeros((num_stim_trials,5))
+	number_aligned_choices = np.zeros(5)
+	number_aligned_choices_rewarded = np.zeros(5)
+	number_aligned_choices_unrewarded = np.zeros(5)
+	counter_rewarded = 0
+	counter_unrewarded = 0
+	counter_stimtrials_used = 0
+
+	for i in range(0,num_stim_trials-1):
+		ind_stim = stim_trial_ind[i]
+		max_ind_out = np.min([5,stim_trial_ind[i+1]-stim_trial_ind[i]-1])
+		if max_ind_out > 0:
+			aligned_lv_choices[i,0:max_ind_out] = (2 - target3[ind_stim+1:ind_stim+max_ind_out+1])
+			number_aligned_choices[0:max_ind_out] += np.ones(max_ind_out)
+
+			if (reward3[ind_stim]==1):  # reward paired with stim
+				aligned_lv_choices_rewarded[counter_rewarded,0:max_ind_out] = aligned_lv_choices[i,0:max_ind_out]
+				number_aligned_choices_rewarded[0:max_ind_out] += np.ones(max_ind_out)
+				counter_rewarded += 1
+			else:
+				aligned_lv_choices_unrewarded[counter_unrewarded,0:max_ind_out] = aligned_lv_choices[i,0:max_ind_out]
+				number_aligned_choices_unrewarded[0:max_ind_out] += np.ones(max_ind_out)
+				counter_unrewarded += 1 
+			counter_stimtrials_used += 1
+		else:
+			aligned_lv_choices[i,:] = np.zeros(5)
+
+	prob_choose_low_aligned = np.sum(aligned_lv_choices,axis=0)
+	prob_choose_low_aligned = prob_choose_low_aligned/number_aligned_choices
+
+	prob_stim_rewarded = float(counter_rewarded)/(counter_stimtrials_used)  # didn't include data from last stim trial
+	prob_stim_unrewarded = float(counter_unrewarded)/(counter_stimtrials_used)
+
+	prob_choose_low_aligned_rewarded = np.sum(aligned_lv_choices_rewarded[0:counter_rewarded,:],axis=0)
+	prob_choose_low_aligned_rewarded = prob_choose_low_aligned_rewarded/np.max([np.ones(5), number_aligned_choices_rewarded],axis=0) # conditional probability: p(choose low | rewarded)
+	#print 'Condition prob - reward:', prob_choose_low_aligned_rewarded
+	prob_choose_low_aligned_rewarded = prob_stim_rewarded*prob_choose_low_aligned_rewarded  # joint probability: p(choose low, rewarded)
+	#print 'Joint prob - reward:', prob_choose_low_aligned_rewarded
+	prob_choose_low_aligned_unrewarded = np.sum(aligned_lv_choices_unrewarded[0:counter_unrewarded,:],axis=0)
+	prob_choose_low_aligned_unrewarded = prob_choose_low_aligned_unrewarded/number_aligned_choices_unrewarded  # conditional probability
+	#print 'Condition prob - unrewarded', prob_choose_low_aligned_unrewarded
+	prob_choose_low_aligned_unrewarded = prob_stim_unrewarded*prob_choose_low_aligned_unrewarded
+	#print 'Joint prob - unrewarded', prob_choose_low_aligned_unrewarded
+
+
+	return prob_choose_low_aligned, prob_choose_low_aligned_rewarded, prob_choose_low_aligned_unrewarded
+
+
+
+
+'''
+debug this in command line and then re-runn summary analysis
+'''

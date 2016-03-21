@@ -16,10 +16,13 @@ from matplotlib.pyplot import cm
 from logLikelihoodRLPerformance import RLPerformance, logLikelihoodRLPerformance, RLPerformance_multiplicative_Qstimparameter, logLikelihoodRLPerformance_multiplicative_Qstimparameter, \
                                         RLPerformance_additive_Qstimparameter, logLikelihoodRLPerformance_additive_Qstimparameter, RLPerformance_multiplicative_Pstimparameter, \
                                         logLikelihoodRLPerformance_multiplicative_Pstimparameter, RLPerformance_additive_Pstimparameter, logLikelihoodRLPerformance_additive_Pstimparameter
-from probabilisticRewardTaskPerformance import FreeChoicePilotTask_Behavior
+from probabilisticRewardTaskPerformance import FreeChoicePilotTask_Behavior, FreeChoicePilotTask_Behavior_ProbChooseLow
 
 
-
+'''
+Do fit_regularized for regression
+Plot difference in AIC/BIC
+'''
 
 
 # constant voltage and constant current stimulation: constant current starts at 20150508
@@ -80,14 +83,14 @@ hdf_list = np.sum([hdf_list_stim,hdf_list_stim2])
 
 #hdf_list = np.sum([hdf_list_stim,hdf_list_sham])
 # Exceptions: 5/25 - 2, 5/30 - 1, 2/18 - 4, 6/2 - 3, 2/19 - 9 (if doing first 100 trials), 3/3 - 3 (if doing first 100 trials)
-
+'''
 hdf_list = ['\papa20150211_11.hdf',
     '\papa20150223_02.hdf','\papa20150224_02.hdf',
     '\papa20150306_07.hdf','\papa20150309_04.hdf','\papa20150508_12.hdf','\papa20150508_13.hdf','\papa20150518_03.hdf',
     '\papa20150518_05.hdf','\papa20150518_06.hdf',
-    '\papa20150524_04.hdf','\papa20150525_01.hdf',
+    '\papa20150524_04.hdf',
     '\papa20150602_04.hdf']
-
+'''
 
 hdf_prefix = 'C:\Users\Samantha Summerson\Dropbox\Carmena Lab\Papa\hdf'
 stim_hdf_list = hdf_list
@@ -1085,6 +1088,7 @@ for name in stim_hdf_list:
     Compute task performance.
     '''
     reward_block1, target_block1, trial_block1, target_side1, reward_block3, target_block3, trial_block3, target_side3, stim_trials_block = FreeChoicePilotTask_Behavior(full_name)
+    b3_prob_choose_low, b3_prob_reward_low = FreeChoicePilotTask_Behavior_ProbChooseLow(full_name)
     prob_choose_low = FirstChoiceAfterStim(target_block3,trial_block3, stim_trials_block)
 
     #prob_choose_low = 1 - np.sum(target_block3[fc_trial_ind] - 1)/len(target_block3[fc_trial_ind])  # for prob of choosing low value target over all trials
@@ -1165,12 +1169,12 @@ for name in stim_hdf_list:
     
     result3 = op.minimize(nll, [alpha_true, beta_true], args=(Q_initial, reward_block3, target_block3, trial_block3), bounds=[(0,1),(0,None)])
     alpha_ml_block3, beta_ml_block3 = result3["x"]
-    Qlow_block3, Qhigh_block3, prob_low_block3, max_loglikelihood3 = RLPerformance([alpha_ml_block3,beta_ml_block3],[Qlow_block1[-1],Qhigh_block1[-1]],reward_block3,target_block3, trial_block3)
+    Qlow_block3, Qhigh_block3, prob_low_block3_regular, max_loglikelihood3 = RLPerformance([alpha_ml_block3,beta_ml_block3],[Qlow_block1[-1],Qhigh_block1[-1]],reward_block3,target_block3, trial_block3)
     BIC3 = -2*max_loglikelihood3 + len(result3["x"])*np.log(target_block3.size)
     AIC3 = -2*max_loglikelihood3 + 2*len(result3["x"])
 
     # Accuracy of fit
-    model3 = 0.33*(prob_low_block3 > 0.5) + 0.66*(np.less_equal(prob_low_block3, 0.5))  # scaling by 0.33 and 0.66 just for plotting purposes
+    model3 = 0.33*(prob_low_block3_regular > 0.5) + 0.66*(np.less_equal(prob_low_block3_regular, 0.5))  # scaling by 0.33 and 0.66 just for plotting purposes
     target_freechoice_block3 = np.array(target_freechoice_block3)
     fit3 = np.equal(model3[:-1],(0.33*target_freechoice_block3))
     accuracy3 = float(np.sum(fit3))/model3.size
@@ -1189,14 +1193,14 @@ for name in stim_hdf_list:
     Get fit with additive stimulation parameter in Q-value update equation
     '''
     nll_Qadditive = lambda *args: -logLikelihoodRLPerformance_additive_Qstimparameter(*args)
-    result3_Qadditive = op.minimize(nll_Qadditive, [alpha_true, beta_true, gamma_true], args=([Qlow_block1[-1],Qhigh_block1[-1]], reward_block3, target_block3, trial_block3, stim_trials_block), bounds=[(0,1),(0,None),(-1,None)])
+    result3_Qadditive = op.minimize(nll_Qadditive, [alpha_true, beta_true, gamma_true], args=([Qlow_block1[-1],Qhigh_block1[-1]], reward_block3, target_block3, trial_block3, stim_trials_block), bounds=[(0,1),(0,None),(0,None)])
     alpha_ml_block3_Qadditive, beta_ml_block3_Qadditive, gamma_ml_block3_Qadditive = result3_Qadditive["x"]
-    Qlow_block3, Qhigh_block3, prob_low_block3, max_loglikelihood3 = RLPerformance_additive_Qstimparameter([alpha_ml_block3_Qadditive,beta_ml_block3_Qadditive,gamma_ml_block3_Qadditive],[Qlow_block1[-1],Qhigh_block1[-1]],reward_block3,target_block3, trial_block3, stim_trials_block)
+    Qlow_block3, Qhigh_block3, prob_low_block3_Qadditive, max_loglikelihood3 = RLPerformance_additive_Qstimparameter([alpha_ml_block3_Qadditive,beta_ml_block3_Qadditive,gamma_ml_block3_Qadditive],[Qlow_block1[-1],Qhigh_block1[-1]],reward_block3,target_block3, trial_block3, stim_trials_block)
     BIC3_Qadditive = -2*max_loglikelihood3 + len(result3_Qadditive["x"])*np.log(target_block3.size)
     AIC3_Qadditive = -2*max_loglikelihood3 + 2*len(result3_Qadditive["x"])
 
      # Accuracy of fit
-    model3 = 0.33*(prob_low_block3 > 0.5) + 0.66*(np.less_equal(prob_low_block3, 0.5))  # scaling by 0.33 and 0.66 just for plotting purposes
+    model3 = 0.33*(prob_low_block3_Qadditive > 0.5) + 0.66*(np.less_equal(prob_low_block3_Qadditive, 0.5))  # scaling by 0.33 and 0.66 just for plotting purposes
     target_freechoice_block3 = np.array(target_freechoice_block3)
     fit3 = np.equal(model3[:-1],(0.33*target_freechoice_block3))
     accuracy3_Qadditive = float(np.sum(fit3))/model3.size
@@ -1210,17 +1214,17 @@ for name in stim_hdf_list:
     stim_learning_ratio_Qadditive[stim_counter] = float(alpha_ml_block3_Qadditive)/alpha_ml_block1
 
     '''
-    Get fit with additive stimulation parameter in Q-value update equation
+    Get fit with Multiplicative stimulation parameter in Q-value update equation
     '''
     nll_Qmultiplicative = lambda *args: -logLikelihoodRLPerformance_multiplicative_Qstimparameter(*args)
-    result3_Qmultiplicative = op.minimize(nll_Qmultiplicative, [alpha_true, beta_true, gamma_true], args=([Qlow_block1[-1],Qhigh_block1[-1]], reward_block3, target_block3, trial_block3, stim_trials_block), bounds=[(0,1),(0,None),(-1,None)])
+    result3_Qmultiplicative = op.minimize(nll_Qmultiplicative, [alpha_true, beta_true, gamma_true], args=([Qlow_block1[-1],Qhigh_block1[-1]], reward_block3, target_block3, trial_block3, stim_trials_block), bounds=[(0,1),(0,None),(0,None)])
     alpha_ml_block3_Qmultiplicative, beta_ml_block3_Qmultiplicative, gamma_ml_block3_Qmultiplicative = result3_Qmultiplicative["x"]
-    Qlow_block3, Qhigh_block3, prob_low_block3, max_loglikelihood3 = RLPerformance_additive_Qstimparameter([alpha_ml_block3_Qmultiplicative,beta_ml_block3_Qmultiplicative,gamma_ml_block3_Qmultiplicative],[Qlow_block1[-1],Qhigh_block1[-1]],reward_block3,target_block3, trial_block3, stim_trials_block)
+    Qlow_block3, Qhigh_block3, prob_low_block3_Qmultiplicative, max_loglikelihood3 = RLPerformance_multiplicative_Qstimparameter([alpha_ml_block3_Qmultiplicative,beta_ml_block3_Qmultiplicative,gamma_ml_block3_Qmultiplicative],[Qlow_block1[-1],Qhigh_block1[-1]],reward_block3,target_block3, trial_block3, stim_trials_block)
     BIC3_Qmultiplicative = -2*max_loglikelihood3 + len(result3_Qmultiplicative["x"])*np.log(target_block3.size)
     AIC3_Qmultiplicative = -2*max_loglikelihood3 + 2*len(result3_Qmultiplicative["x"])
 
      # Accuracy of fit
-    model3 = 0.33*(prob_low_block3 > 0.5) + 0.66*(np.less_equal(prob_low_block3, 0.5))  # scaling by 0.33 and 0.66 just for plotting purposes
+    model3 = 0.33*(prob_low_block3_Qmultiplicative > 0.5) + 0.66*(np.less_equal(prob_low_block3_Qmultiplicative, 0.5))  # scaling by 0.33 and 0.66 just for plotting purposes
     target_freechoice_block3 = np.array(target_freechoice_block3)
     fit3 = np.equal(model3[:-1],(0.33*target_freechoice_block3))
     accuracy3_Qmultiplicative = float(np.sum(fit3))/model3.size
@@ -1239,12 +1243,12 @@ for name in stim_hdf_list:
     nll_Padditive = lambda *args: -logLikelihoodRLPerformance_additive_Pstimparameter(*args)
     result3_Padditive = op.minimize(nll_Padditive, [alpha_true, beta_true, gamma_true], args=([Qlow_block1[-1],Qhigh_block1[-1]], reward_block3, target_block3, trial_block3, stim_trials_block), bounds=[(0,1),(0,None),(-1,None)])
     alpha_ml_block3_Padditive, beta_ml_block3_Padditive, gamma_ml_block3_Padditive = result3_Padditive["x"]
-    Qlow_block3, Qhigh_block3, prob_low_block3, max_loglikelihood3 = RLPerformance_additive_Pstimparameter([alpha_ml_block3_Padditive,beta_ml_block3_Padditive,gamma_ml_block3_Padditive],[Qlow_block1[-1],Qhigh_block1[-1]],reward_block3,target_block3, trial_block3, stim_trials_block)
+    Qlow_block3, Qhigh_block3, prob_low_block3_Padditive, max_loglikelihood3 = RLPerformance_additive_Pstimparameter([alpha_ml_block3_Padditive,beta_ml_block3_Padditive,gamma_ml_block3_Padditive],[Qlow_block1[-1],Qhigh_block1[-1]],reward_block3,target_block3, trial_block3, stim_trials_block)
     BIC3_Padditive = -2*max_loglikelihood3 + len(result3_Padditive["x"])*np.log(target_block3.size)
     AIC3_Padditive = -2*max_loglikelihood3 + 2*len(result3_Padditive["x"])
 
      # Accuracy of fit
-    model3 = 0.33*(prob_low_block3 > 0.5) + 0.66*(np.less_equal(prob_low_block3, 0.5))  # scaling by 0.33 and 0.66 just for plotting purposes
+    model3 = 0.33*(prob_low_block3_Padditive > 0.5) + 0.66*(np.less_equal(prob_low_block3_Padditive, 0.5))  # scaling by 0.33 and 0.66 just for plotting purposes
     target_freechoice_block3 = np.array(target_freechoice_block3)
     fit3 = np.equal(model3[:-1],(0.33*target_freechoice_block3))
     accuracy3_Padditive = float(np.sum(fit3))/model3.size
@@ -1258,17 +1262,17 @@ for name in stim_hdf_list:
     stim_learning_ratio_Padditive[stim_counter] = float(alpha_ml_block3_Padditive)/alpha_ml_block1
 
     '''
-    Get fit with additive stimulation parameter in P-value update equation
+    Get fit with Multiplicative stimulation parameter in P-value update equation
     '''
     nll_Pmultiplicative = lambda *args: -logLikelihoodRLPerformance_multiplicative_Pstimparameter(*args)
     result3_Pmultiplicative = op.minimize(nll_Pmultiplicative, [alpha_true, beta_true, gamma_true], args=([Qlow_block1[-1],Qhigh_block1[-1]], reward_block3, target_block3, trial_block3, stim_trials_block), bounds=[(0,1),(0,None),(-1,None)])
     alpha_ml_block3_Pmultiplicative, beta_ml_block3_Pmultiplicative, gamma_ml_block3_Pmultiplicative = result3_Pmultiplicative["x"]
-    Qlow_block3, Qhigh_block3, prob_low_block3, max_loglikelihood3 = RLPerformance_additive_Pstimparameter([alpha_ml_block3_Pmultiplicative,beta_ml_block3_Pmultiplicative,gamma_ml_block3_Pmultiplicative],[Qlow_block1[-1],Qhigh_block1[-1]],reward_block3,target_block3, trial_block3, stim_trials_block)
+    Qlow_block3, Qhigh_block3, prob_low_block3_Pmultiplicative, max_loglikelihood3 = RLPerformance_multiplicative_Pstimparameter([alpha_ml_block3_Pmultiplicative,beta_ml_block3_Pmultiplicative,gamma_ml_block3_Pmultiplicative],[Qlow_block1[-1],Qhigh_block1[-1]],reward_block3,target_block3, trial_block3, stim_trials_block)
     BIC3_Pmultiplicative = -2*max_loglikelihood3 + len(result3_Pmultiplicative["x"])*np.log(target_block3.size)
     AIC3_Pmultiplicative = -2*max_loglikelihood3 + 2*len(result3_Pmultiplicative["x"])
 
      # Accuracy of fit
-    model3 = 0.33*(prob_low_block3 > 0.5) + 0.66*(np.less_equal(prob_low_block3, 0.5))  # scaling by 0.33 and 0.66 just for plotting purposes
+    model3 = 0.33*(prob_low_block3_Pmultiplicative > 0.5) + 0.66*(np.less_equal(prob_low_block3_Pmultiplicative, 0.5))  # scaling by 0.33 and 0.66 just for plotting purposes
     target_freechoice_block3 = np.array(target_freechoice_block3)
     fit3 = np.equal(model3[:-1],(0.33*target_freechoice_block3))
     accuracy3_Pmultiplicative = float(np.sum(fit3))/model3.size
@@ -1280,6 +1284,17 @@ for name in stim_hdf_list:
     stim_AIC_block3_Pmultiplicative[stim_counter] = AIC3_Pmultiplicative
     stim_RLaccuracy_block3_Pmultiplicative[stim_counter] = accuracy3_Pmultiplicative
     stim_learning_ratio_Pmultiplicative[stim_counter] = float(alpha_ml_block3_Pmultiplicative)/alpha_ml_block1
+
+    print b3_prob_choose_low[0]
+    plt.figure()
+    plt.plot(b3_prob_choose_low,'r',label='Behavior')
+    plt.plot(prob_low_block3_regular,'b',label='Regular')
+    plt.plot(prob_low_block3_Qadditive,'c',label='Q Additive')
+    plt.plot(prob_low_block3_Qmultiplicative,'g',label='Q Multiplicative')
+    plt.plot(prob_low_block3_Padditive,'m',label='P Additive')
+    plt.plot(prob_low_block3_Pmultiplicative,'k',label='P Multiplicative')
+    plt.legend()
+    plt.show()
 
     stim_counter += 1
     
@@ -1623,32 +1638,35 @@ plt.show()
 
 plt.figure()
 plt.subplot(1,2,1)
-#plt.plot(stim_BIC_block3,'r',label='Unadjusted')
-plt.plot(stim_BIC_block3_Qadditive,'b',label='Additive Q Param')
-#plt.plot(stim_BIC_block3_Qmultiplicative,'c',label='Multiplicative Q Param')
-plt.plot(stim_BIC_block3_Padditive,'g',label='Additive P Param')
-plt.plot(stim_BIC_block3_Pmultiplicative,'k', label='Multiplicative P Param')
-plt.legend()
-plt.xlabel('Days')
-plt.ylabel('BIC')
-plt.title('Stim')
+plt.scatter(1*np.ones(len(stim_BIC_block3)), stim_BIC_block3 - stim_BIC_block3_Qadditive,c='b')
+plt.scatter(2*np.ones(len(stim_BIC_block3)), stim_BIC_block3 - stim_BIC_block3_Qmultiplicative,c='r')
+plt.scatter(3*np.ones(len(stim_BIC_block3)), stim_BIC_block3 - stim_BIC_block3_Padditive,c='m')
+plt.scatter(4*np.ones(len(stim_BIC_block3)), stim_BIC_block3 - stim_BIC_block3_Pmultiplicative,c='g')
+plt.plot([-0.5,4.5],[0,0],'k--')
+plt.ylabel('BIC Difference (Regular - Adjusted)')
+labels = ["Q Additive","Q Multiplicative'","P Additive", "P Multiplicative"]
+plt.xticks([1,2,3,4], labels, fontsize=8)
+plt.ylim([-10,50])
+plt.title('Bayesian Information Criterion - Stim Days')
+#plt.legend()
 plt.subplot(1,2,2)
-plt.plot(sham_BIC_block3,'r',label='Unadjusted')
-plt.plot(sham_BIC_block3_Qadditive,'b',label='Additive Q Param')
-plt.plot(sham_BIC_block3_Qmultiplicative,'c',label='Multiplicative Q Param')
-plt.plot(sham_BIC_block3_Padditive,'g',label='Additive P Param')
-plt.plot(sham_BIC_block3_Pmultiplicative,'k--',label='Multiplicative P Param')
-plt.legend()
-plt.xlabel('Days')
-plt.ylabel('BIC')
-plt.title('Sham')
+plt.scatter(1*np.ones(len(stim_BIC_block3)), stim_BIC_block3_Qmultiplicative - stim_BIC_block3_Qadditive,c='b')
+plt.scatter(2*np.ones(len(stim_BIC_block3)), stim_BIC_block3_Qmultiplicative - stim_BIC_block3_Padditive,c='m')
+plt.scatter(3*np.ones(len(stim_BIC_block3)), stim_BIC_block3_Qmultiplicative - stim_BIC_block3_Pmultiplicative,c='g')
+plt.plot([-0.5,3.5],[0,0],'k--')
+plt.ylabel('BIC Difference (Q Multiplicative Model - Adjusted)')
+labels = ["Q Additive'","P Additive", "P Multiplicative"]
+plt.xticks([1,2,3], labels, fontsize=8)
+plt.title('Bayesian Information Criterion - Stim Days')
+plt.ylim([-10,5])
+#plt.legend()
 plt.show()
 
 plt.figure()
 plt.subplot(1,2,1)
 plt.plot(stim_RLaccuracy_block3,'r',label='Unadjusted')
 plt.plot(stim_RLaccuracy_block3_Qadditive,'b',label='Additive Q Param')
-#plt.plot(stim_RLaccuracy_block3_Qmultiplicative,'c',label='Multiplicative Q Param')
+plt.plot(stim_RLaccuracy_block3_Qmultiplicative,'c',label='Multiplicative Q Param')
 plt.plot(stim_RLaccuracy_block3_Padditive,'g',label='Additive P Param')
 plt.plot(stim_RLaccuracy_block3_Pmultiplicative,'k--',label='Multiplicative P Param')
 plt.legend()
@@ -1693,6 +1711,26 @@ plt.plot(stim_gamma_block3_Pmultiplicative,'k--',label='Multiplicative P Param')
 plt.legend()
 plt.xlabel('Days')
 plt.ylabel('Gamma')
+plt.show()
+
+adjusted_alpha_means = [np.mean(stim_alpha_block3),np.mean(stim_alpha_block3_Qadditive),np.mean(stim_alpha_block3_Qmultiplicative),np.mean(stim_alpha_block3_Padditive),np.mean(stim_alpha_block3_Pmultiplicative)]
+adjusted_beta_means = [np.mean(stim_beta_block3),np.mean(stim_beta_block3_Qadditive),np.mean(stim_beta_block3_Qmultiplicative),np.mean(stim_beta_block3_Padditive),np.mean(stim_beta_block3_Pmultiplicative)]
+adjusted_gamma_means = [np.mean(stim_gamma_block3_Qadditive),np.mean(stim_gamma_block3_Qmultiplicative),np.mean(stim_gamma_block3_Padditive),np.mean(stim_gamma_block3_Pmultiplicative)]
+index = np.arange(5)
+
+plt.figure()
+plt.subplot(1,3,1)
+plt.bar(index,adjusted_alpha_means,width/2, color='c')
+plt.ylabel('avg alpha')
+plt.xticks(index,('Regular','Q Additive','Q Multiplicative','P Additive','P Multiplicative'))
+plt.subplot(1,3,2)
+plt.bar(index,adjusted_beta_means,width/2,color='m')
+plt.ylabel('avg beta')
+plt.xticks(index,('Regular','Q Additive','Q Multiplicative','P Additive','P Multiplicative'))
+plt.subplot(1,3,3)
+plt.bar(index[1:],adjusted_gamma_means,width/2,color='y')
+plt.ylabel('avg gamma')
+plt.xticks(index,('Regular','Q Additive','Q Multiplicative','P Additive','P Multiplicative'))
 plt.show()
 
 prob_choose_low_mean = (np.mean(stim_prob_choose_low), np.mean(sham_prob_choose_low))
