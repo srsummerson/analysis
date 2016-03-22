@@ -299,8 +299,8 @@ for i in range(0,len(row_ind_successful_stress)):
 	window = np.floor(pupil_samprate/10) # sample window equal to ~100 ms
 	pupil_snippet = (pupil_snippet[0:window]- pupil_snippet_mean)/float(pupil_snippet_std)
 	all_pupil_stress += pupil_snippet.tolist()
-	#pupil_stress['i'] = pupil_snippet
-	pupil_stress_mean.append(np.mean(pupil_snippet))
+	#pupil_stress_mean.append(np.mean(pupil_snippet))  # add z-scored pupil mean value
+	pupil_stress_mean.append(pupil_snippet_mean)
 	pupil_stress_std.append(np.std(pupil_snippet))
 
 # Find IBIs and pupil data for all stress trials
@@ -494,7 +494,8 @@ for i in range(0,len(row_ind_successful_reg)):
 		pupil_snippet = (pupil_snippet[0:window]- pupil_snippet_mean)/float(pupil_snippet_std)
 		#pupil_snippet = signal.lfilter(lpf,1,pupil_snippet[eyes_open])
 		all_pupil_reg_before += pupil_snippet.tolist()
-		pupil_reg_before_mean.append(np.mean(pupil_snippet))
+		#pupil_reg_before_mean.append(np.mean(pupil_snippet))  # add z-scored pupil mean 
+		pupil_reg_before_mean.append(pupil_snippet_mean)
 		pupil_reg_before_std.append(np.std(pupil_snippet))
 		#pupil_reg_before[num2str(i)] = pupil_snippet
 		count_before += 1

@@ -58,8 +58,8 @@ def running_mean(x, N):
 	return (cumsum[N:] - cumsum[:-N]) / float(N) 
 
 # Set up code for particular day and block
-hdf_filename = 'mari20160317_11_te1763.hdf'
-filename = 'Mario20160317'
+hdf_filename = 'mari20160321_08_te1817.hdf'
+filename = 'Mario20160321'
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
 #hdf_location = hdf_filename
@@ -954,7 +954,7 @@ F_all_ibi,p_all_ibi = stats.f_oneway(all_ibi_all_reg_before,all_ibi_all_reg_afte
 F_all_pupil,p_all_pupil = stats.f_oneway(all_pupil_all_stress,all_ibi_all_reg_after,all_ibi_all_reg_before)
 
 plt.figure()
-plt.subplot(1,2,1)
+#plt.subplot(1,2,1)
 plt.plot(nbins_ibi_reg_before,ibi_reg_before_hist,'b',label='Before Stress')
 plt.fill_between(nbins_ibi_reg_before[17:22],ibi_reg_before_hist[17:22],np.zeros(5),facecolor='blue',linewidth=0.1,alpha=0.5)
 plt.plot([nbins_ibi_reg_before[19],nbins_ibi_reg_before[19]],[0,ibi_reg_before_hist[19]],'b--')
@@ -965,7 +965,7 @@ plt.xlabel('IBI (s)')
 plt.ylabel('Frequency')
 plt.xlim((0.1,0.6))
 plt.title('IBI Distribtions')
-
+'''
 plt.subplot(1,2,2)
 plt.plot(nbins_ibi_all_reg_before,ibi_all_reg_before_hist,'b',label='Before Stress')
 plt.fill_between(nbins_ibi_all_reg_before[17:22],ibi_all_reg_before_hist[17:22],np.zeros(5),facecolor='blue',linewidth=0.1,alpha=0.5)
@@ -977,7 +977,7 @@ plt.xlabel('IBI (s)')
 plt.ylabel('Frequency')
 plt.xlim((0.1,0.6))
 plt.title('IBI Distribtions for All Trials')
-
+'''
 #plt.plot(nbins_ibi_reg_after,ibi_reg_after_hist,'k',label='After Stress')
 #plt.fill_between(nbins_ibi_reg_after[17:22],ibi_reg_after_hist[17:22],np.zeros(5),facecolor='gray',linewidth=0.1,alpha=0.5)
 #plt.plot([nbins_ibi_reg_after[19],nbins_ibi_reg_after[19]],[0,ibi_reg_after_hist[19]],'k--')
@@ -991,6 +991,7 @@ plt.legend()
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_IBIDistribution.svg')
 
 plt.figure()
+'''
 plt.subplot(1,2,1)
 plt.plot(nbins_pupil_reg_before,pupil_reg_before_hist,'b',label='Regular Before')
 plt.fill_between(nbins_pupil_reg_before[17:22],pupil_reg_before_hist[17:22],np.zeros(5),facecolor='blue',linewidth=0.1,alpha=0.5)
@@ -1003,6 +1004,7 @@ plt.ylabel('Frequency')
 plt.title('Distribution of Pupil Diameters')
 
 plt.subplot(1,2,2)
+'''
 plt.plot(nbins_pupil_all_reg_before,pupil_all_reg_before_hist,'b',label='Regular Before')
 plt.fill_between(nbins_pupil_all_reg_before[17:22],pupil_all_reg_before_hist[17:22],np.zeros(5),facecolor='blue',linewidth=0.1,alpha=0.5)
 plt.plot([nbins_pupil_all_reg_before[19],nbins_pupil_all_reg_before[19]],[0,pupil_all_reg_before_hist[19]],'b--')
@@ -1025,31 +1027,41 @@ plt.legend()
 #plt.show()
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_PupilDistribution-DeleteBlinks.svg')
 
+norm_ibi_stress_mean = (ibi_stress_mean - np.nanmin(ibi_stress_mean + ibi_reg_before_mean))/np.nanmax(ibi_stress_mean + ibi_reg_before_mean - np.nanmin(ibi_stress_mean + ibi_reg_before_mean))
+norm_pupil_stress_mean = (pupil_stress_mean - np.nanmin(pupil_stress_mean + pupil_reg_before_mean))/np.nanmax(pupil_stress_mean + pupil_reg_before_mean - np.nanmin(pupil_stress_mean + pupil_reg_before_mean))
+norm_ibi_reg_before_mean = (ibi_reg_before_mean - np.nanmin(ibi_stress_mean + ibi_reg_before_mean))/np.nanmax(ibi_stress_mean + ibi_reg_before_mean - np.nanmin(ibi_stress_mean + ibi_reg_before_mean))
+norm_pupil_reg_before_mean = (pupil_reg_before_mean - np.nanmin(pupil_stress_mean + pupil_reg_before_mean))/np.nanmax(pupil_stress_mean + pupil_reg_before_mean - np.nanmin(pupil_stress_mean + pupil_reg_before_mean))
+norm_ibi_all_stress_mean = (ibi_all_stress_mean - np.nanmin(ibi_all_stress_mean + ibi_all_reg_before_mean))/np.nanmax(ibi_all_stress_mean + ibi_all_reg_before_mean - np.nanmin(ibi_all_stress_mean + ibi_all_reg_before_mean))
+norm_pupil_all_stress_mean = (pupil_all_stress_mean - np.nanmin(pupil_all_stress_mean + pupil_all_reg_before_mean))/np.nanmax(pupil_all_stress_mean + pupil_all_reg_before_mean - np.nanmin(pupil_all_stress_mean + pupil_all_reg_before_mean))
+norm_ibi_all_reg_before_mean = (ibi_all_reg_before_mean - np.nanmin(ibi_all_stress_mean + ibi_all_reg_before_mean))/np.nanmax(ibi_all_stress_mean + ibi_all_reg_before_mean - np.nanmin(ibi_all_stress_mean + ibi_all_reg_before_mean))
+norm_pupil_all_reg_before_mean = (pupil_all_reg_before_mean - np.nanmin(pupil_all_stress_mean + pupil_all_reg_before_mean))/np.nanmax(pupil_all_stress_mean + pupil_all_reg_before_mean - np.nanmin(pupil_all_stress_mean + pupil_all_reg_before_mean))
 
-
-points_stress = np.array([ibi_stress_mean,pupil_stress_mean])
-points_reg_before = np.array([ibi_reg_before_mean,pupil_reg_before_mean])
+points_stress = np.array([norm_ibi_stress_mean,norm_pupil_stress_mean])
+points_reg_before = np.array([norm_ibi_reg_before_mean,norm_pupil_reg_before_mean])
 cov_stress = np.cov(points_stress)
 cov_reg_before = np.cov(points_reg_before)
-mean_vec_stress = [np.nanmean(ibi_stress_mean),np.nanmean(pupil_stress_mean)]
-mean_vec_reg_before = [np.nanmean(ibi_reg_before_mean),np.nanmean(pupil_reg_before_mean)]
+mean_vec_stress = [np.nanmean(norm_ibi_stress_mean),np.nanmean(norm_pupil_stress_mean)]
+mean_vec_reg_before = [np.nanmean(norm_ibi_reg_before_mean),np.nanmean(norm_pupil_reg_before_mean)]
 
-points_all_stress = np.array([ibi_all_stress_mean,pupil_all_stress_mean])
-points_all_reg_before = np.array([ibi_all_reg_before_mean,pupil_all_reg_before_mean])
+points_all_stress = np.array([norm_ibi_all_stress_mean,norm_pupil_all_stress_mean])
+points_all_reg_before = np.array([norm_ibi_all_reg_before_mean,norm_pupil_all_reg_before_mean])
 cov_all_stress = np.cov(points_all_stress)
 cov_all_reg_before = np.cov(points_all_reg_before)
-mean_vec_all_stress = [np.nanmean(ibi_all_stress_mean),np.nanmean(pupil_all_stress_mean)]
-mean_vec_all_reg_before = [np.nanmean(ibi_all_reg_before_mean),np.nanmean(pupil_all_reg_before_mean)]
+mean_vec_all_stress = [np.nanmean(norm_ibi_all_stress_mean),np.nanmean(norm_pupil_all_stress_mean)]
+mean_vec_all_reg_before = [np.nanmean(norm_ibi_all_reg_before_mean),np.nanmean(norm_pupil_all_reg_before_mean)]
 
 cmap_stress = mpl.cm.autumn
 cmap_reg_before = mpl.cm.winter
 
+
+
 plt.figure()
 for i in range(0,len(ibi_stress_mean)):
-    plt.plot(ibi_stress_mean[i],pupil_stress_mean[i],color=cmap_stress(i/float(len(ibi_stress_mean))),marker='o')
+    #plt.plot(norm_ibi_stress_mean[i],norm_pupil_stress_mean[i],color=cmap_stress(i/float(len(ibi_stress_mean))),marker='o',markeredgecolor=None,markeredgewidth=0.0)
+    plt.plot(norm_ibi_stress_mean[i],norm_pupil_stress_mean[i],color=cmap_stress(i/float(len(ibi_stress_mean))),marker='o')
 plot_cov_ellipse(cov_stress,mean_vec_stress,fc='r',ec='None',a=0.2)
 for i in range(0,len(ibi_reg_before_mean)):
-	plt.plot(ibi_reg_before_mean[i],pupil_reg_before_mean[i],color=cmap_reg_before(i/float(len(ibi_reg_before_mean))),marker='o')
+	plt.plot(norm_ibi_reg_before_mean[i],norm_pupil_reg_before_mean[i],color=cmap_reg_before(i/float(len(ibi_reg_before_mean))),marker='o')
 plot_cov_ellipse(cov_reg_before,mean_vec_reg_before,fc='b',ec='None',a=0.2)
 #plt.legend()
 plt.xlabel('Mean Trial IBI (s)')
@@ -1065,16 +1077,18 @@ sm_stress = plt.cm.ScalarMappable(cmap=cmap_stress, norm=plt.Normalize(vmin=0, v
 sm_stress._A = []
 cbar = plt.colorbar(sm_stress,ticks=[0,1], orientation='vertical')
 cbar.ax.set_xticklabels(['Early', 'Late'])  # horizontal colorbar
+plt.ylim((-0.05,1.05))
+plt.xlim((-0.05,1.05))
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_IBIPupilCovariance.svg')
 
 plt.figure()
 #plt.plot(ibi_all_stress_mean,pupil_all_stress_mean,'ro',label='Stress')
 for i in range(0,len(ibi_all_stress_mean)):
-    plt.plot(ibi_all_stress_mean[i],pupil_all_stress_mean[i],color=cmap_stress(i/float(len(ibi_all_stress_mean))),marker='o')
+    plt.plot(norm_ibi_all_stress_mean[i],norm_pupil_all_stress_mean[i],color=cmap_stress(i/float(len(ibi_all_stress_mean))),marker='o')
 plot_cov_ellipse(cov_all_stress,mean_vec_all_stress,fc='r',ec='None',a=0.2)
 #plt.plot(ibi_all_reg_before_mean,pupil_all_reg_before_mean,'bo',label='Reg Before')
 for i in range(0,len(ibi_all_reg_before_mean)):
-	plt.plot(ibi_all_reg_before_mean[i],pupil_all_reg_before_mean[i],color=cmap_reg_before(i/float(len(ibi_all_reg_before_mean))),marker='o')
+	plt.plot(norm_ibi_all_reg_before_mean[i],norm_pupil_all_reg_before_mean[i],color=cmap_reg_before(i/float(len(ibi_all_reg_before_mean))),marker='o')
 plot_cov_ellipse(cov_all_reg_before,mean_vec_all_reg_before,fc='b',ec='None',a=0.2)
 #plt.legend()
 plt.xlabel('Mean Trial IBI (s)')
@@ -1090,6 +1104,8 @@ sm_stress = plt.cm.ScalarMappable(cmap=cmap_stress, norm=plt.Normalize(vmin=0, v
 sm_stress._A = []
 cbar = plt.colorbar(sm_stress,ticks=[0,1], orientation='vertical')
 cbar.ax.set_xticklabels(['Early', 'Late'])  # horizontal colorbar
+plt.ylim((-0.05,1.05))
+plt.xlim((-0.05,1.05))
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_IBIPupilCovariance_alltrials.svg')
 
 plt.close("all")
