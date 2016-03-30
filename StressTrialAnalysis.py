@@ -58,12 +58,12 @@ def running_mean(x, N):
 	return (cumsum[N:] - cumsum[:-N]) / float(N) 
 
 # Set up code for particular day and block
-hdf_filename = 'mari20160321_08_te1817.hdf'
-filename = 'Mario20160321'
+hdf_filename = 'mari20160325_07_te1856.hdf'
+filename = 'Mario20160325'
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
 #hdf_location = hdf_filename
-block_num = 2
+block_num = 3
 
 num_avg = 50 	# number of trials to compute running average of trial statistics over
 
