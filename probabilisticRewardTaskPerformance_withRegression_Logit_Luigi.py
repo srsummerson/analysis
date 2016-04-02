@@ -22,9 +22,11 @@ hdf_list_stim = ['\luig20160204_15_te1382.hdf','\luig20160208_07_te1401.hdf','\l
                 '\luig20160229_11_te1565.hdf','\luig20160301_07_te1572.hdf','\luig20160301_09_te1574.hdf', '\luig20160311_08_te1709.hdf',
                 '\luig20160313_07_te1722.hdf', '\luig20160315_14_te1739.hdf']
 hdf_list_sham = ['\luig20160213_05_te1434.hdf','\luig20160219_04_te1473.hdf','\luig20160221_05_te1478.hdf', '\luig20160305_26_te1617.hdf', \
-                 '\luig20160306_11_te1628.hdf', '\luig20160307_13_te1641.hdf']
+                 '\luig20160306_11_te1628.hdf', '\luig20160307_13_te1641.hdf', '\luig20160310_16_te1695.hdf','\luig20160319_23_te1801.hdf', \
+                 '\luig20160320_07_te1809.hdf', '\luig20160322_08_te1826.hdf']
 #hdf_list_hv = ['\luig20160218_10_te1469.hdf','\luig20160223_09_te1506.hdf','\luig20160223_11_te1508.hdf','\luig20160224_11_te1519.hdf',
-#                '\luig20160224_15_te1523.hdf', '\luig20160302_06_te1580.hdf, '\luig20160303_09_te1589.hdf', '\luig20160302_06_te1580.hdf']
+#                '\luig20160224_15_te1523.hdf', '\luig20160302_06_te1580.hdf, '\luig20160303_09_te1589.hdf', '\luig20160303_11_te1591.hdf', \
+#                '\luig20160308_06_te1647.hdf','\luig20160309_25_te1672.hdf', '\luig20160323_04_te1830.hdf', '\luig20160323_09_te1835.hdf']
 hdf_list_hv = ['\luig20160218_10_te1469.hdf','\luig20160223_11_te1508.hdf','\luig20160224_15_te1523.hdf', \
                 '\luig20160303_11_te1591.hdf', '\luig20160308_06_te1647.hdf','\luig20160309_25_te1672.hdf']
 
@@ -34,12 +36,12 @@ sham_hdf_list = hdf_list_sham
 hv_hdf_list = hdf_list_hv
 
 global_max_trial_dist = 0
-Q_initial = [0.6, 0.5]
+Q_initial = [0.6, 0.6]
 alpha_true = 0.05
 beta_true = 0.2
 
 def FirstChoiceAfterStim(target3,trial3,stim_trials):
-    choice = [target3[i] for i in range(1,len(target3)) if (trial3[i]==2)&(stim_trials[i-1]==1)]
+    choice = [target3[i] for i in range(1,len(target3[0:100])) if (trial3[i]==2)&(stim_trials[i-1]==1)]
     choice = np.array(choice)
     choose_low = np.sum(-choice + 2)
 

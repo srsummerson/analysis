@@ -36,9 +36,9 @@ def FreeChoiceTaskPerformance(hdf_file):
 	targetH_info = targetH[state_time[ind_target_states]]
 	targetL_info = targetL[state_time[ind_target_states]]
 
-	targetH_side = targetH_info[:,3]
-	print len(targetH_side)
-	print len(ind_target_states)
+	targetH_side = targetH_info[:,2]
+	#print len(targetH_side)
+	#print len(ind_target_states)
 
 	# Initialize variables use for in performance computation
 	counter = 0	# counter for counting number of free-choice trials
@@ -131,15 +131,16 @@ def FreeChoiceTaskPerformance(hdf_file):
 	plt.plot(range(1,target_freechoice.size+1),prob_choose_low_freechoice,'r',label='Low-value target')
 	plt.axis([1,target_freechoice.size,0,1])
 	plt.axis([1,target_freechoice.size, -0.5, 1.5])
-	plt.plot(chose_high,0.2*chose_high_reward+1.1,'b*')
-	plt.plot(chose_low,-0.2*chose_low_reward-0.1,'r*')
+	plt.plot(chose_high,0.2*chose_high_reward+1.1,'b|')
+	plt.plot(chose_low,-0.2*chose_low_reward-0.1,'r|')
 	plt.xlabel('Trials')
+	plt.ylabel('Probability of Target Selection')
 	plt.title('Free-Choice Trials')
 	plt.legend()
 	#plt.savefig('C:/Users/Samantha Summerson/Documents/GitHub/analysis/Papa_Performance_figs/FCPerformance_targets_%s.svg' % hdf_file[:-4])    # save this filetype for AI editing
-	plt.savefig('/home/srsummerson/code/analysis/Luigi_Performance_figs/FCPerformance_targets_%s.png' % hdf_file[:-4])    # save this filetype for easy viewing
-	plt.close()
-
+	#plt.savefig('/home/srsummerson/code/analysis/Luigi_Performance_figs/FCPerformance_targets_%s.png' % hdf_file[:-4])    # save this filetype for easy viewing
+	#plt.close()
+	plt.show()
 	
 	plt.figure()
 	'''
@@ -158,13 +159,14 @@ def FreeChoiceTaskPerformance(hdf_file):
 	plt.plot(range(1,target_freechoice.size+1),prob_reward_low_freechoice,'r',label='Low-value target')
 	plt.axis([1,target_freechoice.size, 0, 1])
 	plt.xlabel('Trials')
+	plt.ylabel('Probability of Reward')
 	plt.legend()
 	plt.title('Free-Choice Trials')
 
 	#plt.savefig('C:/Users/Samantha Summerson/Documents/GitHub/analysis/Papa_Performance_figs/FCPerformance_rewards_%s.svg' % hdf_file[:-4])    # save this filetype for AI editing
-	plt.savefig('/home/srsummerson/code/analysis/Luigi_Performance_figs/FCPerformance_rewards_%s.png' % hdf_file[:-4])    # save this filetype for easy viewing
-	plt.close()
-
+	#plt.savefig('/home/srsummerson/code/analysis/Luigi_Performance_figs/FCPerformance_rewards_%s.png' % hdf_file[:-4])    # save this filetype for easy viewing
+	#plt.close()
+	plt.show()
 	
 	hdf.close()
 
@@ -174,7 +176,7 @@ def FreeChoicePilotTaskPerformance(hdf_file):
     hdf = tables.openFile(hdf_file)
     counter_block1 = 0
     counter_block3 = 0
-    running_avg_length = 20
+    running_avg_length = 10
 
     state = hdf.root.task_msgs[:]['msg']
     state_time = hdf.root.task_msgs[:]['time']
@@ -277,12 +279,24 @@ def FreeChoicePilotTaskPerformance(hdf_file):
         prob_reward_high_freechoice_block3[i] = float(sum(reward_high_freechoice))/(sum(chosen_high_freechoice) + (sum(chosen_high_freechoice)==0))  # add logic statment to denominator so we never divide by 0
         prob_reward_low_freechoice_block3[i] = float(sum(reward_low_freechoice))/(sum(chosen_low_freechoice) + (sum(chosen_low_freechoice)==0))
 
+    chose_high_block1 = np.ravel(np.nonzero(np.equal(target_freechoice_block1,2)))
+    chose_high_reward_block1 = reward_freechoice_block1[chose_high_block1]
+    chose_low_block1 = np.ravel(np.nonzero(np.equal(target_freechoice_block1,1)))
+    chose_low_reward_block1 = reward_freechoice_block1[chose_low_block1]
+
+    chose_high_block3 = np.ravel(np.nonzero(np.equal(target_freechoice_block3,2)))
+    chose_high_reward_block3 = reward_freechoice_block3[chose_high_block3]
+    chose_low_block3 = np.ravel(np.nonzero(np.equal(target_freechoice_block3,1)))
+    chose_low_reward_block3 = reward_freechoice_block3[chose_low_block3]
+
     plt.figure()
     plt.subplot(2,2,1)
     plt.plot(range(1,len(target_freechoice_block1)+1),prob_choose_high_freechoice_block1,'b',label='High-value target')
     plt.plot(range(1,len(target_freechoice_block1)+1),prob_choose_low_freechoice_block1,'r',label='Low-value target')
     plt.axis([1,target_freechoice_block1.size,0,1])
-    plt.axis([1,target_freechoice_block1.size, 0,1])
+    plt.axis([1,target_freechoice_block1.size, -0.5,1.5])
+    plt.plot(chose_high_block1,0.2*chose_high_reward_block1+1.1,'b|')
+    plt.plot(chose_low_block1,-0.2*chose_low_reward_block1-0.1,'r|')
     plt.xlabel('Trials')
     plt.ylabel('Probability of Target Selection')
     plt.title('Block A: Free-Choice Trials')
@@ -292,7 +306,9 @@ def FreeChoicePilotTaskPerformance(hdf_file):
     plt.plot(range(1,len(target_freechoice_block3)+1),prob_choose_high_freechoice_block3,'b',label='High-value target')
     plt.plot(range(1,len(target_freechoice_block3)+1),prob_choose_low_freechoice_block3,'r',label='Low-value target')
     plt.axis([1,target_freechoice_block3.size,0,1])
-    plt.axis([1,target_freechoice_block3.size, 0,1])
+    plt.axis([1,target_freechoice_block3.size, -0.5,1.5])
+    plt.plot(chose_high_block3,0.2*chose_high_reward_block3+1.1,'b|')
+    plt.plot(chose_low_block3,-0.2*chose_low_reward_block3-0.1,'r|')
     plt.xlabel('Trials')
     plt.ylabel('Probability of Target Selection')
     plt.title("Block A': Free-Choice Trials")
@@ -318,10 +334,16 @@ def FreeChoicePilotTaskPerformance(hdf_file):
     plt.title("Block A': Free-Choice Trials")
     plt.legend()
     
+<<<<<<< HEAD
+    plt.show()
+    #plt.savefig('C:/Users/Samantha Summerson/Documents/GitHub/analysis/Papa_Performance_figs/FCPerformance_targets_%s.svg' % hdf_file[:-4])    # save this filetype for AI editing
+    #plt.savefig('/home/srsummerson/code/analysis/Luigi_Performance_figs/FCPerformance_targets_%s.svg' % hdf_file[:-4])    # save this filetype for easy viewing
+=======
     #plt.savefig('C:/Users/Samantha Summerson/Documents/GitHub/analysis/Papa_Performance_figs/FCPerformance_targets_%s.svg' % hdf_file[:-4])    # save this filetype for AI editing
     plt.savefig('/home/srsummerson/code/analysis/Luigi_Performance_figs/FCPerformance_targets_%s.svg' % hdf_file[:-4])    # save this filetype for easy viewing
+>>>>>>> dbc748fe1adc56009274b4ba09c845c2e50c32dd
     #plt.savefig('/home/srsummerson/code/analysis/Luigi_Performance_figs/FCPerformance_targets_%s.png' % hdf_file[:-4])    # save this filetype for easy viewing
-    plt.close()
+    #plt.close()
     hdf.close()
     return 
 
@@ -650,8 +672,64 @@ def PeriStimulusFreeChoiceBehavior(hdf_file):
 	return prob_choose_low_aligned, prob_choose_low_aligned_rewarded, prob_choose_low_aligned_unrewarded
 
 
+def FreeChoiceBehaviorConditionalProbabilities(hdf_file):
 
+	reward1, target_block1, trial_block1, target_side1, reward3, target_block3, trial_block3, target_side3, stim_trials = FreeChoicePilotTask_Behavior(hdf_file)
 
-'''
-debug this in command line and then re-runn summary analysis
-'''
+	'''
+	Target_side1 is the side that the HV target is on in Block 1.
+	Target_side3 is the side that the HV target is on in Block 3
+	'''
+
+	fc_trial_ind_block3 = np.ravel(np.nonzero(np.equal(np.ravel(trial_block3),2)))
+	fc_trial_ind_block1 = np.ravel(np.nonzero(np.equal(np.ravel(trial_block1),2)))
+
+	prob_hv_on_left_block1 = 1 - np.sum(target_side1[fc_trial_ind_block1])/len(target_side1[fc_trial_ind_block1])  # prob(hv target is on left )
+	choose_left_and_low_block1 = (np.equal(target_side1[fc_trial_ind_block1],0)&np.equal(target_block1[fc_trial_ind_block1],1))  
+	prob_choose_left_and_low_block1 = float(np.sum(choose_left_and_low_block1))/len(choose_left_and_low_block1)   # joint prob: prob(choose left and low-value)
+	choose_left_and_high_block1 = (np.equal(target_side1[fc_trial_ind_block1],0)&np.equal(target_block1[fc_trial_ind_block1],2))
+	prob_choose_left_and_high_block1 = float(np.sum(choose_left_and_high_block1))/len(choose_left_and_high_block1)  # joint prob: prob(choose left and high-value)
+	#prob_choose_left_block1 = prob_choose_left_and_low_block1 + prob_choose_left_and_high_block1  # prob(choosing left  target)
+
+	prob_hv_on_right_block1 = np.sum(target_side1[fc_trial_ind_block1])/len(target_side1[fc_trial_ind_block1])  # prob(hv target is on right )
+	choose_right_and_low_block1 = (np.equal(target_side1[fc_trial_ind_block1],1)&np.equal(target_block1[fc_trial_ind_block1],1))  
+	prob_choose_right_and_low_block1 = float(np.sum(choose_right_and_low_block1))/len(choose_right_and_low_block1)   # joint prob: prob(choose left and low-value)
+	choose_right_and_high_block1 = (np.equal(target_side1[fc_trial_ind_block1],1)&np.equal(target_block1[fc_trial_ind_block1],2))
+	prob_choose_right_and_high_block1 = float(np.sum(choose_right_and_high_block1))/len(choose_right_and_high_block1)  # joint prob: prob(choose left and high-value)
+	#prob_choose_right_block1 = prob_choose_right_and_low_block1 + prob_choose_right_and_high_block1
+	
+	prob_high_given_rhs_block1 = prob_choose_right_and_high_block1/prob_hv_on_right_block1  # conditional prob: prob(high-value | high value on right)
+	prob_high_given_lhs_block1 = prob_choose_left_and_high_block1/prob_hv_on_left_block1  # conditional prob: prob(high-vale | high value on left)
+	prob_low_given_rhs_block1 = prob_choose_right_and_low_block1/prob_hv_on_left_block1  # conditional prob: prob(low-value | low value on right) = prob(low value | high value on left)
+	prob_low_given_lhs_block1 = prob_choose_left_and_low_block1/prob_hv_on_right_block1 # conditional prob: prob(low-value | low value on left) = prob(low value | high value on right)
+	'''
+	prob_high_given_rhs_block1 = prob_choose_right_and_high_block1  # conditional prob: prob(high-value | choose right)
+	prob_high_given_lhs_block1 = prob_choose_left_and_high_block1  # conditional prob: prob(high-vale | choose left)
+	prob_low_given_rhs_block1 = prob_choose_right_and_low_block1  # conditional prob: prob(low-value | choose right)
+	prob_low_given_lhs_block1 = prob_choose_left_and_low_block1 # conditional prob: prob(low-value | choose left)
+	'''
+	prob_hv_on_left_block3 = 1 - np.sum(target_side3[fc_trial_ind_block3])/len(target_side3[fc_trial_ind_block3])  # prob(hv on left )
+	choose_left_and_low_block3 = (np.equal(target_side3[fc_trial_ind_block3],0)&np.equal(target_block3[fc_trial_ind_block3],1))  
+	prob_choose_left_and_low_block3 = float(np.sum(choose_left_and_low_block3))/len(choose_left_and_low_block3)   # joint prob: prob(choose left and low-value)
+	choose_left_and_high_block3 = (np.equal(target_side3[fc_trial_ind_block3],0)&np.equal(target_block3[fc_trial_ind_block3],2))
+	prob_choose_left_and_high_block3 = float(np.sum(choose_left_and_high_block3))/len(choose_left_and_high_block3)  # joint prob: prob(choose left and high-value)
+	#prob_choose_left_block3 = prob_choose_left_and_low_block3 + prob_choose_left_and_high_block3
+
+	prob_hv_on_right_block3 = np.sum(target_side3[fc_trial_ind_block3])/len(target_side3[fc_trial_ind_block3])  # prob(hv on right )
+	choose_right_and_low_block3 = (np.equal(target_side3[fc_trial_ind_block3],1)&np.equal(target_block3[fc_trial_ind_block3],1))  
+	prob_choose_right_and_low_block3 = float(np.sum(choose_right_and_low_block3))/len(choose_right_and_low_block3)   # joint prob: prob(choose left and low-value)
+	choose_right_and_high_block3 = (np.equal(target_side3[fc_trial_ind_block3],1)&np.equal(target_block3[fc_trial_ind_block3],2))
+	prob_choose_right_and_high_block3 = float(np.sum(choose_right_and_high_block3))/len(choose_right_and_high_block3)  # joint prob: prob(choose left and high-value)
+	#prob_choose_right_block3 = prob_choose_right_and_low_block3 + prob_choose_right_and_high_block3
+	
+	prob_high_given_rhs_block3 = prob_choose_right_and_high_block3/prob_hv_on_right_block3  # conditional prob: prob(high-value | hv on right)
+	prob_high_given_lhs_block3 = prob_choose_left_and_high_block3/prob_hv_on_left_block3  # conditional prob: prob(high-vale | hv on left)
+	prob_low_given_rhs_block3 = prob_choose_right_and_low_block3/prob_hv_on_left_block3  # conditional prob: prob(low-value | lv on right)
+	prob_low_given_lhs_block3 = prob_choose_left_and_low_block3/prob_hv_on_right_block3 # conditional prob: prob(low-value | lv on left)
+	'''
+	prob_high_given_rhs_block3 = prob_choose_right_and_high_block3  # conditional prob: prob(high-value | choose right)
+	prob_high_given_lhs_block3 = prob_choose_left_and_high_block3  # conditional prob: prob(high-vale | choose left)
+	prob_low_given_rhs_block3 = prob_choose_right_and_low_block3  # conditional prob: prob(low-value | choose right)
+	prob_low_given_lhs_block3 = prob_choose_left_and_low_block3 # conditional prob: prob(low-value | choose left)
+	'''
+	return prob_high_given_rhs_block1, prob_high_given_lhs_block1, prob_high_given_rhs_block3,prob_high_given_lhs_block3, prob_low_given_rhs_block1,prob_low_given_lhs_block1,prob_low_given_rhs_block3,prob_low_given_lhs_block3
