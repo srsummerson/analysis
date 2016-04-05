@@ -508,20 +508,25 @@ for chann in hdeeg.keys():
 	# set the limits of the plot to the limits of the data
 	#plt.axis([x.min(), x.max(), y.min(), y.max()])
 	plt.colorbar()
-	
+	'''
 	trial_power_avg_stress = np.nanmean(trial_power_stress,axis=1)
+	trial_power_std_stress = np.nanstd(trial_power_stress,axis=1)
 	trial_power_avg_reg = np.nanmean(trial_power_reg,axis=1)
+	trial_power_std_reg = np.nanstd(trial_power_reg,axis=1)
 	plt.figure()
 	plt.plot(freq[0:density_length],trial_power_avg_stress,'r',label='Stress Trials') # plotting the spectrum
+	plt.fill_between(freq[0:density_length],trial_power_avg_stress - trial_power_std_stress,trial_power_avg_stress +trial_power_std_stress,facecolor='red',linewidth=0.1,alpha=0.5)
 	plt.plot(freq[0:density_length],trial_power_avg_reg,'b',label='Regular Trials')
+	plt.fill_between(freq[0:density_length],trial_power_avg_reg - trial_power_std_reg,trial_power_avg_reg +trial_power_std_reg,facecolor='blue',linewidth=0.1,alpha=0.5)
  	plt.xlim((0, 50))
  	plt.xlabel('Freq (Hz)')
  	plt.ylabel('Average PSD')
  	plt.title('Channel ' +str(chann))
-	plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_Spectrogram_Ch'+str(chann)+'.svg')
-	#plt.show()
+ 	plt.legend()
+	#plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_Spectrogram_Ch'+str(chann)+'.svg')
+	plt.show()
 	#plt.close()
-	'''
+	
 mean_ibi_stress = np.nanmean(all_ibi_stress)
 std_ibi_stress = np.nanstd(all_ibi_stress)
 nbins_ibi_stress = np.arange(mean_ibi_stress-10*std_ibi_stress,mean_ibi_stress+10*std_ibi_stress,float(std_ibi_stress)/2)
