@@ -58,12 +58,12 @@ def running_mean(x, N):
 	return (cumsum[N:] - cumsum[:-N]) / float(N) 
 
 # Set up code for particular day and block
-hdf_filename = 'mari20160325_07_te1856.hdf'
-filename = 'Mario20160325'
+hdf_filename = 'mari20160404_07_te1930.hdf'
+filename = 'Mario20160404'
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
 #hdf_location = hdf_filename
-block_num = 3
+block_num = 2
 
 num_avg = 50 	# number of trials to compute running average of trial statistics over
 
@@ -153,9 +153,9 @@ response_time_successful_reg = (state_time[row_ind_successful_reg_reward] - stat
 
 # Response time for all regular trials
 ind_reg = np.ravel(np.nonzero(np.logical_not(all_stress_or_not)))
-row_ind_reg = ind_target_states[ind_reg]
+row_ind_reg = ind_center_states[ind_reg]
 row_ind_end_reg = np.zeros(len(row_ind_reg))
-row_ind_end_reg = np.minimum(row_ind_reg + 2,total_states-1)  # target_transition state occues two states later for successful trials
+row_ind_end_reg = np.minimum(row_ind_reg + 5,total_states-1)  # target_transition state occues two states later for successful trials
 for i in range(0,len(row_ind_successful_reg)):
 	ind = np.where(row_ind_reg == row_ind_successful_reg[i])[0]
 	row_ind_end_reg[ind] = row_ind_successful_reg_reward[i]
@@ -320,11 +320,14 @@ for i in range(0,len(row_ind_stress)):
 	pupil_ind_stress[i] = pupil_dio_sample_num[hdf_index]
 	hdeeg_ind_stress[i] = hdeeg_dio_sample_num[hdf_index]
 
+if len(row_ind_successful_stress) > 0: 
+	ind_start_stress = row_ind_successful_stress[0]
+else:
+	ind_start_stress = np.inf
 
-ind_start_stress = row_ind_successful_stress[0]
 ind_start_all_stress = row_ind_stress[0]
 for i in range(0,len(state_row_ind_successful_reg)):
-	if (row_ind_successful_reg[i] < ind_start_stress):
+	if (row_ind_successful_reg[i] < ind_start_all_stress):
 		hdf_index = np.argmin(np.abs(hdf_rows - state_row_ind_successful_reg[i]))
 		pulse_ind_successful_reg_before.append(pulse_dio_sample_num[hdf_index])
 		pupil_ind_successful_reg_before.append(pupil_dio_sample_num[hdf_index])
@@ -345,6 +348,8 @@ for i in range(0,len(state_row_ind_reg)):
 		pulse_ind_reg_after.append(pulse_dio_sample_num[hdf_index])
 		pupil_ind_reg_after.append(pupil_dio_sample_num[hdf_index])
 		hdeeg_ind_reg_after.append(hdeeg_dio_sample_num[hdf_index])
+
+
 
 # Find IBIs and pupil data for all stress trials. 
 samples_pulse_successful_stress = np.floor(response_time_successful_stress*pulse_samprate) 	#number of samples in trial interval for pulse signal
@@ -503,7 +508,7 @@ for chann in hdeeg.keys():
 	# set the limits of the plot to the limits of the data
 	#plt.axis([x.min(), x.max(), y.min(), y.max()])
 	plt.colorbar()
-	'''
+	
 	trial_power_avg_stress = np.nanmean(trial_power_stress,axis=1)
 	trial_power_avg_reg = np.nanmean(trial_power_reg,axis=1)
 	plt.figure()
@@ -516,7 +521,7 @@ for chann in hdeeg.keys():
 	plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_Spectrogram_Ch'+str(chann)+'.svg')
 	#plt.show()
 	#plt.close()
-
+	'''
 mean_ibi_stress = np.nanmean(all_ibi_stress)
 std_ibi_stress = np.nanstd(all_ibi_stress)
 nbins_ibi_stress = np.arange(mean_ibi_stress-10*std_ibi_stress,mean_ibi_stress+10*std_ibi_stress,float(std_ibi_stress)/2)
@@ -649,6 +654,8 @@ for i in range(0,len(row_ind_successful_reg)):
 		pupil_reg_after_mean.append(np.nanmean(pupil_snippet))
 		pupil_reg_after_std.append(np.nanstd(pupil_snippet))
 
+
+
 ibi_all_reg_before_mean = []
 ibi_all_reg_before_std = []
 ibi_all_reg_after_mean = []
@@ -663,6 +670,7 @@ all_pupil_all_reg_before = []
 all_pupil_all_reg_after = []
 count_before = 0
 for i in range(0,len(row_ind_reg)):
+	
 	if (row_ind_reg[i] < ind_start_all_stress):
 		pulse_snippet = pulse_data[pulse_ind_reg_before[i]:pulse_ind_reg_before[i]+samples_pulse_reg[i]]
 		ibi_snippet = findIBIs(pulse_snippet,pulse_samprate)
@@ -701,6 +709,7 @@ for i in range(0,len(row_ind_reg)):
 		pupil_all_reg_before_std.append(np.nanstd(pupil_snippet))
 		#pupil_reg_before[num2str(i)] = pupil_snippet
 		count_before += 1
+
 	else:
 		pulse_snippet = pulse_data[pulse_ind_reg_after[i-count_before]:pulse_ind_reg_after[i-count_before]+samples_pulse_reg[i]]
 		ibi_snippet = findIBIs(pulse_snippet,pulse_samprate)
@@ -738,6 +747,8 @@ for i in range(0,len(row_ind_reg)):
 		#pupil_reg_after['i-count_before'] = pupil_snippet
 		pupil_all_reg_after_mean.append(np.nanmean(pupil_snippet))
 		pupil_all_reg_after_std.append(np.nanstd(pupil_snippet))
+
+
 
 mean_ibi_reg_before = np.nanmean(all_ibi_reg_before)
 std_ibi_reg_before = np.nanstd(all_ibi_reg_before)
@@ -801,17 +812,18 @@ r_stress, r_p_stress = stats.pearsonr(ibi_stress_mean,pupil_stress_mean)
 r_after, r_p_after = stats.pearsonr(ibi_reg_after_mean,pupil_reg_after_mean)
 
 # Linear fits to go along with plots
-m,b = np.polyfit(range(1,len(ibi_stress_mean)+1), ibi_stress_mean, 1)
-ibi_stress_mean_fit = m*np.arange(1,len(ibi_stress_mean)+1) + b
+if len(ibi_stress_mean) > 0:
+	m,b = np.polyfit(range(1,len(ibi_stress_mean)+1), ibi_stress_mean, 1)
+	ibi_stress_mean_fit = m*np.arange(1,len(ibi_stress_mean)+1) + b
+
+	m,b = np.polyfit(range(1,len(pupil_stress_mean)+1), pupil_stress_mean, 1)
+	pupil_stress_mean_fit = m*np.arange(1,len(pupil_stress_mean)+1) + b
 
 m,b = np.polyfit(range(1,len(ibi_reg_before_mean)+1), ibi_reg_before_mean, 1)
 ibi_reg_before_mean_fit = m*np.arange(1,len(ibi_reg_before_mean)+1) + b
 
 #m,b = np.polyfit(range(1,len(ibi_reg_after_mean)+1), ibi_reg_after_mean, 1)
 #ibi_reg_after_mean_fit = m*np.arange(1,len(ibi_reg_after_mean)+1) + b
-
-m,b = np.polyfit(range(1,len(pupil_stress_mean)+1), pupil_stress_mean, 1)
-pupil_stress_mean_fit = m*np.arange(1,len(pupil_stress_mean)+1) + b
 
 m,b = np.polyfit(range(1,len(pupil_reg_before_mean)+1), pupil_reg_before_mean, 1)
 pupil_reg_before_mean_fit = m*np.arange(1,len(pupil_reg_before_mean)+1) + b
@@ -847,8 +859,9 @@ pupil_all_reg_before_mean_fit = m*np.arange(1,len(pupil_all_reg_before_mean)+1) 
 
 plt.figure()
 plt.subplot(2,2,3)
-plt.plot(range(1,len(ibi_stress_mean)+1),ibi_stress_mean,'r')
-plt.plot(range(1,len(ibi_stress_mean)+1),ibi_stress_mean_fit,'r--')
+if len(ibi_stress_mean) > 0:
+	plt.plot(range(1,len(ibi_stress_mean)+1),ibi_stress_mean,'r')
+	plt.plot(range(1,len(ibi_stress_mean)+1),ibi_stress_mean_fit,'r--')
 #plt.xlabel('Trial')
 #plt.ylabel('Average IBI')
 plt.ylim((0.28,0.5))
@@ -896,14 +909,16 @@ plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(blo
 
 plt.figure()
 plt.subplot(2,2,3)
-plt.plot(range(1,len(pupil_stress_mean)+1),pupil_stress_mean,'r')
-plt.plot(range(1,len(pupil_stress_mean)+1),pupil_stress_mean_fit,'r--')
+if len(pupil_stress_mean) > 0: 
+	plt.plot(range(1,len(pupil_stress_mean)+1),pupil_stress_mean,'r')
+	plt.plot(range(1,len(pupil_stress_mean)+1),pupil_stress_mean_fit,'r--')
+	plt.text(1,np.max(pupil_stress_mean),'Pulse v. Pupil:r=%f \n p=%f' % (r_stress,r_p_stress))
 #plt.xlabel('Trial')
 #plt.ylabel('Average Pupil Diameter')
 #plt.ylim((0.70,1.15))
 plt.ylim((-3,3))
 plt.title('Pupil Diameter in Stress Trials')
-plt.text(1,np.max(pupil_stress_mean),'Pulse v. Pupil:r=%f \n p=%f' % (r_stress,r_p_stress))
+
 
 plt.subplot(2,2,1)
 plt.plot(range(1,len(pupil_reg_before_mean)+1),pupil_reg_before_mean,'b')
@@ -954,7 +969,8 @@ F_all_ibi,p_all_ibi = stats.f_oneway(all_ibi_all_reg_before,all_ibi_all_reg_afte
 F_all_pupil,p_all_pupil = stats.f_oneway(all_pupil_all_stress,all_ibi_all_reg_after,all_ibi_all_reg_before)
 
 plt.figure()
-#plt.subplot(1,2,1)
+'''
+plt.subplot(1,2,1)
 plt.plot(nbins_ibi_reg_before,ibi_reg_before_hist,'b',label='Before Stress')
 plt.fill_between(nbins_ibi_reg_before[17:22],ibi_reg_before_hist[17:22],np.zeros(5),facecolor='blue',linewidth=0.1,alpha=0.5)
 plt.plot([nbins_ibi_reg_before[19],nbins_ibi_reg_before[19]],[0,ibi_reg_before_hist[19]],'b--')
@@ -965,8 +981,9 @@ plt.xlabel('IBI (s)')
 plt.ylabel('Frequency')
 plt.xlim((0.1,0.6))
 plt.title('IBI Distribtions')
-'''
+
 plt.subplot(1,2,2)
+'''
 plt.plot(nbins_ibi_all_reg_before,ibi_all_reg_before_hist,'b',label='Before Stress')
 plt.fill_between(nbins_ibi_all_reg_before[17:22],ibi_all_reg_before_hist[17:22],np.zeros(5),facecolor='blue',linewidth=0.1,alpha=0.5)
 plt.plot([nbins_ibi_all_reg_before[19],nbins_ibi_all_reg_before[19]],[0,ibi_all_reg_before_hist[19]],'b--')
@@ -977,7 +994,7 @@ plt.xlabel('IBI (s)')
 plt.ylabel('Frequency')
 plt.xlim((0.1,0.6))
 plt.title('IBI Distribtions for All Trials')
-'''
+
 #plt.plot(nbins_ibi_reg_after,ibi_reg_after_hist,'k',label='After Stress')
 #plt.fill_between(nbins_ibi_reg_after[17:22],ibi_reg_after_hist[17:22],np.zeros(5),facecolor='gray',linewidth=0.1,alpha=0.5)
 #plt.plot([nbins_ibi_reg_after[19],nbins_ibi_reg_after[19]],[0,ibi_reg_after_hist[19]],'k--')
@@ -1027,21 +1044,10 @@ plt.legend()
 #plt.show()
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_PupilDistribution-DeleteBlinks.svg')
 
-norm_ibi_stress_mean = (ibi_stress_mean - np.nanmin(ibi_stress_mean + ibi_reg_before_mean))/np.nanmax(ibi_stress_mean + ibi_reg_before_mean - np.nanmin(ibi_stress_mean + ibi_reg_before_mean))
-norm_pupil_stress_mean = (pupil_stress_mean - np.nanmin(pupil_stress_mean + pupil_reg_before_mean))/np.nanmax(pupil_stress_mean + pupil_reg_before_mean - np.nanmin(pupil_stress_mean + pupil_reg_before_mean))
-norm_ibi_reg_before_mean = (ibi_reg_before_mean - np.nanmin(ibi_stress_mean + ibi_reg_before_mean))/np.nanmax(ibi_stress_mean + ibi_reg_before_mean - np.nanmin(ibi_stress_mean + ibi_reg_before_mean))
-norm_pupil_reg_before_mean = (pupil_reg_before_mean - np.nanmin(pupil_stress_mean + pupil_reg_before_mean))/np.nanmax(pupil_stress_mean + pupil_reg_before_mean - np.nanmin(pupil_stress_mean + pupil_reg_before_mean))
 norm_ibi_all_stress_mean = (ibi_all_stress_mean - np.nanmin(ibi_all_stress_mean + ibi_all_reg_before_mean))/np.nanmax(ibi_all_stress_mean + ibi_all_reg_before_mean - np.nanmin(ibi_all_stress_mean + ibi_all_reg_before_mean))
 norm_pupil_all_stress_mean = (pupil_all_stress_mean - np.nanmin(pupil_all_stress_mean + pupil_all_reg_before_mean))/np.nanmax(pupil_all_stress_mean + pupil_all_reg_before_mean - np.nanmin(pupil_all_stress_mean + pupil_all_reg_before_mean))
 norm_ibi_all_reg_before_mean = (ibi_all_reg_before_mean - np.nanmin(ibi_all_stress_mean + ibi_all_reg_before_mean))/np.nanmax(ibi_all_stress_mean + ibi_all_reg_before_mean - np.nanmin(ibi_all_stress_mean + ibi_all_reg_before_mean))
 norm_pupil_all_reg_before_mean = (pupil_all_reg_before_mean - np.nanmin(pupil_all_stress_mean + pupil_all_reg_before_mean))/np.nanmax(pupil_all_stress_mean + pupil_all_reg_before_mean - np.nanmin(pupil_all_stress_mean + pupil_all_reg_before_mean))
-
-points_stress = np.array([norm_ibi_stress_mean,norm_pupil_stress_mean])
-points_reg_before = np.array([norm_ibi_reg_before_mean,norm_pupil_reg_before_mean])
-cov_stress = np.cov(points_stress)
-cov_reg_before = np.cov(points_reg_before)
-mean_vec_stress = [np.nanmean(norm_ibi_stress_mean),np.nanmean(norm_pupil_stress_mean)]
-mean_vec_reg_before = [np.nanmean(norm_ibi_reg_before_mean),np.nanmean(norm_pupil_reg_before_mean)]
 
 points_all_stress = np.array([norm_ibi_all_stress_mean,norm_pupil_all_stress_mean])
 points_all_reg_before = np.array([norm_ibi_all_reg_before_mean,norm_pupil_all_reg_before_mean])
@@ -1052,34 +1058,6 @@ mean_vec_all_reg_before = [np.nanmean(norm_ibi_all_reg_before_mean),np.nanmean(n
 
 cmap_stress = mpl.cm.autumn
 cmap_reg_before = mpl.cm.winter
-
-
-
-plt.figure()
-for i in range(0,len(ibi_stress_mean)):
-    #plt.plot(norm_ibi_stress_mean[i],norm_pupil_stress_mean[i],color=cmap_stress(i/float(len(ibi_stress_mean))),marker='o',markeredgecolor=None,markeredgewidth=0.0)
-    plt.plot(norm_ibi_stress_mean[i],norm_pupil_stress_mean[i],color=cmap_stress(i/float(len(ibi_stress_mean))),marker='o')
-plot_cov_ellipse(cov_stress,mean_vec_stress,fc='r',ec='None',a=0.2)
-for i in range(0,len(ibi_reg_before_mean)):
-	plt.plot(norm_ibi_reg_before_mean[i],norm_pupil_reg_before_mean[i],color=cmap_reg_before(i/float(len(ibi_reg_before_mean))),marker='o')
-plot_cov_ellipse(cov_reg_before,mean_vec_reg_before,fc='b',ec='None',a=0.2)
-#plt.legend()
-plt.xlabel('Mean Trial IBI (s)')
-plt.ylabel('Mean Trial PD (AU)')
-plt.title('Successful Trials')
-sm_reg_before = plt.cm.ScalarMappable(cmap=cmap_reg_before, norm=plt.Normalize(vmin=0, vmax=1))
-# fake up the array of the scalar mappable. Urgh...
-sm_reg_before._A = []
-cbar = plt.colorbar(sm_reg_before,ticks=[0,1], orientation='vertical')
-cbar.ax.set_xticklabels(['Early', 'Late'])  # horizontal colorbar
-sm_stress = plt.cm.ScalarMappable(cmap=cmap_stress, norm=plt.Normalize(vmin=0, vmax=1))
-# fake up the array of the scalar mappable. Urgh...
-sm_stress._A = []
-cbar = plt.colorbar(sm_stress,ticks=[0,1], orientation='vertical')
-cbar.ax.set_xticklabels(['Early', 'Late'])  # horizontal colorbar
-plt.ylim((-0.05,1.05))
-plt.xlim((-0.05,1.05))
-plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_IBIPupilCovariance.svg')
 
 plt.figure()
 #plt.plot(ibi_all_stress_mean,pupil_all_stress_mean,'ro',label='Stress')
@@ -1107,6 +1085,47 @@ cbar.ax.set_xticklabels(['Early', 'Late'])  # horizontal colorbar
 plt.ylim((-0.05,1.05))
 plt.xlim((-0.05,1.05))
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_IBIPupilCovariance_alltrials.svg')
+
+
+norm_ibi_stress_mean = (ibi_stress_mean - np.nanmin(ibi_stress_mean + ibi_reg_before_mean))/np.nanmax(ibi_stress_mean + ibi_reg_before_mean - np.nanmin(ibi_stress_mean + ibi_reg_before_mean))
+norm_pupil_stress_mean = (pupil_stress_mean - np.nanmin(pupil_stress_mean + pupil_reg_before_mean))/np.nanmax(pupil_stress_mean + pupil_reg_before_mean - np.nanmin(pupil_stress_mean + pupil_reg_before_mean))
+norm_ibi_reg_before_mean = (ibi_reg_before_mean - np.nanmin(ibi_stress_mean + ibi_reg_before_mean))/np.nanmax(ibi_stress_mean + ibi_reg_before_mean - np.nanmin(ibi_stress_mean + ibi_reg_before_mean))
+norm_pupil_reg_before_mean = (pupil_reg_before_mean - np.nanmin(pupil_stress_mean + pupil_reg_before_mean))/np.nanmax(pupil_stress_mean + pupil_reg_before_mean - np.nanmin(pupil_stress_mean + pupil_reg_before_mean))
+
+points_stress = np.array([norm_ibi_stress_mean,norm_pupil_stress_mean])
+points_reg_before = np.array([norm_ibi_reg_before_mean,norm_pupil_reg_before_mean])
+cov_stress = np.cov(points_stress)
+cov_reg_before = np.cov(points_reg_before)
+mean_vec_stress = [np.nanmean(norm_ibi_stress_mean),np.nanmean(norm_pupil_stress_mean)]
+mean_vec_reg_before = [np.nanmean(norm_ibi_reg_before_mean),np.nanmean(norm_pupil_reg_before_mean)]
+
+plt.figure()
+for i in range(0,len(ibi_stress_mean)):
+    #plt.plot(norm_ibi_stress_mean[i],norm_pupil_stress_mean[i],color=cmap_stress(i/float(len(ibi_stress_mean))),marker='o',markeredgecolor=None,markeredgewidth=0.0)
+    plt.plot(norm_ibi_stress_mean[i],norm_pupil_stress_mean[i],color=cmap_stress(i/float(len(ibi_stress_mean))),marker='o')
+plot_cov_ellipse(cov_stress,mean_vec_stress,fc='r',ec='None',a=0.2)
+for i in range(0,len(ibi_reg_before_mean)):
+	plt.plot(norm_ibi_reg_before_mean[i],norm_pupil_reg_before_mean[i],color=cmap_reg_before(i/float(len(ibi_reg_before_mean))),marker='o')
+plot_cov_ellipse(cov_reg_before,mean_vec_reg_before,fc='b',ec='None',a=0.2)
+#plt.legend()
+plt.xlabel('Mean Trial IBI (s)')
+plt.ylabel('Mean Trial PD (AU)')
+plt.title('Successful Trials')
+sm_reg_before = plt.cm.ScalarMappable(cmap=cmap_reg_before, norm=plt.Normalize(vmin=0, vmax=1))
+# fake up the array of the scalar mappable. Urgh...
+sm_reg_before._A = []
+cbar = plt.colorbar(sm_reg_before,ticks=[0,1], orientation='vertical')
+cbar.ax.set_xticklabels(['Early', 'Late'])  # horizontal colorbar
+sm_stress = plt.cm.ScalarMappable(cmap=cmap_stress, norm=plt.Normalize(vmin=0, vmax=1))
+# fake up the array of the scalar mappable. Urgh...
+sm_stress._A = []
+cbar = plt.colorbar(sm_stress,ticks=[0,1], orientation='vertical')
+cbar.ax.set_xticklabels(['Early', 'Late'])  # horizontal colorbar
+plt.ylim((-0.05,1.05))
+plt.xlim((-0.05,1.05))
+plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_IBIPupilCovariance.svg')
+
+
 
 plt.close("all")
 hdf.close()
