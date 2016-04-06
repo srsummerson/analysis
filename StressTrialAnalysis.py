@@ -58,12 +58,14 @@ def running_mean(x, N):
 	return (cumsum[N:] - cumsum[:-N]) / float(N) 
 
 # Set up code for particular day and block
-hdf_filename = 'mari20160404_07_te1930.hdf'
-filename = 'Mario20160404'
+hdf_filename = 'mari20160405_04_te1934.hdf'
+filename = 'Mario20160405'
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
 #hdf_location = hdf_filename
-block_num = 2
+block_num = 1
+
+lfp1_channels = [34, 39, 44, 45, 71, 76, 80, 82, 84, 90, 93, 94, 95, 96]
 
 num_avg = 50 	# number of trials to compute running average of trial statistics over
 
@@ -262,7 +264,7 @@ else:
 			pulse_samprate = sig.sampling_rate.item()
 		if (sig.name[0:4] == 'LFP1'):
 			channel = sig.channel_index
-			if channel in [9, 25, 11, 27, 10, 12, 28]:
+			if channel in lfp1_channels:
 				hdeeg_samprate = sig.sampling_rate.item()
 				hdeeg[channel] = np.ravel(sig)
 
