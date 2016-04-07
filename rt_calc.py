@@ -9,21 +9,58 @@ def example_run():
     go_cue_ix = np.array([hdf.root.task_msgs[j-3]['time'] for j, i in enumerate(hdf.root.task_msgs) if i['msg']=='reward'])
     
     # Calculate filtered velocity and 'velocity mag. in target direction'
-    filt_vel, vel_bins, vel_in_targ_dir = get_cursor_velocity(hdf, go_cue_ix, .1, 2., use_filt_vel=False)
+    filt_vel, vel_bins = get_cursor_velocity(hdf, go_cue_ix, 0., 2., use_filt_vel=False)
 
-    # Calculate 'RT' from vel_in_targ_direction
-    kin_feat = get_kin_sig_shenoy_method(vel_in_targ_dir.T, vel_bins, perc=.2, start_tm = .1)
+    ## Calculate 'RT' from vel_in_targ_direction: use with get_cusor_velocity_in_targ_dir
+    #kin_feat = get_kin_sig_shenoy_method(vel_in_targ_dir.T, vel_bins, perc=.2, start_tm = .1)
+    kin_feat = get_rt(filt_vel.T, vel_bins, vel_thres = 0.1)
 
     #PLot first 15 trials in a row
     for n in range(15):
-        plt.plot(vel_in_targ_dir[:, n], '.-')
-        plt.plot(kin_feat[n, 0], vel_in_targ_dir[int(kin_feat[n,0]), n], '.', markersize=10)
+        plt.plot(filt_vel[:, n], '.-')
+        plt.plot(kin_feat[n, 0], filt_vel[int(kin_feat[n,0]), n], '.', markersize=10)
         plt.show()
         time.sleep(1.)
 
     return kin_feat
 
 def get_cursor_velocity(hdf, go_cue_ix, before_cue_time, after_cue_time, fs=60., use_filt_vel=True):
+    '''
+    hdf file -- task file generated from bmi3d
+    go_cue_ix -- list of go cue indices (units of hdf file row numbers)
+    before_cue_time -- time before go cue to inclue in trial (units of sec)
+    after_cue_time -- time after go cue to include in trial (units of sec)
+
+    returns a time x (x,y) x trials filtered velocity array
+    '''
+
+    ix = np.arange(-1*before_cue_time*fs, after_cue_time*fs).astype(int)
+
+
+    # Get trial trajectory: 
+    cursor = []
+    for g in go_cue_ix:
+        try:
+            #Get cursor
+            cursor.append(hdf.root.task[ix+g]['cursor'][:, [0, 2]])
+
+        except:
+            print 'skipping index: ', g, ' -- too close to beginning or end of file'
+    cursor = np.dstack((cursor))    # time x (x,y) x trial
+    
+    dt = 1./fs
+    vel = np.diff(cursor,axis=0)/dt
+
+    #Filter velocity: 
+    if use_filt_vel:
+        filt_vel = sg_filt.savgol_filter(vel, 9, 5, axis=0)
+    else:
+        filt_vel = vel
+    vel_bins = np.linspace(-1*before_cue_time, after_cue_time, vel.shape[0])
+
+    return filt_vel, vel_bins
+
+def get_cursor_velocity_in_targ_dir(hdf, go_cue_ix, before_cue_time, after_cue_time, fs=60., use_filt_vel=True):
     '''
     hdf file -- task file generated from bmi3d
     go_cue_ix -- list of go cue indices (units of hdf file row numbers)
@@ -73,6 +110,36 @@ def get_cursor_velocity(hdf, go_cue_ix, before_cue_time, after_cue_time, fs=60.,
         vel_in_targ_dir = np.sum(np.multiply(mag_mat, vel), axis=1)
 
     return filt_vel, vel_bins, vel_in_targ_dir
+
+def get_rt(kin_sig, bins, vel_thres = 0.):
+    '''
+    input:
+        kin_sig: trials x time array corresponding to velocity of the cursor
+        
+        start_tm: time from beginning of 'bins' of which to ignore any motion (e.g. if hold 
+            time is 200 ms, and your kin_sig starts at the beginning of the hold time, set 
+            start_tm = 0.2 to prevent micromovements in the hold time from being captured)
+
+    output: 
+        kin_feat : a trl x 3 array:
+            column1 = RT in units of "bins" indices
+            column2 = RT in units of time (bins[column1])
+            column3 = index of max of kin_sig
+
+    '''
+    ntrials= kin_sig.shape[0]
+    kin_feat = np.zeros((ntrials, 3))
+    
+    #Iterate through trials
+    for trl in range(ntrials):   
+        spd = kin_sig[trl,:]
+
+        bin_rt = np.sum(np.less(spd,vel_thres))
+        
+        kin_feat[trl, 0] = rev_ind[bin_rt] #Index of 'RT'
+        kin_feat[trl, 1] = bins[kin_feat[trl, 0]] #Actual time of 'RT'
+        kin_feat[trl, 2] = bin_max 
+    return kin_feat
 
 def get_kin_sig_shenoy_method(kin_sig, bins, perc=.2, start_tm = .1):
     '''
