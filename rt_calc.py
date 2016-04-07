@@ -1,28 +1,32 @@
-#import sav_gol_filt as sg_filt
+import sav_gol_filt as sg_filt
 import tables, time
+import numpy as np
+import scipy
+import matplotlib.pyplot as plt
 
 def example_run(): 
     # Load HDF file
-    hdf = tables.openFile('grom20160201_04_te4048.hdf')
+    hdf = tables.openFile('grom20160405_05_te4771.hdf')
 
     #Extract go_cue_indices in units of hdf file row number
     go_cue_ix = np.array([hdf.root.task_msgs[j-3]['time'] for j, i in enumerate(hdf.root.task_msgs) if i['msg']=='reward'])
     
     # Calculate filtered velocity and 'velocity mag. in target direction'
-    filt_vel, vel_bins = get_cursor_velocity(hdf, go_cue_ix, 0., 2., use_filt_vel=False)
+    filt_vel, total_vel, vel_bins = get_cursor_velocity(hdf, go_cue_ix, 0., 2., use_filt_vel=False)
 
     ## Calculate 'RT' from vel_in_targ_direction: use with get_cusor_velocity_in_targ_dir
     #kin_feat = get_kin_sig_shenoy_method(vel_in_targ_dir.T, vel_bins, perc=.2, start_tm = .1)
-    kin_feat = get_rt(filt_vel.T, vel_bins, vel_thres = 0.1)
-
+    #kin_feat = get_rt(total_vel.T, vel_bins, vel_thres = 0.1)
+    kin_feat = get_rt_change_deriv(total_vel.T, vel_bins, d_vel_thres = 0.5, fs=60)
+    
     #PLot first 15 trials in a row
-    for n in range(15):
-        plt.plot(filt_vel[:, n], '.-')
-        plt.plot(kin_feat[n, 0], filt_vel[int(kin_feat[n,0]), n], '.', markersize=10)
+    for n in range(5):
+        plt.plot(total_vel[:, n], '.-')
+        plt.plot(kin_feat[n, :][0], total_vel[int(kin_feat[n,:][0]), n], '.', markersize=10)
         plt.show()
         time.sleep(1.)
-
-    return kin_feat
+    
+    return kin_feat[:,1], total_vel
 
 def get_cursor_velocity(hdf, go_cue_ix, before_cue_time, after_cue_time, fs=60., use_filt_vel=True):
     '''
@@ -56,9 +60,13 @@ def get_cursor_velocity(hdf, go_cue_ix, before_cue_time, after_cue_time, fs=60.,
         filt_vel = sg_filt.savgol_filter(vel, 9, 5, axis=0)
     else:
         filt_vel = vel
+    total_vel = np.zeros((int(filt_vel.shape[0]),int(filt_vel.shape[2])))
+    for n in range(int(filt_vel.shape[2])):
+        total_vel[:,n] = np.sqrt(filt_vel[:,0,n]**2 + filt_vel[:,1,n]**2)
+
     vel_bins = np.linspace(-1*before_cue_time, after_cue_time, vel.shape[0])
 
-    return filt_vel, vel_bins
+    return filt_vel, total_vel, vel_bins
 
 def get_cursor_velocity_in_targ_dir(hdf, go_cue_ix, before_cue_time, after_cue_time, fs=60., use_filt_vel=True):
     '''
@@ -128,18 +136,50 @@ def get_rt(kin_sig, bins, vel_thres = 0.):
 
     '''
     ntrials= kin_sig.shape[0]
-    kin_feat = np.zeros((ntrials, 3))
+    kin_feat = np.zeros((ntrials, 2))
+    
+    #Iterate through trials
+    for trl in range(ntrials):   
+        spd = kin_sig[trl,:]
+        bin_rt = np.ravel(np.nonzero(np.greater(spd,vel_thres)))[0]
+        
+        kin_feat[trl, 0] = bin_rt #Index of 'RT'
+        kin_feat[trl, 1] = bins[kin_feat[trl, 0]] #Actual time of 'RT'
+    return kin_feat
+
+def get_rt_change_deriv(kin_sig, bins, d_vel_thres = 0., fs = 60):
+    '''
+    input:
+        kin_sig: trials x time array corresponding to velocity of the cursor
+        
+        start_tm: time from beginning of 'bins' of which to ignore any motion (e.g. if hold 
+            time is 200 ms, and your kin_sig starts at the beginning of the hold time, set 
+            start_tm = 0.2 to prevent micromovements in the hold time from being captured)
+
+    output: 
+        kin_feat : a trl x 3 array:
+            column1 = RT in units of "bins" indices
+            column2 = RT in units of time (bins[column1])
+            column3 = index of max of kin_sig
+
+    '''
+    ntrials= kin_sig.shape[0]
+    kin_feat = np.zeros((ntrials, 2))
     
     #Iterate through trials
     for trl in range(ntrials):   
         spd = kin_sig[trl,:]
 
-        bin_rt = np.sum(np.less(spd,vel_thres))
+        dt = 1./fs
+        d_spd = np.diff(spd,axis=0)/dt
+
+
+        bin_rt = np.ravel(np.nonzero(np.greater(d_spd,d_vel_thres)))[0]
         
-        kin_feat[trl, 0] = rev_ind[bin_rt] #Index of 'RT'
+        kin_feat[trl, 0] = bin_rt + 1 #Index of 'RT'
         kin_feat[trl, 1] = bins[kin_feat[trl, 0]] #Actual time of 'RT'
-        kin_feat[trl, 2] = bin_max 
     return kin_feat
+
 
 def get_kin_sig_shenoy_method(kin_sig, bins, perc=.2, start_tm = .1):
     '''
