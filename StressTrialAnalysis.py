@@ -58,12 +58,12 @@ def running_mean(x, N):
 	return (cumsum[N:] - cumsum[:-N]) / float(N) 
 
 # Set up code for particular day and block
-hdf_filename = 'mari20160405_04_te1934.hdf'
-filename = 'Mario20160405'
+hdf_filename = 'mari20160406_08_te1949.hdf'
+filename = 'Mario20160406'
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
 #hdf_location = hdf_filename
-block_num = 1
+block_num = 2
 
 lfp1_channels = [34, 39, 44, 45, 71, 76, 80, 82, 84, 90, 93, 94, 95, 96]
 
