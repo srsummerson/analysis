@@ -334,14 +334,13 @@ def FreeChoicePilotTaskPerformance(hdf_file):
     plt.title("Block A': Free-Choice Trials")
     plt.legend()
     
-<<<<<<< HEAD
-    plt.show()
+
     #plt.savefig('C:/Users/Samantha Summerson/Documents/GitHub/analysis/Papa_Performance_figs/FCPerformance_targets_%s.svg' % hdf_file[:-4])    # save this filetype for AI editing
     #plt.savefig('/home/srsummerson/code/analysis/Luigi_Performance_figs/FCPerformance_targets_%s.svg' % hdf_file[:-4])    # save this filetype for easy viewing
-=======
+
     #plt.savefig('C:/Users/Samantha Summerson/Documents/GitHub/analysis/Papa_Performance_figs/FCPerformance_targets_%s.svg' % hdf_file[:-4])    # save this filetype for AI editing
     plt.savefig('/home/srsummerson/code/analysis/Luigi_Performance_figs/FCPerformance_targets_%s.svg' % hdf_file[:-4])    # save this filetype for easy viewing
->>>>>>> dbc748fe1adc56009274b4ba09c845c2e50c32dd
+
     #plt.savefig('/home/srsummerson/code/analysis/Luigi_Performance_figs/FCPerformance_targets_%s.png' % hdf_file[:-4])    # save this filetype for easy viewing
     #plt.close()
     hdf.close()
