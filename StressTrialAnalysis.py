@@ -1136,6 +1136,31 @@ plt.ylim((-0.05,1.05))
 plt.xlim((-0.05,1.05))
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_IBIPupilCovariance.svg')
 
+plt.figure()
+for i in range(0,len(ibi_stress_mean)):
+    #plt.plot(norm_ibi_stress_mean[i],norm_pupil_stress_mean[i],color=cmap_stress(i/float(len(ibi_stress_mean))),marker='o',markeredgecolor=None,markeredgewidth=0.0)
+    plt.plot(norm_ibi_stress_mean[i],norm_pupil_stress_mean[i],color=cmap_stress(i/float(len(ibi_stress_mean))),marker='o')
+plot_cov_ellipse(cov_stress,mean_vec_stress,fc='r',ec='None',a=0.2)
+for i in range(len(ibi_reg_before_mean)/2,len(ibi_reg_before_mean)):
+	plt.plot(norm_ibi_reg_before_mean[i],norm_pupil_reg_before_mean[i],color=cmap_reg_before(i/float(len(ibi_reg_before_mean))),marker='o')
+plot_cov_ellipse(cov_reg_before,mean_vec_reg_before,fc='b',ec='None',a=0.2)
+#plt.legend()
+plt.xlabel('Mean Trial IBI (s)')
+plt.ylabel('Mean Trial PD (AU)')
+plt.title('Block A - late trials only')
+sm_reg_before = plt.cm.ScalarMappable(cmap=cmap_reg_before, norm=plt.Normalize(vmin=0, vmax=1))
+# fake up the array of the scalar mappable. Urgh...
+sm_reg_before._A = []
+cbar = plt.colorbar(sm_reg_before,ticks=[0,1], orientation='vertical')
+cbar.ax.set_xticklabels(['Early', 'Late'])  # horizontal colorbar
+sm_stress = plt.cm.ScalarMappable(cmap=cmap_stress, norm=plt.Normalize(vmin=0, vmax=1))
+# fake up the array of the scalar mappable. Urgh...
+sm_stress._A = []
+cbar = plt.colorbar(sm_stress,ticks=[0,1], orientation='vertical')
+cbar.ax.set_xticklabels(['Early', 'Late'])  # horizontal colorbar
+plt.ylim((-0.05,1.05))
+plt.xlim((-0.05,1.05))
+plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_IBIPupilCovariance_latetrials.svg')
 
 
 plt.close("all")
