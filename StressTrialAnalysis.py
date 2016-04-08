@@ -529,8 +529,8 @@ for chann in hdeeg.keys():
  	plt.ylabel('Average PSD')
  	plt.title('Channel ' +str(chann))
  	plt.legend()
-	#plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_Spectrogram_Ch'+str(chann)+'.svg')
-	plt.show()
+	plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_Spectrogram_Ch'+str(chann)+'.svg')
+	#plt.show()
 	#plt.close()
 	
 mean_ibi_stress = np.nanmean(all_ibi_stress)
