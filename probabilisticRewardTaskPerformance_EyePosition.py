@@ -264,8 +264,8 @@ for i in range(1,2):
 	
 	# target side 0 = left, target side 1 = right?
 	lv_targ_side = 1 - target_side3[ind_stim_block3[i]-200]
-	plt.plot(azimuth,elevation)
-	plt.plot(20*lv_targ_side - 10,0,color='g',marker='o',markersize = 2.0)
+	plt.scatter(azimuth,elevation,color=cmap_stim_block3)
+	plt.plot(20*lv_targ_side - 10,0,color='k',marker='o',markersize = 2.0)
 	
 #plt.show()	
 
