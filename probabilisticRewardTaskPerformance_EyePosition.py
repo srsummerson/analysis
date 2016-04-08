@@ -9,22 +9,24 @@ from scipy import stats
 from matplotlib import mlab
 import matplotlib.pyplot as plt
 from basicAnalysis import plot_cov_ellipse
+from iscan_processing import get_iscan_data
 
 
 # Set up code for particular day and block
-hdf_filename = 'mari20160406_08_te1949.hdf'
-filename = 'Mario20160406'
-TDT_tank = '/home/srsummerson/storage/tdt/'+filename
+hdf_filename = 'luig20160204_15_te1382.hdf'
+filename = 'Luigi20160204_HDEEG'
+#TDT_tank = '/home/srsummerson/storage/tdt/'+filename
+TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
 #hdf_location = hdf_filename
 block_num = 2
-eyedata_location = '/home/srsummerson/storage/eye-tracker/'+filename+'-Block'+block_num+'.tda'
+eyedata_location = '/home/srsummerson/storage/eye-tracker/'+filename+'-Block'+str(block_num-1)+'.tda'
 
 num_avg = 50 	# number of trials to compute running average of trial statistics over
 
 # Load behavior data
 
-hdf = tables.openFile(hdf_file)
+hdf = tables.openFile(hdf_location)
 counter_block1 = 0
 counter_block3 = 0
 running_avg_length = 20
@@ -91,13 +93,13 @@ for i in range(0,100):
         counter_block1 += 1
 for i in range(100,200):
     target_state2 = state[ind_check_reward_states[i] - 2]
-    target_side2[i] = targetH_side[i]
+    target_side2[i-100] = targetH_side[i]
     if target_state2 == 'hold_targetL':
-        target2[i] = 1
-        reward2[i] = rewarded_reward_scheduleL[i]
+        target2[i-100] = 1
+        reward2[i-100] = rewarded_reward_scheduleL[i]
     else:
-        target2[i] = 2
-        reward2[i] = rewarded_reward_scheduleH[i]
+        target2[i-100] = 2
+        reward2[i-100] = rewarded_reward_scheduleH[i]
    
 for i in range(200,num_successful_trials):
 #for i in range(200,np.min([num_successful_trials,300])):
@@ -186,45 +188,59 @@ dio_freq = np.ravel(hdf_times['tdt_dio_samplerate'])
 pulse_dio_sample_num = (float(pulse_samprate)/float(dio_freq))*(dio_tdt_sample - 1) + 1
 pupil_dio_sample_num = (float(pupil_samprate)/float(dio_freq))*(dio_tdt_sample - 1) + 1
 eye_tracker_sample_num = (float(eye_tracker_samprate))/float(dio_freq)*(dio_tdt_sample - 1) + 1
+eye_tracker_sample_num = [int(eye_tracker_sample_num[i]) for i in range(len(eye_tracker_sample_num))]
 
 
 state_row_ind_stim_block3 = state_time[row_ind_stim_block3]
 state_row_ind_reg_block3 = state_time[row_ind_reg_block3]
 pupil_ind_stim_block3 = np.zeros(row_ind_stim_block3.size)
 pupil_ind_reg_block3 = np.zeros(row_ind_reg_block3.size)
-eye_azimuth_ind_stim_block3 = np.zeros(row_ind_stim_block3.size)
-eye_elevation_ind_stim_block3 = np.zeros(row_ind_stim_block3.size)
-eye_azimuth_ind_reg_block3 = np.zeros(row_ind_reg_block3.size)
-eye_elevation_ind_reg_block3 = np.zeros(row_ind_reg_block3.size)
-
+eye_azimuth_ind_stim_block3 = []
+eye_elevation_ind_stim_block3 = []
+eye_azimuth_ind_reg_block3 = []
+eye_elevation_ind_reg_block3 = []
 
 for i in range(0,len(row_ind_stim_block3)):
 	hdf_index = np.argmin(np.abs(hdf_rows - state_row_ind_stim_block3[i]))
-	pulse_ind_stim_block3[i] = pulse_dio_sample_num[hdf_index]
-	eye_azimuth_ind_stim_block3[i] = eye_tracker_sample_num[hdf_index]
-	eye_elevation_ind_stim_block3[i] = eye_tracker_sample_num[hdf_index]
+	pupil_ind_stim_block3[i] = pupil_dio_sample_num[hdf_index]
+	eye_azimuth_ind_stim_block3.append(eye_tracker_sample_num[hdf_index])
+	eye_elevation_ind_stim_block3.append(eye_tracker_sample_num[hdf_index])
 for i in range(0,len(row_ind_reg_block3)):
 	hdf_index = np.argmin(np.abs(hdf_rows - state_row_ind_reg_block3[i]))
-	pulse_ind_reg_block3[i] = pulse_dio_sample_num[hdf_index]
-	eye_azimuth_ind_reg_block3[i] = eye_tracker_sample_num[hdf_index]
-	eye_elevation_ind_reg_block3[i] = eye_tracker_sample_num[hdf_index]
+	pupil_ind_reg_block3[i] = pupil_dio_sample_num[hdf_index]
+	eye_azimuth_ind_reg_block3.append(eye_tracker_sample_num[hdf_index])
+	eye_elevation_ind_reg_block3.append(eye_tracker_sample_num[hdf_index])
+
+'''
+Notes: 
+- filter pupil signal for dropping to zero (eyes closed)
+- only consider data points for azimuth and elevation when pupil is non-zero
+- for sample number for eye-tracker, need to consider that it's start time (and thus sample num) is later than pupil data
+'''
 
 
 cmap_stim_block3 = mpl.cm.winter
 cmap_stim_block3_pupil = mpl.cm.autumn
 plt.figure()
-for i in range(0,len(row_ind_stim_block3)):
+#for i in range(0,len(row_ind_stim_block3)):
+for i in range(1,2):
 	# Get data for 1000 ms hold period
 	pupil_snippet = pupil_data[pupil_ind_stim_block3[i]:pupil_ind_stim_block3[i]+pupil_samprate]
+	pupil_range = np.nanmax(pupil_snippet) - np.nanmin(pupil_snippet)
+	pupil_snippet = pupil_snippet/pupil_range
+	pupil_snippet = pupil_snippet - np.nanmean(pupil_snippet)
 	azimuth = eye_azimuth[eye_azimuth_ind_stim_block3[i]:eye_azimuth_ind_stim_block3[i]+eye_tracker_samprate]
 	elevation = eye_elevation[eye_elevation_ind_stim_block3[i]:eye_elevation_ind_stim_block3[i]+eye_tracker_samprate]
-	diameter = eye_diameter[eye_elevation_ind_stim_block3[i]:eye_elevation_ind_stim_block3[i]+eye_tracker_samprate]
+	diameter = eye_diameter[eye_elevation_ind_stim_block3[i] - int(0.4*eye_tracker_samprate):eye_elevation_ind_stim_block3[i]- int(0.4*eye_tracker_samprate) +eye_tracker_samprate]
+	diameter_range = np.nanmax(diameter) - np.nanmin(diameter)
+	diameter = diameter/diameter_range
+	diameter = diameter - np.nanmean(diameter)
 
-	subplot(2,1,1)
-    plt.plot(azimuth,elevation,color=cmap_stim_block3(i/float(len(row_ind_stim_block3))),linestyle='-.')
-    subplot(2,1,2)
-    plt.plot(range(len(diameter)),diameter,color=cmap_stim_block3(i/float(len(row_ind_stim_block3))),linestyle='-.')
-    plt.plot(range(len(pupil_snippet)),pupil_snippet,color=cmap_stim_block3_pupil(i/float(len(row_ind_stim_block3))),linestyle='-.')
+	plt.subplot(2,1,1)
+	plt.plot(azimuth,elevation,color=cmap_stim_block3(i/float(len(row_ind_stim_block3))),linestyle='-.')
+	plt.subplot(2,1,2)
+	plt.plot(np.arange(len(diameter))/float(eye_tracker_samprate),diameter,color=cmap_stim_block3(i/float(len(row_ind_stim_block3))),linestyle='-')
+	plt.plot(np.arange(len(pupil_snippet))/float(pupil_samprate),pupil_snippet,color=cmap_stim_block3_pupil(i/float(len(row_ind_stim_block3))),linestyle='-')
     
 	'''
 	pupil_snippet_range = range(0,len(pupil_snippet))
