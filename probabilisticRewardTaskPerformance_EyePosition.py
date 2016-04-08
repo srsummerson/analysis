@@ -257,13 +257,14 @@ for i in range(1,2):
 			pupil_snippet_range = np.delete(pupil_snippet_range,rm_indices)
 			pupil_snippet_range = pupil_snippet_range.tolist()
 	#pupil_snippet = signal.lfilter(lpf,1,pupil_snippet[eyes_open])
-	pupil_snippet = pupil_snippet[pupil_snippet_range]
+	#pupil_snippet = pupil_snippet[pupil_snippet_range]
 	azimuth = azimuth[pupil_snippet_range]
 	elevation = elevation[pupil_snippet_range]
 	
-	# target_side3 is the side of the high-value target, so we should actually plot the opposite of that
+	# target side 0 = left, target side 1 = right?
+	lv_targ_side = 1 - target_side3[ind_stim_block3[i]-200]
 	plt.plot(azimuth,elevation)
-	plt.plot(target_side3[ind_stim_block3[i]-200],0,color='g',marker='o',markersize = 2.0)
+	plt.plot(20*lv_targ_side - 10,0,color='g',marker='o',markersize = 2.0)
 	
 #plt.show()	
 
