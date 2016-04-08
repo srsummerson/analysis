@@ -226,9 +226,9 @@ plt.figure()
 for i in range(1,2):
 	# Get data for 1000 ms hold period
 	pupil_snippet = eye_diameter[eye_elevation_ind_stim_block3[i]:eye_elevation_ind_stim_block3[i]+eye_tracker_samprate]
-	pupil_range = np.nanmax(pupil_snippet) - np.nanmin(pupil_snippet)
-	pupil_snippet = pupil_snippet/pupil_range
-	pupil_snippet = pupil_snippet - np.nanmean(pupil_snippet)
+	#pupil_range = np.nanmax(pupil_snippet) - np.nanmin(pupil_snippet)
+	#pupil_snippet = pupil_snippet/pupil_range
+	#pupil_snippet = pupil_snippet - np.nanmean(pupil_snippet)
 	azimuth = eye_azimuth[eye_azimuth_ind_stim_block3[i]:eye_azimuth_ind_stim_block3[i]+eye_tracker_samprate]
 	elevation = eye_elevation[eye_elevation_ind_stim_block3[i]:eye_elevation_ind_stim_block3[i]+eye_tracker_samprate]
 	
@@ -241,7 +241,7 @@ for i in range(1,2):
     
 	'''
 	pupil_snippet_range = range(0,len(pupil_snippet))
-	eyes_closed = np.nonzero(np.less(pupil_snippet,1))
+	eyes_closed = np.nonzero(np.less(pupil_snippet,2))
 	eyes_closed = np.ravel(eyes_closed)
 	if len(eyes_closed) > 1:
 		find_blinks = eyes_closed[1:] - eyes_closed[:-1]
