@@ -7,7 +7,7 @@ from neo import io
 filename = 'Luigi20160204_HDEEG'
 TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
 #TDT_tank = '/home/srsummerson/storage/tdt/'+filename
-block_num = 1
+block_num = 2
 
 # Can we get timestamps directly?
 
