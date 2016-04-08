@@ -467,6 +467,8 @@ for chann in hdeeg.keys():
 		num_timedom_samples = hdeeg_snippet.size
 		time = [float(t)/Fs for t in range(0,num_timedom_samples)]
  		freq, Pxx_den = signal.welch(hdeeg_snippet, Fs, nperseg=512, noverlap=256)
+ 		total_power_Pxx_den = np.sum(Pxx_den)
+ 		Pxx_den = Pxx_den/total_power_Pxx_den
  		trial_power_stress[:,i] = Pxx_den[0:density_length]
  		#hdeeg_snippet_aligned_to_end = hdeeg_snippet[-hdeeg_samprate:]
  		#hdeeg_snippet_aligned_to_beginning = hdeeg_snippet[0:hdeeg_samprate]
@@ -488,6 +490,8 @@ for chann in hdeeg.keys():
 		num_timedom_samples = hdeeg_snippet.size
 		time = [float(t)/Fs for t in range(0,num_timedom_samples)]
  		freq, Pxx_den = signal.welch(hdeeg_snippet, Fs, nperseg=512, noverlap=256)
+ 		total_power_Pxx_den = np.sum(Pxx_den)
+ 		Pxx_den = Pxx_den/total_power_Pxx_den
  		trial_power_reg[:,i] = Pxx_den[0:density_length]
  	# plot figures here
  	'''
