@@ -4,12 +4,12 @@ import numpy as np
 import scipy
 import matplotlib.pyplot as plt
 
-def example_run(): 
+def compute_rt_per_trial(hdf_file): 
     # Load HDF file
-    hdf = tables.openFile('grom20160405_05_te4771.hdf')
+    hdf = tables.openFile(hdf_file)
 
     #Extract go_cue_indices in units of hdf file row number
-    go_cue_ix = np.array([hdf.root.task_msgs[j-3]['time'] for j, i in enumerate(hdf.root.task_msgs) if i['msg']=='reward'])
+    go_cue_ix = np.array([hdf.root.task_msgs[j-3]['time'] for j, i in enumerate(hdf.root.task_msgs) if i['msg']=='check_reward'])
     
     # Calculate filtered velocity and 'velocity mag. in target direction'
     filt_vel, total_vel, vel_bins = get_cursor_velocity(hdf, go_cue_ix, 0., 2., use_filt_vel=False)
@@ -19,7 +19,7 @@ def example_run():
     #kin_feat = get_rt(total_vel.T, vel_bins, vel_thres = 0.1)
     kin_feat = get_rt_change_deriv(total_vel.T, vel_bins, d_vel_thres = 0.5, fs=60)
     
-    #PLot first 15 trials in a row
+    #PLot first 5 trials in a row
     for n in range(5):
         plt.plot(total_vel[:, n], '.-')
         plt.plot(kin_feat[n, :][0], total_vel[int(kin_feat[n,:][0]), n], '.', markersize=10)
