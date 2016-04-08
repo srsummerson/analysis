@@ -230,8 +230,9 @@ for i in range(1,2):
 	#pupil_snippet = pupil_snippet/pupil_range
 	#pupil_snippet = pupil_snippet - np.nanmean(pupil_snippet)
 	azimuth = eye_azimuth[eye_azimuth_ind_stim_block3[i]:eye_azimuth_ind_stim_block3[i]+eye_tracker_samprate]
+	azimuth = np.array(azimuth)
 	elevation = eye_elevation[eye_elevation_ind_stim_block3[i]:eye_elevation_ind_stim_block3[i]+eye_tracker_samprate]
-	
+	elevation = np.array(elevation)
 	'''
 	plt.subplot(2,1,1)
 	plt.plot(azimuth,elevation,color=cmap_stim_block3(i/float(len(row_ind_stim_block3))),linestyle='-.')
