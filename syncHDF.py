@@ -22,6 +22,7 @@ hdf_times['row_number'] = []
 #hdf_times['tdt_timestamp'] = []
 hdf_times['tdt_samplenumber'] = []
 hdf_times['tdt_dio_samplerate'] = []
+hdf_times['tdt_recording_start'] = []
 
 row_number = []
 tdt_timestamp = []
@@ -29,6 +30,8 @@ tdt_samplenumber = []
 
 # find channel index for DIOx 3 and DIOx 4
 for sig in analogsig:
+	if (sig.name == 'DIOx 1'):
+		DIOx1 = np.ravel(sig)
 	if (sig.name == 'DIOx 2'):
 		DIOx2 = np.ravel(sig)
 	if (sig.name == 'DIOx 3'): # third channel indicates message type
@@ -39,6 +42,8 @@ for sig in analogsig:
 		DIOx4 = np.ravel(sig)
 		#DIOx4 = [sig[ind].item() for ind in range(0,sig.size)]
 		##DIOx4_times = sig.times
+
+find_recording_start = np.ravel(np.nonzero(DIOx1))[0]
 
 find_data_rows = np.logical_and(np.ravel(np.equal(DIOx3,13)),np.ravel(np.greater(DIOx2,0))) # when data corresponds to a row and strobe is on
 find_data_rows_ind = np.ravel(np.nonzero(find_data_rows))	
@@ -59,6 +64,7 @@ for ind in range(1,len(rows)):
 
 hdf_times['row_number'] = rows
 hdf_times['tdt_samplenumber'] = find_data_rows_ind
+hdf_times['tdt_recording_start'] = find_recording_start
 #hdf_times['tdt_timestamp'] = times
 
 mat_filename = filename+'_b'+str(block_num)+'_syncHDF.mat'

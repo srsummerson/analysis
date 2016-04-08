@@ -181,13 +181,14 @@ hdf_rows = np.ravel(hdf_times['row_number'])
 hdf_rows = [val for val in hdf_rows]	# turn into a list so that the index method can be used later
 dio_tdt_sample = np.ravel(hdf_times['tdt_samplenumber'])
 dio_freq = np.ravel(hdf_times['tdt_dio_samplerate'])
+dio_start = np.ravel(hdf_times['tdt_recording_start'])
 
 # Convert DIO TDT sample numbers to for pupil and pulse data:
-# if dio sample num is x, then data sample number is R*(x-1) + 1 where
+# if dio sample num is x, then data sample number is R*x where
 # R = data_sample_rate/dio_sample_rate
-pulse_dio_sample_num = (float(pulse_samprate)/float(dio_freq))*(dio_tdt_sample - 1) + 1
-pupil_dio_sample_num = (float(pupil_samprate)/float(dio_freq))*(dio_tdt_sample - 1) + 1
-eye_tracker_sample_num = (float(eye_tracker_samprate))/float(dio_freq)*(dio_tdt_sample - 1) + 1
+pulse_dio_sample_num = (float(pulse_samprate)/float(dio_freq))*(dio_tdt_sample)
+pupil_dio_sample_num = (float(pupil_samprate)/float(dio_freq))*(dio_tdt_sample)
+eye_tracker_sample_num = (float(eye_tracker_samprate)/float(dio_freq))*(dio_tdt_sample - dio_start)
 eye_tracker_sample_num = [int(eye_tracker_sample_num[i]) for i in range(len(eye_tracker_sample_num))]
 
 
