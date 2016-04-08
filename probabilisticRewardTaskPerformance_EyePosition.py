@@ -216,7 +216,6 @@ for i in range(0,len(row_ind_reg_block3)):
 Notes: 
 - filter pupil signal for dropping to zero (eyes closed)
 - only consider data points for azimuth and elevation when pupil is non-zero
-- for sample number for eye-tracker, need to consider that it's start time (and thus sample num) is later than pupil data
 '''
 
 
@@ -226,17 +225,14 @@ plt.figure()
 #for i in range(0,len(row_ind_stim_block3)):
 for i in range(1,2):
 	# Get data for 1000 ms hold period
-	pupil_snippet = pupil_data[pupil_ind_stim_block3[i]:pupil_ind_stim_block3[i]+pupil_samprate]
+	pupil_snippet = eye_diameter[eye_elevation_ind_stim_block3[i]:eye_elevation_ind_stim_block3[i]+eye_tracker_samprate]
 	pupil_range = np.nanmax(pupil_snippet) - np.nanmin(pupil_snippet)
 	pupil_snippet = pupil_snippet/pupil_range
 	pupil_snippet = pupil_snippet - np.nanmean(pupil_snippet)
 	azimuth = eye_azimuth[eye_azimuth_ind_stim_block3[i]:eye_azimuth_ind_stim_block3[i]+eye_tracker_samprate]
 	elevation = eye_elevation[eye_elevation_ind_stim_block3[i]:eye_elevation_ind_stim_block3[i]+eye_tracker_samprate]
-	diameter = eye_diameter[eye_elevation_ind_stim_block3[i] - int(0.4*eye_tracker_samprate):eye_elevation_ind_stim_block3[i]- int(0.4*eye_tracker_samprate) +eye_tracker_samprate]
-	diameter_range = np.nanmax(diameter) - np.nanmin(diameter)
-	diameter = diameter/diameter_range
-	diameter = diameter - np.nanmean(diameter)
-
+	
+	'''
 	plt.subplot(2,1,1)
 	plt.plot(azimuth,elevation,color=cmap_stim_block3(i/float(len(row_ind_stim_block3))),linestyle='-.')
 	plt.subplot(2,1,2)
@@ -245,7 +241,7 @@ for i in range(1,2):
     
 	'''
 	pupil_snippet_range = range(0,len(pupil_snippet))
-	eyes_closed = np.nonzero(np.less(pupil_snippet,-3.3))
+	eyes_closed = np.nonzero(np.less(pupil_snippet,1))
 	eyes_closed = np.ravel(eyes_closed)
 	if len(eyes_closed) > 1:
 		find_blinks = eyes_closed[1:] - eyes_closed[:-1]
@@ -262,17 +258,14 @@ for i in range(1,2):
 			pupil_snippet_range = pupil_snippet_range.tolist()
 	#pupil_snippet = signal.lfilter(lpf,1,pupil_snippet[eyes_open])
 	pupil_snippet = pupil_snippet[pupil_snippet_range]
-	pupil_snippet_mean = np.nanmean(pupil_snippet)
-	pupil_snippet_std = np.nanstd(pupil_snippet)
-	window = np.floor(pupil_samprate/10) # sample window equal to ~100 ms
-	pupil_snippet = (pupil_snippet[0:window]- pupil_snippet_mean)/float(pupil_snippet_std)
-	all_pupil_stress += pupil_snippet.tolist()
-	#pupil_stress['i'] = pupil_snippet
-	#pupil_stress_mean.append(np.nanmean(pupil_snippet))  # add z-scored pupil mean
-	pupil_stress_mean.append(pupil_snippet_mean)
-	pupil_stress_std.append(np.nanmean(pupil_snippet))
-	'''
-plt.show()	
+	azimuth = azimuth[pupil_snippet_range]
+	elevation = elevation[pupil_snippet_range]
+	
+	# target_side3 is the side of the high-value target, so we should actually plot the opposite of that
+	plt.plot(azimuth,elevation)
+	plt.plot(target_side3[ind_stim_block3[i]-200],0,color='g',marker='o',markersize = 2.0)
+	
+#plt.show()	
 
 #plt.close("all")
 hdf.close()
