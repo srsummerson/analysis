@@ -64,6 +64,7 @@ TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
 #hdf_location = hdf_filename
 block_num = 1
+stim_freq = 100
 
 lfp1_channels = [34, 39, 44, 45, 71, 76, 80, 82, 84, 90, 93, 94, 95, 96]
 
@@ -467,7 +468,8 @@ for chann in hdeeg.keys():
 		num_timedom_samples = hdeeg_snippet.size
 		time = [float(t)/Fs for t in range(0,num_timedom_samples)]
  		freq, Pxx_den = signal.welch(hdeeg_snippet, Fs, nperseg=512, noverlap=256)
- 		total_power_Pxx_den = np.sum(Pxx_den)
+ 		norm_freq = np.append(np.ravel(np.nonzero(np.less(freq,stim_freq-3))),np.ravel(np.nonzero(np.less(freq,stim_freq+3))))
+ 		total_power_Pxx_den = np.sum(Pxx_den[norm_freq])
  		Pxx_den = Pxx_den/total_power_Pxx_den
  		trial_power_stress[:,i] = Pxx_den[0:density_length]
  		#hdeeg_snippet_aligned_to_end = hdeeg_snippet[-hdeeg_samprate:]
@@ -490,7 +492,8 @@ for chann in hdeeg.keys():
 		num_timedom_samples = hdeeg_snippet.size
 		time = [float(t)/Fs for t in range(0,num_timedom_samples)]
  		freq, Pxx_den = signal.welch(hdeeg_snippet, Fs, nperseg=512, noverlap=256)
- 		total_power_Pxx_den = np.sum(Pxx_den)
+ 		norm_freq = np.append(np.ravel(np.nonzero(np.less(freq,stim_freq-3))),np.ravel(np.nonzero(np.less(freq,stim_freq+3))))
+ 		total_power_Pxx_den = np.sum(Pxx_den[norm_freq])
  		Pxx_den = Pxx_den/total_power_Pxx_den
  		trial_power_reg[:,i] = Pxx_den[0:density_length]
  	# plot figures here
