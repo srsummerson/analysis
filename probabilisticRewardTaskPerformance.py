@@ -732,3 +732,51 @@ def FreeChoiceBehaviorConditionalProbabilities(hdf_file):
 	prob_low_given_lhs_block3 = prob_choose_left_and_low_block3 # conditional prob: prob(low-value | choose left)
 	'''
 	return prob_high_given_rhs_block1, prob_high_given_lhs_block1, prob_high_given_rhs_block3,prob_high_given_lhs_block3, prob_low_given_rhs_block1,prob_low_given_lhs_block1,prob_low_given_rhs_block3,prob_low_given_lhs_block3
+
+def FreeChoiceBehavior_withStressTrials(hdf_file):
+	hdf = tables.openFile(hdf_file)
+
+	state = hdf.root.task_msgs[:]['msg']
+	state_time = hdf.root.task_msgs[:]['time']
+	trial_type = hdf.root.task[:]['target_index']
+	stress_type = hdf.root.task[:]['stress_trial']
+	# reward schedules
+	reward_scheduleH = hdf.root.task[:]['reward_scheduleH']
+	reward_scheduleL = hdf.root.task[:]['reward_scheduleL']
+	  
+	ind_wait_states = np.ravel(np.nonzero(state == 'wait'))   # total number of unique trials
+	ind_center_states = np.ravel(np.nonzero(state == 'center'))   # total number of totals (includes repeats if trial was incomplete)
+	ind_target_states = np.ravel(np.nonzero(state == 'target'))
+	ind_check_reward_states = np.ravel(np.nonzero(state == 'check_reward'))
+	instructed_or_freechoice = trial_type[state_time[ind_check_reward_states]]	# free choice trial = 2, instructed = 1
+	all_instructed_or_freechoice = trial_type[state_time[ind_center_states]]
+	successful_stress_or_not = np.ravel(stress_type[state_time[ind_check_reward_states]])
+	all_stress_or_not = np.ravel(stress_type[state_time[ind_center_states]])
+	rewarded_reward_scheduleH = reward_scheduleH[state_time[ind_check_reward_states]]
+	rewarded_reward_scheduleL = reward_scheduleL[state_time[ind_check_reward_states]]
+
+	num_trials = ind_center_states.size
+	total_states = state.size
+
+	trial_success = np.zeros(num_trials)
+	target = np.zeros(num_trials)
+	reward = np.zeros(num_trials)
+	counter = 0 	# counter increments for all successful trials
+
+	for i in range(0,num_trials):
+		if (state[np.minimum(ind_center_states[i]+5,total_states-1)] == 'check_reward'):	 
+			trial_success[i] = 1
+			target_state = state[ind_center_states[i] + 3]
+			if (target_state == 'hold_targetL'):
+				target[i] = 1
+				reward[i] = rewarded_reward_scheduleL[counter]
+			else:
+				target[i] = 2
+				reward[i] = rewarded_reward_scheduleH[counter]
+			counter += 1
+		else:
+			trial_success[i] = 0
+			target[i] = 0 	# no target selected
+			reward[i] = 0 	# no reward givens
+
+	return state_time, ind_center_states, ind_check_reward_states, all_instructed_or_freechoice, all_stress_or_not, trial_success, target, reward

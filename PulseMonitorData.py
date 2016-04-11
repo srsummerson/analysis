@@ -203,8 +203,66 @@ def syncHDFwithDIOx(TDT_tank,block_num):
 	return hdf_times
 
 
+def getIBIandPuilDilation(pulse_data, pulse_ind,samples_pulse, pulse_samprate,pupil_data, pupil_ind,samples_pupil,pupil_samprate):
+	'''
+	This method computes statistics on the IBI and pupil diameter per trial, as well as aggregating data
+	from all the trials indicated by the row_ind input to compute histograms of the data.
+	'''
+	ibi_mean = []
+	ibi_std = []
+	pupil_mean = []
+	pupil_std = []
+	all_ibi = []
+	all_pupil = []
+	for i in range(0,len(pulse_ind)):
+		pulse_snippet = pulse_data[pulse_ind[i]:pulse_ind[i]+samples_pulse[i]]
+		ibi_snippet = findIBIs(pulse_snippet,pulse_samprate)
+		all_ibi += ibi_snippet.tolist()
+		ibi_stress.append(np.nanmean(ibi_snippet))
+		ibi_stress.append(np.nanmean(ibi_snippet))
+		
+		pupil_snippet = pupil_data[pupil_ind[i]:pupil_ind[i]+samples_pupil[i]]
+		pupil_snippet_range = range(0,len(pupil_snippet))
+		eyes_closed = np.nonzero(np.less(pupil_snippet,-3.3))
+		eyes_closed = np.ravel(eyes_closed)
+		if len(eyes_closed) > 1:
+			find_blinks = eyes_closed[1:] - eyes_closed[:-1]
+			blink_inds = np.ravel(np.nonzero(np.not_equal(find_blinks,1)))
+			eyes_closed_ind = [eyes_closed[0]]
+			eyes_closed_ind += eyes_closed[blink_inds].tolist()
+			eyes_closed_ind += eyes_closed[blink_inds+1].tolist()
+			eyes_closed_ind += [eyes_closed[-1]]
+			eyes_closed_ind.sort()
+			for i in np.arange(1,len(eyes_closed_ind),2):
+				rm_range = range(np.maximum(eyes_closed_ind[i-1]-20,0),np.minimum(eyes_closed_ind[i] + 20,len(pupil_snippet)-1))
+				rm_indices = [pupil_snippet_range.index(rm_range[ind]) for ind in range(0,len(rm_range)) if (rm_range[ind] in pupil_snippet_range)]
+				pupil_snippet_range = np.delete(pupil_snippet_range,rm_indices)
+				pupil_snippet_range = pupil_snippet_range.tolist()
+		pupil_snippet = pupil_snippet[pupil_snippet_range]
+		pupil_snippet_mean = np.nanmean(pupil_snippet)
+		pupil_snippet_std = np.nanstd(pupil_snippet)
+		window = np.floor(pupil_samprate/10) # sample window equal to ~100 ms
+		pupil_snippet = (pupil_snippet[0:window]- pupil_snippet_mean)/float(pupil_snippet_std)
+		all_pupil += pupil_snippet.tolist()
+		pupil_mean.append(pupil_snippet_mean)
+		pupil_std.append(np.nanmean(pupil_snippet))
+
+	mean_ibi = np.nanmean(all_ibi)
+	std_ibi = np.nanstd(all_ibi)
+	nbins_ibi = np.arange(mean_ibi-10*std_ibi,mean_ibi+10*std_ibi,float(std_ibi)/2)
+	ibi_hist,nbins_ibi = np.histogram(all_ibi,bins=nbins_ibi)
+	nbins_ibi = nbins_ibi[1:]
+	ibi_hist = ibi_hist/float(len(all_ibi))
+
+	mean_pupil = np.nanmean(all_pupil)
+	std_pupil = np.nanstd(all_pupil)
+	nbins_pupil = np.arange(mean_pupil-10*std_pupil,mean_pupil+10*std_pupil,float(std_pupil)/2)
+	pupil_hist,nbins_pupil = np.histogram(all_pupil,bins=nbins_pupil)
+	nbins_pupil = nbins_pupil[1:]
+	pupil_hist = pupil_hist/float(len(all_pupil))
 
 
+	return ibi_mean, ibi_std, pupil_mean, pupil_std, nbins_ibi, ibi_hist, nbins_pupil, pupil_hist
 
 
 
