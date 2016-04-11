@@ -108,43 +108,43 @@ def gen_spcgrm(tankname,channel,cutoffs=(0,250),binsize=50):
 			spec,freqs,bins,im=specgram(data,Fs=srate,NFFT=binsize,noverlap=0)
 	return 
 
-def TrialAveragedPSD(lfp_data, Fs, lfp_ind, samples_lfp, row_ind, stim_freq):
+def TrialAveragedPSD(lfp_data, chann, Fs, lfp_ind, samples_lfp, row_ind, stim_freq):
 	'''
 	Computes PSD per channel, with data averaged over trials. 
 	'''
+	density_length = 30
 	
-	for chann in lfp_data.keys():
-		trial_power = np.zeros([density_length,len(row_ind)])
-		for i in range(0,len(row_ind)):	
-			lfp_snippet = lfp_data[chann][lfp_ind[i]:lfp_ind[i]+samples_lfp[i]]
-			num_timedom_samples = lfp_snippet.size
-			time = [float(t)/Fs for t in range(0,num_timedom_samples)]
-	 		freq, Pxx_den = signal.welch(lfp_snippet, Fs, nperseg=512, noverlap=256)
-	 		norm_freq = np.append(np.ravel(np.nonzero(np.less(freq,stim_freq-3))),np.ravel(np.nonzero(np.less(freq,stim_freq+3))))
-	 		total_power_Pxx_den = np.sum(Pxx_den[norm_freq])
-	 		Pxx_den = Pxx_den/total_power_Pxx_den
-	 		trial_power[:,i] = Pxx_den[0:density_length]
+	trial_power = np.zeros([density_length,len(row_ind)])
+	for i in range(0,len(row_ind)):	
+		lfp_snippet = lfp_data[chann][lfp_ind[i]:lfp_ind[i]+samples_lfp[i]]
+		num_timedom_samples = lfp_snippet.size
+		time = [float(t)/Fs for t in range(0,num_timedom_samples)]
+ 		freq, Pxx_den = signal.welch(lfp_snippet, Fs, nperseg=512, noverlap=256)
+ 		norm_freq = np.append(np.ravel(np.nonzero(np.less(freq,stim_freq-3))),np.ravel(np.nonzero(np.less(freq,stim_freq+3))))
+ 		total_power_Pxx_den = np.sum(Pxx_den[norm_freq])
+ 		Pxx_den = Pxx_den/total_power_Pxx_den
+ 		trial_power[:,i] = Pxx_den[0:density_length]
 
-	 	'''
-	 	z_min, z_max = -np.abs(trial_power).max(), np.abs(trial_power).max()
-		plt.figure()
-		plt.subplot(1, 2, 1)
-		plt.imshow(low_power, cmap='RdBu')
-		#plt.xticks(np.arange(0.5,density_length+0.5),freq[0:density_length])
-		#plt.yticks(range(0,len(row_ind_successful_stress)))
-		plt.title('Channel %i - Spectrogram: 0 - 10 Hz power' % (chann))
-		plt.axis('auto')
-		plt.colorbar()
-		#z_min, z_max = -np.abs(beta_power).max(), np.abs(beta_power).max()
-		plt.subplot(1, 2, 2)
-		plt.imshow(beta_power, cmap='RdBu')
-		#plt.xticks(np.arange(0.5,len(bins)+0.5),bins)
-		#plt.yticks(range(0,len(row_ind_successful_stress)))
-		plt.title('Spectrogram: 50 - 100 Hz power')
-		plt.axis('auto')
-		# set the limits of the plot to the limits of the data
-		#plt.axis([x.min(), x.max(), y.min(), y.max()])
-		plt.colorbar()
-		'''
+ 	'''
+ 	z_min, z_max = -np.abs(trial_power).max(), np.abs(trial_power).max()
+	plt.figure()
+	plt.subplot(1, 2, 1)
+	plt.imshow(low_power, cmap='RdBu')
+	#plt.xticks(np.arange(0.5,density_length+0.5),freq[0:density_length])
+	#plt.yticks(range(0,len(row_ind_successful_stress)))
+	plt.title('Channel %i - Spectrogram: 0 - 10 Hz power' % (chann))
+	plt.axis('auto')
+	plt.colorbar()
+	#z_min, z_max = -np.abs(beta_power).max(), np.abs(beta_power).max()
+	plt.subplot(1, 2, 2)
+	plt.imshow(beta_power, cmap='RdBu')
+	#plt.xticks(np.arange(0.5,len(bins)+0.5),bins)
+	#plt.yticks(range(0,len(row_ind_successful_stress)))
+	plt.title('Spectrogram: 50 - 100 Hz power')
+	plt.axis('auto')
+	# set the limits of the plot to the limits of the data
+	#plt.axis([x.min(), x.max(), y.min(), y.max()])
+	plt.colorbar()
+	'''
 	
 	return freq, trial_power

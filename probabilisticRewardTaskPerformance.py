@@ -779,4 +779,5 @@ def FreeChoiceBehavior_withStressTrials(hdf_file):
 			target[i] = 0 	# no target selected
 			reward[i] = 0 	# no reward givens
 
+	hdf.close()
 	return state_time, ind_center_states, ind_check_reward_states, all_instructed_or_freechoice, all_stress_or_not, successful_stress_or_not,trial_success, target, reward

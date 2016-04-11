@@ -317,26 +317,27 @@ ibi_all_reg_after_mean, ibi_all_reg_after_std, pupil_all_reg_after_mean, pupil_a
 Process LFP data and find PSDs.
 '''
 Fs = hdeeg_samprate
-
-freq, trial_power_stress = TrialAveragedPSD(hdeeg, Fs, hdeeg_ind_successful_stress, samples_hdeeg_successful_stress, row_ind_successful_stress, stim_freq)
-freq, trial_power_stress = TrialAveragedPSD(hdeeg, Fs, hdeeg_ind_successful_reg_before, samples_hdeeg_successful_reg, row_ind_successful_reg, stim_freq)
-
 density_length = 30
-trial_power_avg_stress = np.nanmean(trial_power_stress,axis=1)
-trial_power_std_stress = np.nanstd(trial_power_stress,axis=1)
-trial_power_avg_reg = np.nanmean(trial_power_reg,axis=1)
-trial_power_std_reg = np.nanstd(trial_power_reg,axis=1)
 plt.figure()
-plt.plot(freq[0:density_length],trial_power_avg_stress,'r',label='Stress Trials') # plotting the spectrum
-plt.fill_between(freq[0:density_length],trial_power_avg_stress - trial_power_std_stress,trial_power_avg_stress +trial_power_std_stress,facecolor='red',linewidth=0.1,alpha=0.5)
-plt.plot(freq[0:density_length],trial_power_avg_reg,'b',label='Regular Trials')
-plt.fill_between(freq[0:density_length],trial_power_avg_reg - trial_power_std_reg,trial_power_avg_reg +trial_power_std_reg,facecolor='blue',linewidth=0.1,alpha=0.5)
-plt.xlim((0, 50))
-plt.xlabel('Freq (Hz)')
-plt.ylabel('Normalized PSD')
-plt.title('Channel ' +str(chann) + '- Successful Trial-Averaged PSD')
-plt.legend()
-plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_Spectrogram_Ch'+str(chann)+'.svg')
+for chann in hdeeg.keys():
+	freq, trial_power_stress = TrialAveragedPSD(hdeeg, chann, Fs, hdeeg_ind_successful_stress, samples_hdeeg_successful_stress, row_ind_successful_stress, stim_freq)
+	freq, trial_power_reg = TrialAveragedPSD(hdeeg, chann, Fs, hdeeg_ind_successful_reg_before, samples_hdeeg_successful_reg, row_ind_successful_reg, stim_freq)
+
+	trial_power_avg_stress = np.nanmean(trial_power_stress,axis=1)
+	trial_power_std_stress = np.nanstd(trial_power_stress,axis=1)
+	trial_power_avg_reg = np.nanmean(trial_power_reg,axis=1)
+	trial_power_std_reg = np.nanstd(trial_power_reg,axis=1)
+
+	plt.plot(freq[0:density_length],trial_power_avg_stress,'r',label='Stress Trials') # plotting the spectrum
+	plt.fill_between(freq[0:density_length],trial_power_avg_stress - trial_power_std_stress,trial_power_avg_stress +trial_power_std_stress,facecolor='red',linewidth=0.1,alpha=0.5)
+	plt.plot(freq[0:density_length],trial_power_avg_reg,'b',label='Regular Trials')
+	plt.fill_between(freq[0:density_length],trial_power_avg_reg - trial_power_std_reg,trial_power_avg_reg +trial_power_std_reg,facecolor='blue',linewidth=0.1,alpha=0.5)
+	plt.xlim((0, 50))
+	plt.xlabel('Freq (Hz)')
+	plt.ylabel('Normalized PSD')
+	plt.title('Channel ' +str(chann) + '- Successful Trial-Averaged PSD')
+	plt.legend()
+	plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_Spectrogram_Ch'+str(chann)+'.svg')
 #plt.show()
 #plt.close()
 
@@ -487,11 +488,11 @@ plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(blo
 
 # IBI plots
 # Compute significance
-F_ibi,p_ibi = stats.f_oneway(all_ibi_reg_before,all_ibi_reg_after,all_ibi_stress)
-F_pupil,p_pupil = stats.f_oneway(all_pupil_stress,all_ibi_reg_after,all_ibi_reg_before)
+#F_ibi,p_ibi = stats.f_oneway(all_ibi_reg_before,all_ibi_reg_after,all_ibi_stress)
+#F_pupil,p_pupil = stats.f_oneway(all_pupil_stress,all_ibi_reg_after,all_ibi_reg_before)
 
-F_all_ibi,p_all_ibi = stats.f_oneway(all_ibi_all_reg_before,all_ibi_all_reg_after,all_ibi_all_stress)
-F_all_pupil,p_all_pupil = stats.f_oneway(all_pupil_all_stress,all_ibi_all_reg_after,all_ibi_all_reg_before)
+#F_all_ibi,p_all_ibi = stats.f_oneway(all_ibi_all_reg_before,all_ibi_all_reg_after,all_ibi_all_stress)
+#F_all_pupil,p_all_pupil = stats.f_oneway(all_pupil_all_stress,all_ibi_all_reg_after,all_ibi_all_reg_before)
 
 plt.figure()
 '''
@@ -617,6 +618,10 @@ cbar.ax.set_xticklabels(['Early', 'Late'])  # horizontal colorbar
 #plt.xlim((-0.05,1.05))
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_IBIPupilCovariance_alltrials.svg')
 
+norm_ibi_stress_mean = ibi_stress_mean 
+norm_pupil_stress_mean = pupil_stress_mean 
+norm_ibi_reg_before_mean = ibi_reg_before_mean 
+norm_pupil_reg_before_mean = pupil_reg_before_mean 
 
 norm_ibi_stress_mean = (ibi_stress_mean - np.nanmin(ibi_stress_mean + ibi_reg_before_mean))/np.nanmax(ibi_stress_mean + ibi_reg_before_mean - np.nanmin(ibi_stress_mean + ibi_reg_before_mean))
 norm_pupil_stress_mean = (pupil_stress_mean - np.nanmin(pupil_stress_mean + pupil_reg_before_mean))/np.nanmax(pupil_stress_mean + pupil_reg_before_mean - np.nanmin(pupil_stress_mean + pupil_reg_before_mean))
@@ -684,4 +689,3 @@ plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(blo
 
 
 plt.close("all")
-hdf.close()
