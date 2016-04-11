@@ -32,7 +32,7 @@ Load behavior data
 '''
 ## self.target_index = 1 for instructed, 2 for free choice
 ## self.stress_trial =1 for stress trial, 0 for regular trial
-state_time, ind_center_states, ind_check_reward_states, all_instructed_or_freechoice, all_stress_or_not, trial_success, target, reward = FreeChoiceBehavior_withStressTrials(hdf_location)
+state_time, ind_center_states, ind_check_reward_states, all_instructed_or_freechoice, all_stress_or_not, successful_stress_or_not,trial_success, target, reward = FreeChoiceBehavior_withStressTrials(hdf_location)
 
 # Total number of trials
 num_trials = ind_center_states.size
