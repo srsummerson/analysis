@@ -15,12 +15,12 @@ from spectralAnalysis import TrialAveragedPSD
 
 
 # Set up code for particular day and block
-hdf_filename = 'mari20160411_08_te1975.hdf'
-filename = 'Mario20160411'
+hdf_filename = 'mari20160409_02_te1956.hdf'
+filename = 'Mario20160409'
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
 #hdf_location = hdffilename
-block_num = 3
+block_num = 1
 stim_freq = 100
 
 lfp1_channels = [34, 39, 44, 45, 71, 76, 80, 82, 84, 90, 93, 94, 95, 96]
@@ -659,6 +659,8 @@ cbar = plt.colorbar(sm_stress,ticks=[0,1], orientation='vertical')
 cbar.ax.set_xticklabels(['Early', 'Late'])  # horizontal colorbar
 #plt.ylim((-0.05,1.05))
 #plt.xlim((-0.05,1.05))
+plt.ylim((-4,3))
+plt.xlim((0.32,0.46))
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_IBIPupilCovariance.svg')
 
 plt.figure()
