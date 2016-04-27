@@ -68,9 +68,9 @@ def computePSTH(spike_file1,spike_file2,times,window_before=1,window_after=2, bi
 			channel_spikes = [entry for entry in spike_file2 if (entry[1]==channel)]
 		print channel
 		units = [spike[2] for spike in channel_spikes]
-		print units
 		unit_vals = set(units)  # number of units
-		unit_vals.remove(0) 	# value 0 are units marked as noise events
+		if len(unit_vals) > 0:
+			unit_vals.remove(0) 	# value 0 are units marked as noise events
 
 		for unit in unit_vals:
 			unit_name = 'Ch'+str(channel) +'_' + str(unit)
