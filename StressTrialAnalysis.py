@@ -15,12 +15,12 @@ from spectralAnalysis import TrialAveragedPSD
 
 
 # Set up code for particular day and block
-hdf_filename = 'mari20160409_07_te1961.hdf'
-filename = 'Mario20160409'
+hdf_filename = 'mari20160426_06_te2048.hdf'
+filename = 'Mario20160426'
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
 #hdf_location = hdffilename
-block_num = 3
+block_num = 1
 stim_freq = 100
 
 lfp1_channels = [34, 39, 44, 45, 71, 76, 80, 82, 84, 90, 93, 94, 95, 96]
@@ -318,7 +318,7 @@ Process LFP data and find PSDs.
 '''
 Fs = hdeeg_samprate
 density_length = 30
-plt.figure()
+
 for chann in hdeeg.keys():
 	freq, trial_power_stress = TrialAveragedPSD(hdeeg, chann, Fs, hdeeg_ind_successful_stress, samples_hdeeg_successful_stress, row_ind_successful_stress, stim_freq)
 	freq, trial_power_reg = TrialAveragedPSD(hdeeg, chann, Fs, hdeeg_ind_successful_reg_before, samples_hdeeg_successful_reg, row_ind_successful_reg, stim_freq)
@@ -327,11 +327,12 @@ for chann in hdeeg.keys():
 	trial_power_std_stress = np.nanstd(trial_power_stress,axis=1)
 	trial_power_avg_reg = np.nanmean(trial_power_reg,axis=1)
 	trial_power_std_reg = np.nanstd(trial_power_reg,axis=1)
-
+	plt.figure()
 	plt.plot(freq[0:density_length],trial_power_avg_stress,'r',label='Stress Trials') # plotting the spectrum
 	plt.fill_between(freq[0:density_length],trial_power_avg_stress - trial_power_std_stress,trial_power_avg_stress +trial_power_std_stress,facecolor='red',linewidth=0.1,alpha=0.5)
 	plt.plot(freq[0:density_length],trial_power_avg_reg,'b',label='Regular Trials')
 	plt.fill_between(freq[0:density_length],trial_power_avg_reg - trial_power_std_reg,trial_power_avg_reg +trial_power_std_reg,facecolor='blue',linewidth=0.1,alpha=0.5)
+	
 	plt.xlim((0, 50))
 	plt.xlabel('Freq (Hz)')
 	plt.ylabel('Normalized PSD')
