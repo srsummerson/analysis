@@ -4,7 +4,7 @@ import tables
 from neo import io
 from plexon import plexfile
 from PulseMonitorData import findIBIs
-from basicAnalysis import computeSTA, computePSTH
+from basicAnalysis import computeSTA, computePSTH, computeSpikeRatesPerChannel
 from scipy import signal
 from scipy import stats
 from matplotlib import mlab
@@ -104,6 +104,7 @@ dio_tstart = dio_recording_start/dio_freq # starting time in seconds
 state_row_ind_successful_stress = state_time[row_ind_successful_stress]
 state_row_ind_successful_reg = state_time[row_ind_successful_reg]
 state_row_ind_stress = state_time[row_ind_stress]
+state_row_ind_reg = state_time[row_ind_reg]
 
 time_successful_stress = np.zeros(len(row_ind_successful_stress))
 time_successful_reg = np.zeros(len(row_ind_successful_reg))
@@ -115,6 +116,14 @@ for i in range(0,len(row_ind_successful_stress)):
 ind_start_all_stress = row_ind_stress[0]
 hdf_index_start_stress = np.argmin(np.abs(hdf_rows - state_row_ind_stress[0]))
 time_start_stress = dio_tdt_sample[hdf_index_start_stress]/dio_freq
+hdf_index_end_stress = np.argmin(np.abs(hdf_rows - state_row_ind_stress[-1]))
+time_end_stress = dio_tdt_sample[hdf_index_end_stress]/dio_freq
+
+hdf_index_start_reg = np.argmin(np.abs(hdf_rows - state_row_ind_reg[0]))
+time_start_reg = dio_tdt_sample[hdf_index_start_reg]/dio_freq
+hdf_index_end_reg = np.argmin(np.abs(hdf_rows - state_row_ind_reg[-1]))
+time_end_reg = dio_tdt_sample[hdf_index_end_reg]/dio_freq
+
 for i in range(0,len(row_ind_successful_reg)):
 	hdf_index = np.argmin(np.abs(hdf_rows - state_row_ind_successful_reg[i]))
 	time_successful_reg[i] = dio_tdt_sample[hdf_index]/dio_freq
@@ -125,8 +134,10 @@ binsize = 100
 
 psth_stress, smooth_psth_stress = computePSTH(spike_file1,spike_file2,time_successful_stress,window_before,window_after, binsize)
 psth_reg, smooth_psth_reg = computePSTH(spike_file1,spike_file2,time_successful_reg,window_before,window_after, binsize)
-
 psth_time_window = np.arange(-window_before,window_after-float(binsize)/1000,float(binsize)/1000)
+
+spikerates_stress, spikerates_sem_stress, labels_stress = computeSpikeRatesPerChannel(spike_file1,spike_file2,time_start_stress,time_end_stress)
+spikerates_reg, spikerates_sem_reg, labels_reg = computeSpikeRatesPerChannel(spike_file1,spike_file2,time_start_reg,time_end_reg)
 
 cmap_stress = mpl.cm.autumn
 plt.figure()
@@ -134,6 +145,7 @@ for i in range(len(psth_stress)):
 	unit_name = psth_stress.keys()[i]
 	plt.subplot(1,2,1)
 	plt.plot(psth_time_window,psth_stress[unit_name],color=cmap_stress(i/float(len(psth_stress))))
+for i in range(len(psth_reg)):
 	plt.subplot(1,2,2)
 	plt.plot(psth_time_window,psth_reg[unit_name],color=cmap_stress(i/float(len(psth_stress))))
 plt.subplot(1,2,1)
@@ -145,4 +157,11 @@ plt.title('Regular')
 plt.xlabel('Time (s)')
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_PSTH-Stress.svg')
 
+ind = np.range(len(spikerates_stress))
+plt.figure()
+plt.bar(ind, spikerates_stress, color = 'y', yerr = spikerates_sem_stress, label='Stress')
+plt.xticks(ind, labels_stress)
+plt.xlabel('Units')
+plt.ylabel('Avg Firing Rate (Hz)')
+plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_AvgFiringRate-Stress.svg')
 
