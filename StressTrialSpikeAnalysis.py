@@ -157,13 +157,13 @@ plt.title('Regular')
 plt.xlabel('Time (s)')
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_PSTH-Stress.svg')
 
-"""
-ind = np.range(len(spikerates_stress))
+
+ind = range(len(spikerates_stress))
 plt.figure()
 plt.bar(ind, spikerates_stress, color = 'y', yerr = spikerates_sem_stress, label='Stress')
 plt.xticks(ind, labels_stress)
 plt.xlabel('Units')
 plt.ylabel('Avg Firing Rate (Hz)')
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_AvgFiringRate-Stress.svg')
-"""
+
 plt.close()
