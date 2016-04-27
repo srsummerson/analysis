@@ -132,9 +132,16 @@ cmap_stress = mpl.cm.autumn
 plt.figure()
 for i in range(len(psth_stress)):
 	unit_name = psth_stress.keys()[i]
+	plt.subplot(1,2,1)
 	plt.plot(psth_time_window,psth_stress[unit_name],color=cmap_stress(i/float(len(psth_stress))))
+	plt.subplot(1,2,2)
+	plt.plot(psth_time_window,psth_reg[unit_name],color=cmap_stress(i/float(len(psth_stress))))
+plt.subplot(1,2,1)
 plt.title('Stress')
 plt.ylabel('Firing Rate (Hz)')
+plt.xlabel('Time (s)')
+plt.subplot(1,2,2)
+plt.title('Regular')
 plt.xlabel('Time (s)')
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_PSTH-Stress.svg')
 
