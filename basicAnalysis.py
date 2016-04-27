@@ -86,6 +86,44 @@ def computePSTH(spike_file1,spike_file2,times,window_before=1,window_after=2, bi
 
 	return psth, smooth_psth
 
+def computeSpikeRatesPerChannel(spike_file1,spike_file2,t_start,t_end):
+	'''
+	Input:
+		- spike_file1: sorted spikes for Channels 1 - 96
+		- spike_file2: sorted spikes for Channels 97 - 160
+		- t_start: time window start in units of seconds
+		- t_end: time window end in units of seconds
+	Output:
+		- spike_rates: an array of length equal to the number of units, containing the spike rate of each channel
+		- spike_sem: an array of length equal to the number of units, containing the SEM for the spike rate of each channel
+	'''
+	spike_rates = []
+	spike_sem = []
+	unit_labels = []
+
+	epoch_bins = np.arange(t_start,t_end,1)
+	num_bins = len(epoch_bins)
+
+	for channel in channels:
+		if channel < 97: 
+			channel_spikes = [entry for entry in spike_file1 if (t_start <= entry[0] <= t_end)&(entry[1]==channel)]
+		else:
+			channel_spikes = [entry for entry in spike_file2 if (t_start <= entry[0] <= t_end)&(entry[1]==channel)]
+		units = [spike[2] for spike in channel_spikes]
+		unit_vals = set(units)  # number of units
+		if len(unit_vals) > 0:
+			unit_vals.remove(0) 	# value 0 are units marked as noise events
+
+		for unit in unit_vals:
+			unit_name = 'Ch'+str(channel) +'_' + str(unit)
+			unit_labels.append(unit_name)
+			spike_times = [spike[0] for spike in channel_spikes if (spike[2]==unit)]
+			counts, bins = np.histogram(spike_times,epoch_bins)
+			spike_rates.append(np.nanmean(counts))
+			spike_sem.append(np.nanstd(counts)/num_bins)
+
+	return spike_rates, spike_sem, unit_labels
+
 def plot_point_cov(points, nstd=2, ax=None, **kwargs):
 	"""
 	Plots an `nstd` sigma ellipse based on the mean and covariance of a point
