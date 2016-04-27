@@ -97,6 +97,8 @@ def computeSpikeRatesPerChannel(spike_file1,spike_file2,t_start,t_end):
 		- spike_rates: an array of length equal to the number of units, containing the spike rate of each channel
 		- spike_sem: an array of length equal to the number of units, containing the SEM for the spike rate of each channel
 	'''
+	channels = np.arange(1,161)
+	
 	spike_rates = []
 	spike_sem = []
 	unit_labels = []
