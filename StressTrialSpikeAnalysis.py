@@ -20,11 +20,13 @@ plx_filename1 = 'Offline_eNe1.plx'
 plx_filename2 = 'Offline_eNe2.plx'
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
-plx_location1 = '/home/srsummerson/storage/tdt/'+filename+'/'+plx_filename1
-plx_location2 = '/home/srsummerson/storage/tdt/'+filename+'/'+plx_filename2
+
 
 #hdf_location = hdf_filename
 block_num = 1
+
+plx_location1 = '/home/srsummerson/storage/tdt/'+filename+'/'+'Block-'+ str(block_num) + '/'+plx_filename1
+plx_location2 = '/home/srsummerson/storage/tdt/'+filename+'/'+'Block-'+ str(block_num) + '/'+plx_filename2
 
 # Get spike data
 plx1 = plexfile.openFile(plx_location1)
