@@ -115,7 +115,7 @@ hdf_index_start_stress = np.argmin(np.abs(hdf_rows - state_row_ind_stress[0]))
 time_start_stress = dio_tdt_sample[hdf_index_start_stress]/dio_freq
 for i in range(0,len(row_ind_successful_reg)):
 	hdf_index = np.argmin(np.abs(hdf_rows - state_row_ind_successful_reg[i]))
-	time_successful_reg[i] = dio_tdt_sample[hdf_index])/dio_freq
+	time_successful_reg[i] = dio_tdt_sample[hdf_index]/dio_freq
 
 psth_stress, smooth_psth_stress = computePSTH(spike_file1,spike_file2,time_successful_stress,window_before=1,window_after=2)
 psth_reg, smooth_psth_reg = computePSTH(spike_file1,spike_file2,time_successful_reg,window_before=1,window_after=2)
