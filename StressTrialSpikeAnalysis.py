@@ -108,8 +108,7 @@ time_successful_reg = np.zeros(len(row_ind_successful_reg))
 	
 for i in range(0,len(row_ind_successful_stress)):
 	hdf_index = np.argmin(np.abs(hdf_rows - state_row_ind_successful_stress[i]))
-	time_successful_stress[i] = dio_tdt_sample[hdf_index])/dio_freq
-
+	time_successful_stress[i] = dio_tdt_sample[hdf_index]/dio_freq
 
 ind_start_all_stress = row_ind_stress[0]
 hdf_index_start_stress = np.argmin(np.abs(hdf_rows - state_row_ind_stress[0]))
