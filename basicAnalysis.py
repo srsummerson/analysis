@@ -124,6 +124,7 @@ def computeSpikeRatesPerChannel(spike_file1,spike_file2,t_start,t_end):
 			spike_times = [spike[0] for spike in channel_spikes if (spike[2]==unit)]
 			counts, bins = np.histogram(spike_times,epoch_bins)
 			spike_rates.append(np.nanmean(counts))
+			print spike_rates
 			spike_sem.append(np.nanstd(counts)/num_bins)
 
 	return spike_rates, spike_sem, unit_labels
