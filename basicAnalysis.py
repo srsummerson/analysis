@@ -1,8 +1,10 @@
 from plexon import plexfile
 from neo import io
 import numpy as np
+import scipy as sp
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
+from scipy import signal
 
 def computeSTA(spike_file,tdt_signal,channel,t_start,t_stop):
 	'''
@@ -40,7 +42,48 @@ def computeSTA(spike_file,tdt_signal,channel,t_start,t_stop):
 
 	return unit_sta
 
+def computePSTH(spike_file1,spike_file2,times,window_before=1,window_after=2, binsize=1):
+	'''
+	Input:
+		- spike_file1: sorted spikes for Channels 1 - 96
+		- spike_file2: sorted spikes for Channels 97 - 160
+		- times: time points to align peri-stimulus time histograms to
+		- window_before: amount of time before alignment points to include in time window, units in seconds
+		- window_after: amount of time after alignment points to include in time window, units in seconds
+		- binsize: time length of bins for estimating spike rates, units in milleseconds
+	Output:
+		- psth: peri-stimulus time histogram over window [window_before, window_after] averaged over trials
+	'''
+	channels = np.arange(1,161)
+	binsize = float(binsize)/1000
+	psth_time_window = np.arange(0,window_before+window_after-float(binsize),float(binsize))
+	boxcar_window = signal.boxcar(4)  # 2 ms before, 2 ms after for boxcar smoothing
+	psth = dict()
+	smooth_psth = dict()
 
+	for channel in channels:
+		if channel < 97: 
+			channel_spikes = [entry for entry in spike_file1 if (entry[1]==channel)]
+		else:
+			channel_spikes = [entry for entry in spike_file2 if (entry[1]==channel)]
+		units = [spike[2] for spike in channel_spikes]
+		unit_vals = set(units)  # number of units
+		unit_vals.remove(0) 	# value 0 are units marked as noise events
+
+		for unit in unit_vals:
+			unit_name = 'Ch'+str(channel) +'_' + str(unit)
+			spike_times = [spike[0] for spike in channel_spikes if (spike[2]==unit)]
+			psth[unit_name] = np.zeros(len(psth_time_window))
+			
+			for time in times:
+				epoch_bins = np.arange(time-window_before,time+window_after,float(binsize)) 
+				counts, bins = np.histogram(spike_times,epoch_bins)
+				psth[unit_name] += counts/binsize	# collect all rates into a N-dim array
+
+			psth[unit_name] = psth[unit_name]/len(times)
+			smooth_psth[unit_name] = np.convolve(psth[unit_name], boxcar_window,mode='same')
+
+	return psth, smooth_psth
 
 def plot_point_cov(points, nstd=2, ax=None, **kwargs):
 	"""
