@@ -132,8 +132,8 @@ window_before = 1
 window_after = 2
 binsize = 100
 
-psth_stress, smooth_psth_stress = computePSTH(spike_file1,spike_file2,time_successful_stress,window_before,window_after, binsize)
-psth_reg, smooth_psth_reg = computePSTH(spike_file1,spike_file2,time_successful_reg,window_before,window_after, binsize)
+psth_stress, smooth_psth_stress, labels_stress = computePSTH(spike_file1,spike_file2,time_successful_stress,window_before,window_after, binsize)
+psth_reg, smooth_psth_reg, labels_reg = computePSTH(spike_file1,spike_file2,time_successful_reg,window_before,window_after, binsize)
 psth_time_window = np.arange(-window_before,window_after-float(binsize)/1000,float(binsize)/1000)
 
 spikerates_stress, spikerates_sem_stress, labels_stress = computeSpikeRatesPerChannel(spike_file1,spike_file2,time_start_stress,time_end_stress)
@@ -157,6 +157,7 @@ plt.title('Regular')
 plt.xlabel('Time (s)')
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_PSTH-Stress.svg')
 
+"""
 ind = np.range(len(spikerates_stress))
 plt.figure()
 plt.bar(ind, spikerates_stress, color = 'y', yerr = spikerates_sem_stress, label='Stress')
@@ -164,4 +165,5 @@ plt.xticks(ind, labels_stress)
 plt.xlabel('Units')
 plt.ylabel('Avg Firing Rate (Hz)')
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_AvgFiringRate-Stress.svg')
-
+"""
+plt.close()

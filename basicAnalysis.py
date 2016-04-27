@@ -60,6 +60,7 @@ def computePSTH(spike_file1,spike_file2,times,window_before=1,window_after=2, bi
 	boxcar_window = signal.boxcar(4)  # 2 ms before, 2 ms after for boxcar smoothing
 	psth = dict()
 	smooth_psth = dict()
+	unit_labels = []
 
 	for channel in channels:
 		if channel < 97: 
@@ -75,6 +76,7 @@ def computePSTH(spike_file1,spike_file2,times,window_before=1,window_after=2, bi
 			unit_name = 'Ch'+str(channel) +'_' + str(unit)
 			spike_times = [spike[0] for spike in channel_spikes if (spike[2]==unit)]
 			psth[unit_name] = np.zeros(len(psth_time_window))
+			unit_labels.append(unit_name)
 			
 			for time in times:
 				epoch_bins = np.arange(time-window_before,time+window_after,float(binsize)) 
@@ -84,7 +86,7 @@ def computePSTH(spike_file1,spike_file2,times,window_before=1,window_after=2, bi
 			psth[unit_name] = psth[unit_name]/len(times)
 			smooth_psth[unit_name] = np.convolve(psth[unit_name], boxcar_window,mode='same')
 
-	return psth, smooth_psth
+	return psth, smooth_psth, unit_labels
 
 def computeSpikeRatesPerChannel(spike_file1,spike_file2,t_start,t_end):
 	'''
