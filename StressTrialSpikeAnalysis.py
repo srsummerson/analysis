@@ -136,8 +136,8 @@ psth_stress, smooth_psth_stress, labels_stress = computePSTH(spike_file1,spike_f
 psth_reg, smooth_psth_reg, labels_reg = computePSTH(spike_file1,spike_file2,time_successful_reg,window_before,window_after, binsize)
 psth_time_window = np.arange(-window_before,window_after-float(binsize)/1000,float(binsize)/1000)
 
-spikerates_stress, spikerates_sem_stress, labels_stress = computeSpikeRatesPerChannel(spike_file1,spike_file2,time_start_stress,time_end_stress)
-spikerates_reg, spikerates_sem_reg, labels_reg = computeSpikeRatesPerChannel(spike_file1,spike_file2,time_start_reg,time_end_reg)
+#spikerates_stress, spikerates_sem_stress, labels_stress = computeSpikeRatesPerChannel(spike_file1,spike_file2,time_start_stress,time_end_stress)
+#spikerates_reg, spikerates_sem_reg, labels_reg = computeSpikeRatesPerChannel(spike_file1,spike_file2,time_start_reg,time_end_reg)
 
 cmap_stress = mpl.cm.autumn
 plt.figure()
