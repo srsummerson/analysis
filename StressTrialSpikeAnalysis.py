@@ -119,15 +119,23 @@ for i in range(0,len(row_ind_successful_reg)):
 	hdf_index = np.argmin(np.abs(hdf_rows - state_row_ind_successful_reg[i]))
 	time_successful_reg[i] = dio_tdt_sample[hdf_index]/dio_freq
 
-psth_stress, smooth_psth_stress = computePSTH(spike_file1,spike_file2,time_successful_stress,window_before=1,window_after=2, binsize=100)
-psth_reg, smooth_psth_reg = computePSTH(spike_file1,spike_file2,time_successful_reg,window_before=1,window_after=2, binsize=100)
+window_before = 1
+window_after = 2
+binsize = 100
+
+psth_stress, smooth_psth_stress = computePSTH(spike_file1,spike_file2,time_successful_stress,window_before,window_after, binsize)
+psth_reg, smooth_psth_reg = computePSTH(spike_file1,spike_file2,time_successful_reg,window_before,window_after, binsize)
+
+psth_time_window = np.arange(-window_before,window_after-float(binsize)/1000,float(binsize)/1000)
 
 cmap_stress = mpl.cm.autumn
 plt.figure()
 for i in range(len(psth_stress)):
 	unit_name = psth_stress.keys()[i]
-	plt.plot(psth_stress[unit_name],color=cmap_stress(i/float(len(psth_stress))))
+	plt.plot(psth_time_window,psth_stress[unit_name],color=cmap_stress(i/float(len(psth_stress))))
 plt.title('Stress')
+plt.ylabel('Firing Rate (Hz)')
+plt.xlabel('Time (s)')
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_PSTH-Stress.svg')
 
 
