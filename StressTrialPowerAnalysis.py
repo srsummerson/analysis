@@ -4,7 +4,7 @@ import tables
 from neo import io
 from plexon import plexfile
 from PulseMonitorData import findIBIs
-from basicAnalysis import computeSTA, computePSTH, computeSpikeRatesPerChannel
+from basicAnalysis import computePSTH, computeSpikeRatesPerChannel, computePeakPowerPerChannel
 from scipy import signal
 from scipy import stats
 from matplotlib import mlab
@@ -85,6 +85,7 @@ lfp = dict()
 # Get Pulse and Pupil Data
 for sig in bl.segments[block_num-1].analogsignals:
 	if (sig.name[0:4] == 'LFP1'):
+		lfp_samprate = sig.sampling_rate.item()
 		channel = sig.channel_index
 		lfp[channel] = np.ravel(sig)
 	if (sig.name[0:4] == 'LFP2'):
@@ -106,6 +107,7 @@ dio_tdt_sample = np.ravel(hdf_times['tdt_samplenumber'])
 dio_freq = np.ravel(hdf_times['tdt_dio_samplerate'])
 dio_recording_start = hdf_times['tdt_recording_start']  # starting sample value
 dio_tstart = dio_recording_start/dio_freq # starting time in seconds
+lfp_dio_sample_num = (float(lfp_samprate)/float(dio_freq))*(dio_tdt_sample - 1) + 1
 
 state_row_ind_successful_stress = state_time[row_ind_successful_stress]
 state_row_ind_successful_reg = state_time[row_ind_successful_reg]
@@ -114,23 +116,36 @@ state_row_ind_reg = state_time[row_ind_reg]
 
 time_successful_stress = np.zeros(len(row_ind_successful_stress))
 time_successful_reg = np.zeros(len(row_ind_successful_reg))
+lfp_ind_successful_stress = np.zeros(len(row_ind_successful_stress))
+lfp_ind_successful_reg = np.zeros(len(row_ind_successful_reg))
 	
 for i in range(0,len(row_ind_successful_stress)):
 	hdf_index = np.argmin(np.abs(hdf_rows - state_row_ind_successful_stress[i]))
+	lfp_ind_successful_stress[i] = lfp_dio_sample_num[hdf_index]
 	time_successful_stress[i] = dio_tdt_sample[hdf_index]/dio_freq
+for i in range(0,len(row_ind_successful_reg)):
+	hdf_index = np.argmin(np.abs(hdf_rows - state_row_ind_successful_reg[i]))
+	lfp_ind_successful_reg[i] = lfp_dio_sample_num[hdf_index]
+	time_successful_reg[i] = dio_tdt_sample[hdf_index]/dio_freq
 
 ind_start_all_stress = row_ind_stress[0]
 hdf_index_start_stress = np.argmin(np.abs(hdf_rows - state_row_ind_stress[0]))
-time_start_stress = dio_tdt_sample[hdf_index_start_stress]/dio_freq
+sample_start_stress = dio_tdt_sample[hdf_index_start_stress]
+time_start_stress = sample_start_stress/dio_freq
 hdf_index_end_stress = np.argmin(np.abs(hdf_rows - state_row_ind_stress[-1]))
-time_end_stress = dio_tdt_sample[hdf_index_end_stress]/dio_freq
+sample_end_stress = dio_tdt_sample[hdf_index_end_stress]
+time_end_stress = sample_end_stress/dio_freq
 
 hdf_index_start_reg = np.argmin(np.abs(hdf_rows - state_row_ind_reg[0]))
-time_start_reg = dio_tdt_sample[hdf_index_start_reg]/dio_freq
+sample_start_reg = dio_tdt_sample[hdf_index_start_reg]
+time_start_reg = sample_start_reg/dio_freq
 hdf_index_end_reg = np.argmin(np.abs(hdf_rows - state_row_ind_reg[-1]))
-time_end_reg = dio_tdt_sample[hdf_index_end_reg]/dio_freq
+sample_end_reg = dio_tdt_sample[hdf_index_end_reg]
+time_end_reg = sample_end_reg/dio_freq
 
-for i in range(0,len(row_ind_successful_reg)):
-	hdf_index = np.argmin(np.abs(hdf_rows - state_row_ind_successful_reg[i]))
-	time_successful_reg[i] = dio_tdt_sample[hdf_index]/dio_freq
+peak_power_stress = computePeakPowerPerChannel(lfp, lfp_samprate,stim_freq,sample_start_stress,sample_end_stress,[1,20])
+peak_power_reg = computePeakPowerPerChannel(lfp, lfp_samprate,stim_freq,sample_start_reg,sample_end_reg,[1,20])
+
+
+
 

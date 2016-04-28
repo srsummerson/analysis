@@ -131,37 +131,33 @@ def computeSpikeRatesPerChannel(spike_file1,spike_file2,t_start,t_end):
 
 	return spike_rates, spike_sem, unit_labels
 
-def computePeakPowerPerChannel(lfp1,lfp2,Fs,stim_freq,t_start,t_end,freq_window):
+def computePeakPowerPerChannel(lfp,Fs,stim_freq,t_start,t_end,freq_window):
 	'''
 	Input:
-		- lfp1: LFP data for Channels 1 - 96
-		- lfp2: LFP data for Channels 97 - 160
-		- t_start: time window start in units of seconds
-		- t_end: time window end in units of seconds
+		- lfp: dictionary with one entry per channel of array of lfp samples
+		- Fs: sample frequency in Hz
+		- stim_freq: frequency to notch out when normalizing spectral power
+		- t_start: time window start in units of sample number
+		- t_end: time window end in units of sample number
 		- freq_window: frequency band over which to look for peak power, should be of form [f_low,f_high]
 	Output:
 		- peak_power: an array of length equal to the number of channels, containing the peak power of each channel in 
 					  the designated frequency band
 	'''
-	channels = np.zeros(160)
+	channels = lfp.keys()
 	f_low = freq_window[0]
 	f_high = freq_window[1]
 	counter = 0
 	
 	for chann in channels:
-		if channel < 97: 
-			lfp_snippet = lfp1[chann][t_start:t_end]
-		else:
-			channel2 = chann % 96
-			lfp_snippet = lfp2[chann][t_start:t_end]
+		lfp_snippet = lfp[chann][t_start:t_end]
 		num_timedom_samples = lfp_snippet.size
-		time = [float(t)/Fs for t in range(0,num_timedom_samples)]
- 		freq, Pxx_den = signal.welch(lfp_snippet, Fs, nperseg=512, noverlap=256)
+		freq, Pxx_den = signal.welch(lfp_snippet, Fs, nperseg=512, noverlap=256)
  		norm_freq = np.append(np.ravel(np.nonzero(np.less(freq,stim_freq-3))),np.ravel(np.nonzero(np.less(freq,stim_freq+3))))
  		total_power_Pxx_den = np.sum(Pxx_den[norm_freq])
  		Pxx_den = Pxx_den/total_power_Pxx_den
 
- 		freq_band = (f_low < freq < f_high)
+ 		freq_band = np.less(freq,f_high)&np.greater(freq,f_low)
  		freq_band_ind = np.ravel(np.nonzero(freq_band))
  		peak_power[counter] = np.max(Pxx_den[freq_band_ind])
  		counter += 1
