@@ -138,8 +138,10 @@ psth_time_window = np.arange(-window_before,window_after-float(binsize)/1000,flo
 
 print time_start_stress
 print time_end_stress
+print time_start_reg
+print time_end_reg
 spikerates_stress, spikerates_sem_stress, labels_stress = computeSpikeRatesPerChannel(spike_file1,spike_file2,time_start_stress,time_end_stress)
-#spikerates_reg, spikerates_sem_reg, labels_reg = computeSpikeRatesPerChannel(spike_file1,spike_file2,time_start_reg,time_end_reg)
+spikerates_reg, spikerates_sem_reg, labels_reg = computeSpikeRatesPerChannel(spike_file1,spike_file2,time_start_reg,time_end_reg)
 
 cmap_stress = mpl.cm.autumn
 plt.figure()
@@ -160,10 +162,17 @@ plt.xlabel('Time (s)')
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_PSTH-Stress.svg')
 
 
-ind = range(len(spikerates_stress))
+ind_stress = range(len(spikerates_stress))
+ind_reg = range(len(spikerates_reg))
 plt.figure()
+plt.subplot(1,2,1)
 plt.bar(ind, spikerates_stress, color = 'y', yerr = spikerates_sem_stress, label='Stress')
 plt.xticks(ind, labels_stress)
+plt.xlabel('Units')
+plt.ylabel('Avg Firing Rate (Hz)')
+plt.subplot(1,2,2)
+plt.bar(ind, spikerates_reg, color = 'y', yerr = spikerates_sem_reg, label='Stress')
+plt.xticks(ind, labels_reg)
 plt.xlabel('Units')
 plt.ylabel('Avg Firing Rate (Hz)')
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_AvgFiringRate-Stress.svg')
