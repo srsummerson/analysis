@@ -168,7 +168,7 @@ spikerates_reg = np.array(spikerates_reg)[ind_stress_sorted]
 spikerates_stress = np.array(spikerates_stress)[ind_stress_sorted]
 spikerates_sem_reg = np.array(spikerates_sem_reg)[ind_stress_sorted]
 spikerates_sem_stress = np.array(spikerates_sem_stress)[ind_stress_sorted]
-labels_reg = labels_reg[ind_stress_sorted]
+labels_reg = np.array(labels_reg)[ind_stress_sorted]
 
 labels_all = list(set(labels_stress+labels_reg))
 width = float(0.55)
