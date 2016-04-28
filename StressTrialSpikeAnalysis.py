@@ -145,17 +145,20 @@ plt.figure()
 for i in range(len(psth_stress)):
 	unit_name = psth_stress.keys()[i]
 	plt.subplot(1,2,1)
-	plt.plot(psth_time_window,psth_stress[unit_name],color=cmap_stress(i/float(len(psth_stress))))
+	plt.plot(psth_time_window,psth_stress[unit_name],color=cmap_stress(i/float(len(psth_stress))),label=unit_name)
 for i in range(len(psth_reg)):
+	unit_name = psth_reg.keys()[i]
 	plt.subplot(1,2,2)
-	plt.plot(psth_time_window,psth_reg[unit_name],color=cmap_stress(i/float(len(psth_stress))))
+	plt.plot(psth_time_window,psth_reg[unit_name],color=cmap_stress(i/float(len(psth_stress))),label='unit_name')
 plt.subplot(1,2,1)
 plt.title('Stress')
 plt.ylabel('Firing Rate (Hz)')
 plt.xlabel('Time (s)')
+plt.legend()
 plt.subplot(1,2,2)
 plt.title('Regular')
 plt.xlabel('Time (s)')
+plt.legend()
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_PSTH-Stress.svg')
 
 
@@ -181,6 +184,7 @@ plt.xticks(ind_reg[:num_units], labels_reg[:num_units])
 plt.bar(ind_stress[:num_units] + width, spikerates_stress[:num_units], width/2, color = 'y', yerr = spikerates_sem_stress[:num_units], label='Stress')
 plt.xlabel('Units')
 plt.ylabel('Avg Firing Rate (Hz)')
+plt.legend()
 plt.subplot(2,2,2)
 plt.bar(ind_reg[num_units:2*num_units], spikerates_reg[num_units:2*num_units], width/2, color = 'm', yerr = spikerates_sem_reg[num_units:2*num_units], label='Regular')
 plt.xticks(ind_reg[num_units:2*num_units], labels_reg[num_units:2*num_units])
