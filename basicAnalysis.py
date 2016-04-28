@@ -120,6 +120,7 @@ def computeSpikeRatesPerChannel(spike_file1,spike_file2,t_start,t_end):
 
 		for unit in unit_vals:
 			unit_name = 'Ch'+str(channel) +'_' + str(unit)
+			print unit_name
 			unit_labels.append(unit_name)
 			spike_times = [spike[0] for spike in channel_spikes if (spike[2]==unit)]
 			counts, bins = np.histogram(spike_times,epoch_bins)
