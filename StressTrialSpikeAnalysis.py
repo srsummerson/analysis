@@ -169,7 +169,7 @@ spikerates_sem_reg = np.array(spikerates_sem_reg)[ind_stress_sorted]
 spikerates_sem_stress = np.array(spikerates_sem_stress)[ind_stress_sorted]
 
 labels_all = list(set(labels_stress+labels_reg))
-width = float(0.35)
+width = float(0.55)
 plt.figure()
 #plt.subplot(1,2,1)
 plt.bar(ind_reg + width, spikerates_reg, width/2, color = 'm', yerr = spikerates_sem_reg, label='Regular')
