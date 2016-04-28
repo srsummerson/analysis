@@ -18,23 +18,12 @@ from probabilisticRewardTaskPerformance import FreeChoiceBehavior_withStressTria
 # Set up code for particular day and block
 hdf_filename = 'mari20160418_04_te2002.hdf'
 filename = 'Mario20160418'
-plx_filename1 = 'Offline_eNe1.plx'
-plx_filename2 = 'Offline_eNe2.plx'
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
-
+stim_freq = 100
 
 #hdf_location = hdf_filename
 block_num = 1
-
-plx_location1 = '/home/srsummerson/storage/tdt/'+filename+'/'+'Block-'+ str(block_num) + '/'+plx_filename1
-plx_location2 = '/home/srsummerson/storage/tdt/'+filename+'/'+'Block-'+ str(block_num) + '/'+plx_filename2
-
-# Get spike data
-plx1 = plexfile.openFile(plx_location1)
-spike_file1 = plx1.spikes[:].data
-plx2 = plexfile.openFile(plx_location2)
-spike_file2 = plx2.spikes[:].data
 
 # Load behavior data
 ## self.stress_trial =1 for stress trial, 0 for regular trial
@@ -88,6 +77,23 @@ for i in range(0,len(row_ind_successful_reg)):
 	row_ind_end_reg[ind] = row_ind_successful_reg_reward[i]
 response_time_reg = (state_time[row_ind_end_reg] - state_time[row_ind_reg])/float(60)
 
+# Loading LFP data
+r = io.TdtIO(TDT_tank)
+bl = r.read_block(lazy=False,cascade=True)
+print "File read."
+lfp = dict()
+# Get Pulse and Pupil Data
+for sig in bl.segments[block_num-1].analogsignals:
+	if (sig.name[0:4] == 'LFP1'):
+		channel = sig.channel_index
+		lfp[channel] = np.ravel(sig)
+	if (sig.name[0:4] == 'LFP2'):
+		channel = sig.channel_index + 96
+		lfp[channel] = np.ravel(sig)
+
+'''
+stopped here 
+'''
 
 # Load syncing data for hdf file and TDT recording
 hdf_times = dict()
@@ -128,61 +134,3 @@ for i in range(0,len(row_ind_successful_reg)):
 	hdf_index = np.argmin(np.abs(hdf_rows - state_row_ind_successful_reg[i]))
 	time_successful_reg[i] = dio_tdt_sample[hdf_index]/dio_freq
 
-window_before = 1
-window_after = 2
-binsize = 100
-
-psth_stress, smooth_psth_stress, labels_stress = computePSTH(spike_file1,spike_file2,time_successful_stress,window_before,window_after, binsize)
-psth_reg, smooth_psth_reg, labels_reg = computePSTH(spike_file1,spike_file2,time_successful_reg,window_before,window_after, binsize)
-psth_time_window = np.arange(-window_before,window_after-float(binsize)/1000,float(binsize)/1000)
-
-
-spikerates_stress, spikerates_sem_stress, labels_stress = computeSpikeRatesPerChannel(spike_file1,spike_file2,time_start_stress,time_end_stress)
-spikerates_reg, spikerates_sem_reg, labels_reg = computeSpikeRatesPerChannel(spike_file1,spike_file2,time_start_reg,time_end_reg)
-
-cmap_stress = mpl.cm.autumn
-plt.figure()
-for i in range(len(psth_stress)):
-	unit_name = psth_stress.keys()[i]
-	plt.subplot(1,2,1)
-	plt.plot(psth_time_window,psth_stress[unit_name],color=cmap_stress(i/float(len(psth_stress))))
-for i in range(len(psth_reg)):
-	plt.subplot(1,2,2)
-	plt.plot(psth_time_window,psth_reg[unit_name],color=cmap_stress(i/float(len(psth_stress))))
-plt.subplot(1,2,1)
-plt.title('Stress')
-plt.ylabel('Firing Rate (Hz)')
-plt.xlabel('Time (s)')
-plt.subplot(1,2,2)
-plt.title('Regular')
-plt.xlabel('Time (s)')
-plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_PSTH-Stress.svg')
-
-
-ind_stress = np.arange(len(spikerates_stress))
-ind_reg = np.arange(len(spikerates_reg))
-
-ind_stress_sorted = np.argsort(spikerates_reg)
-ind_stress_sorted = np.flipud(ind_stress_sorted)
-spikerates_reg = np.array(spikerates_reg)[ind_stress_sorted]
-spikerates_stress = np.array(spikerates_stress)[ind_stress_sorted]
-spikerates_sem_reg = np.array(spikerates_sem_reg)[ind_stress_sorted]
-spikerates_sem_stress = np.array(spikerates_sem_stress)[ind_stress_sorted]
-labels_reg = np.array(labels_reg)[ind_stress_sorted]
-
-width = float(0.55)
-plt.figure()
-#plt.subplot(1,2,1)
-plt.bar(ind_reg + width, spikerates_reg, width/2, color = 'm', yerr = spikerates_sem_reg, label='Regular')
-plt.xticks(ind_reg, labels_reg)
-plt.xlabel('Units')
-plt.ylabel('Avg Firing Rate (Hz)')
-#plt.subplot(1,2,2)
-plt.bar(ind_stress, spikerates_stress, width/2, color = 'y', yerr = spikerates_sem_stress, label='Stress')
-#plt.xticks(ind_stress, labels_stress)
-plt.xlabel('Units')
-plt.ylabel('Avg Firing Rate (Hz)')
-plt.legend()
-plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_AvgFiringRate-Stress.svg')
-
-plt.close()
