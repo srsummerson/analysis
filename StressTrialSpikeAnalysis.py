@@ -159,22 +159,29 @@ plt.xlabel('Time (s)')
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_PSTH-Stress.svg')
 
 
-ind_stress = range(len(spikerates_stress))
-ind_reg = range(len(spikerates_reg))
+ind_stress = np.arange(len(spikerates_stress))
+ind_reg = np.arange(len(spikerates_reg))
+
+ind_stress_sorted = np.argsort(spikerates_reg)
+spikerates_reg = spikerates_reg[ind_stress_sorted]
+spikerates_stress = spikerates_stress[ind_stress_sorted]
+spikerates_sem_reg = spikerates_sem_reg[ind_stress_sorted]
+spikerates_sem_stress = spikerates_sem_stress[ind_stress_sorted]
 
 labels_all = list(set(labels_stress+labels_reg))
 width = float(0.35)
 plt.figure()
 #plt.subplot(1,2,1)
+plt.bar(ind_reg + width, spikerates_reg, width/2, color = 'm', yerr = spikerates_sem_reg, label='Regular')
+plt.xticks(ind_reg, labels_reg)
+plt.xlabel('Units')
+plt.ylabel('Avg Firing Rate (Hz)')
+#plt.subplot(1,2,2)
 plt.bar(ind_stress, spikerates_stress, width/2, color = 'y', yerr = spikerates_sem_stress, label='Stress')
 plt.xticks(ind_stress, labels_stress)
 plt.xlabel('Units')
 plt.ylabel('Avg Firing Rate (Hz)')
-#plt.subplot(1,2,2)
-plt.bar(ind_reg + width/2, spikerates_reg, width/2, color = 'm', yerr = spikerates_sem_reg, label='Regular')
-plt.xticks(ind_reg, labels_reg)
-plt.xlabel('Units')
-plt.ylabel('Avg Firing Rate (Hz)')
+
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_AvgFiringRate-Stress.svg')
 
 plt.close()
