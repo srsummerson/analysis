@@ -163,10 +163,12 @@ ind_stress = np.arange(len(spikerates_stress))
 ind_reg = np.arange(len(spikerates_reg))
 
 ind_stress_sorted = np.argsort(spikerates_reg)
+ind_stress_sorted = np.fliplr(ind_stress_sorted)
 spikerates_reg = np.array(spikerates_reg)[ind_stress_sorted]
 spikerates_stress = np.array(spikerates_stress)[ind_stress_sorted]
 spikerates_sem_reg = np.array(spikerates_sem_reg)[ind_stress_sorted]
 spikerates_sem_stress = np.array(spikerates_sem_stress)[ind_stress_sorted]
+labels_reg = labels_reg[ind_stress_sorted]
 
 labels_all = list(set(labels_stress+labels_reg))
 width = float(0.55)
@@ -178,10 +180,10 @@ plt.xlabel('Units')
 plt.ylabel('Avg Firing Rate (Hz)')
 #plt.subplot(1,2,2)
 plt.bar(ind_stress, spikerates_stress, width/2, color = 'y', yerr = spikerates_sem_stress, label='Stress')
-plt.xticks(ind_stress, labels_stress)
+#plt.xticks(ind_stress, labels_stress)
 plt.xlabel('Units')
 plt.ylabel('Avg Firing Rate (Hz)')
-
+plt.legend()
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_AvgFiringRate-Stress.svg')
 
 plt.close()
