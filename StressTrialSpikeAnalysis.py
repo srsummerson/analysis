@@ -163,7 +163,7 @@ ind_stress = np.arange(len(spikerates_stress))
 ind_reg = np.arange(len(spikerates_reg))
 
 ind_stress_sorted = np.argsort(spikerates_reg)
-ind_stress_sorted = np.fliplr(ind_stress_sorted)
+ind_stress_sorted = np.flipud(ind_stress_sorted)
 spikerates_reg = np.array(spikerates_reg)[ind_stress_sorted]
 spikerates_stress = np.array(spikerates_stress)[ind_stress_sorted]
 spikerates_sem_reg = np.array(spikerates_sem_reg)[ind_stress_sorted]
