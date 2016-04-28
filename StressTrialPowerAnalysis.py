@@ -4,7 +4,7 @@ import tables
 from neo import io
 from plexon import plexfile
 from PulseMonitorData import findIBIs
-from basicAnalysis import computePSTH, computeSpikeRatesPerChannel, computePeakPowerPerChannel
+from basicAnalysis import computePSTH, computeSpikeRatesPerChannel, computePeakPowerPerChannel, ElectrodeGridMat
 from scipy import signal
 from scipy import stats
 from matplotlib import mlab
@@ -152,24 +152,30 @@ cmap.set_bad(color='k', alpha = 1.)
 
 # Set up matrix for plotting peak powers
 dx, dy = 1, 1
-y, x = [slice(0,15,dy),
+y, x = np.mgrid[slice(0,15,dy),
 		slice(0,14,dx)]
 
-power_mat_stress = ElectrodeGridMat(peak_power_stress) 
+power_mat_stress = ElectrodeGridMat(peak_power_stress)
+power_mat_reg = ElectrodeGridMat(peak_power_reg)
+power_mat_stress = np.ma.masked_invalid(power_mat_stress)
+power_mat_reg = np.ma.masked_invalid(power_mat_reg)
+
+cmap = plt.get_cmap('RdBu')
+cmap.set_bad(color='k', alpha = 1.)
+
+z_max = np.max(np.append(peak_power_stress,peak_power_reg))
+z_min = np.min(np.append(peak_power_stress,peak_power_reg))
+
+plt.figure()
+plt.subplot(1,2,1)
+plt.pcolormesh(x,y,power_mat_reg,cmap=cmap,vmin=z_min,vmax = z_max)
+plt.title('Regular Block')
+plt.subplot(1,2,2)
+plt.pcolormesh(x,y,power_mat_stress,cmap=cmap,vmin=z_min,vmax = z_max)
+plt.title('Regular Block')
+plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_PeakPowers.svg')
+
+plt.close()
 
 
-
-def ElectrodeGridMat(powers):
-	'''
-	Input: 
-		- powers: array of peak powers, length equal to the number of channels
-	Output:
-		- peak powers arranged in a matrix according to their position in the semi-chronic array
-	'''
-	power_mat = np.zeros([15,14])
-	power_mat[:,:] = np.nan 	# all entries initially nan until they are update with peak powers
-
-	channels = np.arange(1,161)
-
-	return power_mat
 
