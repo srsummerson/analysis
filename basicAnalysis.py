@@ -66,7 +66,8 @@ def computePSTH(spike_file1,spike_file2,times,window_before=1,window_after=2, bi
 		if channel < 97: 
 			channel_spikes = [entry for entry in spike_file1 if (entry[1]==channel)]
 		else:
-			channel_spikes = [entry for entry in spike_file2 if (entry[1]==channel)]
+			channel2 = channel % 96
+			channel_spikes = [entry for entry in spike_file2 if (entry[1]==channel2)]
 		units = [spike[2] for spike in channel_spikes]
 		unit_vals = set(units)  # number of units
 		if len(unit_vals) > 0:
@@ -112,7 +113,8 @@ def computeSpikeRatesPerChannel(spike_file1,spike_file2,t_start,t_end):
 		if channel < 97: 
 			channel_spikes = [entry for entry in spike_file1 if (t_start <= entry[0] <= t_end)&(entry[1]==channel)]
 		else:
-			channel_spikes = [entry for entry in spike_file2 if (t_start <= entry[0] <= t_end)&(entry[1]==channel)]
+			channel2 = channel % 96
+			channel_spikes = [entry for entry in spike_file2 if (t_start <= entry[0] <= t_end)&(entry[1]==channel2)]
 		units = [spike[2] for spike in channel_spikes]
 		unit_vals = set(units)  # number of units
 		if len(unit_vals) > 0:
