@@ -259,3 +259,48 @@ def plot_cov_ellipse(cov, pos, volume=.5, ax=None, fc='none', ec=[0,0,0], a=1, l
 
     ax.add_artist(ellip)
     return ellip
+
+def ElectrodeGridMat(powers):
+	'''
+	Input: 
+		- powers: array of peak powers, length equal to the number of channels
+	Output:
+		- peak powers arranged in a matrix according to their position in the semi-chronic array
+	'''
+	power_mat = np.zeros([15,14])
+	power_mat[:,:] = np.nan 	# all entries initially nan until they are update with peak powers
+	channels = np.arange(1,161)
+
+	row_zero = np.array([31, 15, 29, 13, 27, 11, 25, 9])
+	row_one = np.array([32, 16, 30, 14, 28, 12, 26, 10])
+	row_two = np.array([24, 8, 22, 6, 20, 4, 18, 2, 23])
+	row_three = np.array([7, 21, 5, 19, 3, 17, 1, 63, 47])
+	row_four = np.array([61, 45, 59, 43, 57, 41, 64, 48, 62, 46])
+	row_five = np.array([60, 44, 58, 42, 56, 40, 54, 38, 52, 36])
+	row_six = np.array([50, 34, 55, 39, 53, 37, 51, 35, 49, 33, 95])
+	row_seven = np.array([79, 93, 77, 91, 75, 89, 73, 96, 80, 94, 78])
+	row_eight = np.array([92, 76, 90, 74, 88, 72, 86, 70, 84, 68, 82, 66])
+	row_nine = np.array([87, 71, 85, 69, 83, 67, 81, 65, 127, 111, 125, 109])
+	row_ten = np.array([123, 107, 121, 105, 128, 112, 126, 110, 124, 108, 122, 106, 120])
+	row_eleven = np.array([104, 118, 102, 116, 100, 114, 98, 119, 103, 117, 101, 115])
+	row_twelve = np.array([99, 113, 97, 159, 143, 157, 141, 155, 139, 153, 137, 160])
+	row_thirteen = np.array([144, 158, 142, 156, 140, 154, 138, 152, 136, 150, 134])
+	row_fourteen = np.array([148, 132, 146, 130, 151, 135, 149, 133, 147])
+
+	power_mat[0,0:8] = powers[row_zero]
+	power_mat[1,0:8] = powers[row_one]
+	power_mat[2,0:9] = powers[row_two]
+	power_mat[3,0:9] = powers[row_three]
+	power_mat[4,0:10] = powers[row_four]
+	power_mat[5,0:10] = powers[row_five]
+	power_mat[6,0:11] = powers[row_six]
+	power_mat[7,0:11] = powers[row_seven]
+	power_mat[8,0:12] = powers[row_eight]
+	power_mat[9,0:12] = powers[row_nine]
+	power_mat[10,0:13] = powers[row_ten]
+	power_mat[11,1:13] = powers[row_eleven]
+	power_mat[12,2:14] = powers[row_twelve]
+	power_mat[13,3:14] = powers[row_thirteen]
+	power_mat[14,4:13] = powers[row_fourteen]
+	
+	return power_mat

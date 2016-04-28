@@ -146,6 +146,30 @@ time_end_reg = sample_end_reg/dio_freq
 peak_power_stress = computePeakPowerPerChannel(lfp, lfp_samprate,stim_freq,sample_start_stress,sample_end_stress,[1,20])
 peak_power_reg = computePeakPowerPerChannel(lfp, lfp_samprate,stim_freq,sample_start_reg,sample_end_reg,[1,20])
 
+# Set colormap for pcolormesh plots so that nan values are plotted with black
+cmap = mpl.cm.autumn
+cmap.set_bad(color='k', alpha = 1.)
+
+# Set up matrix for plotting peak powers
+dx, dy = 1, 1
+y, x = [slice(0,15,dy),
+		slice(0,14,dx)]
+
+power_mat_stress = ElectrodeGridMat(peak_power_stress) 
 
 
+
+def ElectrodeGridMat(powers):
+	'''
+	Input: 
+		- powers: array of peak powers, length equal to the number of channels
+	Output:
+		- peak powers arranged in a matrix according to their position in the semi-chronic array
+	'''
+	power_mat = np.zeros([15,14])
+	power_mat[:,:] = np.nan 	# all entries initially nan until they are update with peak powers
+
+	channels = np.arange(1,161)
+
+	return power_mat
 
