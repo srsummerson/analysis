@@ -200,6 +200,7 @@ plt.xticks(ind_reg[3*num_units:], labels_reg[3*num_units:])
 plt.bar(ind_stress[3*num_units:] + width, spikerates_stress[3*num_units:], width/2, color = 'y', yerr = spikerates_sem_stress[3*num_units:], label='Stress')
 plt.xlabel('Units')
 plt.ylabel('Avg Firing Rate (Hz)')
-plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_AvgFiringRate-Stress.svg')
 '''
+plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_AvgFiringRate-Stress.svg')
+
 plt.close()
