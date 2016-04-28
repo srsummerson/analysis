@@ -184,7 +184,6 @@ plt.bar(ind_stress[:num_units] + width, spikerates_stress[:num_units], width/2, 
 plt.xlabel('Units')
 plt.ylabel('Avg Firing Rate (Hz)')
 plt.legend()
-
 plt.subplot(2,2,2)
 plt.bar(ind_reg[num_units:2*num_units], spikerates_reg[num_units:2*num_units], width/2, color = 'm', yerr = spikerates_sem_reg[num_units:2*num_units], label='Regular')
 plt.xticks(ind_reg[num_units:2*num_units], labels_reg[num_units:2*num_units])
@@ -193,7 +192,6 @@ plt.ylabel('Avg Firing Rate (Hz)')
 plt.bar(ind_stress[num_units:2*num_units] + width, spikerates_stress[num_units:2*num_units], width/2, color = 'y', yerr = spikerates_sem_stress[num_units:2*num_units], label='Stress')
 plt.xlabel('Units')
 plt.ylabel('Avg Firing Rate (Hz)')
-
 plt.subplot(2,2,3)
 plt.bar(ind_reg[2*num_units:3*num_units], spikerates_reg[2*num_units:3*num_units], width/2, color = 'm', yerr = spikerates_sem_reg[2*num_units:3*num_units], label='Regular')
 plt.xticks(ind_reg[2*num_units:3*num_units], labels_reg[2*num_units:3*num_units])
@@ -202,7 +200,6 @@ plt.ylabel('Avg Firing Rate (Hz)')
 plt.bar(ind_stress[2*num_units:3*num_units] + width, spikerates_stress[2*num_units:3*num_units], width/2, color = 'y', yerr = spikerates_sem_stress[2*num_units:3*num_units], label='Stress')
 plt.xlabel('Units')
 plt.ylabel('Avg Firing Rate (Hz)')
-
 plt.subplot(2,2,4)
 plt.bar(ind_reg[3*num_units:], spikerates_reg[3*num_units:], width/2, color = 'm', yerr = spikerates_sem_reg[3*num_units:], label='Regular')
 plt.xticks(ind_reg[3*num_units:], labels_reg[3*num_units:])
