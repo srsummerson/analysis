@@ -105,7 +105,7 @@ def computeSpikeRatesPerChannel(spike_file1,spike_file2,t_start,t_end):
 	# setting up arrays of zeros as placeholders, picked 200 because it's likely greater than the number of units per recording
 	spike_rates = np.zeros(200)
 	spike_sem = np.zeros(200)
-	unit_labels = np.zeros(200)
+	unit_labels = []
 
 	epoch_bins = np.arange(t_start,t_end,1)
 	num_bins = len(epoch_bins)
@@ -124,7 +124,7 @@ def computeSpikeRatesPerChannel(spike_file1,spike_file2,t_start,t_end):
 		for unit in unit_vals:
 			unit_name = 'Ch'+str(channel) +'_' + str(unit)
 			print unit_name
-			unit_labels[counter] = unit_name
+			unit_labels.append(unit_name)
 			spike_times = [spike[0] for spike in channel_spikes if (spike[2]==unit)]
 			counts, bins = np.histogram(spike_times,epoch_bins)
 			spike_rates[counter] = np.nanmean(counts)
@@ -133,7 +133,7 @@ def computeSpikeRatesPerChannel(spike_file1,spike_file2,t_start,t_end):
 
 	spike_rates = spike_rates[:counter]
 	spike_sem = spike_sem[:counter]
-	unit_labels = unit_labels[:counter]
+	#unit_labels = unit_labels[:counter]
 
 	return spike_rates, spike_sem, unit_labels
 
