@@ -16,9 +16,10 @@ from probabilisticRewardTaskPerformance import FreeChoiceBehavior_withStressTria
 
 
 # Set up code for particular day and block
-hdf_filename = 'mari20160418_04_te2002.hdf'
-filename = 'Mario20160418'
-TDT_tank = '/home/srsummerson/storage/tdt/'+filename
+hdf_filename = 'mari20160424_03_te2035.hdf'
+filename = 'Mario20160424'
+#TDT_tank = '/home/srsummerson/storage/tdt/'+filename
+TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
 stim_freq = 100
 
@@ -168,24 +169,32 @@ cmap.set_bad(color='k', alpha = 1.)
 z_max = np.max(np.append(peak_power_stress,peak_power_reg))
 z_min = np.min(np.append(peak_power_stress,peak_power_reg))
 
-
+#z_max_diff = np.max(peak_power_stress - peak_power_reg)
+#z_min_diff = np.min(peak_power_stress - peak_power_reg)
+z_max_diff = 0.03
+z_min_diff = -0.03
 
 plt.figure()
 plt.subplot(1,2,1)
 plt.pcolormesh(x,y,power_mat_reg,cmap=cmap,vmin=z_min,vmax = z_max)
 plt.title('Regular Block')
 plt.ylabel('Peak Power: 1-20 Hz')
+plt.axis([x.min(),x.max(),y.min(),y.max()])
 plt.subplot(1,2,2)
 plt.pcolormesh(x,y,power_mat_stress,cmap=cmap,vmin=z_min,vmax = z_max)
 plt.title('Stress Block')
 plt.ylabel('Peak Power: 1-20 Hz')
+plt.axis([x.min(),x.max(),y.min(),y.max()])
+plt.colorbar()
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_PeakPowers.svg')
 
 plt.figure()
 plt.subplot(1,1,1)
-plt.pcolormesh(x,y,power_mat_diff,cmap=cmap,vmin= -z_max,vmax = z_max)
+plt.pcolormesh(x,y,power_mat_diff,cmap=cmap,vmin= z_min_diff,vmax = z_max_diff)
 plt.title('Difference in Peak Power: Stress - Regular')
 plt.ylabel('Peak Power: 1-20 Hz')
+plt.axis([x.min(),x.max(),y.min(),y.max()])
+plt.colorbar()
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_PeakPowerDifference.svg')
 
 
