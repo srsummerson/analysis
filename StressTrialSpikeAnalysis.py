@@ -145,20 +145,18 @@ cmap_stress = mpl.cm.autumn
 plt.figure()
 for i in range(len(psth_stress)):
 	unit_name = psth_stress.keys()[i]
-	if i % 2 == 0:
+	if i % 4 == 0:
 		plt.subplot(2,2,1)
-		plt.plot(psth_time_window,psth_stress[unit_name],color=cmap_stress(i/float(len(psth_stress))),label=unit_name)
-	if i % 2 == 1:
+		plt.plot(psth_time_window,smooth_psth_stress[unit_name],color=cmap_stress(i/float(len(psth_stress)/4)),label=unit_name)
+	if i % 4 == 1:
 		plt.subplot(2,2,3)
-		plt.plot(psth_time_window,psth_stress[unit_name],color=cmap_stress(i/float(len(psth_stress))), label=unit_name)
-for i in range(len(psth_reg)):
-	unit_name = psth_reg.keys()[i]
-	if i % 2 == 0:
+		plt.plot(psth_time_window,smooth_psth_stress[unit_name],color=cmap_stress(i/float(len(psth_stress)/4)), label=unit_name)
+	if i % 4 == 0:
 		plt.subplot(2,2,2)
-		plt.plot(psth_time_window,smooth_psth_reg[unit_name],color=cmap_stress(i/float(len(psth_reg))),label=unit_name)
-	if i % 2 == 1:
+		plt.plot(psth_time_window,smooth_psth_stress[unit_name],color=cmap_stress(i/float(len(psth_stress)/4)),label=unit_name)
+	if i % 4 == 1:
 		plt.subplot(2,2,4)
-		plt.plot(psth_time_window,psth_reg[unit_name],color=cmap_stress(i/float(len(psth_reg))), label=unit_name)
+		plt.plot(psth_time_window,smooth_psth_stress[unit_name],color=cmap_stress(i/float(len(psth_stress)/4)), label=unit_name)
 plt.subplot(2,2,1)
 plt.title('Stress')
 plt.ylabel('Firing Rate (Hz)')
@@ -178,6 +176,41 @@ plt.title('Regular')
 plt.xlabel('Time (s)')
 plt.legend()
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_PSTH-Stress.svg')
+
+plt.figure()
+for i in range(len(psth_reg)):
+	unit_name = psth_reg.keys()[i]
+	if i % 4 == 0:
+		plt.subplot(2,2,1)
+		plt.plot(psth_time_window,smooth_psth_reg[unit_name],color=cmap_stress(i/float(len(psth_reg)/4)),label=unit_name)
+	if i % 4 == 1:
+		plt.subplot(2,2,3)
+		plt.plot(psth_time_window,smooth_psth_reg[unit_name],color=cmap_stress(i/float(len(psth_reg)/4)), label=unit_name)
+	if i % 4 == 0:
+		plt.subplot(2,2,2)
+		plt.plot(psth_time_window,smooth_psth_reg[unit_name],color=cmap_stress(i/float(len(psth_reg)/4)),label=unit_name)
+	if i % 24 == 1:
+		plt.subplot(2,2,4)
+		plt.plot(psth_time_window,smooth_psth_reg[unit_name],color=cmap_stress(i/float(len(psth_reg)/4)), label=unit_name)
+plt.subplot(2,2,1)
+plt.title('Stress')
+plt.ylabel('Firing Rate (Hz)')
+plt.xlabel('Time (s)')
+plt.legend()
+plt.subplot(2,2,3)
+plt.title('Stress')
+plt.ylabel('Firing Rate (Hz)')
+plt.xlabel('Time (s)')
+plt.legend()
+plt.subplot(2,2,2)
+plt.title('Regular')
+plt.xlabel('Time (s)')
+plt.legend()
+plt.subplot(2,2,4)
+plt.title('Regular')
+plt.xlabel('Time (s)')
+plt.legend()
+plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_PSTH-Regular.svg')
 
 
 ind_stress = np.arange(len(spikerates_stress))
