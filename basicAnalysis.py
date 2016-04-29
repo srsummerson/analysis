@@ -54,10 +54,11 @@ def computePSTH(spike_file1,spike_file2,times,window_before=1,window_after=2, bi
 	Output:
 		- psth: peri-stimulus time histogram over window [window_before, window_after] averaged over trials
 	'''
+	boxcar_length = 4.
 	channels = np.arange(1,161)
 	binsize = float(binsize)/1000
 	psth_time_window = np.arange(0,window_before+window_after-float(binsize),float(binsize))
-	boxcar_window = signal.boxcar(4)  # 2 ms before, 2 ms after for boxcar smoothing
+	boxcar_window = signal.boxcar(boxcar_length)  # 2 ms before, 2 ms after for boxcar smoothing
 	psth = dict()
 	smooth_psth = dict()
 	unit_labels = []
@@ -85,7 +86,7 @@ def computePSTH(spike_file1,spike_file2,times,window_before=1,window_after=2, bi
 				psth[unit_name] += counts[0:len(psth_time_window)]/binsize	# collect all rates into a N-dim array
 
 			psth[unit_name] = psth[unit_name]/float(len(times))
-			smooth_psth[unit_name] = np.convolve(psth[unit_name], boxcar_window,mode='same')
+			smooth_psth[unit_name] = np.convolve(psth[unit_name], boxcar_window,mode='same')/boxcar_length
 
 	return psth, smooth_psth, unit_labels
 
