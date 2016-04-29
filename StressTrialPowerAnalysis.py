@@ -4,7 +4,8 @@ import tables
 from neo import io
 from plexon import plexfile
 from PulseMonitorData import findIBIs
-from basicAnalysis import computePSTH, computeSpikeRatesPerChannel, computePeakPowerPerChannel, ElectrodeGridMat
+from basicAnalysis import computePSTH, computeSpikeRatesPerChannel, ElectrodeGridMat
+from spectralAnalysis import TrialAveragedPeakPower, computePeakPowerPerChannel
 from scipy import signal
 from scipy import stats
 from matplotlib import mlab
@@ -144,8 +145,20 @@ hdf_index_end_reg = np.argmin(np.abs(hdf_rows - state_row_ind_reg[-1]))
 sample_end_reg = dio_tdt_sample[hdf_index_end_reg]
 time_end_reg = sample_end_reg/dio_freq
 
+samples_lfp_successful_stress = np.floor(response_time_successful_stress*lfp_samprate)
+samples_lfp_successful_reg = np.floor(response_time_successful_reg*lfp_samprate)
+
+# Compute trial-averaged peak powers across block per channel
+trialaverage_peak_power_reg_10_30 = TrialAveragedPeakPower(lfp, lfp_samprate, lfp_ind_successful_reg, samples_lfp_successful_reg, [10, 30], stim_freq)
+trialaverage_peak_power_stress_10_30 = TrialAveragedPeakPower(lfp, lfp_samprate, lfp_ind_successful_stress, samples_lfp_successful_stress, [10, 30], stim_freq)
+
+# Compute peak powers across block per channel
+
 peak_power_stress = computePeakPowerPerChannel(lfp, lfp_samprate,stim_freq,sample_start_stress,sample_end_stress,[1,20])
 peak_power_reg = computePeakPowerPerChannel(lfp, lfp_samprate,stim_freq,sample_start_reg,sample_end_reg,[1,20])
+
+peak_power_stress_10_30 = computePeakPowerPerChannel(lfp, lfp_samprate,stim_freq,sample_start_stress,sample_end_stress,[10,30])
+peak_power_reg_10_30 = computePeakPowerPerChannel(lfp, lfp_samprate,stim_freq,sample_start_reg,sample_end_reg,[10,30])
 
 # Set colormap for pcolormesh plots so that nan values are plotted with black
 cmap = mpl.cm.autumn
@@ -163,16 +176,46 @@ power_mat_reg = np.ma.masked_invalid(power_mat_reg)
 power_mat_diff = ElectrodeGridMat(peak_power_stress - peak_power_reg)
 power_mat_diff = np.ma.masked_invalid(power_mat_diff)
 
+power_mat_stress_10_30 = ElectrodeGridMat(peak_power_stress_10_30)
+power_mat_reg_10_30 = ElectrodeGridMat(peak_power_reg_10_30)
+power_mat_stress_10_30 = np.ma.masked_invalid(power_mat_stress_10_30)
+power_mat_reg_10_30 = np.ma.masked_invalid(power_mat_reg_10_30)
+power_mat_diff_10_30 = ElectrodeGridMat(peak_power_stress_10_30 - peak_power_reg_10_30)
+power_mat_diff_10_30 = np.ma.masked_invalid(power_mat_diff_10_30)
+
+trialaverage_power_mat_stress_10_30 = ElectrodeGridMat(trialaverage_peak_power_stress_10_30)
+trialaverage_power_mat_reg_10_30 = ElectrodeGridMat(trialaverage_peak_power_reg_10_30)
+trialaverage_power_mat_stress_10_30 = np.ma.masked_invalid(trialaverage_power_mat_stress_10_30)
+trialaverage_power_mat_reg_10_30 = np.ma.masked_invalid(trialaverage_power_mat_reg_10_30)
+trialaverage_power_mat_diff_10_30 = ElectrodeGridMat(trialaverage_peak_power_stress_10_30 - trialaverage_peak_power_reg_10_30)
+trialaverage_power_mat_diff_10_30 = np.ma.masked_invalid(trialaverage_power_mat_diff_10_30)
+
 cmap = plt.get_cmap('RdBu')
 cmap.set_bad(color='k', alpha = 1.)
 
 z_max = np.max(np.append(peak_power_stress,peak_power_reg))
 z_min = np.min(np.append(peak_power_stress,peak_power_reg))
 
-#z_max_diff = np.max(peak_power_stress - peak_power_reg)
-#z_min_diff = np.min(peak_power_stress - peak_power_reg)
-z_max_diff = 0.03
-z_min_diff = -0.03
+z_max_10_30 = np.max(np.append(peak_power_stress_10_30,peak_power_reg_10_30))
+z_min_10_30 = np.min(np.append(peak_power_stress_10_30,peak_power_reg_10_30))
+
+trialaverage_z_max_10_30 = np.max(np.append(trialaverage_peak_power_stress_10_30,trialaverage_peak_power_reg_10_30))
+trialaverage_z_min_10_30 = np.min(np.append(trialaverage_peak_power_stress_10_30,trialaverage_peak_power_reg_10_30))
+
+z_max_diff = np.max(peak_power_stress - peak_power_reg)
+z_min_diff = np.min(peak_power_stress - peak_power_reg)
+
+max_diff = np.max([z_max_diff,-z_min_diff])
+
+z_max_diff_10_30 = np.max(peak_power_stress_10_30 - peak_power_reg_10_30)
+z_min_diff_10_30 = np.min(peak_power_stress_10_30 - peak_power_reg_10_30)
+
+max_diff_10_30 = np.max([z_max_diff_10_30,-z_min_diff_10_30])
+
+trialaverage_z_max_diff_10_30 = np.max(trialaverage_peak_power_stress_10_30 - trialaverage_peak_power_reg_10_30)
+trialaverage_z_min_diff_10_30 = np.min(trialaverage_peak_power_stress_10_30 - trialaverage_peak_power_reg_10_30)
+
+trialaverage_max_diff_10_30 = np.max([trialaverage_z_max_diff_10_30,-trialaverage_z_min_diff_10_30])
 
 plt.figure()
 plt.subplot(1,2,1)
@@ -190,14 +233,58 @@ plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(blo
 
 plt.figure()
 plt.subplot(1,1,1)
-plt.pcolormesh(x,y,power_mat_diff,cmap=cmap,vmin= z_min_diff,vmax = z_max_diff)
+plt.pcolormesh(x,y,power_mat_diff,cmap=cmap,vmin= -max_diff,vmax = max_diff)
 plt.title('Difference in Peak Power: Stress - Regular')
 plt.ylabel('Peak Power: 1-20 Hz')
 plt.axis([x.min(),x.max(),y.min(),y.max()])
 plt.colorbar()
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_PeakPowerDifference.svg')
 
+plt.figure()
+plt.subplot(1,2,1)
+plt.pcolormesh(x,y,power_mat_reg_10_30,cmap=cmap,vmin=z_min_10_30,vmax = z_max_10_30)
+plt.title('Regular Block')
+plt.ylabel('Peak Power: 10-30 Hz')
+plt.axis([x.min(),x.max(),y.min(),y.max()])
+plt.subplot(1,2,2)
+plt.pcolormesh(x,y,power_mat_stress_10_30,cmap=cmap,vmin=z_min_10_30,vmax = z_max_10_30)
+plt.title('Stress Block')
+plt.ylabel('Peak Power: 10-30 Hz')
+plt.axis([x.min(),x.max(),y.min(),y.max()])
+plt.colorbar()
+plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_PeakPowers_10_30.svg')
 
+plt.figure()
+plt.subplot(1,1,1)
+plt.pcolormesh(x,y,power_mat_diff_10_30,cmap=cmap,vmin= -max_diff_10_30,vmax = max_diff_10_30)
+plt.title('Difference in Peak Power: Stress - Regular')
+plt.ylabel('Peak Power: 10-30 Hz')
+plt.axis([x.min(),x.max(),y.min(),y.max()])
+plt.colorbar()
+plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_PeakPowerDifference_10_30.svg')
+
+plt.figure()
+plt.subplot(1,2,1)
+plt.pcolormesh(x,y,trialaverage_power_mat_reg_10_30,cmap=cmap,vmin=trialaverage_z_min_10_30,vmax = trialaverage_z_max_10_30)
+plt.title('Regular Block')
+plt.ylabel('Trial-Averaged Peak Power: 10-30 Hz')
+plt.axis([x.min(),x.max(),y.min(),y.max()])
+plt.subplot(1,2,2)
+plt.pcolormesh(x,y,trialaverage_power_mat_stress_10_30,cmap=cmap,vmin=trialaverage_z_min_10_30,vmax = trialaverage_z_max_10_30)
+plt.title('Stress Block')
+plt.ylabel('Trial-Averaged Peak Power: 10-30 Hz')
+plt.axis([x.min(),x.max(),y.min(),y.max()])
+plt.colorbar()
+plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_TrialAveragedPeakPowers_10_30.svg')
+
+plt.figure()
+plt.subplot(1,1,1)
+plt.pcolormesh(x,y,trialaverage_power_mat_diff_10_30,cmap=cmap,vmin= -trialaverage_max_diff_10_30,vmax = trialaverage_max_diff_10_30)
+plt.title('Difference in Trial-Averaged Peak Power: Stress - Regular')
+plt.ylabel('Peak Power: 10-30 Hz')
+plt.axis([x.min(),x.max(),y.min(),y.max()])
+plt.colorbar()
+plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_TrialAveragedPeakPowerDifference_10_30.svg')
 plt.close()
 
 

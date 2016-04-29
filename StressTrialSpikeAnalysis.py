@@ -136,6 +136,7 @@ psth_stress, smooth_psth_stress, labels_stress = computePSTH(spike_file1,spike_f
 psth_reg, smooth_psth_reg, labels_reg = computePSTH(spike_file1,spike_file2,time_successful_reg,window_before,window_after, binsize)
 psth_time_window = np.arange(-window_before,window_after-float(binsize)/1000,float(binsize)/1000)
 
+units_with_interesting_firing = ['Ch116_1','Ch9_1','Ch31_1','Ch105_1','Ch104_1','Ch117_1','Ch130_1','Ch124_1']
 
 spikerates_stress, spikerates_sem_stress, labels_stress = computeSpikeRatesPerChannel(spike_file1,spike_file2,time_start_stress,time_end_stress)
 spikerates_reg, spikerates_sem_reg, labels_reg = computeSpikeRatesPerChannel(spike_file1,spike_file2,time_start_reg,time_end_reg)
@@ -144,12 +145,14 @@ cmap_stress = mpl.cm.autumn
 plt.figure()
 for i in range(len(psth_stress)):
 	unit_name = psth_stress.keys()[i]
-	plt.subplot(1,2,1)
-	plt.plot(psth_time_window,psth_stress[unit_name],color=cmap_stress(i/float(len(psth_stress))),label=unit_name)
+	if unit_name in units_with_interesting_firing:
+		plt.subplot(1,2,1)
+		plt.plot(psth_time_window,smooth_psth_stress[unit_name],color=cmap_stress(i/float(len(psth_stress))),label=unit_name)
 for i in range(len(psth_reg)):
 	unit_name = psth_reg.keys()[i]
-	plt.subplot(1,2,2)
-	plt.plot(psth_time_window,psth_reg[unit_name],color=cmap_stress(i/float(len(psth_stress))),label='unit_name')
+	if unit_name in units_with_interesting_firing:
+		plt.subplot(1,2,2)
+		plt.plot(psth_time_window,smooth_psth_reg[unit_name],color=cmap_stress(i/float(len(psth_reg))),label=unit_name)
 plt.subplot(1,2,1)
 plt.title('Stress')
 plt.ylabel('Firing Rate (Hz)')
@@ -176,7 +179,21 @@ labels_reg = np.array(labels_reg)[ind_stress_sorted]
 num_units = len(spikerates_reg)
 num_units = num_units/4
 
+# Find units with spike rate > 1 Hz in regular block
+spike_rate_above_thres = np.nonzero(np.greater(spikerates_reg,1))[0]
+print "Num units with rate above 1 Hz:", len(spike_rate_above_thres)
+spike_rate_diff = spikerates_stress[spike_rate_above_thres] - spikerates_reg[spike_rate_above_thres]
+
 width = float(0.55)
+plt.figure()
+plt.subplot(1,1,1)
+plt.bar(ind_reg[0:len(spike_rate_above_thres)], spike_rate_diff, width/2, color = 'm')
+plt.xticks(ind_reg[0:len(spike_rate_above_thres)], labels_reg[spike_rate_above_thres])
+plt.xlabel('Units')
+plt.ylaebl('Diff. Avg. Firing Rate (Hz)')
+plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_AvgFiringRateDiff-Stress.svg')
+
+
 plt.figure()
 plt.subplot(2,2,1)
 plt.bar(ind_reg[:num_units], spikerates_reg[:num_units], width/2, color = 'm', yerr = spikerates_sem_reg[:num_units], label='Regular')

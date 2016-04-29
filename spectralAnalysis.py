@@ -148,3 +148,78 @@ def TrialAveragedPSD(lfp_data, chann, Fs, lfp_ind, samples_lfp, row_ind, stim_fr
 	'''
 	
 	return freq, trial_power
+
+def TrialAveragedPeakPower(lfp, Fs, lfp_ind, samples_lfp, freq_window, stim_freq):
+	'''
+	Computes PSD per channel, finds the peak power in the frequency window indicated, and then data is averaged over trials. 
+
+	Input:
+		- lfp: dictionary with one entry per channel of array of lfp samples
+		- Fs: sample frequency in Hz
+		- lfp_ind: sample index for the beginning of a trial
+		- samples_lfp: the number of lfp samples per trial
+		- stim_freq: frequency to notch out when normalizing spectral power
+		- freq_window: frequency band over which to look for peak power, should be of form [f_low,f_high]
+	Output:
+		- trial_averaged_peak_power: an array of length equal to the number of channels, containing the trial-averaged peak power 
+									of each channel in the designated frequency band
+
+	'''
+	channels = [int(item) for item in lfp.keys()]
+	channels.sort()
+	f_low = freq_window[0]
+	f_high = freq_window[1]
+	counter = 0
+	peak_power = np.zeros(len(channels),len(lfp_ind))
+	density_length = 30
+
+	for i in range(0,len(lfp_ind)):	
+		for chann in channels:
+			lfp_snippet = lfp_data[chann][lfp_ind[i]:lfp_ind[i]+samples_lfp[i]]
+			num_timedom_samples = lfp_snippet.size
+			freq, Pxx_den = signal.welch(lfp_snippet, Fs, nperseg=512, noverlap=256)
+	 		norm_freq = np.append(np.ravel(np.nonzero(np.less(freq,stim_freq-3))),np.ravel(np.nonzero(np.less(freq,stim_freq+3))))
+	 		total_power_Pxx_den = np.sum(Pxx_den[norm_freq])
+	 		Pxx_den = Pxx_den/total_power_Pxx_den
+	 		
+	 		freq_band = np.less(freq,f_high)&np.greater(freq,f_low)
+ 			freq_band_ind = np.ravel(np.nonzero(freq_band))
+ 			peak_power[chann,i] = np.max(Pxx_den[freq_band_ind])
+
+ 	trial_averaged_peak_power = np.nanmean(peak_power,axis=0)
+
+ 	return trial_averaged_peak_power
+
+def computePeakPowerPerChannel(lfp,Fs,stim_freq,t_start,t_end,freq_window):
+	'''
+	Input:
+		- lfp: dictionary with one entry per channel of array of lfp samples
+		- Fs: sample frequency in Hz
+		- stim_freq: frequency to notch out when normalizing spectral power
+		- t_start: time window start in units of sample number
+		- t_end: time window end in units of sample number
+		- freq_window: frequency band over which to look for peak power, should be of form [f_low,f_high]
+	Output:
+		- peak_power: an array of length equal to the number of channels, containing the peak power of each channel in 
+					  the designated frequency band
+	'''
+	channels = lfp.keys()
+	f_low = freq_window[0]
+	f_high = freq_window[1]
+	counter = 0
+	peak_power = np.zeros(len(channels))
+	
+	for chann in channels:
+		lfp_snippet = lfp[chann][t_start:t_end]
+		num_timedom_samples = lfp_snippet.size
+		freq, Pxx_den = signal.welch(lfp_snippet, Fs, nperseg=512, noverlap=256)
+ 		norm_freq = np.append(np.ravel(np.nonzero(np.less(freq,stim_freq-3))),np.ravel(np.nonzero(np.less(freq,stim_freq+3))))
+ 		total_power_Pxx_den = np.sum(Pxx_den[norm_freq])
+ 		Pxx_den = Pxx_den/total_power_Pxx_den
+
+ 		freq_band = np.less(freq,f_high)&np.greater(freq,f_low)
+ 		freq_band_ind = np.ravel(np.nonzero(freq_band))
+ 		peak_power[counter] = np.max(Pxx_den[freq_band_ind])
+ 		counter += 1
+
+	return peak_power
