@@ -141,38 +141,47 @@ units_with_interesting_firing = ['Ch116_1','Ch9_1','Ch31_1','Ch105_1','Ch104_1',
 spikerates_stress, spikerates_sem_stress, labels_stress = computeSpikeRatesPerChannel(spike_file1,spike_file2,time_start_stress,time_end_stress)
 spikerates_reg, spikerates_sem_reg, labels_reg = computeSpikeRatesPerChannel(spike_file1,spike_file2,time_start_reg,time_end_reg)
 
-cmap_stress = mpl.cm.autumn
+cmap_stress = mpl.cm.viridis
 plt.figure()
 for i in range(len(psth_stress)):
 	unit_name = psth_stress.keys()[i]
-	if i % 4 == 0:
-		plt.subplot(2,2,1)
+	if i % 6 == 0:
+		plt.subplot(2,3,1)
 		plt.plot(psth_time_window,smooth_psth_stress[unit_name],color=cmap_stress(i/float(len(psth_stress)/4)),label=unit_name)
-	if i % 4 == 1:
-		plt.subplot(2,2,3)
+	if i % 6 == 1:
+		plt.subplot(2,3,2)
 		plt.plot(psth_time_window,smooth_psth_stress[unit_name],color=cmap_stress(i/float(len(psth_stress)/4)), label=unit_name)
-	if i % 4 == 0:
-		plt.subplot(2,2,2)
+	if i % 6 == 2:
+		plt.subplot(2,3,3)
 		plt.plot(psth_time_window,smooth_psth_stress[unit_name],color=cmap_stress(i/float(len(psth_stress)/4)),label=unit_name)
-	if i % 4 == 1:
-		plt.subplot(2,2,4)
+	if i % 6 == 3:
+		plt.subplot(2,3,4)
 		plt.plot(psth_time_window,smooth_psth_stress[unit_name],color=cmap_stress(i/float(len(psth_stress)/4)), label=unit_name)
-plt.subplot(2,2,1)
-plt.title('Stress')
+	if i % 6 == 4:
+		plt.subplot(2,3,5)
+		plt.plot(psth_time_window,smooth_psth_stress[unit_name],color=cmap_stress(i/float(len(psth_stress)/4)),label=unit_name)
+	if i % 6 == 5:
+		plt.subplot(2,3,6)
+		plt.plot(psth_time_window,smooth_psth_stress[unit_name],color=cmap_stress(i/float(len(psth_stress)/4)), label=unit_name)
+plt.subplot(2,3,1)
 plt.ylabel('Firing Rate (Hz)')
 plt.xlabel('Time (s)')
 plt.legend()
-plt.subplot(2,2,3)
-plt.title('Stress')
+plt.subplot(2,3,3)
 plt.ylabel('Firing Rate (Hz)')
 plt.xlabel('Time (s)')
 plt.legend()
-plt.subplot(2,2,2)
-plt.title('Regular')
+plt.subplot(2,3,2)
 plt.xlabel('Time (s)')
 plt.legend()
-plt.subplot(2,2,4)
-plt.title('Regular')
+plt.ylabel('Firing Rate (Hz)')
+plt.subplot(2,3,4)
+plt.xlabel('Time (s)')
+plt.legend()
+plt.subplot(2,3,5)
+plt.xlabel('Time (s)')
+plt.legend()
+plt.subplot(2,3,6)
 plt.xlabel('Time (s)')
 plt.legend()
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_PSTH-Stress.svg')
@@ -180,34 +189,43 @@ plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(blo
 plt.figure()
 for i in range(len(psth_reg)):
 	unit_name = psth_reg.keys()[i]
-	if i % 4 == 0:
-		plt.subplot(2,2,1)
+	if i % 6 == 0:
+		plt.subplot(2,3,1)
 		plt.plot(psth_time_window,smooth_psth_reg[unit_name],color=cmap_stress(i/float(len(psth_reg)/4)),label=unit_name)
-	if i % 4 == 1:
-		plt.subplot(2,2,3)
+	if i % 6 == 1:
+		plt.subplot(2,3,2)
 		plt.plot(psth_time_window,smooth_psth_reg[unit_name],color=cmap_stress(i/float(len(psth_reg)/4)), label=unit_name)
-	if i % 4 == 0:
-		plt.subplot(2,2,2)
+	if i % 6 == 2:
+		plt.subplot(2,3,3)
 		plt.plot(psth_time_window,smooth_psth_reg[unit_name],color=cmap_stress(i/float(len(psth_reg)/4)),label=unit_name)
-	if i % 24 == 1:
-		plt.subplot(2,2,4)
+	if i % 6 == 3:
+		plt.subplot(2,3,4)
 		plt.plot(psth_time_window,smooth_psth_reg[unit_name],color=cmap_stress(i/float(len(psth_reg)/4)), label=unit_name)
-plt.subplot(2,2,1)
-plt.title('Stress')
+	if i % 6 == 4:
+		plt.subplot(2,3,5)
+		plt.plot(psth_time_window,smooth_psth_reg[unit_name],color=cmap_stress(i/float(len(psth_reg)/4)),label=unit_name)
+	if i % 6 == 5:
+		plt.subplot(2,3,6)
+		plt.plot(psth_time_window,smooth_psth_reg[unit_name],color=cmap_stress(i/float(len(psth_reg)/4)), label=unit_name)
+plt.subplot(2,3,1)
 plt.ylabel('Firing Rate (Hz)')
 plt.xlabel('Time (s)')
 plt.legend()
-plt.subplot(2,2,3)
-plt.title('Stress')
+plt.subplot(2,3,3)
 plt.ylabel('Firing Rate (Hz)')
 plt.xlabel('Time (s)')
 plt.legend()
-plt.subplot(2,2,2)
-plt.title('Regular')
+plt.subplot(2,3,2)
 plt.xlabel('Time (s)')
 plt.legend()
-plt.subplot(2,2,4)
-plt.title('Regular')
+plt.ylabel('Firing Rate (Hz)')
+plt.subplot(2,3,4)
+plt.xlabel('Time (s)')
+plt.legend()
+plt.subplot(2,3,5)
+plt.xlabel('Time (s)')
+plt.legend()
+plt.subplot(2,3,6)
 plt.xlabel('Time (s)')
 plt.legend()
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_PSTH-Regular.svg')
