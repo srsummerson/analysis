@@ -149,14 +149,14 @@ for i in range(len(psth_stress)):
 		plt.subplot(2,2,1)
 		plt.plot(psth_time_window,smooth_psth_stress[unit_name],color=cmap_stress(i/float(len(psth_stress))),label=unit_name)
 		plt.subplot(2,2,3)
-		plt.plot(psth_time_window,psth_stress[unit_name],color=cmap_stress(i/float(len(psth_stress))),label=unit_name)
+		plt.plot(psth_time_window,psth_stress[unit_name],color=cmap_stress(i/float(len(psth_stress))))
 for i in range(len(psth_reg)):
 	unit_name = psth_reg.keys()[i]
 	if unit_name in units_with_interesting_firing:
 		plt.subplot(2,2,2)
 		plt.plot(psth_time_window,smooth_psth_reg[unit_name],color=cmap_stress(i/float(len(psth_reg))),label=unit_name)
 		plt.subplot(2,2,4)
-		plt.plot(psth_time_window,psth_reg[unit_name],color=cmap_stress(i/float(len(psth_reg))),label=unit_name)
+		plt.plot(psth_time_window,psth_reg[unit_name],color=cmap_stress(i/float(len(psth_reg))))
 plt.subplot(1,2,1)
 plt.title('Stress')
 plt.ylabel('Firing Rate (Hz)')
