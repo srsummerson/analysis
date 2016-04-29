@@ -84,7 +84,7 @@ def computePSTH(spike_file1,spike_file2,times,window_before=1,window_after=2, bi
 				counts, bins = np.histogram(spike_times,epoch_bins)
 				psth[unit_name] += counts[0:len(psth_time_window)]/binsize	# collect all rates into a N-dim array
 
-			psth[unit_name] = psth[unit_name]/len(times)
+			psth[unit_name] = psth[unit_name]/float(len(times))
 			smooth_psth[unit_name] = np.convolve(psth[unit_name], boxcar_window,mode='same')
 
 	return psth, smooth_psth, unit_labels
