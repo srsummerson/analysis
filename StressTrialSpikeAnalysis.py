@@ -147,22 +147,22 @@ for i in range(len(psth_stress)):
 	unit_name = psth_stress.keys()[i]
 	if i % 6 == 0:
 		plt.subplot(2,3,1)
-		plt.plot(psth_time_window,smooth_psth_stress[unit_name],color=cmap_stress(i/float(len(psth_stress)/4)),label=unit_name)
+		plt.plot(psth_time_window,smooth_psth_stress[unit_name],color=cmap_stress(i/float(len(psth_stress))),label=unit_name)
 	if i % 6 == 1:
 		plt.subplot(2,3,2)
-		plt.plot(psth_time_window,smooth_psth_stress[unit_name],color=cmap_stress(i/float(len(psth_stress)/4)), label=unit_name)
+		plt.plot(psth_time_window,smooth_psth_stress[unit_name],color=cmap_stress(i/float(len(psth_stress))), label=unit_name)
 	if i % 6 == 2:
 		plt.subplot(2,3,3)
-		plt.plot(psth_time_window,smooth_psth_stress[unit_name],color=cmap_stress(i/float(len(psth_stress)/4)),label=unit_name)
+		plt.plot(psth_time_window,smooth_psth_stress[unit_name],color=cmap_stress(i/float(len(psth_stress))),label=unit_name)
 	if i % 6 == 3:
 		plt.subplot(2,3,4)
-		plt.plot(psth_time_window,smooth_psth_stress[unit_name],color=cmap_stress(i/float(len(psth_stress)/4)), label=unit_name)
+		plt.plot(psth_time_window,smooth_psth_stress[unit_name],color=cmap_stress(i/float(len(psth_stress))), label=unit_name)
 	if i % 6 == 4:
 		plt.subplot(2,3,5)
-		plt.plot(psth_time_window,smooth_psth_stress[unit_name],color=cmap_stress(i/float(len(psth_stress)/4)),label=unit_name)
+		plt.plot(psth_time_window,smooth_psth_stress[unit_name],color=cmap_stress(i/float(len(psth_stress))),label=unit_name)
 	if i % 6 == 5:
 		plt.subplot(2,3,6)
-		plt.plot(psth_time_window,smooth_psth_stress[unit_name],color=cmap_stress(i/float(len(psth_stress)/4)), label=unit_name)
+		plt.plot(psth_time_window,smooth_psth_stress[unit_name],color=cmap_stress(i/float(len(psth_stress))), label=unit_name)
 plt.subplot(2,3,1)
 plt.ylabel('Firing Rate (Hz)')
 plt.xlabel('Time (s)')
@@ -197,22 +197,22 @@ for i in range(len(psth_reg)):
 	unit_name = psth_reg.keys()[i]
 	if i % 6 == 0:
 		plt.subplot(2,3,1)
-		plt.plot(psth_time_window,smooth_psth_reg[unit_name],color=cmap_stress(i/float(len(psth_reg)/4)),label=unit_name)
+		plt.plot(psth_time_window,smooth_psth_reg[unit_name],color=cmap_stress(i/float(len(psth_reg))),label=unit_name)
 	if i % 6 == 1:
 		plt.subplot(2,3,2)
-		plt.plot(psth_time_window,smooth_psth_reg[unit_name],color=cmap_stress(i/float(len(psth_reg)/4)), label=unit_name)
+		plt.plot(psth_time_window,smooth_psth_reg[unit_name],color=cmap_stress(i/float(len(psth_reg))), label=unit_name)
 	if i % 6 == 2:
 		plt.subplot(2,3,3)
-		plt.plot(psth_time_window,smooth_psth_reg[unit_name],color=cmap_stress(i/float(len(psth_reg)/4)),label=unit_name)
+		plt.plot(psth_time_window,smooth_psth_reg[unit_name],color=cmap_stress(i/float(len(psth_reg))),label=unit_name)
 	if i % 6 == 3:
 		plt.subplot(2,3,4)
-		plt.plot(psth_time_window,smooth_psth_reg[unit_name],color=cmap_stress(i/float(len(psth_reg)/4)), label=unit_name)
+		plt.plot(psth_time_window,smooth_psth_reg[unit_name],color=cmap_stress(i/float(len(psth_reg))), label=unit_name)
 	if i % 6 == 4:
 		plt.subplot(2,3,5)
-		plt.plot(psth_time_window,smooth_psth_reg[unit_name],color=cmap_stress(i/float(len(psth_reg)/4)),label=unit_name)
+		plt.plot(psth_time_window,smooth_psth_reg[unit_name],color=cmap_stress(i/float(len(psth_reg))),label=unit_name)
 	if i % 6 == 5:
 		plt.subplot(2,3,6)
-		plt.plot(psth_time_window,smooth_psth_reg[unit_name],color=cmap_stress(i/float(len(psth_reg)/4)), label=unit_name)
+		plt.plot(psth_time_window,smooth_psth_reg[unit_name],color=cmap_stress(i/float(len(psth_reg))), label=unit_name)
 plt.subplot(2,3,1)
 plt.ylabel('Firing Rate (Hz)')
 plt.xlabel('Time (s)')
