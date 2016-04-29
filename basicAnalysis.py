@@ -148,6 +148,7 @@ def computePeakPowerPerChannel(lfp,Fs,stim_freq,t_start,t_end,freq_window):
 	f_low = freq_window[0]
 	f_high = freq_window[1]
 	counter = 0
+	peak_power = np.zeros(len(channels))
 	
 	for chann in channels:
 		lfp_snippet = lfp[chann][t_start:t_end]
@@ -287,20 +288,20 @@ def ElectrodeGridMat(powers):
 	row_thirteen = np.array([144, 158, 142, 156, 140, 154, 138, 152, 136, 150, 134])
 	row_fourteen = np.array([148, 132, 146, 130, 151, 135, 149, 133, 147])
 
-	power_mat[0,0:8] = powers[row_zero]
-	power_mat[1,0:8] = powers[row_one]
-	power_mat[2,0:9] = powers[row_two]
-	power_mat[3,0:9] = powers[row_three]
-	power_mat[4,0:10] = powers[row_four]
-	power_mat[5,0:10] = powers[row_five]
-	power_mat[6,0:11] = powers[row_six]
-	power_mat[7,0:11] = powers[row_seven]
-	power_mat[8,0:12] = powers[row_eight]
-	power_mat[9,0:12] = powers[row_nine]
-	power_mat[10,0:13] = powers[row_ten]
-	power_mat[11,1:13] = powers[row_eleven]
-	power_mat[12,2:14] = powers[row_twelve]
-	power_mat[13,3:14] = powers[row_thirteen]
-	power_mat[14,4:13] = powers[row_fourteen]
+	power_mat[0,0:8] = powers[row_zero-1]
+	power_mat[1,0:8] = powers[row_one-1]
+	power_mat[2,0:9] = powers[row_two-1]
+	power_mat[3,0:9] = powers[row_three-1]
+	power_mat[4,0:10] = powers[row_four-1]
+	power_mat[5,0:10] = powers[row_five-1]
+	power_mat[6,0:11] = powers[row_six-1]
+	power_mat[7,0:11] = powers[row_seven-1]
+	power_mat[8,0:12] = powers[row_eight-1]
+	power_mat[9,0:12] = powers[row_nine-1]
+	power_mat[10,0:13] = powers[row_ten-1]
+	power_mat[11,1:13] = powers[row_eleven-1]
+	power_mat[12,2:14] = powers[row_twelve-1]
+	power_mat[13,3:14] = powers[row_thirteen-1]
+	power_mat[14,4:13] = powers[row_fourteen-1]
 	
 	return power_mat
