@@ -102,13 +102,14 @@ def computeSpikeRatesPerChannel(spike_file1,spike_file2,t_start,t_end):
 	'''
 	channels = np.arange(1,161)
 	
-	spike_rates = []
-	spike_sem = []
-	unit_labels = []
+	# setting up arrays of zeros as placeholders, picked 200 because it's likely greater than the number of units per recording
+	spike_rates = np.zeros(200)
+	spike_sem = np.zeros(200)
+	unit_labels = np.zeros(200)
 
 	epoch_bins = np.arange(t_start,t_end,1)
 	num_bins = len(epoch_bins)
-
+	counter = 0
 	for channel in channels:
 		if channel < 97: 
 			channel_spikes = [entry for entry in spike_file1 if (t_start <= entry[0] <= t_end)&(entry[1]==channel)]
@@ -123,47 +124,19 @@ def computeSpikeRatesPerChannel(spike_file1,spike_file2,t_start,t_end):
 		for unit in unit_vals:
 			unit_name = 'Ch'+str(channel) +'_' + str(unit)
 			print unit_name
-			unit_labels.append(unit_name)
+			unit_labels[counter] = unit_name
 			spike_times = [spike[0] for spike in channel_spikes if (spike[2]==unit)]
 			counts, bins = np.histogram(spike_times,epoch_bins)
-			spike_rates.append(np.nanmean(counts))
-			spike_sem.append(np.nanstd(counts)/float(num_bins))
+			spike_rates[counter] = np.nanmean(counts)
+			spike_sem[counter] = np.nanstd(counts)/float(num_bins)
+			counter += 1
+
+	spike_rates = spike_rates[:counter]
+	spike_sem = spike_sem[:counter]
+	unit_labels = unit_labels[:counter]
 
 	return spike_rates, spike_sem, unit_labels
 
-def computePeakPowerPerChannel(lfp,Fs,stim_freq,t_start,t_end,freq_window):
-	'''
-	Input:
-		- lfp: dictionary with one entry per channel of array of lfp samples
-		- Fs: sample frequency in Hz
-		- stim_freq: frequency to notch out when normalizing spectral power
-		- t_start: time window start in units of sample number
-		- t_end: time window end in units of sample number
-		- freq_window: frequency band over which to look for peak power, should be of form [f_low,f_high]
-	Output:
-		- peak_power: an array of length equal to the number of channels, containing the peak power of each channel in 
-					  the designated frequency band
-	'''
-	channels = lfp.keys()
-	f_low = freq_window[0]
-	f_high = freq_window[1]
-	counter = 0
-	peak_power = np.zeros(len(channels))
-	
-	for chann in channels:
-		lfp_snippet = lfp[chann][t_start:t_end]
-		num_timedom_samples = lfp_snippet.size
-		freq, Pxx_den = signal.welch(lfp_snippet, Fs, nperseg=512, noverlap=256)
- 		norm_freq = np.append(np.ravel(np.nonzero(np.less(freq,stim_freq-3))),np.ravel(np.nonzero(np.less(freq,stim_freq+3))))
- 		total_power_Pxx_den = np.sum(Pxx_den[norm_freq])
- 		Pxx_den = Pxx_den/total_power_Pxx_den
-
- 		freq_band = np.less(freq,f_high)&np.greater(freq,f_low)
- 		freq_band_ind = np.ravel(np.nonzero(freq_band))
- 		peak_power[counter] = np.max(Pxx_den[freq_band_ind])
- 		counter += 1
-
-	return peak_power
 
 def plot_point_cov(points, nstd=2, ax=None, **kwargs):
 	"""
