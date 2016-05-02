@@ -17,12 +17,13 @@ from probabilisticRewardTaskPerformance import FreeChoiceBehavior_withStressTria
 
 
 # Set up code for particular day and block
-hdf_filename = 'mari20160424_03_te2035.hdf'
-filename = 'Mario20160424'
+hdf_filename = 'mari20160417_03_te1994.hdf'
+filename = 'Mario20160417'
 #TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
 stim_freq = 100
+
 
 #hdf_location = hdf_filename
 block_num = 1

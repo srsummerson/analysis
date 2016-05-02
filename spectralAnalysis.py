@@ -170,12 +170,12 @@ def TrialAveragedPeakPower(lfp, Fs, lfp_ind, samples_lfp, freq_window, stim_freq
 	f_low = freq_window[0]
 	f_high = freq_window[1]
 	counter = 0
-	peak_power = np.zeros(len(channels),len(lfp_ind))
+	peak_power = np.zeros([len(channels),len(lfp_ind)])
 	density_length = 30
 
 	for i in range(0,len(lfp_ind)):	
 		for chann in channels:
-			lfp_snippet = lfp_data[chann][lfp_ind[i]:lfp_ind[i]+samples_lfp[i]]
+			lfp_snippet = lfp[chann][lfp_ind[i]:lfp_ind[i]+samples_lfp[i]]
 			num_timedom_samples = lfp_snippet.size
 			freq, Pxx_den = signal.welch(lfp_snippet, Fs, nperseg=512, noverlap=256)
 	 		norm_freq = np.append(np.ravel(np.nonzero(np.less(freq,stim_freq-3))),np.ravel(np.nonzero(np.less(freq,stim_freq+3))))
@@ -184,9 +184,9 @@ def TrialAveragedPeakPower(lfp, Fs, lfp_ind, samples_lfp, freq_window, stim_freq
 	 		
 	 		freq_band = np.less(freq,f_high)&np.greater(freq,f_low)
  			freq_band_ind = np.ravel(np.nonzero(freq_band))
- 			peak_power[chann,i] = np.max(Pxx_den[freq_band_ind])
+ 			peak_power[chann-1,i] = np.max(Pxx_den[freq_band_ind])
 
- 	trial_averaged_peak_power = np.nanmean(peak_power,axis=0)
+ 	trial_averaged_peak_power = np.nanmean(peak_power,axis=1)
 
  	return trial_averaged_peak_power
 
