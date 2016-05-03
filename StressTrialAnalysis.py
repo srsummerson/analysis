@@ -15,15 +15,15 @@ from spectralAnalysis import TrialAveragedPSD
 
 
 # Set up code for particular day and block
-hdf_filename = 'mari20160426_06_te2048.hdf'
-filename = 'Mario20160426'
+hdf_filename = 'mari20160418_04_te2002.hdf'
+filename = 'Mario20160418'
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
 #hdf_location = hdffilename
 block_num = 1
 stim_freq = 100
 
-lfp1_channels = [34, 39, 44, 45, 71, 76, 80, 82, 84, 90, 93, 94, 95, 96]
+lfp1_channels = [13, 14, 15, 16, 29, 30]
 
 num_avg = 50 	# number of trials to compute running average of trial statistics over
 
