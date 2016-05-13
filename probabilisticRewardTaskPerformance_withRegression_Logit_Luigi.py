@@ -13,10 +13,56 @@ import tables
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import cm
-from logLikelihoodRLPerformance import RLPerformance, logLikelihoodRLPerformance
+from logLikelihoodRLPerformance import RLPerformance, logLikelihoodRLPerformance, RLPerformance_multiplicative_Qstimparameter, logLikelihoodRLPerformance_multiplicative_Qstimparameter, \
+                                        RLPerformance_additive_Qstimparameter, logLikelihoodRLPerformance_additive_Qstimparameter, RLPerformance_multiplicative_Pstimparameter, \
+                                        logLikelihoodRLPerformance_multiplicative_Pstimparameter, RLPerformance_additive_Pstimparameter, logLikelihoodRLPerformance_additive_Pstimparameter, \
+                                        logLikelihoodRLPerformance_multiplicative_Qstimparameter_HVTarget, RLPerformance_multiplicative_Qstimparameter_HVTarget
 from probabilisticRewardTaskPerformance import FreeChoicePilotTask_Behavior
 
 
+hdf_list_sham = ['\papa20150213_10.hdf','\papa20150217_05.hdf','\papa20150225_02.hdf','\papa20150305_02.hdf',
+    '\papa20150307_02.hdf','\papa20150308_06.hdf','\papa20150310_02.hdf','\papa20150506_09.hdf','\papa20150506_10.hdf',
+    '\papa20150519_02.hdf','\papa20150519_03.hdf','\papa20150519_04.hdf','\papa20150527_01.hdf','\papa20150528_02.hdf']
+"""
+hdf_list_sham = ['\papa20150217_05.hdf','\papa20150305_02.hdf',
+    '\papa20150310_02.hdf',
+    '\papa20150519_02.hdf','\papa20150519_04.hdf','\papa20150528_02.hdf']
+"""
+# sessions with good RL fit only
+# 9 sessions contant voltage, 10 sessions constant current, 12 sessions sham
+# 
+"""
+hdf_list_stim = ['\papa20150203_10.hdf','\papa20150211_11.hdf','\papa20150214_18.hdf','\papa20150216_05.hdf',
+    '\papa20150218_04.hdf','\papa20150219_09.hdf','\papa20150223_02.hdf','\papa20150224_02.hdf','\papa20150303_03.hdf',
+    '\papa20150522_05.hdf','\papa20150522_06.hdf','\papa20150524_02.hdf',
+    '\papa20150525_01.hdf','\papa20150525_02.hdf',
+    '\papa20150530_01.hdf','\papa20150530_02.hdf','\papa20150601_01.hdf','\papa20150601_02.hdf','\papa20150602_03.hdf']
+
+hdf_list_sham = ['\papa20150213_10.hdf','\papa20150217_05.hdf','\papa20150225_02.hdf',
+    '\papa20150307_02.hdf','\papa20150308_06.hdf','\papa20150310_02.hdf','\papa20150506_09.hdf','\papa20150506_10.hdf',
+    '\papa20150519_03.hdf','\papa20150519_04.hdf','\papa20150527_01.hdf','\papa20150528_02.hdf']
+"""
+
+# constant voltage: 11 good stim sessions
+# hdf_list_stim = [\papa20150211_11.hdf','\papa20150214_18.hdf','\papa20150216_05.hdf',
+#    '\papa20150218_04.hdf','\papa20150219_09.hdf','\papa20150223_02.hdf','\papa20150224_02.hdf','\papa20150303_03.hdf',
+#    '\papa20150306_07.hdf','\papa20150309_04.hdf']
+hdf_list_stim = ['\papa20150211_11.hdf',
+    '\papa20150218_04.hdf','\papa20150219_09.hdf','\papa20150223_02.hdf','\papa20150224_02.hdf','\papa20150303_03.hdf',
+    '\papa20150306_07.hdf','\papa20150309_04.hdf']
+# constant current: 18 good stim sessions
+# hdf_list_stim2 = ['\papa20150508_12.hdf','\papa20150508_13.hdf','\papa20150518_03.hdf',
+#    '\papa20150518_05.hdf','\papa20150518_06.hdf','\papa20150522_05.hdf','\papa20150522_06.hdf','\papa20150524_02.hdf',
+#    '\papa20150524_03.hdf','\papa20150524_04.hdf','\papa20150525_01.hdf','\papa20150525_02.hdf',
+#    '\papa20150530_01.hdf','\papa20150530_02.hdf','\papa20150601_01.hdf','\papa20150601_02.hdf','\papa20150602_03.hdf',
+#    '\papa20150602_04.hdf']
+hdf_list_stim2 = ['\papa20150508_12.hdf','\papa20150508_13.hdf','\papa20150518_03.hdf',
+    '\papa20150518_05.hdf','\papa20150518_06.hdf','\papa20150522_05.hdf','\papa20150522_06.hdf','\papa20150524_02.hdf',
+    '\papa20150524_04.hdf','\papa20150525_01.hdf','\papa20150525_02.hdf',
+    '\papa20150530_01.hdf','\papa20150530_02.hdf','\papa20150601_02.hdf','\papa20150602_03.hdf',
+    '\papa20150602_04.hdf']
+
+"""
 
 hdf_list_stim = ['\luig20160204_15_te1382.hdf','\luig20160208_07_te1401.hdf','\luig20160212_08_te1429.hdf','\luig20160217_06_te1451.hdf',
                 '\luig20160229_11_te1565.hdf','\luig20160301_07_te1572.hdf','\luig20160301_09_te1574.hdf', '\luig20160311_08_te1709.hdf',
@@ -24,21 +70,24 @@ hdf_list_stim = ['\luig20160204_15_te1382.hdf','\luig20160208_07_te1401.hdf','\l
 hdf_list_sham = ['\luig20160213_05_te1434.hdf','\luig20160219_04_te1473.hdf','\luig20160221_05_te1478.hdf', '\luig20160305_26_te1617.hdf', \
                  '\luig20160306_11_te1628.hdf', '\luig20160307_13_te1641.hdf', '\luig20160310_16_te1695.hdf','\luig20160319_23_te1801.hdf', \
                  '\luig20160320_07_te1809.hdf', '\luig20160322_08_te1826.hdf']
-#hdf_list_hv = ['\luig20160218_10_te1469.hdf','\luig20160223_09_te1506.hdf','\luig20160223_11_te1508.hdf','\luig20160224_11_te1519.hdf',
-#                '\luig20160224_15_te1523.hdf', '\luig20160302_06_te1580.hdf, '\luig20160303_09_te1589.hdf', '\luig20160303_11_te1591.hdf', \
-#                '\luig20160308_06_te1647.hdf','\luig20160309_25_te1672.hdf', '\luig20160323_04_te1830.hdf', '\luig20160323_09_te1835.hdf']
 hdf_list_hv = ['\luig20160218_10_te1469.hdf','\luig20160223_11_te1508.hdf','\luig20160224_15_te1523.hdf', \
                 '\luig20160303_11_te1591.hdf', '\luig20160308_06_te1647.hdf','\luig20160309_25_te1672.hdf']
+hdf_list_hv = ['\luig20160218_10_te1469.hdf','\luig20160223_11_te1508.hdf', \
+                '\luig20160224_15_te1523.hdf', '\luig20160303_11_te1591.hdf',  \
+                '\luig20160308_06_te1647.hdf','\luig20160309_25_te1672.hdf', '\luig20160323_04_te1830.hdf', '\luig20160323_09_te1835.hdf',
+                '\luig20160324_10_te1845.hdf', '\luig20160324_12_te1847.hdf','\luig20160324_14_te1849.hdf']
+"""
 
-hdf_prefix = 'C:\Users\Samantha Summerson\Dropbox\Carmena Lab\Luigi\hdf'
-stim_hdf_list = hdf_list_stim
+hdf_prefix = 'C:\Users\Samantha Summerson\Dropbox\Carmena Lab\Papa\hdf'
+stim_hdf_list = hdf_list_stim2
 sham_hdf_list = hdf_list_sham
-hv_hdf_list = hdf_list_hv
+hv_hdf_list = hdf_list_stim
 
 global_max_trial_dist = 0
 Q_initial = [0.6, 0.6]
-alpha_true = 0.05
+alpha_true = 0.2
 beta_true = 0.2
+gamma_true = 2
 
 def FirstChoiceAfterStim(target3,trial3,stim_trials):
     choice = [target3[i] for i in range(1,len(target3[0:100])) if (trial3[i]==2)&(stim_trials[i-1]==1)]
@@ -944,10 +993,24 @@ sham_learning_ratio = np.zeros(sham_num_days)
 hv_learning_ratio = np.zeros(hv_num_days)
 stim_alpha_block1 = np.zeros(stim_num_days)
 stim_alpha_block3 = np.zeros(stim_num_days)
+stim_alpha_block3_Qmultiplicative = np.zeros(stim_num_days)
 sham_alpha_block1 = np.zeros(sham_num_days)
 sham_alpha_block3 = np.zeros(sham_num_days)
 hv_alpha_block1 = np.zeros(hv_num_days)
 hv_alpha_block3 = np.zeros(hv_num_days)
+hv_alpha_block3_Qmultiplicative = np.zeros(hv_num_days)
+
+stim_beta_block1 = np.zeros(stim_num_days)
+stim_beta_block3 = np.zeros(stim_num_days)
+stim_beta_block3_Qmultiplicative = np.zeros(stim_num_days)
+sham_beta_block1 = np.zeros(sham_num_days)
+sham_beta_block3 = np.zeros(sham_num_days)
+hv_beta_block1 = np.zeros(hv_num_days)
+hv_beta_block3 = np.zeros(hv_num_days)
+hv_beta_block3_Qmultiplicative = np.zeros(hv_num_days)
+
+stim_gamma_block3_Qmultiplicative = np.zeros(stim_num_days)
+hv_gamma_block3_Qmultiplicative = np.zeros(hv_num_days)
 
 stim_prob_choose_low = np.zeros(stim_num_days)
 sham_prob_choose_low = np.zeros(sham_num_days)
@@ -1069,7 +1132,24 @@ for name in stim_hdf_list:
 
     stim_alpha_block1[stim_counter] = alpha_ml_block1
     stim_alpha_block3[stim_counter] = alpha_ml_block3
+    stim_beta_block1[stim_counter] = beta_ml_block1
+    stim_beta_block3[stim_counter] = beta_ml_block3
     stim_learning_ratio[stim_counter] = float(alpha_ml_block3)/alpha_ml_block1
+
+    '''
+    Get fit with Multiplicative stimulation parameter in Q-value update equation
+    '''
+    nll_Qmultiplicative = lambda *args: -logLikelihoodRLPerformance_multiplicative_Qstimparameter(*args)
+    result3_Qmultiplicative = op.minimize(nll_Qmultiplicative, [alpha_true, beta_true, gamma_true], args=([Qlow_block1[-1],Qhigh_block1[-1]], reward_block3, target_block3, trial_block3, stim_trials_block), bounds=[(0,1),(0,None),(1,None)])
+    alpha_ml_block3_Qmultiplicative, beta_ml_block3_Qmultiplicative, gamma_ml_block3_Qmultiplicative = result3_Qmultiplicative["x"]
+    Qlow_block3, Qhigh_block3, prob_low_block3_Qmultiplicative, max_loglikelihood3 = RLPerformance_multiplicative_Qstimparameter([alpha_ml_block3_Qmultiplicative,beta_ml_block3_Qmultiplicative,gamma_ml_block3_Qmultiplicative],[Qlow_block1[-1],Qhigh_block1[-1]],reward_block3,target_block3, trial_block3, stim_trials_block)
+    
+    stim_alpha_block3_Qmultiplicative[stim_counter] = alpha_ml_block3_Qmultiplicative
+    stim_beta_block3_Qmultiplicative[stim_counter] = beta_ml_block3_Qmultiplicative
+    stim_gamma_block3_Qmultiplicative[stim_counter] = gamma_ml_block3_Qmultiplicative
+    
+
+
     stim_counter += 1
     
 for name in sham_hdf_list:
@@ -1154,8 +1234,11 @@ for name in sham_hdf_list:
     alpha_ml_block3, beta_ml_block3 = result3["x"]
     Qlow_block3, Qhigh_block3, prob_low_block3, max_loglikelihood3 = RLPerformance([alpha_ml_block3,beta_ml_block3],[Qlow_block1[-1],Qhigh_block1[-1]],reward_block3,target_block3, trial_block3)
     
+
     sham_alpha_block1[sham_counter] = alpha_ml_block1
     sham_alpha_block3[sham_counter] = alpha_ml_block3
+    sham_beta_block1[sham_counter] = beta_ml_block1
+    sham_beta_block3[sham_counter] = beta_ml_block3
     sham_learning_ratio[sham_counter] = float(alpha_ml_block3)/alpha_ml_block1
     sham_counter += 1
 
@@ -1219,8 +1302,23 @@ for name in hv_hdf_list:
     alpha_ml_block3, beta_ml_block3 = result3["x"]
     Qlow_block3, Qhigh_block3, prob_low_block3, max_loglikelihood3 = RLPerformance([alpha_ml_block3,beta_ml_block3],[Qlow_block1[-1],Qhigh_block1[-1]],reward_block3,target_block3, trial_block3)
     
+    '''
+    Get fit with Multiplicative stimulation parameter in Q-value update equation
+    '''
+    nll_Qmultiplicative = lambda *args: -logLikelihoodRLPerformance_multiplicative_Qstimparameter_HVTarget(*args)
+    result3_Qmultiplicative = op.minimize(nll_Qmultiplicative, [alpha_true, beta_true, gamma_true], args=([Qlow_block1[-1],Qhigh_block1[-1]], reward_block3, target_block3, trial_block3, stim_trials_block), bounds=[(0,1),(0,None),(1,None)])
+    alpha_ml_block3_Qmultiplicative, beta_ml_block3_Qmultiplicative, gamma_ml_block3_Qmultiplicative = result3_Qmultiplicative["x"]
+    Qlow_block3, Qhigh_block3, prob_low_block3_Qmultiplicative, max_loglikelihood3 = RLPerformance_multiplicative_Qstimparameter_HVTarget([alpha_ml_block3_Qmultiplicative,beta_ml_block3_Qmultiplicative,gamma_ml_block3_Qmultiplicative],[Qlow_block1[-1],Qhigh_block1[-1]],reward_block3,target_block3, trial_block3, stim_trials_block)
+    
+    hv_alpha_block3_Qmultiplicative[hv_counter] = alpha_ml_block3_Qmultiplicative
+    hv_beta_block3_Qmultiplicative[hv_counter] = beta_ml_block3_Qmultiplicative
+    hv_gamma_block3_Qmultiplicative[hv_counter] = gamma_ml_block3_Qmultiplicative
+
+
     hv_alpha_block1[hv_counter] = alpha_ml_block1
     hv_alpha_block3[hv_counter] = alpha_ml_block3
+    hv_beta_block1[hv_counter] = beta_ml_block1
+    hv_beta_block3[hv_counter] = beta_ml_block3
     hv_learning_ratio[hv_counter] = float(alpha_ml_block3)/alpha_ml_block1
     hv_counter += 1
 
@@ -1340,6 +1438,9 @@ plt.ylim([0.0,1.05])
 plt.show()
 
 
+'''
+RL Model Parameters Plots
+'''
 
 alpha_means = (np.mean(stim_alpha_block1 - stim_alpha_block3), np.mean(sham_alpha_block1 - sham_alpha_block3), np.mean(hv_alpha_block1 - hv_alpha_block3), np.mean(stim_alpha_block3), np.mean(sham_alpha_block3), np.mean(hv_alpha_block3))
 alpha_sem = (float(np.std(stim_alpha_block1 - stim_alpha_block3))/stim_num_days, float(np.std(sham_alpha_block1 - sham_alpha_block3))/sham_num_days, float(np.std(hv_alpha_block1 - hv_alpha_block3))/hv_num_days,float(np.std(stim_alpha_block3))/stim_num_days, float(np.std(sham_alpha_block3))/sham_num_days, float(np.std(hv_alpha_block3))/hv_num_days)
@@ -1351,6 +1452,108 @@ plt.ylabel('Alpha')
 plt.title('Average Learning Rate')
 plt.xticks(ind + width/2., ('Stim: B1 - B3', 'Sham: B1 - B3','HV: B1 - B3', 'Stim: B3', 'Sham: B3', 'HV: B3'))
 plt.show()
+
+
+#Beta indices for Luigi
+
+stim_beta_ind = range(0,stim_num_days)
+sham_beta_ind = range(0,sham_num_days)
+stim_gamma_ind = range(0,stim_num_days)
+
+'''
+#Indices for Luigi
+sham_beta_ind.pop(3)
+
+'''
+# Indices for papa
+stim_beta_ind.pop(2)
+sham_beta_ind.pop(8)
+sham_beta_ind.pop(11)
+sham_beta_ind.pop(11)
+
+stim_gamma_ind.pop(2)
+stim_gamma_ind.pop(12)
+
+
+print sham_beta_block3[sham_beta_ind]
+print stim_beta_block3_Qmultiplicative[stim_beta_ind]
+print stim_gamma_block3_Qmultiplicative[stim_gamma_ind]
+
+
+
+alpha_means = (np.nanmean(sham_alpha_block3), np.nanmean(stim_alpha_block3), np.nanmean(stim_alpha_block3_Qmultiplicative), np.nanmean(hv_alpha_block3), np.nanmean(hv_alpha_block3_Qmultiplicative))
+alpha_sem = (np.nanstd(sham_alpha_block3)/np.sqrt(sham_num_days), np.nanstd(stim_alpha_block3)/np.sqrt(stim_num_days), np.nanstd(stim_alpha_block3_Qmultiplicative)/np.sqrt(stim_num_days), np.nanstd(hv_alpha_block3)/np.sqrt(hv_num_days), np.nanstd(hv_alpha_block3_Qmultiplicative)/np.sqrt(hv_num_days))
+beta_means = (np.nanmean(sham_beta_block3[sham_beta_ind]), np.nanmean(stim_beta_block3[stim_beta_ind]), np.nanmean(stim_beta_block3_Qmultiplicative), np.nanmean(hv_beta_block3), np.nanmean(hv_beta_block3_Qmultiplicative))
+beta_sem = (np.nanstd(sham_beta_block3[sham_beta_ind])/np.sqrt(sham_num_days-1), np.nanstd(stim_beta_block3[stim_beta_ind])/np.sqrt(stim_num_days-1), np.nanstd(stim_beta_block3_Qmultiplicative)/np.sqrt(stim_num_days), np.nanstd(hv_beta_block3)/np.sqrt(hv_num_days), np.nanstd(hv_beta_block3_Qmultiplicative)/np.sqrt(hv_num_days))
+gamma_means = (np.nanmean(stim_gamma_block3_Qmultiplicative), np.nanmean(hv_gamma_block3_Qmultiplicative))
+gamma_sem = (np.nanstd(stim_gamma_block3_Qmultiplicative)/np.sqrt(stim_num_days), np.nanstd(hv_gamma_block3_Qmultiplicative)/np.sqrt(hv_num_days))
+
+
+plt.figure()
+plt.subplot(1,3,1)
+plt.bar(np.arange(5), alpha_means,yerr=alpha_sem,color='b')
+plt.xticks(np.arange(5), ('Sham', 'Stim - Standard','Stim - Q Mult', 'Control - Standard', 'Control - Q Mult'))
+plt.title('Alpha')
+plt.subplot(1,3,2)
+plt.bar(np.arange(5), beta_means,yerr=beta_sem,color='r')
+plt.xticks(np.arange(5), ('Sham', 'Stim - Standard','Stim - Q Mult', 'Control - Standard', 'Control - Q Mult'))
+plt.title('Beta')
+plt.subplot(1,3,3)
+plt.bar(np.arange(2), gamma_means,yerr=gamma_sem,color='g')
+plt.xticks(np.arange(2), ('Stim - Q Mult', 'Control - Q Mult'))
+plt.title('Gamma')
+plt.show()
+
+alpha_means = (np.nanmean(sham_alpha_block3), np.nanmean(stim_alpha_block3_Qmultiplicative), np.nanmean(hv_alpha_block3_Qmultiplicative))
+alpha_sem = (np.nanstd(sham_alpha_block3)/np.sqrt(sham_num_days), np.nanstd(stim_alpha_block3_Qmultiplicative)/np.sqrt(stim_num_days), np.nanstd(hv_alpha_block3_Qmultiplicative)/np.sqrt(hv_num_days))
+beta_means = (np.nanmean(sham_beta_block3[sham_beta_ind]), np.nanmean(stim_beta_block3_Qmultiplicative[stim_beta_ind]), np.nanmean(hv_beta_block3_Qmultiplicative))
+beta_sem = (np.nanstd(sham_beta_block3[sham_beta_ind])/np.sqrt(sham_num_days-1), np.nanstd(stim_beta_block3_Qmultiplicative[stim_beta_ind])/np.sqrt(stim_num_days), np.nanstd(hv_beta_block3_Qmultiplicative)/np.sqrt(hv_num_days))
+gamma_means = (np.nanmean(stim_gamma_block3_Qmultiplicative[stim_gamma_ind]), np.nanmean(hv_gamma_block3_Qmultiplicative))
+gamma_sem = (np.nanstd(stim_gamma_block3_Qmultiplicative[stim_gamma_ind])/np.sqrt(stim_num_days), np.nanstd(hv_gamma_block3_Qmultiplicative)/np.sqrt(hv_num_days))
+
+
+plt.figure()
+plt.subplot(1,3,1)
+plt.errorbar(np.arange(3), alpha_means,yerr=alpha_sem,color='b',ecolor='b')
+plt.xticks(np.arange(3), ('Sham', 'Stim - Q Mult', 'Control - Q Mult'))
+plt.xlim((-0.1,2.1))
+plt.ylim((0,0.25))
+plt.title('Alpha')
+plt.subplot(1,3,2)
+plt.errorbar(np.arange(3), beta_means,yerr=beta_sem,color='r',ecolor='r')
+plt.xticks(np.arange(3), ('Sham', 'Stim - Q Mult', 'Control - Q Mult'))
+plt.xlim((-0.1,2.1))
+plt.ylim((0,10))
+plt.title('Beta')
+plt.subplot(1,3,3)
+plt.errorbar(np.arange(2), gamma_means,yerr=gamma_sem,color='g',ecolor='g')
+plt.xticks(np.arange(2), ('Stim - Q Mult', 'Control - Q Mult'))
+plt.xlim((-0.1,1.1))
+plt.ylim((0,5.5))
+plt.title('Gamma')
+plt.show()
+
+plt.figure()
+plt.subplot(1,3,1)
+plt.errorbar(np.arange(2), alpha_means[0:2],yerr=alpha_sem[0:2],color='b',ecolor='b')
+plt.xticks(np.arange(3), ('Sham', 'Stim - Q Mult', 'Control - Q Mult'))
+plt.xlim((-0.1,2.1))
+plt.ylim((0,0.25))
+plt.title('Alpha')
+plt.subplot(1,3,2)
+plt.errorbar(np.arange(2), beta_means[0:2],yerr=beta_sem[0:2],color='r',ecolor='r')
+plt.xticks(np.arange(3), ('Sham', 'Stim - Q Mult', 'Control - Q Mult'))
+plt.xlim((-0.1,2.1))
+plt.ylim((0,10))
+plt.title('Beta')
+plt.subplot(1,3,3)
+plt.errorbar(np.arange(1), gamma_means[0],yerr=gamma_sem[0],color='g',ecolor='g')
+plt.xticks(np.arange(2), ('Stim - Q Mult', 'Control - Q Mult'))
+plt.xlim((-0.1,1.1))
+plt.ylim((0,5.5))
+plt.title('Gamma')
+plt.show()
+
 
 prob_choose_low_mean = (np.mean(stim_prob_choose_low), np.mean(sham_prob_choose_low), np.mean(hv_prob_choose_low))
 prob_choose_low_sem = (float(np.std(stim_prob_choose_low))/stim_num_days, float(np.std(sham_prob_choose_low))/sham_num_days, float(np.std(hv_prob_choose_low))/hv_num_days)

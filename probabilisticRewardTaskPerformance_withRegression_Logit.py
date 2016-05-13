@@ -37,7 +37,7 @@ hdf_list_stim = ['\papa20150203_10.hdf','\papa20150210_13.hdf','\papa20150211_11
     '\papa20150602_04.hdf']
 
 # 14 good sham sessions
-hdf_list_sham = ['\papa20150213_10.hdf','\papa20150217_05.hdf','\papa20150225_02.hdf','\papa20150305_02.hdf',
+hdf_list_sham = ['\papa20150213_10.hdf','\papa20150217_05.hdf','\papa20150225_02.hdf',
     '\papa20150307_02.hdf','\papa20150308_06.hdf','\papa20150310_02.hdf','\papa20150506_09.hdf','\papa20150506_10.hdf',
     '\papa20150519_02.hdf','\papa20150519_03.hdf','\papa20150519_04.hdf','\papa20150527_01.hdf','\papa20150528_02.hdf']
 """
@@ -48,7 +48,7 @@ hdf_list_sham = ['\papa20150217_05.hdf','\papa20150305_02.hdf',
 # sessions with good RL fit only
 # 9 sessions contant voltage, 10 sessions constant current, 12 sessions sham
 # 
-"""
+
 hdf_list_stim = ['\papa20150203_10.hdf','\papa20150211_11.hdf','\papa20150214_18.hdf','\papa20150216_05.hdf',
     '\papa20150218_04.hdf','\papa20150219_09.hdf','\papa20150223_02.hdf','\papa20150224_02.hdf','\papa20150303_03.hdf',
     '\papa20150522_05.hdf','\papa20150522_06.hdf','\papa20150524_02.hdf',
@@ -58,14 +58,16 @@ hdf_list_stim = ['\papa20150203_10.hdf','\papa20150211_11.hdf','\papa20150214_18
 hdf_list_sham = ['\papa20150213_10.hdf','\papa20150217_05.hdf','\papa20150225_02.hdf',
     '\papa20150307_02.hdf','\papa20150308_06.hdf','\papa20150310_02.hdf','\papa20150506_09.hdf','\papa20150506_10.hdf',
     '\papa20150519_03.hdf','\papa20150519_04.hdf','\papa20150527_01.hdf','\papa20150528_02.hdf']
-"""
+
 # constant voltage: 11 good stim sessions
 # hdf_list_stim = [\papa20150211_11.hdf','\papa20150214_18.hdf','\papa20150216_05.hdf',
 #    '\papa20150218_04.hdf','\papa20150219_09.hdf','\papa20150223_02.hdf','\papa20150224_02.hdf','\papa20150303_03.hdf',
 #    '\papa20150306_07.hdf','\papa20150309_04.hdf']
+"""
 hdf_list_stim = ['\papa20150211_11.hdf',
     '\papa20150218_04.hdf','\papa20150219_09.hdf','\papa20150223_02.hdf','\papa20150224_02.hdf','\papa20150303_03.hdf',
     '\papa20150306_07.hdf','\papa20150309_04.hdf']
+"""
 # constant current: 18 good stim sessions
 # hdf_list_stim2 = ['\papa20150508_12.hdf','\papa20150508_13.hdf','\papa20150518_03.hdf',
 #    '\papa20150518_05.hdf','\papa20150518_06.hdf','\papa20150522_05.hdf','\papa20150522_06.hdf','\papa20150524_02.hdf',
@@ -78,8 +80,9 @@ hdf_list_stim2 = ['\papa20150508_12.hdf','\papa20150508_13.hdf','\papa20150518_0
     '\papa20150530_01.hdf','\papa20150530_02.hdf','\papa20150601_02.hdf','\papa20150602_03.hdf',
     '\papa20150602_04.hdf']
 
-hdf_list = np.sum([hdf_list_stim,hdf_list_stim2])
+#hdf_list = np.sum([hdf_list_stim,hdf_list_stim2])
 
+'''
 
 #hdf_list = np.sum([hdf_list_stim,hdf_list_sham])
 # Exceptions: 5/25 - 2, 5/30 - 1, 2/18 - 4, 6/2 - 3, 2/19 - 9 (if doing first 100 trials), 3/3 - 3 (if doing first 100 trials)
@@ -90,7 +93,24 @@ hdf_list = ['\papa20150211_11.hdf',
     '\papa20150518_05.hdf','\papa20150518_06.hdf',
     '\papa20150524_04.hdf',
     '\papa20150602_04.hdf']
-'''
+
+"""
+hdf_list_stim = ['\luig20160204_15_te1382.hdf','\luig20160208_07_te1401.hdf','\luig20160212_08_te1429.hdf','\luig20160217_06_te1451.hdf',
+                '\luig20160229_11_te1565.hdf','\luig20160301_07_te1572.hdf','\luig20160301_09_te1574.hdf', '\luig20160311_08_te1709.hdf',
+                '\luig20160313_07_te1722.hdf', '\luig20160315_14_te1739.hdf']
+hdf_list = hdf_list_stim
+hdf_list_sham = ['\luig20160213_05_te1434.hdf','\luig20160219_04_te1473.hdf','\luig20160221_05_te1478.hdf', '\luig20160305_26_te1617.hdf', \
+                 '\luig20160306_11_te1628.hdf', '\luig20160307_13_te1641.hdf', '\luig20160310_16_te1695.hdf','\luig20160319_23_te1801.hdf', \
+                 '\luig20160320_07_te1809.hdf', '\luig20160322_08_te1826.hdf']
+hdf_list_hv = ['\luig20160218_10_te1469.hdf','\luig20160223_11_te1508.hdf','\luig20160224_15_te1523.hdf', \
+                '\luig20160303_11_te1591.hdf', '\luig20160308_06_te1647.hdf','\luig20160309_25_te1672.hdf']
+hdf_list_hv = ['\luig20160218_10_te1469.hdf','\luig20160223_11_te1508.hdf', \
+                '\luig20160224_15_te1523.hdf', '\luig20160303_11_te1591.hdf',  \
+                '\luig20160308_06_te1647.hdf','\luig20160309_25_te1672.hdf', '\luig20160323_04_te1830.hdf', '\luig20160323_09_te1835.hdf',
+                '\luig20160324_10_te1845.hdf', '\luig20160324_12_te1847.hdf','\luig20160324_14_te1849.hdf']
+
+"""
+
 
 hdf_prefix = 'C:\Users\Samantha Summerson\Dropbox\Carmena Lab\Papa\hdf'
 stim_hdf_list = hdf_list
@@ -100,14 +120,19 @@ global_max_trial_dist = 0
 Q_initial = [0.5, 0.5]
 alpha_true = 0.2
 beta_true = 0.2
-gamma_true = 0.5
+gamma_true = 0.1
 
 def FirstChoiceAfterStim(target3,trial3,stim_trials):
-    choice = [target3[i] for i in range(1,len(target3)) if (trial3[i]==2)&(stim_trials[i-1]==1)]
+    choice = [target3[i] for i in range(1,len(target3[0:100])) if (trial3[i]==2)&(stim_trials[i-1]==1)]
     choice = np.array(choice)
     choose_low = np.sum(-choice + 2)
 
-    return float(choose_low)/len(choice)
+    if len(choice) > 0:
+        prob_choose_low = float(choose_low)/len(choice)
+    else:
+        prob_choose_low = np.nan
+
+    return prob_choose_low
 
 
 def computeProbabilityChoiceWithRegressors(params_block1, params_block3,reward1, target1, trial1, target_side1, reward3, target3, trial3, target_side3, stim_trials):
@@ -1058,6 +1083,8 @@ sham_RLaccuracy_block3_Padditive = np.zeros(sham_num_days)
 sham_RLaccuracy_block3_Qmultiplicative = np.zeros(sham_num_days)
 sham_RLaccuracy_block3_Pmultiplicative = np.zeros(sham_num_days)
 
+sham_RLaccuracy_block3 = np.zeros(sham_num_days)
+sham_RL_max_loglikelihood = np.zeros(sham_num_days)
 
 stim_prob_choose_low = np.zeros(stim_num_days)
 sham_prob_choose_low = np.zeros(sham_num_days)
@@ -1220,6 +1247,7 @@ for name in stim_hdf_list:
     result3_Qmultiplicative = op.minimize(nll_Qmultiplicative, [alpha_true, beta_true, gamma_true], args=([Qlow_block1[-1],Qhigh_block1[-1]], reward_block3, target_block3, trial_block3, stim_trials_block), bounds=[(0,1),(0,None),(0,None)])
     alpha_ml_block3_Qmultiplicative, beta_ml_block3_Qmultiplicative, gamma_ml_block3_Qmultiplicative = result3_Qmultiplicative["x"]
     Qlow_block3, Qhigh_block3, prob_low_block3_Qmultiplicative, max_loglikelihood3 = RLPerformance_multiplicative_Qstimparameter([alpha_ml_block3_Qmultiplicative,beta_ml_block3_Qmultiplicative,gamma_ml_block3_Qmultiplicative],[Qlow_block1[-1],Qhigh_block1[-1]],reward_block3,target_block3, trial_block3, stim_trials_block)
+    print max_loglikelihood3
     BIC3_Qmultiplicative = -2*max_loglikelihood3 + len(result3_Qmultiplicative["x"])*np.log(target_block3.size)
     AIC3_Qmultiplicative = -2*max_loglikelihood3 + 2*len(result3_Qmultiplicative["x"])
 
@@ -1284,7 +1312,7 @@ for name in stim_hdf_list:
     stim_AIC_block3_Pmultiplicative[stim_counter] = AIC3_Pmultiplicative
     stim_RLaccuracy_block3_Pmultiplicative[stim_counter] = accuracy3_Pmultiplicative
     stim_learning_ratio_Pmultiplicative[stim_counter] = float(alpha_ml_block3_Pmultiplicative)/alpha_ml_block1
-
+    '''
     print b3_prob_choose_low[0]
     plt.figure()
     plt.plot(b3_prob_choose_low,'r',label='Behavior')
@@ -1295,7 +1323,7 @@ for name in stim_hdf_list:
     plt.plot(prob_low_block3_Pmultiplicative,'k',label='P Multiplicative')
     plt.legend()
     plt.show()
-
+    '''
     stim_counter += 1
     
 for name in sham_hdf_list:
@@ -1381,9 +1409,19 @@ for name in sham_hdf_list:
     Qlow_block1, Qhigh_block1, prob_low_block1, max_loglikelihood1 = RLPerformance([alpha_ml_block1,beta_ml_block1],Q_initial,reward_block1,target_block1, trial_block1)
     
     result3 = op.minimize(nll, [alpha_true, beta_true], args=(Q_initial, reward_block3, target_block3, trial_block3), bounds=[(0,1),(0,None)])
+
     alpha_ml_block3, beta_ml_block3 = result3["x"]
     Qlow_block3, Qhigh_block3, prob_low_block3, max_loglikelihood3 = RLPerformance([alpha_ml_block3,beta_ml_block3],[Qlow_block1[-1],Qhigh_block1[-1]],reward_block3,target_block3, trial_block3)
     BIC3 = -2*max_loglikelihood3 + len(result3["x"])*np.log(target_block3.size)
+
+     # Accuracy of fit
+    model3 = 0.33*(prob_low_block3 > 0.5) + 0.66*(np.less_equal(prob_low_block3, 0.5))  # scaling by 0.33 and 0.66 just for plotting purposes
+    fit3 = np.equal(model3[:-1],(0.33*target_freechoice_block3))
+    accuracy3 = float(np.sum(fit3))/model3.size
+    
+    
+    sham_RLaccuracy_block3[sham_counter] = accuracy3
+    sham_RL_max_loglikelihood[sham_counter] = max_loglikelihood3
 
     sham_alpha_block1[sham_counter] = alpha_ml_block1
     sham_beta_block1[sham_counter] = beta_ml_block1
@@ -1411,7 +1449,7 @@ for name in sham_hdf_list:
     Get fit with Multiplicative stimulation parameter in Q-value update equation
     '''
     nll_Qmultiplicative = lambda *args: -logLikelihoodRLPerformance_multiplicative_Qstimparameter(*args)
-    result3_Qmultiplicative = op.minimize(nll_Qmultiplicative, [alpha_true, beta_true, gamma_true], args=([Qlow_block1[-1],Qhigh_block1[-1]], reward_block3, target_block3, trial_block3, stim_trials_block), bounds=[(0,1),(0,None),(0,1)])
+    result3_Qmultiplicative = op.minimize(nll_Qmultiplicative, [alpha_true, beta_true, gamma_true], args=([Qlow_block1[-1],Qhigh_block1[-1]], reward_block3, target_block3, trial_block3, stim_trials_block), bounds=[(0,1),(0,None),(1,None)])
     alpha_ml_block3_Qmultiplicative, beta_ml_block3_Qmultiplicative, gamma_ml_block3_Qmultiplicative = result3_Qmultiplicative["x"]
     Qlow_block3, Qhigh_block3, prob_low_block3, max_loglikelihood3 = RLPerformance_additive_Qstimparameter([alpha_ml_block3_Qmultiplicative,beta_ml_block3_Qmultiplicative,gamma_ml_block3_Qmultiplicative],[Qlow_block1[-1],Qhigh_block1[-1]],reward_block3,target_block3, trial_block3, stim_trials_block)
     BIC3_Qmultiplicative = -2*max_loglikelihood3 + len(result3_Qmultiplicative["x"])*np.log(target_block3.size)
@@ -1636,30 +1674,53 @@ plt.title('Average Learning Rate')
 plt.xticks(ind + width/2., ('Stim: B1 - B3', 'Sham: B1 - B3', 'Stim: B3', 'Sham: B3'))
 plt.show()
 
+print stim_BIC_block3_Qmultiplicative
+
 plt.figure()
 plt.subplot(1,2,1)
-plt.scatter(1*np.ones(len(stim_BIC_block3)), stim_BIC_block3 - stim_BIC_block3_Qadditive,c='b')
-plt.scatter(2*np.ones(len(stim_BIC_block3)), stim_BIC_block3 - stim_BIC_block3_Qmultiplicative,c='r')
-plt.scatter(3*np.ones(len(stim_BIC_block3)), stim_BIC_block3 - stim_BIC_block3_Padditive,c='m')
-plt.scatter(4*np.ones(len(stim_BIC_block3)), stim_BIC_block3 - stim_BIC_block3_Pmultiplicative,c='g')
+plt.scatter(1*np.ones(len(stim_BIC_block3)), -stim_BIC_block3 + stim_BIC_block3_Qadditive,c='b')
+plt.scatter(2*np.ones(len(stim_BIC_block3)), -stim_BIC_block3 + stim_BIC_block3_Qmultiplicative,c='r')
+plt.scatter(3*np.ones(len(stim_BIC_block3)), -stim_BIC_block3 + stim_BIC_block3_Padditive,c='m')
+plt.scatter(4*np.ones(len(stim_BIC_block3)), -stim_BIC_block3 + stim_BIC_block3_Pmultiplicative,c='g')
 plt.plot([-0.5,4.5],[0,0],'k--')
-plt.ylabel('BIC Difference (Regular - Adjusted)')
+plt.ylabel('BIC Difference (Adjusted - Standard)')
 labels = ["Q Additive","Q Multiplicative'","P Additive", "P Multiplicative"]
 plt.xticks([1,2,3,4], labels, fontsize=8)
-plt.ylim([-10,50])
+#plt.ylim([-10,50])
 plt.title('Bayesian Information Criterion - Stim Days')
 #plt.legend()
 plt.subplot(1,2,2)
-plt.scatter(1*np.ones(len(stim_BIC_block3)), stim_BIC_block3_Qmultiplicative - stim_BIC_block3_Qadditive,c='b')
-plt.scatter(2*np.ones(len(stim_BIC_block3)), stim_BIC_block3_Qmultiplicative - stim_BIC_block3_Padditive,c='m')
-plt.scatter(3*np.ones(len(stim_BIC_block3)), stim_BIC_block3_Qmultiplicative - stim_BIC_block3_Pmultiplicative,c='g')
-plt.plot([-0.5,3.5],[0,0],'k--')
-plt.ylabel('BIC Difference (Q Multiplicative Model - Adjusted)')
-labels = ["Q Additive'","P Additive", "P Multiplicative"]
-plt.xticks([1,2,3], labels, fontsize=8)
+plt.scatter(1*np.ones(len(stim_BIC_block3)), stim_BIC_block3 - stim_BIC_block3_Qmultiplicative,c='r')
+plt.scatter(2*np.ones(len(stim_BIC_block3)), -stim_BIC_block3_Qmultiplicative + stim_BIC_block3_Qadditive,c='b')
+plt.scatter(3*np.ones(len(stim_BIC_block3)), -stim_BIC_block3_Qmultiplicative + stim_BIC_block3_Padditive,c='m')
+plt.scatter(4*np.ones(len(stim_BIC_block3)), -stim_BIC_block3_Qmultiplicative + stim_BIC_block3_Pmultiplicative,c='g')
+plt.plot([-0.5,4.5],[0,0],'k--')
+plt.ylabel('BIC Difference (Adjusted - Q Multiplicative Model)')
+labels = ["Standard","Q Additive'","P Additive", "P Multiplicative"]
+plt.xticks([1,2,3,4], labels, fontsize=8)
 plt.title('Bayesian Information Criterion - Stim Days')
-plt.ylim([-10,5])
+#plt.ylim([-10,40])
 #plt.legend()
+
+plt.show()
+
+"""
+# Luigi indices
+BIC_indices = range(len(stim_BIC_block3))
+BIC_indices.pop(5)
+"""
+BIC_indices = range(len(stim_BIC_block3))
+BIC_indices.pop(8)
+
+avg_model_BIC = [np.nanmean(stim_BIC_block3[BIC_indices]), np.nanmean(stim_BIC_block3_Qadditive[BIC_indices]), np.nanmean(stim_BIC_block3_Qmultiplicative[BIC_indices]), np.nanmean(stim_BIC_block3_Padditive[BIC_indices]), np.nanmean(stim_BIC_block3_Pmultiplicative[BIC_indices])]
+sem_model_BIC = [np.nanstd(stim_BIC_block3[BIC_indices])/len(stim_BIC_block3), np.nanstd(stim_BIC_block3_Qadditive[BIC_indices])/len(stim_BIC_block3), np.nanstd(stim_BIC_block3_Qmultiplicative[BIC_indices])/len(stim_BIC_block3), np.nanstd(stim_BIC_block3_Padditive[BIC_indices])/len(stim_BIC_block3), np.nanstd(stim_BIC_block3_Pmultiplicative[BIC_indices])/len(stim_BIC_block3)]
+sem_model_BIC = np.array(sem_model_BIC)/2
+plt.figure()
+plt.errorbar(range(len(avg_model_BIC)), avg_model_BIC, yerr=sem_model_BIC,marker='o',color='c')
+labels = ["Regular","Q Additive","Q Multiplicative","P Additive", "P Multiplicative"]
+plt.xticks([0,1,2,3,4], labels, fontsize=8)
+plt.xlim((-0.1,4.1))
+plt.title('Bayesian Information Criterion')
 plt.show()
 
 plt.figure()

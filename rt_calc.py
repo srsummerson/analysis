@@ -4,12 +4,39 @@ import numpy as np
 import scipy
 import matplotlib.pyplot as plt
 
-def compute_rt_per_trial(hdf_file): 
+def compute_rt_per_trial_FreeChoiceTask(hdf_file): 
     # Load HDF file
     hdf = tables.openFile(hdf_file)
 
     #Extract go_cue_indices in units of hdf file row number
     go_cue_ix = np.array([hdf.root.task_msgs[j-3]['time'] for j, i in enumerate(hdf.root.task_msgs) if i['msg']=='check_reward'])
+    
+    # Calculate filtered velocity and 'velocity mag. in target direction'
+    filt_vel, total_vel, vel_bins = get_cursor_velocity(hdf, go_cue_ix, 0., 2., use_filt_vel=False)
+
+    ## Calculate 'RT' from vel_in_targ_direction: use with get_cusor_velocity_in_targ_dir
+    #kin_feat = get_kin_sig_shenoy_method(vel_in_targ_dir.T, vel_bins, perc=.2, start_tm = .1)
+    #kin_feat = get_rt(total_vel.T, vel_bins, vel_thres = 0.1)
+    kin_feat = get_rt_change_deriv(total_vel.T, vel_bins, d_vel_thres = 0.3, fs=60)
+    
+    '''
+    #PLot first 5 trials in a row
+    for n in range(1):
+        plt.plot(total_vel[:, n], '.-')
+        plt.plot(kin_feat[n, :][0], total_vel[int(kin_feat[n,:][0]), n], '.', markersize=10)
+        plt.show()
+        time.sleep(1.)
+    '''
+    hdf.close()
+    
+    return kin_feat[:,1], total_vel
+
+def compute_rt_per_trial_CenterOut(hdf_file): 
+    # Load HDF file
+    hdf = tables.openFile(hdf_file)
+
+    #Extract go_cue_indices in units of hdf file row number
+    go_cue_ix = np.array([hdf.root.task_msgs[j-3]['time'] for j, i in enumerate(hdf.root.task_msgs) if i['msg']=='reward'])
     
     # Calculate filtered velocity and 'velocity mag. in target direction'
     filt_vel, total_vel, vel_bins = get_cursor_velocity(hdf, go_cue_ix, 0., 2., use_filt_vel=False)
@@ -172,9 +199,11 @@ def get_rt_change_deriv(kin_sig, bins, d_vel_thres = 0., fs = 60):
 
         dt = 1./fs
         d_spd = np.diff(spd,axis=0)/dt
-
-
-        bin_rt = np.ravel(np.nonzero(np.greater(d_spd,d_vel_thres)))[0]
+        
+        if len(np.ravel(np.nonzero(np.greater(d_spd,d_vel_thres))))==0:
+            bin_rt = 0
+        else:
+            bin_rt = np.ravel(np.nonzero(np.greater(d_spd,d_vel_thres)))[0]
         
         kin_feat[trl, 0] = bin_rt + 1 #Index of 'RT'
         kin_feat[trl, 1] = bins[kin_feat[trl, 0]] #Actual time of 'RT'
