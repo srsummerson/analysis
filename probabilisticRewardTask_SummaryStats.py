@@ -1,6 +1,7 @@
 from probabilisticRewardTaskPerformance import PeriStimulusFreeChoiceBehavior, FreeChoicePilotTask_Behavior, FreeChoiceBehaviorConditionalProbabilities, FreeChoicePilotTask_ChoiceAfterStim
 import numpy as np
 import scipy.optimize as op
+import statsmodels.api as sm
 import matplotlib.pyplot as plt
 from statsmodels.formula.api import ols
 from statsmodels.stats.anova import anova_lm
@@ -858,6 +859,134 @@ def probabilisticRewardTaskPerformance_LVChoice(sham_days, stim_days, control_da
 
 	return sham_prob_lv, stim_prob_lv, control_prob_lv
 
+
+def probabilisticRewardTaskPerformance_RegressFreeChoice(days, animal_id):
+
+	num_days = len(days)
+
+	targ_choice = []
+	targ_side = []
+	stim_dist = []
+	stim_reward = []
+	stim_targ_side = []
+
+	for i in range(0,num_days):
+		name = days[i]
+		hdf_location = 'C:\Users\Samantha Summerson\Dropbox\Carmena Lab'+ animal_id + '\hdf'+name
+
+		reward1, target1, instructed_or_freechoice_block1, target_side1, reward3, target3, instructed_or_freechoice_block3, target_side3, stim_trials = FreeChoicePilotTask_Behavior(hdf_location)
+
+		free_choice_ind = np.ravel(np.nonzero(np.equal(np.ravel(instructed_or_freechoice_block3),2)))
+		instructed_choice_ind = np.ravel(np.nonzero(np.equal(np.ravel(instructed_or_freechoice_block3),1)))  # instructed trials in block 3 = stim trials
+		target_freechoice_block3 = target3[free_choice_ind]
+		reward_freechoice_block3 = reward3[free_choice_ind]
+
+		
+		first_stim_trial_ind = instructed_choice_ind[0]
+		prev_stim_trial_ind = first_stim_trial_ind
+
+		for i in range(len(instructed_or_freechoice_block3[prev_stim_trial_ind:])):
+			# If instructed/stim trial, update this as the most recent stim trial
+			if i in instructed_choice_ind:
+				prev_stim_trial_ind = i
+			# If free-choice trial, record the choice on this trial, the distance from the most recent stim trial, whether that stim trial was rewarded, what side the target was 
+			# on during the stim trial, and what side the target was on this time.
+			else:
+				targ_choice.append(target3[i] - 1)  # subject one so that the variable is binary 
+				targ_side.append(target_side3[i])
+				stim_dist.append(i - prev_stim_trial_ind)
+				stim_reward.append(reward3[prev_stim_trial_ind])
+				stim_targ_side.append(target_side3[prev_stim_trial_ind])
+
+	# Convert lists to arrays
+	targ_choice = np.array(targ_choice)
+	targ_side = np.array(targ_side)
+	stim_dist = np.array(stim_dist)
+	stim_reward = np.array(stim_reward)
+	stim_targ_side = np.array(stim_targ_side)
+
+	'''
+	Oraganize data and regress with GLM 
+	'''
+	x = np.vstack((stim_dist, stim_reward, stim_targ_side))
+	x = np.transpose(x)
+	x = sm.add_constant(x,prepend='False')
+
+	model_glm = sm.Logit(targ_choice,x)
+	fit_glm = model_glm.fit()
+
+
+	return fit_glm
+
+
+def probabilisticRewardTaskPerformance_RegressFreeChoiceV2(days, animal_id):
+
+	"""
+	Regress choices as function of indicator variables of whether or not a stim trial occured in the previous five trials.
+	"""
+
+
+	num_days = len(days)
+
+	targ_choice = []
+	stim_dist1 = []
+	stim_dist2 = []
+	stim_dist3 = []
+	stim_dist4 = []
+	stim_dist5 = []
+
+	for i in range(0,num_days):
+		name = days[i]
+		hdf_location = 'C:\Users\Samantha Summerson\Dropbox\Carmena Lab'+ animal_id + '\hdf'+name
+
+		reward1, target1, instructed_or_freechoice_block1, target_side1, reward3, target3, instructed_or_freechoice_block3, target_side3, stim_trials = FreeChoicePilotTask_Behavior(hdf_location)
+
+		free_choice_ind = np.ravel(np.nonzero(np.equal(np.ravel(instructed_or_freechoice_block3),2)))
+		instructed_choice_ind = np.ravel(np.nonzero(np.equal(np.ravel(instructed_or_freechoice_block3),1)))  # instructed trials in block 3 = stim trials
+		target_freechoice_block3 = target3[free_choice_ind]
+		reward_freechoice_block3 = reward3[free_choice_ind]
+
+		
+		first_stim_trial_ind = instructed_choice_ind[0]
+		prev_stim_trial_ind = first_stim_trial_ind
+
+		find_first_100 = np.nonzero((free_choice_ind < 100))
+
+		for i in range(len(instructed_or_freechoice_block3[prev_stim_trial_ind:len(find_first_100)])):
+			# If instructed/stim trial, update this as the most recent stim trial
+			if i in instructed_choice_ind:
+				prev_stim_trial_ind = i
+			# If free-choice trial, record the choice on this trial, the distance from the most recent stim trial, whether that stim trial was rewarded, what side the target was 
+			# on during the stim trial, and what side the target was on this time.
+			else:
+				targ_choice.append(target3[i] - 1)  # subject one so that the variable is binary
+				stim_dist1.append((i - prev_stim_trial_ind)==1) 
+				stim_dist2.append((i - prev_stim_trial_ind)==2)
+				stim_dist3.append((i - prev_stim_trial_ind)==3)
+				stim_dist4.append((i - prev_stim_trial_ind)==4)
+				stim_dist5.append((i - prev_stim_trial_ind)==5)
+
+
+	# Convert lists to arrays
+	targ_choice = np.array(targ_choice)
+	stim_dist1 = np.array(stim_dist1)
+	stim_dist2 = np.array(stim_dist2)
+	stim_dist3 = np.array(stim_dist3)
+	stim_dist4 = np.array(stim_dist4)
+	stim_dist5 = np.array(stim_dist5)
+	'''
+	Oraganize data and regress with GLM 
+	'''
+	x = np.vstack((stim_dist1, stim_dist2, stim_dist3))
+	x = np.transpose(x)
+	x = sm.add_constant(x,prepend='False')
+
+	model_glm = sm.Logit(targ_choice,x)
+	fit_glm = model_glm.fit()
+
+
+	return fit_glm
+
 '''
 papa_hdf_location = 'C:\Users\Samantha Summerson\Dropbox\Carmena Lab\Papa\hdf'
 luigi_hdf_location = 'C:\Users\Samantha Summerson\Dropbox\Carmena Lab\Luigi\hdf'
@@ -932,6 +1061,10 @@ print "Two-way ANOVA analysis: Luigi"
 print(aov_table)
 """
 
+fit_glm = probabilisticRewardTaskPerformance_RegressFreeChoiceV2(luigi_stim_days, '\Luigi')
+
+
+"""
 papa_sham_prob_trialaligned, papa_stim_prob_trialaligned, papa_control_prob_trialaligned = probabilisticRewardTaskPerformance_TrialAligned(sham_days, stim_days, control_days, '\Papa')
 luigi_sham_prob_trialaligned, luigi_stim_prob_trialaligned, luigi_control_prob_trialaligned = probabilisticRewardTaskPerformance_TrialAligned(luigi_sham_days, luigi_stim_days, luigi_control_days, '\Luigi')
 
@@ -978,7 +1111,9 @@ model = ols(formula, dta_trialaligned).fit()
 aov_table_luigi = anova_lm(model, typ=2)
 
 
-"""
+
+
+
 dta_papa_lv = make_statsmodel_dtstructure([papa_sham_prob_lv, papa_stim_prob_lv, papa_control_prob_lv], ['Sham', 'Stim', 'Control'], 'lv_choices')
 dta_luigi_lv = make_statsmodel_dtstructure([luigi_sham_prob_lv, luigi_stim_prob_lv, luigi_control_prob_lv], ['Sham', 'Stim', 'Control'], 'lv_choices')
 
@@ -989,7 +1124,7 @@ res_luigi_01 = pairwise_tukeyhsd(dta_luigi_lv['lv_choices'], dta_luigi_lv['Treat
 #formula = 'lv_choices ~ C(Stim_condition)'
 #model = ols(formula, dta_lv).fit()
 #aov_table = anova_lm(model, typ=2)
-"""
+
 orig_stdout = sys.stdout
 f = file('Prob of LV Choices Aligned to Trials - Fig 2BC.txt', 'w')
 sys.stdout = f
@@ -1003,4 +1138,4 @@ print(aov_table_luigi)
 sys.stdout = orig_stdout
 f.close()
 
-# Stopped here: do one-way ANOVA analysis to compare trial position, but not compare across condition 
+"""
