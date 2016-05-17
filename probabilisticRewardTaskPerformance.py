@@ -335,11 +335,11 @@ def FreeChoicePilotTaskPerformance(hdf_file):
     plt.legend()
     
 
-    #plt.savefig('C:/Users/Samantha Summerson/Documents/GitHub/analysis/Papa_Performance_figs/FCPerformance_targets_%s.svg' % hdf_file[:-4])    # save this filetype for AI editing
+    plt.savefig('C:/Users/Samantha Summerson/Documents/GitHub/analysis/Papa_Performance_figs/FCPerformance_targets_%s.svg' % hdf_file[:-4])    # save this filetype for AI editing
     #plt.savefig('/home/srsummerson/code/analysis/Luigi_Performance_figs/FCPerformance_targets_%s.svg' % hdf_file[:-4])    # save this filetype for easy viewing
 
     #plt.savefig('C:/Users/Samantha Summerson/Documents/GitHub/analysis/Papa_Performance_figs/FCPerformance_targets_%s.svg' % hdf_file[:-4])    # save this filetype for AI editing
-    plt.savefig('/home/srsummerson/code/analysis/Luigi_Performance_figs/FCPerformance_targets_%s.svg' % hdf_file[:-4])    # save this filetype for easy viewing
+    #plt.savefig('/home/srsummerson/code/analysis/Luigi_Performance_figs/FCPerformance_targets_%s.svg' % hdf_file[:-4])    # save this filetype for easy viewing
 
     #plt.savefig('/home/srsummerson/code/analysis/Luigi_Performance_figs/FCPerformance_targets_%s.png' % hdf_file[:-4])    # save this filetype for easy viewing
     #plt.close()
@@ -781,3 +781,30 @@ def FreeChoiceBehavior_withStressTrials(hdf_file):
 
 	hdf.close()
 	return state_time, ind_center_states, ind_check_reward_states, all_instructed_or_freechoice, all_stress_or_not, successful_stress_or_not,trial_success, target, reward
+
+def FreeChoicePilotTask_ChoiceAfterStim(reward3, target3, instructed_or_freechoice_block3,stim_trials):
+	'''
+	This method computes the likelihood of selecting the LV target on the free-choice trial following a trial with stimulation.
+	This likelihood is divided into two cases: when the stimulation trial is rewarded and unrewarded.
+	'''
+
+	# Find rewarded and unrewarded stim trial indices
+	stim_reward = np.ravel(np.nonzero(np.logical_and(reward3,stim_trials)))
+	stim_noreward = np.ravel(np.nonzero(np.logical_and(np.logical_not(reward3),stim_trials)))
+
+	# Delete index from arrays if it corresponds to last trial
+	if (stim_reward[-1]==(len(stim_trials)-1)):
+		stim_reward = np.delete(stim_reward,len(stim_reward)-1)
+	if (stim_noreward[-1]==(len(stim_trials)-1)):
+		stim_noreward = np.delete(stim_noreward,len(stim_noreward)-1)
+
+	# Look at free-choice trial target selections following these stimulation trials
+	choice_reward = [target3[stim_reward[i]+1] for i in range(len(stim_reward)) if (instructed_or_freechoice_block3[stim_reward[i]+1]==2)]
+	choice_noreward = [target3[stim_noreward[i]+1] for i in range(len(stim_noreward)) if (instructed_or_freechoice_block3[stim_noreward[i]+1]==2)]
+
+	# Calculate the likelihood of selecting the low-value target
+	prob_lv_rewarded = float(np.sum(np.equal(choice_reward,1)))/len(choice_reward)
+	prob_lv_unrewarded = float(np.sum(np.equal(choice_noreward,1)))/len(choice_noreward)
+
+
+	return prob_lv_rewarded, prob_lv_unrewarded
