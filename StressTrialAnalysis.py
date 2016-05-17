@@ -15,12 +15,12 @@ from spectralAnalysis import TrialAveragedPSD
 
 
 # Set up code for particular day and block
-hdf_filename = 'mari20160418_06_te2004.hdf'
-filename = 'Mario20160418'
+hdf_filename = 'mari20160516_03_te2088.hdf'
+filename = 'Mario20160516'
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
 #hdf_location = hdffilename
-block_num = 2
+block_num = 1
 stim_freq = 100
 
 lfp1_channels = [13, 14, 15, 16, 29, 30]
@@ -318,6 +318,7 @@ Process LFP data and find PSDs.
 '''
 Fs = hdeeg_samprate
 density_length = 30
+
 
 for chann in hdeeg.keys():
 	freq, trial_power_stress = TrialAveragedPSD(hdeeg, chann, Fs, hdeeg_ind_successful_stress, samples_hdeeg_successful_stress, row_ind_successful_stress, stim_freq)

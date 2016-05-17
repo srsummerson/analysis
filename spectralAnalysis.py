@@ -115,6 +115,8 @@ def TrialAveragedPSD(lfp_data, chann, Fs, lfp_ind, samples_lfp, row_ind, stim_fr
 	density_length = 30
 	
 	trial_power = np.zeros([density_length,len(row_ind)])
+	freq = np.zeros(257)
+	
 	for i in range(0,len(row_ind)):	
 		lfp_snippet = lfp_data[chann][lfp_ind[i]:lfp_ind[i]+samples_lfp[i]]
 		num_timedom_samples = lfp_snippet.size
