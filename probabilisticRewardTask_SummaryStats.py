@@ -173,6 +173,49 @@ def probabilisticRewardTaskPerformance_RewardAndStim(sham_days, stim_days, contr
 
 	return stim_prob_choose_lv_stim_rewarded, stim_prob_choose_lv_stim_unrewarded, sham_prob_choose_lv_stim_rewarded, sham_prob_choose_lv_stim_unrewarded, control_prob_choose_lv_stim_rewarded, control_prob_choose_lv_stim_unrewarded
 
+def probabilisticRewardTaskPerformance_RewardAndTargetSide(days, animal_id):
+	
+	num_days = len(days)
+
+	dta = []
+
+	for i in range(0,num_days):
+		name = stim_days[i]
+		hdf_location = 'C:\Users\Samantha Summerson\Dropbox\Carmena Lab'+ animal_id + '\hdf'+name
+		reward1, target1, instructed_or_freechoice_block1, target_side1, reward3, target3, instructed_or_freechoice_block3, target_side3, stim_trials = FreeChoicePilotTask_Behavior(hdf_location)
+		
+		instructed_choice_ind = np.ravel(np.nonzero(np.equal(np.ravel(instructed_or_freechoice_block3),1)))
+		free_choice_ind = [(ind+1) for ind in instructed_choice_ind if (ind + 1) not in instructed_choice_ind]
+
+		rewarded_left = [(1 - target3[i]) for i in free_choice_ind if (target_side3[i-1] == 1)&(reward3[i] == 1)]
+		rewarded_right = [(1 - target3[i]) for i in free_choice_ind if (target_side3[i-1] == 2)&(reward3[i] == 1)]
+		unrewarded_left = [(1 - target3[i]) for i in free_choice_ind if (target3[i-1] == 1)&(reward3[i] == 0)]
+		unrewarded_right = [(1 - target3[i]) for i in free_choice_ind if (target3[i-1] == 2)&(reward3[i] == 0)]
+
+		prob_lv_stim_rewarded_left = np.sum(rewarded_left)/float(len(rewarded_left))
+		prob_lv_stim_rewarded_right = np.sum(rewarded_right)/float(len(rewarded_right))
+		prob_lv_stim_unrewarded_left = np.sum(unrewarded_left)/float(len(unrewarded_left))
+		prob_lv_stim_unrewarded_right = np.sum(unrewarded_right)/float(len(unrewarded_right))
+
+		rewarded_left = [(target_side3[i]-1) for i in free_choice_ind if (target_side3[i-1] == 1)&(reward3[i] == 1)]
+		rewarded_right = [(target_side3[i]-1) for i in free_choice_ind if (target_side3[i-1] == 2)&(reward3[i] == 1)]
+		unrewarded_left = [(target_side3[i]-1) for i in free_choice_ind if (target3[i-1] == 1)&(reward3[i] == 0)]
+		unrewarded_right = [(target_side3[i]-1) for i in free_choice_ind if (target3[i-1] == 2)&(reward3[i] == 0)]
+
+		prob_right_stim_rewarded_left = np.sum(rewarded_left)/float(len(rewarded_left))
+		prob_right_stim_rewarded_right = np.sum(rewarded_right)/float(len(rewarded_right))
+		prob_right_stim_unrewarded_left = np.sum(unrewarded_left)/float(len(unrewarded_left))
+		prob_right_stim_unrewarded_right = np.sum(unrewarded_right)/float(len(unrewarded_right))
+
+		dta += [(1,1,prob_lv_stim_rewarded_left,prob_right_stim_rewarded_left)]
+		dta += [(1,2,prob_lv_stim_rewarded_right,prob_right_stim_rewarded_right)]
+		dta += [(0,1,prob_lv_stim_unrewarded_left,prob_right_stim_unrewarded_left)]
+		dta += [(0,2,prob_lv_stim_unrewarded_right,prob_right_stim_unrewarded_right)]
+
+	dta = pd.DataFrame(dta, columns=['reward', 'stim_targ_side', 'lv_choices', 'right_choices'])
+		
+	return dta
+
 def probabilisticRewardTaskPerformance_TrialAligned(sham_days,stim_days,control_days, animal_id):
 
 	all_days = stim_days + sham_days + control_days
@@ -986,6 +1029,50 @@ def probabilisticRewardTaskPerformance_RegressFreeChoiceV2(days, animal_id):
 
 
 	return fit_glm
+
+def TwoWayMANOVA(x_dta):
+	'''
+	Inputs:
+		- x_dta: input of the form pd.DataFrame(dta, columns=['reward', 'stim_targ_side', 'lv_choices', 'right_choices']), 
+				 length is equal to number of days
+
+	Outputs:
+
+	'''
+	g = factor1_numgroups
+	b = factor2_numgroups
+	n = num_obs_within_groups
+
+	x_mean_factor1 = 0 # vector of mean values for dependent metrics averages over groups in factor 1
+	x_mean_factor2 = 0 # vector of mean values for dependent metrics averaged over groups in factor 2
+	x_mean = 0 # vector of overall mean values for dependent metrics
+
+	SSP_interaction = 0
+	SSP_residual = 0
+	SSP_corrected = 0
+
+	for i in range(g):
+		for j in range(b):
+			x_mean_cross_terms = 0 # vector of mean values for dependent metrics averages over observations for group i in factor 1
+								 # group j in factor 2
+			SSP_interaction += n*(x_mean_cross_terms - x_mean_factor1 - x_mean_factor2 + x_mean)*(x_mean_cross_terms - x_mean_factor1 - x_mean_factor2 + x_mean).T
+			for r in range(n):
+				SSP_residual += (x[i,j,r] - x_mean_cross_terms)*(x[i,j,r] - x_mean_cross_terms).T
+				SSP_corrected += (x[i,j,r] - x_mean)*(x[i,j,r] - x_mean).T
+
+	SSP_factor1 = np.sum(b*n*(x_mean_factor1 - x_mean)*(x_mean_factor1 - x_mean).T)
+	SSP_factor2 = np.sum(g*n*(x_mean_factor2 - x_mean)*(x_mean_factor2 - x_mean).T)
+
+	df_factor1 = g - 1
+	df_factor2 = b - 1
+	df_interaction = (g - 1)*(b - 1)
+	df_residual = g*b*(n - 1)
+	
+	F_factor1 = (SSP_factor1/float(df_factor1))/(SSP_residual/float(df_residual))
+	F_factor2 = (SSP_factor2/float(df_factor2))/(SSP_residual/float(df_residual))
+	F_interaction = (SSP_interaction/float(df_interaction))/(SSP_residual/float(df_residual))
+
+	return
 
 '''
 papa_hdf_location = 'C:\Users\Samantha Summerson\Dropbox\Carmena Lab\Papa\hdf'
