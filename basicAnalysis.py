@@ -279,3 +279,22 @@ def ElectrodeGridMat(powers):
 	power_mat[14,4:13] = powers[row_fourteen-1]
 	
 	return power_mat
+
+def ComputeRSquared(xd,xm):
+	'''
+	This method computes the coefficient of determination, R^2, for data xd that has been fit with a model resulting in 
+	predicted values xm.
+
+	Input:
+		- xd: array of data, length n
+		- xm: model predictions based on fitting to data, length n
+	Output:
+		-r_squared: coefficient of determination
+	'''
+	ss_tot = np.sum((xd - np.nanmean(xd))**2)  	# total sum of squares ~ variance in data
+	ss_reg = np.sum((xm - np.nanmean(xd))**2)	# explained sum of squares
+	ss_res = np.sum((xd - xm)**2)				# residual sum of squares
+
+	r_squared = 1 - ss_res/float(ss_tot)
+
+	return r_squared

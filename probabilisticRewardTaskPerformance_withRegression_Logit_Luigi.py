@@ -18,6 +18,7 @@ from logLikelihoodRLPerformance import RLPerformance, logLikelihoodRLPerformance
                                         logLikelihoodRLPerformance_multiplicative_Pstimparameter, RLPerformance_additive_Pstimparameter, logLikelihoodRLPerformance_additive_Pstimparameter, \
                                         logLikelihoodRLPerformance_multiplicative_Qstimparameter_HVTarget, RLPerformance_multiplicative_Qstimparameter_HVTarget
 from probabilisticRewardTaskPerformance import FreeChoicePilotTask_Behavior
+from basicAnalysis import ComputeRSquared
 
 
 hdf_list_sham = ['\papa20150213_10.hdf','\papa20150217_05.hdf','\papa20150225_02.hdf','\papa20150305_02.hdf',
