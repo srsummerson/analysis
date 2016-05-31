@@ -228,6 +228,11 @@ lfp_power_successful_reg = dict()
 lfp_power_reg = dict()
 
 for chann in lfp_channels:
+	lfp_power_successful_stress[chann] = []
+	lfp_power_stress[chann] = []
+	lfp_power_successful_reg[chann] = []
+	lfp_power_reg[chann] = []
+	
 	for i, ind in enumerate(lfp_ind_successful_stress):
 		freq, Pxx_den = signal.welch(lfp[chann][ind:ind+samples_lfp_successful_stress[i]], lfp_samprate, nperseg=1024)
 
