@@ -44,6 +44,7 @@ def LFPSpectrumSingleChannel(tankname,channel):
  				plt.close()
  	return 
 
+
 def LFPSpectrumAllChannel(tankname,num_channels):
 	"""
 	Adopted from: http://glowingpython.blogspot.com/2011/08/how-to-plot-frequency-spectrum-with.html
