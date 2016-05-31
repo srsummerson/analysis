@@ -33,6 +33,8 @@ Load behavior data
 '''
 state_time, ind_center_states, ind_check_reward_states, all_instructed_or_freechoice, all_stress_or_not, successful_stress_or_not,trial_success, target, reward = FreeChoiceBehavior_withStressTrials(hdf_location)
 
+print "Behavior data loaded."
+
 # Total number of trials
 num_trials = ind_center_states.size
 total_states = state_time.size
@@ -85,6 +87,8 @@ response_time_reg = (state_time[row_ind_end_reg] - state_time[row_ind_reg])/floa
 '''
 Load syncing data for behavior and TDT recording
 '''
+print "Loading syncing data."
+
 hdf_times = dict()
 mat_filename = filename+'_b'+str(block_num)+'_syncHDF.mat'
 sp.io.loadmat('/home/srsummerson/storage/syncHDF/'+mat_filename,hdf_times)
