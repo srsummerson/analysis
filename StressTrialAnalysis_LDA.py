@@ -15,7 +15,7 @@ from spectralAnalysis import TrialAveragedPSD
 
 
 # Set up code for particular day and block
-hdf_filename = 'mari20160517_09_te2099.hdf'
+hdf_filename = 'mari20160517_07_te2097.hdf'
 filename = 'Mario20160517'
 TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
 #TDT_tank = '/home/srsummerson/storage/tdt/'+filename
@@ -232,7 +232,7 @@ for chann in lfp_channels:
 	lfp_power_stress[chann] = []
 	lfp_power_successful_reg[chann] = []
 	lfp_power_reg[chann] = []
-	
+
 	for i, ind in enumerate(lfp_ind_successful_stress):
 		freq, Pxx_den = signal.welch(lfp[chann][ind:ind+samples_lfp_successful_stress[i]], lfp_samprate, nperseg=1024)
 
