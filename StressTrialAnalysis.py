@@ -17,10 +17,11 @@ from spectralAnalysis import TrialAveragedPSD
 # Set up code for particular day and block
 hdf_filename = 'mari20160517_09_te2099.hdf'
 filename = 'Mario20160517'
-TDT_tank = '/home/srsummerson/storage/tdt/'+filename
+TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
+#TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
 #hdf_location = hdffilename
-block_num = 2
+block_num = 1
 stim_freq = 100
 
 lfp1_channels = [13, 14, 15, 16, 29, 30]
