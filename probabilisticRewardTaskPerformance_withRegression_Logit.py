@@ -17,7 +17,7 @@ from logLikelihoodRLPerformance import RLPerformance, logLikelihoodRLPerformance
                                         RLPerformance_additive_Qstimparameter, logLikelihoodRLPerformance_additive_Qstimparameter, RLPerformance_multiplicative_Pstimparameter, \
                                         logLikelihoodRLPerformance_multiplicative_Pstimparameter, RLPerformance_additive_Pstimparameter, logLikelihoodRLPerformance_additive_Pstimparameter
 from probabilisticRewardTaskPerformance import FreeChoicePilotTask_Behavior, FreeChoicePilotTask_Behavior_ProbChooseLow
-from basicAnalysis import ComputeRSquared
+from basicAnalysis import ComputeRSquared, ComputeEfronRSquared
 
 '''
 Do fit_regularized for regression
@@ -87,6 +87,7 @@ hdf_list_stim2 = ['\papa20150508_12.hdf','\papa20150508_13.hdf','\papa20150518_0
 #hdf_list = np.sum([hdf_list_stim,hdf_list_sham])
 # Exceptions: 5/25 - 2, 5/30 - 1, 2/18 - 4, 6/2 - 3, 2/19 - 9 (if doing first 100 trials), 3/3 - 3 (if doing first 100 trials)
 '''
+"""
 hdf_list = ['\papa20150211_11.hdf',
     '\papa20150223_02.hdf','\papa20150224_02.hdf',
     '\papa20150306_07.hdf','\papa20150309_04.hdf','\papa20150508_12.hdf','\papa20150508_13.hdf','\papa20150518_03.hdf',
@@ -109,10 +110,10 @@ hdf_list_hv = ['\luig20160218_10_te1469.hdf','\luig20160223_11_te1508.hdf', \
                 '\luig20160308_06_te1647.hdf','\luig20160309_25_te1672.hdf', '\luig20160323_04_te1830.hdf', '\luig20160323_09_te1835.hdf',
                 '\luig20160324_10_te1845.hdf', '\luig20160324_12_te1847.hdf','\luig20160324_14_te1849.hdf']
 
-"""
 
 
-hdf_prefix = 'C:\Users\Samantha Summerson\Dropbox\Carmena Lab\Papa\hdf'
+
+hdf_prefix = 'C:\Users\Samantha Summerson\Dropbox\Carmena Lab\Luigi\hdf'
 stim_hdf_list = hdf_list
 sham_hdf_list = hdf_list_sham
 
@@ -1084,9 +1085,14 @@ sham_RLaccuracy_block3_Qmultiplicative = np.zeros(sham_num_days)
 sham_RLaccuracy_block3_Pmultiplicative = np.zeros(sham_num_days)
 
 sham_RLaccuracy_block3 = np.zeros(sham_num_days)
+sham_RLaccuracy_block1 = np.zeros(sham_num_days)
 sham_RL_max_loglikelihood3 = np.zeros(sham_num_days)
 sham_RL_rsquared1 = np.zeros(sham_num_days)
 sham_RL_rsquared3 = np.zeros(sham_num_days)
+sham_RLpearsonr1 = np.zeros(sham_num_days)
+sham_RLpearsonr3 = np.zeros(sham_num_days)
+sham_RLprecision1 = np.zeros(sham_num_days)
+sham_RLprecision3 = np.zeros(sham_num_days)
 
 stim_prob_choose_low = np.zeros(stim_num_days)
 sham_prob_choose_low = np.zeros(sham_num_days)
@@ -1205,8 +1211,8 @@ for name in stim_hdf_list:
     # Accuracy of fit
     model3 = 0.33*(prob_low_block3_regular > 0.5) + 0.66*(np.less_equal(prob_low_block3_regular, 0.5))  # scaling by 0.33 and 0.66 just for plotting purposes
     target_freechoice_block3 = np.array(target_freechoice_block3)
-    fit3 = np.equal(model3[:-1],(0.33*target_freechoice_block3))
-    accuracy3 = float(np.sum(fit3))/model3.size
+    fit3 = np.equal(model3[1:],(0.33*target_freechoice_block3))
+    accuracy3 = float(np.sum(fit3))/fit3.size
 
     stim_alpha_block1[stim_counter] = alpha_ml_block1
     stim_beta_block1[stim_counter] = beta_ml_block1
@@ -1231,8 +1237,8 @@ for name in stim_hdf_list:
      # Accuracy of fit
     model3 = 0.33*(prob_low_block3_Qadditive > 0.5) + 0.66*(np.less_equal(prob_low_block3_Qadditive, 0.5))  # scaling by 0.33 and 0.66 just for plotting purposes
     target_freechoice_block3 = np.array(target_freechoice_block3)
-    fit3 = np.equal(model3[:-1],(0.33*target_freechoice_block3))
-    accuracy3_Qadditive = float(np.sum(fit3))/model3.size
+    fit3 = np.equal(model3[1:],(0.33*target_freechoice_block3))
+    accuracy3_Qadditive = float(np.sum(fit3))/fit3.size
     
     stim_alpha_block3_Qadditive[stim_counter] = alpha_ml_block3_Qadditive
     stim_beta_block3_Qadditive[stim_counter] = beta_ml_block3_Qadditive
@@ -1256,8 +1262,8 @@ for name in stim_hdf_list:
      # Accuracy of fit
     model3 = 0.33*(prob_low_block3_Qmultiplicative > 0.5) + 0.66*(np.less_equal(prob_low_block3_Qmultiplicative, 0.5))  # scaling by 0.33 and 0.66 just for plotting purposes
     target_freechoice_block3 = np.array(target_freechoice_block3)
-    fit3 = np.equal(model3[:-1],(0.33*target_freechoice_block3))
-    accuracy3_Qmultiplicative = float(np.sum(fit3))/model3.size
+    fit3 = np.equal(model3[1:],(0.33*target_freechoice_block3))
+    accuracy3_Qmultiplicative = float(np.sum(fit3))/fit3.size
 
     stim_alpha_block3_Qmultiplicative[stim_counter] = alpha_ml_block3_Qmultiplicative
     stim_beta_block3_Qmultiplicative[stim_counter] = beta_ml_block3_Qmultiplicative
@@ -1280,8 +1286,8 @@ for name in stim_hdf_list:
      # Accuracy of fit
     model3 = 0.33*(prob_low_block3_Padditive > 0.5) + 0.66*(np.less_equal(prob_low_block3_Padditive, 0.5))  # scaling by 0.33 and 0.66 just for plotting purposes
     target_freechoice_block3 = np.array(target_freechoice_block3)
-    fit3 = np.equal(model3[:-1],(0.33*target_freechoice_block3))
-    accuracy3_Padditive = float(np.sum(fit3))/model3.size
+    fit3 = np.equal(model3[1:],(0.33*target_freechoice_block3))
+    accuracy3_Padditive = float(np.sum(fit3))/fit3.size
     
     stim_alpha_block3_Padditive[stim_counter] = alpha_ml_block3_Padditive
     stim_beta_block3_Padditive[stim_counter] = beta_ml_block3_Padditive
@@ -1337,6 +1343,7 @@ for name in sham_hdf_list:
     Compute task performance.
     '''
     reward_block1, target_block1, trial_block1, target_side1, reward_block3, target_block3, trial_block3, target_side3, stim_trials_block = FreeChoicePilotTask_Behavior(full_name)
+    b3_prob_choose_low, b3_prob_reward_low = FreeChoicePilotTask_Behavior_ProbChooseLow(full_name)
     prob_choose_low = FirstChoiceAfterStim(target_block3,trial_block3, stim_trials_block)
 
     #prob_choose_low = 1 - np.sum(target_block3[fc_trial_ind] - 1)/len(target_block3[fc_trial_ind])  # for prob of choosing low value target over all trials
@@ -1411,10 +1418,18 @@ for name in sham_hdf_list:
     alpha_ml_block1, beta_ml_block1 = result1["x"]
     Qlow_block1, Qhigh_block1, prob_low_block1, max_loglikelihood1 = RLPerformance([alpha_ml_block1,beta_ml_block1],Q_initial,reward_block1,target_block1, trial_block1)
     
-    prediction = 1 + (prob_low_block3 > 0.5)  # should be 1 = lv target, 2 = hv target
-    sham_rsquared = ComputeRSquared(target_freechoice_block1, prediction)
+    prediction = 1 + (prob_low_block1 < 0.5)  # should be 1 = lv target, 2 = hv target
+    sham_rsquared = ComputeEfronRSquared(target_freechoice_block1, prob_low_block1[1:])
+    model1 = 0.33*(prob_low_block1 > 0.5) + 0.66*(np.less_equal(prob_low_block1, 0.5))  # scaling by 0.33 and 0.66 just for plotting purposes
+    fit1 = np.equal(model1[1:],(0.33*target_freechoice_block1))
+
+    pearsonr1 = np.corrcoef(prediction[1:], target_freechoice_block1)[1][0]
+    precision = np.nanmean((prediction[1:] - target_freechoice_block1)**2)
+
+    accuracy1 = float(np.sum(fit1))/fit1.size
     
     sham_RL_rsquared1[sham_counter] = sham_rsquared
+    sham_RLprecision1[sham_counter] = precision
 
     result3 = op.minimize(nll, [alpha_true, beta_true], args=(Q_initial, reward_block3, target_block3, trial_block3), bounds=[(0,1),(0,None)])
 
@@ -1423,14 +1438,24 @@ for name in sham_hdf_list:
     BIC3 = -2*max_loglikelihood3 + len(result3["x"])*np.log(target_block3.size)
 
      # Accuracy of fit
-    prediction = 1 + (prob_low_block3 > 0.5)  # should be 1 = lv target, 2 = hv target
+    prediction = 1 + (prob_low_block3 < 0.5)  # should be 1 = lv target, 2 = hv target
     model3 = 0.33*(prob_low_block3 > 0.5) + 0.66*(np.less_equal(prob_low_block3, 0.5))  # scaling by 0.33 and 0.66 just for plotting purposes
     fit3 = np.equal(model3[:-1],(0.33*target_freechoice_block3))
-    accuracy3 = float(np.sum(fit3))/model3.size
+
+    #pearsonr3 = np.corrcoef(prediction[1:], target_freechoice_block3)[1][0]
+    pearsonr3 = np.corrcoef(b3_prob_choose_low, prob_low_block3[1:])[1][0]
     
-    sham_rsquared = ComputeRSquared(target_freechoice_block3, prediction)
+    precision = np.nanmean((prediction[1:] - target_freechoice_block3)**2)
+
+    accuracy3 = float(np.sum(fit3))/fit3.size
     
+    sham_rsquared = ComputeEfronRSquared(target_freechoice_block3, prob_low_block3[1:])
+    
+    sham_RLpearsonr1[sham_counter] = pearsonr1
+    sham_RLpearsonr3[sham_counter] = pearsonr3
+    sham_RLprecision3[sham_counter] = precision
     sham_RL_rsquared3[sham_counter] = sham_rsquared
+    sham_RLaccuracy_block1[sham_counter] = accuracy1
     sham_RLaccuracy_block3[sham_counter] = accuracy3
     sham_RL_max_loglikelihood3[sham_counter] = max_loglikelihood3
 

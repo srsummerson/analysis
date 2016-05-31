@@ -1,4 +1,3 @@
-from plexon import plexfile
 from neo import io
 import numpy as np
 import scipy as sp
@@ -294,6 +293,24 @@ def ComputeRSquared(xd,xm):
 	ss_tot = np.sum((xd - np.nanmean(xd))**2)  	# total sum of squares ~ variance in data
 	ss_reg = np.sum((xm - np.nanmean(xd))**2)	# explained sum of squares
 	ss_res = np.sum((xd - xm)**2)				# residual sum of squares
+
+	r_squared = 1 - ss_res/float(ss_tot)
+
+	return r_squared
+
+def ComputeEfronRSquared(xd,xm_prob):
+	'''
+	This method computes Efron's Pseudo-R^2, for data xd that has been fit with a model resulting in 
+	predicted values xm. The probability output from the model is xm_prob.
+
+	Input:
+		- xd: array of data, length n
+		- xm: model predictions based on fitting to data, length n
+	Output:
+		-r_squared: coefficient of determination
+	'''
+	ss_tot = np.sum((xd - np.nanmean(xd))**2)  	# total sum of squares ~ variance in data
+	ss_res = np.sum((xd - xm_prob)**2)				# residual sum of squares
 
 	r_squared = 1 - ss_res/float(ss_tot)
 

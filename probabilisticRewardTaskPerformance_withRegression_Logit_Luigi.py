@@ -18,6 +18,7 @@ from logLikelihoodRLPerformance import RLPerformance, logLikelihoodRLPerformance
                                         logLikelihoodRLPerformance_multiplicative_Pstimparameter, RLPerformance_additive_Pstimparameter, logLikelihoodRLPerformance_additive_Pstimparameter, \
                                         logLikelihoodRLPerformance_multiplicative_Qstimparameter_HVTarget, RLPerformance_multiplicative_Qstimparameter_HVTarget
 from probabilisticRewardTaskPerformance import FreeChoicePilotTask_Behavior
+from probabilisticRewardTask_SummaryStats import OneWayMANOVA
 from basicAnalysis import ComputeRSquared
 
 
@@ -43,7 +44,7 @@ hdf_list_sham = ['\papa20150213_10.hdf','\papa20150217_05.hdf','\papa20150225_02
     '\papa20150307_02.hdf','\papa20150308_06.hdf','\papa20150310_02.hdf','\papa20150506_09.hdf','\papa20150506_10.hdf',
     '\papa20150519_03.hdf','\papa20150519_04.hdf','\papa20150527_01.hdf','\papa20150528_02.hdf']
 """
-
+"""
 # constant voltage: 11 good stim sessions
 # hdf_list_stim = [\papa20150211_11.hdf','\papa20150214_18.hdf','\papa20150216_05.hdf',
 #    '\papa20150218_04.hdf','\papa20150219_09.hdf','\papa20150223_02.hdf','\papa20150224_02.hdf','\papa20150303_03.hdf',
@@ -77,12 +78,12 @@ hdf_list_hv = ['\luig20160218_10_te1469.hdf','\luig20160223_11_te1508.hdf', \
                 '\luig20160224_15_te1523.hdf', '\luig20160303_11_te1591.hdf',  \
                 '\luig20160308_06_te1647.hdf','\luig20160309_25_te1672.hdf', '\luig20160323_04_te1830.hdf', '\luig20160323_09_te1835.hdf',
                 '\luig20160324_10_te1845.hdf', '\luig20160324_12_te1847.hdf','\luig20160324_14_te1849.hdf']
-"""
 
-hdf_prefix = 'C:\Users\Samantha Summerson\Dropbox\Carmena Lab\Papa\hdf'
-stim_hdf_list = hdf_list_stim2
+
+hdf_prefix = 'C:\Users\Samantha Summerson\Dropbox\Carmena Lab\Luigi\hdf'
+stim_hdf_list = hdf_list_stim
 sham_hdf_list = hdf_list_sham
-hv_hdf_list = hdf_list_stim
+hv_hdf_list = hdf_list_hv
 
 global_max_trial_dist = 0
 Q_initial = [0.6, 0.6]
@@ -1461,7 +1462,7 @@ stim_beta_ind = range(0,stim_num_days)
 sham_beta_ind = range(0,sham_num_days)
 stim_gamma_ind = range(0,stim_num_days)
 
-'''
+
 #Indices for Luigi
 sham_beta_ind.pop(3)
 
@@ -1474,12 +1475,28 @@ sham_beta_ind.pop(11)
 
 stim_gamma_ind.pop(2)
 stim_gamma_ind.pop(12)
-
+'''
 
 print sham_beta_block3[sham_beta_ind]
 print stim_beta_block3_Qmultiplicative[stim_beta_ind]
 print stim_gamma_block3_Qmultiplicative[stim_gamma_ind]
 
+"""
+One-way MANOVA for RL parameters
+"""
+
+dta = []
+for i, data in enumerate(sham_alpha_block3):
+    dta += [(0, data, sham_beta_block3[i])]
+for i, data in enumerate(stim_alpha_block3_Qmultiplicative):
+    dta += [(1, data, stim_beta_block3_Qmultiplicative[i])]
+for i, data in enumerate(hv_alpha_block3_Qmultiplicative):
+    dta += [(2, data, hv_beta_block3_Qmultiplicative[i])]
+
+x_dta = pd.DataFrame(dta, columns=['Stim_condition', 'alpha', 'beta'])
+F_stat, df_factor, df_error = OneWayMANOVA(x_dta, 'Stim_condition', 'alpha', 'beta')
+print "One-way MANOVA: Stim Condition on Alpha + Beta"
+print "F = ", F_stat, "df_factor = ", df_factor, "df_err = ", df_error
 
 
 alpha_means = (np.nanmean(sham_alpha_block3), np.nanmean(stim_alpha_block3), np.nanmean(stim_alpha_block3_Qmultiplicative), np.nanmean(hv_alpha_block3), np.nanmean(hv_alpha_block3_Qmultiplicative))

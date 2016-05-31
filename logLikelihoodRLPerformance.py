@@ -231,13 +231,13 @@ def logLikelihoodRLPerformance_multiplicative_Qstimparameter(parameters, Q_initi
     for i in range(0,choice.size):
         if i==0:
             Q_low[i] = Q_low[i] + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i] - Q_low[i]*gamma*(stim_trial[i]==1))
+            #Q_low[i] = Q_low[i] + Q_low[i]*gamma*(stim_trial[i]==1) + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i] - Q_low[i]*gamma*(stim_trial[i]==1))
             #Q_low[i] = Q_low[i]*gamma*(stim_trial[i]==1) + Q_low[i]*(stim_trial[i]==0) + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i])
-            #Q_low[i] = Q_low[i]*gamma*(stim_trial[i]==1) + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i]*gamma)*(stim_trial[i]==1) + (Q_low[i] + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i]))*(stim_trial[i]==0)
             Q_high[i] = Q_high[i] + alpha*(choice[i]==2)*(float(reward_schedule[i]) - Q_high[i])
         else:
+            #Q_low[i] = Q_low[i-1] + Q_low[i-1]*gamma*(stim_trial[i]==1) + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i-1] - Q_low[i-1]*gamma*(stim_trial[i]==1))
             Q_low[i] = Q_low[i-1] + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i-1] - Q_low[i-1]*gamma*(stim_trial[i]==1))
             #Q_low[i] = Q_low[i-1]*gamma*(stim_trial[i]==1) + Q_low[i-1]*(stim_trial[i]==0) + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i-1])
-            #Q_low[i] = Q_low[i-1]*gamma*(stim_trial[i]==1) + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i-1]*gamma)*(stim_trial[i]==1) + (Q_low[i-1] + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i-1]))*(stim_trial[i]==0)
             Q_high[i] = Q_high[i-1] + alpha*(choice[i]==2)*(float(reward_schedule[i]) - Q_high[i-1])
         if instructed_or_freechoice[i]==2:
             prob_choice_low[counter] = float(1)/(1 + np.exp(beta*(Q_high[i] - Q_low[i] - Q_low[i]*gamma*(stim_trial[i]==1))))
@@ -289,13 +289,13 @@ def RLPerformance_multiplicative_Qstimparameter(parameters, Q_initial, reward_sc
     for i in range(0,choice.size):
         if i==0:
             Q_low[i] = Q_low[i] + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i] - Q_low[i]*gamma*(stim_trial[i]==1))
+            #Q_low[i] = Q_low[i] + Q_low[i]*gamma*(stim_trial[i]==1) + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i] - Q_low[i]*gamma*(stim_trial[i]==1))
             #Q_low[i] = Q_low[i]*gamma*(stim_trial[i]==1) + Q_low[i]*(stim_trial[i]==0) + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i])
-            #Q_low[i] = Q_low[i]*gamma*(stim_trial[i]==1) + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i]*gamma)*(stim_trial[i]==1) + (Q_low[i] + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i]))*(stim_trial[i]==0)
             Q_high[i] = Q_high[i] + alpha*(choice[i]==2)*(float(reward_schedule[i]) - Q_high[i])
         else:
+            #Q_low[i] = Q_low[i-1] + Q_low[i-1]*gamma*(stim_trial[i]==1) + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i-1] - Q_low[i-1]*gamma*(stim_trial[i]==1))
             Q_low[i] = Q_low[i-1] + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i-1] - Q_low[i-1]*gamma*(stim_trial[i]==1))
             #Q_low[i] = Q_low[i-1]*gamma*(stim_trial[i]==1) + Q_low[i-1]*(stim_trial[i]==0) + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i-1])
-            #Q_low[i] = Q_low[i-1]*gamma*(stim_trial[i]==1) + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i-1]*gamma)*(stim_trial[i]==1) + (Q_low[i-1] + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i-1]))*(stim_trial[i]==0)
             Q_high[i] = Q_high[i-1] + alpha*(choice[i]==2)*(float(reward_schedule[i]) - Q_high[i-1])
         if instructed_or_freechoice[i]==2:
             prob_choice_low[counter] = float(1)/(1 + np.exp(beta*(Q_high[i] - Q_low[i] - Q_low[i]*gamma*(stim_trial[i]==1))))
@@ -347,17 +347,17 @@ def RLPerformance_multiplicative_Qstimparameter_withQstimOutput(parameters, Q_in
     
     for i in range(0,choice.size):
         if i==0:
-            Q_low_adjusted[i] = Q_low[i]*gamma*(stim_trial[i]==1) + Q_low[i]*(stim_trial[i]==0)
-            Q_low[i] = Q_low[i]*gamma*(stim_trial[i]==1) + Q_low[i]*(stim_trial[i]==0) + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i])
+            Q_low_adjusted[i] = Q_low[i]*gamma*(stim_trial[i]==1) + Q_low[i]
+            Q_low[i] = Q_low[i]*gamma*(stim_trial[i]==1) + Q_low[i] + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i] - Q_low[i]*gamma*(stim_trial[i]==1))
             #Q_low[i] = Q_low[i]*gamma*(stim_trial[i]==1) + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i]*gamma)*(stim_trial[i]==1) + (Q_low[i] + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i]))*(stim_trial[i]==0)
             Q_high[i] = Q_high[i] + alpha*(choice[i]==2)*(float(reward_schedule[i]) - Q_high[i])
         else:
-            Q_low_adjusted[i-1] = Q_low[i-1]*gamma*(stim_trial[i]==1) + Q_low[i-1]*(stim_trial[i]==0)
-            Q_low[i] = Q_low[i-1]*gamma*(stim_trial[i]==1) + Q_low[i-1]*(stim_trial[i]==0) + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i-1])
+            Q_low_adjusted[i-1] = Q_low[i-1]*gamma*(stim_trial[i]==1) + Q_low[i-1]
+            Q_low[i] = Q_low[i-1]*gamma*(stim_trial[i]==1) + Q_low[i-1] + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i-1] - Q_low[i-1]*gamma*(stim_trial[i]==1))
             #Q_low[i] = Q_low[i-1]*gamma*(stim_trial[i]==1) + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i-1]*gamma)*(stim_trial[i]==1) + (Q_low[i-1] + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i-1]))*(stim_trial[i]==0)
             Q_high[i] = Q_high[i-1] + alpha*(choice[i]==2)*(float(reward_schedule[i]) - Q_high[i-1])
         if instructed_or_freechoice[i]==2:
-            prob_choice_low[counter] = float(1)/(1 + np.exp(beta*(Q_high[i] - Q_low[i]*gamma*(stim_trial[i]==1) - Q_low[i]*(stim_trial[i]==0))))
+            prob_choice_low[counter] = float(1)/(1 + np.exp(beta*(Q_high[i] - Q_low[i])))
             #prob_choice_low[counter] = float(1)/(1 + np.exp(beta*(Q_high[i] - Q_low[i])))
             prob_choice_high[counter] = float(1) - prob_choice_low[counter]
             '''

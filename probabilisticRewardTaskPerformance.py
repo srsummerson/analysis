@@ -733,6 +733,32 @@ def FreeChoiceBehaviorConditionalProbabilities(hdf_file):
 	'''
 	return prob_high_given_rhs_block1, prob_high_given_lhs_block1, prob_high_given_rhs_block3,prob_high_given_lhs_block3, prob_low_given_rhs_block1,prob_low_given_lhs_block1,prob_low_given_rhs_block3,prob_low_given_lhs_block3
 
+def FreeChoiceBehaviorConditionalProbabilitiesAllBlocks(hdf_file):
+
+	reward1, target_block1, trial_block1, target_side1, reward3, target_block3, trial_block3, target_side3, stim_trials = FreeChoicePilotTask_Behavior(hdf_file)
+
+	'''
+	Target_side1 is the side that the HV target is on in Block 1.
+	Target_side3 is the side that the HV target is on in Block 3
+	'''
+
+	fc_trial_ind_block3 = np.ravel(np.nonzero(np.equal(np.ravel(trial_block3),2)))
+	fc_trial_ind_block1 = np.ravel(np.nonzero(np.equal(np.ravel(trial_block1),2)))
+
+	left1 = (np.equal(target_side1[fc_trial_ind_block1],0))
+	choose_left_and_low_block1 = (np.equal(target_side1[fc_trial_ind_block1],0)&np.equal(target_block1[fc_trial_ind_block1],1))
+	left3 = (np.equal(target_side3[fc_trial_ind_block3],0))  
+	choose_left_and_low_block3 = (np.equal(target_side3[fc_trial_ind_block3],0)&np.equal(target_block3[fc_trial_ind_block3],1)) 
+	prob_choose_left_and_low = float(np.sum(choose_left_and_low_block1) + np.sum(choose_left_and_low_block3))/(len(choose_left_and_low_block1) + len(choose_left_and_low_block3))   # joint prob: prob(choose left and low-value)
+	
+	right1 = (np.equal(target_side1[fc_trial_ind_block1],1))
+	choose_right_and_low_block1 = (np.equal(target_side1[fc_trial_ind_block1],1)&np.equal(target_block1[fc_trial_ind_block1],1))
+	right3 = (np.equal(target_side3[fc_trial_ind_block3],1))  
+	choose_right_and_low_block3 = (np.equal(target_side3[fc_trial_ind_block3],1)&np.equal(target_block3[fc_trial_ind_block3],1)) 
+	prob_choose_right_and_low = float(np.sum(choose_right_and_low_block1) + np.sum(choose_right_and_low_block3))/(len(choose_right_and_low_block1) + len(choose_right_and_low_block3))   # joint prob: prob(choose left and low-value)
+	
+	return prob_choose_left_and_low, prob_choose_right_and_low
+
 def FreeChoiceBehavior_withStressTrials(hdf_file):
 	hdf = tables.openFile(hdf_file)
 

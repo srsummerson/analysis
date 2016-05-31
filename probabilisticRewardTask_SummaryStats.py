@@ -1,4 +1,4 @@
-from probabilisticRewardTaskPerformance import PeriStimulusFreeChoiceBehavior, FreeChoicePilotTask_Behavior, FreeChoiceBehaviorConditionalProbabilities, FreeChoicePilotTask_ChoiceAfterStim
+from probabilisticRewardTaskPerformance import PeriStimulusFreeChoiceBehavior, FreeChoicePilotTask_Behavior, FreeChoiceBehaviorConditionalProbabilities, FreeChoicePilotTask_ChoiceAfterStim, FreeChoiceBehaviorConditionalProbabilitiesAllBlocks
 import numpy as np
 import scipy.optimize as op
 import statsmodels.api as sm
@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 from statsmodels.formula.api import ols
 from statsmodels.stats.anova import anova_lm
 from rt_calc import compute_rt_per_trial_FreeChoiceTask
+import pyvttbl as pt
+from collections import namedtuple
 from scipy import stats
 from statsmodels.stats.multicomp import pairwise_tukeyhsd
 import sys
@@ -20,6 +22,9 @@ luigi_stim_days = ['\luig20160204_15_te1382.hdf','\luig20160208_07_te1401.hdf','
 luigi_sham_days = ['\luig20160213_05_te1434.hdf','\luig20160219_04_te1473.hdf','\luig20160221_05_te1478.hdf', '\luig20160305_26_te1617.hdf', \
                  '\luig20160306_11_te1628.hdf', '\luig20160307_13_te1641.hdf', '\luig20160319_23_te1801.hdf','\luig20160320_07_te1809.hdf', \
                  '\luig20160322_08_te1826.hdf']
+luigi_sham_days = ['\luig20160213_05_te1434.hdf','\luig20160219_04_te1473.hdf','\luig20160221_05_te1478.hdf', '\luig20160305_26_te1617.hdf', \
+                 '\luig20160306_11_te1628.hdf', '\luig20160307_13_te1641.hdf', '\luig20160310_16_te1695.hdf','\luig20160319_23_te1801.hdf', \
+                 '\luig20160320_07_te1809.hdf', '\luig20160322_08_te1826.hdf']
 
 luigi_control_days = ['\luig20160218_10_te1469.hdf','\luig20160223_11_te1508.hdf', \
 				'\luig20160224_15_te1523.hdf', '\luig20160303_11_te1591.hdf',  \
@@ -96,12 +101,13 @@ def make_statsmodel_dtstructure(inputs, treatment_labels, independent_var_label)
 		ind = inputs.index(data)
 
 		for i in range(len(data)):
-			dta += [(total, treatment_labels[ind], data[i])]
+			dta += [(total, treatmeant_labels[ind], data[i])]
 			total += 1
 
 	dta = np.rec.array(dta, dtype=[('idx', '<i4'),
                                 ('Treatment', '|S8'),
                                 (independent_var_label, '<f4')])
+	
 	return dta
 
 
@@ -194,7 +200,10 @@ def probabilisticRewardTaskPerformance_RewardAndTargetSide(days, animal_id):
 
 		prob_lv_stim_rewarded_left = np.sum(rewarded_left)/float(len(rewarded_left))
 		prob_lv_stim_rewarded_right = np.sum(rewarded_right)/float(len(rewarded_right))
-		prob_lv_stim_unrewarded_left = np.sum(unrewarded_left)/float(len(unrewarded_left))
+		if len(unrewarded_left)== 0:
+			prob_lv_stim_unrewarded_left = 0
+		else:
+			prob_lv_stim_unrewarded_left = np.sum(unrewarded_left)/float(len(unrewarded_left))
 		prob_lv_stim_unrewarded_right = np.sum(unrewarded_right)/float(len(unrewarded_right))
 
 		rewarded_left = [target_side3[i] for i in free_choice_ind if (target_side3[i-1] == 1)&(reward3[i] == 1)]
@@ -204,7 +213,10 @@ def probabilisticRewardTaskPerformance_RewardAndTargetSide(days, animal_id):
 
 		prob_right_stim_rewarded_left = np.sum(rewarded_left)/float(len(rewarded_left))
 		prob_right_stim_rewarded_right = np.sum(rewarded_right)/float(len(rewarded_right))
-		prob_right_stim_unrewarded_left = np.sum(unrewarded_left)/float(len(unrewarded_left))
+		if len(unrewarded_left) == 0:
+			prob_right_stim_unrewarded_left = 0
+		else:
+			prob_right_stim_unrewarded_left = np.sum(unrewarded_left)/float(len(unrewarded_left))
 		prob_right_stim_unrewarded_right = np.sum(unrewarded_right)/float(len(unrewarded_right))
 
 		dta += [(1,1,prob_lv_stim_rewarded_left,prob_right_stim_rewarded_left)]
@@ -383,6 +395,28 @@ def probabilisticRewardTaskPerformance_ConditionalProbabilities(days, hdf_folder
 
 
 	return
+
+def probabilisticRewardTaskPerformance_SideBiasAnalysis(days, animal_id):
+
+	num_days = len(days)
+
+	prob_low_given_rhs = np.zeros(num_days)
+	prob_low_given_lhs = np.zeros(num_days)
+	
+	for i in range(0,num_days):
+		name = days[i]
+		hdf_location = 'C:\Users\Samantha Summerson\Dropbox\Carmena Lab'+ animal_id + '\hdf'+name
+		prob_low_given_lhs[i], prob_low_given_rhs[i] = FreeChoiceBehaviorConditionalProbabilitiesAllBlocks(hdf_location)
+
+	'''
+	Run one-way ANOVA on these probabilities to see if there is a significant difference
+	'''
+	f_val, p_val = stats.f_oneway(prob_low_given_lhs, prob_low_given_rhs)
+	print "One-way ANOVA Results: Prob(LV) Given Side Presentation"
+	print "F = ", f_val
+	print "p = ", p_val
+
+	return prob_low_given_lhs, prob_low_given_rhs
 
 def ReactionTimeHist(reaction_time):
 
@@ -902,6 +936,36 @@ def probabilisticRewardTaskPerformance_LVChoice(sham_days, stim_days, control_da
 
 	return sham_prob_lv, stim_prob_lv, control_prob_lv
 
+def probabilisticRewardTaskPerformance_TargetsAndChoices(sham_days, animal_id):
+
+	num_sham_days = len(sham_days)
+	
+	f_obs = np.array([0, 0])  # counting frequency of Lv and Hv choices respectively when target positions are LV = left, HV = right
+	f_exp = np.array([0, 0])  # counting frequency of LV and HV choices respectively when target positions are Lv = right, Hv = left
+
+	for i in range(0,num_sham_days):
+		name = sham_days[i]
+		hdf_location = 'C:\Users\Samantha Summerson\Dropbox\Carmena Lab'+ animal_id + '\hdf'+name
+		reward1, target1, instructed_or_freechoice_block1, target_side1, reward3, target3, instructed_or_freechoice_block3, target_side3, stim_trials = FreeChoicePilotTask_Behavior(hdf_location)
+
+		free_choice_ind = np.ravel(np.nonzero(np.equal(np.ravel(instructed_or_freechoice_block1),2)))
+		
+		f_obs[0] += len([1 for ind in free_choice_ind if (target_side1[ind]==1)&(target1[ind]==1)])
+		f_obs[1] += len([1 for ind in free_choice_ind if (target_side1[ind]==1)&(target1[ind]==2)])
+		f_exp[0] += len([1 for ind in free_choice_ind if (target_side1[ind]==0)&(target1[ind]==1)])
+		f_exp[1] += len([1 for ind in free_choice_ind if (target_side1[ind]==0)&(target1[ind]==2)])
+		
+		free_choice_ind = np.ravel(np.nonzero(np.equal(np.ravel(instructed_or_freechoice_block3),2)))
+		
+		f_obs[0] += len([1 for ind in free_choice_ind if (target_side3[ind]==1)&(target3[ind]==1)])
+		f_obs[1] += len([1 for ind in free_choice_ind if (target_side3[ind]==1)&(target3[ind]==2)])
+		f_exp[0] += len([1 for ind in free_choice_ind if (target_side3[ind]==0)&(target3[ind]==1)])
+		f_exp[1] += len([1 for ind in free_choice_ind if (target_side3[ind]==0)&(target3[ind]==2)])
+	
+	stats.chisquare(f_obs, f_exp)
+
+	return f_obs, f_exp
+
 
 def probabilisticRewardTaskPerformance_RegressFreeChoice(days, animal_id):
 
@@ -1125,26 +1189,175 @@ def TwoWayMANOVA(x_dta, factor1, factor2, dv1, dv2):
 
 	print "Factor 2 Significant:", factor2_test
 	
-	return F_factor1, F_factor2, F_interaction
+	return F_factor1, F_factor2, F_interaction, df_factor1, df_factor2, df_interaction, df_residual
 
-'''
+def OneWayMANOVA(x_dta, factor1, dv1, dv2):
+	'''
+	Inputs:
+		- x_dta: input of the form pd.DataFrame(dta, columns=['stim_condtion', 'alpha', 'beta']), 
+				 length is equal to number of days
+		- factor1: string name for first independent variable
+		- dv1: string name for first dependent variable
+		- dv2: string name for second dependent variable
+
+	Outputs:
+
+	'''
+	factor1_levels = x_dta[factor1].unique()
+	g = len(factor1_levels)
+	n = np.sum(x_dta[factor1]==factor1_levels[0])/g
+	p = 2
+
+	total_num_obs = len(x_dta)
+
+	factor1_level1_ind = np.ravel(np.nonzero(x_dta[factor1]==factor1_levels[0]))
+	factor1_level2_ind = np.ravel(np.nonzero(x_dta[factor1]==factor1_levels[1]))
+	factor1_level3_ind = np.ravel(np.nonzero(x_dta[factor1]==factor1_levels[2]))
+
+	x_mean_factor1_level1 = np.array([np.nanmean(x_dta[dv1][factor1_level1_ind]), np.nanmean(x_dta[dv2][factor1_level1_ind])]) # vector of mean values for dependent metrics averages over groups in factor 1
+	x_mean_factor1_level2 = np.array([np.nanmean(x_dta[dv1][factor1_level2_ind]), np.nanmean(x_dta[dv2][factor1_level2_ind])])
+	x_mean_factor1_level3 = np.array([np.nanmean(x_dta[dv1][factor1_level3_ind]), np.nanmean(x_dta[dv2][factor1_level3_ind])])
+
+	x_mean_factor1 = [x_mean_factor1_level1, x_mean_factor1_level2, x_mean_factor1_level3]
+	
+	x_mean = np.array([np.nanmean(x_dta[dv1]), np.nanmean(x_dta[dv2])])
+
+	SSP_interaction = 0
+	SSP_residual = 0
+	SSP_corrected = 0
+
+	for i in range(g):
+
+		factor1_ind = np.ravel(np.nonzero(x_dta[factor1]==factor1_levels[i]))
+		factor_ind = [ind for ind in range(total_num_obs) if (ind in factor1_ind)]
+
+		x_mean_cross_terms = np.array([np.nanmean(x_dta[dv1][factor_ind]), np.nanmean(x_dta[dv2][factor_ind])]) 
+	
+		x_dv1_obs = [item for item in x_dta[dv1][factor_ind]]
+		x_dv2_obs = [item for item in x_dta[dv2][factor_ind]]
+		
+		for r in range(n):
+			x_obs = [x_dv1_obs[r], x_dv2_obs[r]]
+			SSP_residual += np.outer((x_obs - x_mean_cross_terms), (x_obs - x_mean_cross_terms))
+			SSP_corrected += np.outer((x_obs - x_mean),(x_obs - x_mean))
+
+	SSP_factor1 = np.outer(g*n*(x_mean_factor1[0] - x_mean).T,(x_mean_factor1[0] - x_mean)) + np.dot(g*n*(x_mean_factor1[1] - x_mean),(x_mean_factor1[1] - x_mean))
+	
+	df_factor1 = g - 1
+	df_residual = g*(n - 1)
+	df_corrected = g*n - 1
+	
+	F_factor1 = (SSP_factor1/float(df_factor1))/(SSP_residual/float(df_residual))
+	
+	return F_factor1, df_factor1, df_residual
+
+papa_sham_prob_lv, papa_stim_prob_lv, papa_control_prob_lv = probabilisticRewardTaskPerformance_LVChoice(sham_days, stim_days, control_days, '\Papa')
+luigi_sham_prob_lv, luigi_stim_prob_lv, luigi_control_prob_lv = probabilisticRewardTaskPerformance_LVChoice(luigi_sham_days, luigi_stim_days, luigi_control_days, '\Luigi')
+
+#dta_papa_lv = make_statsmodel_dtstructure([papa_sham_prob_lv, papa_stim_prob_lv, papa_control_prob_lv], ['Sham', 'Stim', 'Control'], 'lv_choices')
+
+dta = []
+for data in papa_sham_prob_lv:
+	dta += [(0, data)]
+for data in papa_stim_prob_lv:
+	dta += [(1,data)]
+for data in papa_control_prob_lv:
+	dta += [(2, data)]
+
+dta_papa_lv = pd.DataFrame(dta, columns=['Stim_condition', 'lv_choices'])
+
+dta = []
+for data in luigi_sham_prob_lv:
+	dta += [(0, data)]
+for data in luigi_stim_prob_lv:
+	dta += [(1,data)]
+for data in luigi_control_prob_lv:
+	dta += [(2, data)]
+
+dta_luigi_lv = pd.DataFrame(dta, columns=['Stim_condition', 'lv_choices'])
+
+formula = 'lv_choices ~ C(Stim_condition)'
+model = ols(formula, dta_papa_lv).fit()
+aov_table = anova_lm(model, typ=2)
+print aov_table
+
+model = ols(formula, dta_luigi_lv).fit()
+aov_table = anova_lm(model, typ=2)
+print aov_table
+
+"""
 papa_hdf_location = 'C:\Users\Samantha Summerson\Dropbox\Carmena Lab\Papa\hdf'
 luigi_hdf_location = 'C:\Users\Samantha Summerson\Dropbox\Carmena Lab\Luigi\hdf'
 probabilisticRewardTaskPerformance_ConditionalProbabilities(sham_days, papa_hdf_location,1)
 probabilisticRewardTaskPerformance_ConditionalProbabilities(luigi_sham_days,luigi_hdf_location,2)
 plt.show()
-'''
+"""
 #probabilisticRewardTaskPerformance_TrialAligned(luigi_sham_days,luigi_stim_days,luigi_control_days)
 
 #probabilisticRewardTaskPerformance_ReactionTimes(stim_days,sham_days,control_days, '\Papa')
 #probabilisticRewardTaskPerformance_ReactionTimes(luigi_stim_days,luigi_sham_days,luigi_control_days,'\Luigi')
 
-"""
+
 papa_stim_rewarded, papa_stim_unrewarded, papa_sham_rewarded, papa_sham_unrewarded, papa_control_rewarded, papa_control_unrewarded = probabilisticRewardTaskPerformance_RewardAndStim(sham_days, stim_days, control_days, '\Papa')
 luigi_stim_rewarded, luigi_stim_unrewarded, luigi_sham_rewarded, luigi_sham_unrewarded, luigi_control_rewarded, luigi_control_unrewarded = probabilisticRewardTaskPerformance_RewardAndStim(luigi_sham_days, luigi_stim_days, luigi_control_days, '\Luigi')
 
+dta = []
+for data in luigi_sham_rewarded:
+	dta += [(0, data)]
+for data in luigi_sham_unrewarded:
+	dta += [(1, data)]
 
+dta_luigi_sham = pd.DataFrame(dta, columns=['Reward', 'lv_choices'])
 
+dta = []
+for data in luigi_control_rewarded:
+	dta += [(0, data)]
+for data in luigi_control_unrewarded:
+	dta += [(1, data)]
+
+dta_luigi_control = pd.DataFrame(dta, columns=['Reward', 'lv_choices'])
+
+formula = 'lv_choices ~ C(Reward)'
+model = ols(formula, dta_luigi_sham).fit()
+aov_table = anova_lm(model, typ=2)
+print "Luigi - sham days"
+print aov_table
+
+formula = 'lv_choices ~ C(Reward)'
+model = ols(formula, dta_luigi_control).fit()
+aov_table = anova_lm(model, typ=2)
+print "Luigi - control days"
+print aov_table
+
+dta = []
+for data in papa_sham_rewarded:
+	dta += [(0, data)]
+for data in papa_sham_unrewarded:
+	dta += [(1, data)]
+
+dta_papa_sham = pd.DataFrame(dta, columns=['Reward', 'lv_choices'])
+
+dta = []
+for data in papa_control_rewarded:
+	dta += [(0, data)]
+for data in papa_control_unrewarded:
+	dta += [(1, data)]
+
+dta_papa_control = pd.DataFrame(dta, columns=['Reward', 'lv_choices'])
+
+formula = 'lv_choices ~ C(Reward)'
+model = ols(formula, dta_papa_sham).fit()
+aov_table = anova_lm(model, typ=2)
+print "Papa - sham days"
+print aov_table
+
+formula = 'lv_choices ~ C(Reward)'
+model = ols(formula, dta_papa_control).fit()
+aov_table = anova_lm(model, typ=2)
+print "Papa - control days"
+print aov_table
+
+"""
 Two-way ANOVA: 
 	Indendent variables (factors):
 		- Stimulation condition: 0 = sham, 1 = stim, 2 = control
@@ -1202,8 +1415,15 @@ print(aov_table)
 """
 
 #fit_glm = probabilisticRewardTaskPerformance_RegressFreeChoiceV2(luigi_stim_days, '\Luigi')
-dta_luigi = probabilisticRewardTaskPerformance_RewardAndTargetSide(luigi_stim_days, '\Luigi')
-F_factor1, F_factor2, F_interaction = TwoWayMANOVA(dta_luigi, 'reward', 'stim_targ_side', 'lv_choices', 'right_choices')
+prob_low_given_lhs, prob_low_given_rhs = probabilisticRewardTaskPerformance_SideBiasAnalysis(luigi_stim_days, '\Luigi')
+
+dta_papa = probabilisticRewardTaskPerformance_RewardAndTargetSide(stim_days, '\Papa')
+F_factor1, F_factor2, F_interaction, df_factor1, df_factor2, df_interaction, df_residual = TwoWayMANOVA(dta_papa, 'reward', 'stim_targ_side', 'lv_choices', 'right_choices')
+
+print "Main effect reward: F = ", F_factor1, "df = ", df_factor1
+print "Main effect of side: F = ", F_factor2, "df = ", df_factor2
+print "Interaction effect: F = ", F_interaction, "df = ", df_interaction
+print "df error:", df_residual
 
 """
 papa_sham_prob_trialaligned, papa_stim_prob_trialaligned, papa_control_prob_trialaligned = probabilisticRewardTaskPerformance_TrialAligned(sham_days, stim_days, control_days, '\Papa')
