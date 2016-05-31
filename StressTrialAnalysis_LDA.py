@@ -231,27 +231,27 @@ for chann in lfp_channels:
 	for i, ind in enumerate(lfp_ind_successful_stress):
 		freq, Pxx_den = signal.welch(lfp[chann][ind:ind+samples_lfp_successful_stress[i]], lfp_samprate, nperseg=1024)
 
-		for item in enumerate(bands):
+		for k, item in enumerate(bands):
 			freq_band = [Pxx_den[j] for j in range(len(freq)) if (item[0] <= freq[j] <= item[1])]
 			lfp_power_successful_stress[chann].append(np.sum(freq_band))
 
 	for i, ind in enumerate(lfp_ind_stress):
 		freq, Pxx_den = signal.welch(lfp[chann][ind:ind+samples_lfp_stress[i]], lfp_samprate, nperseg=1024)
 
-		for item in enumerate(bands):
+		for k, item in enumerate(bands):
 			freq_band = [Pxx_den[j] for j in range(len(freq)) if (item[0] <= freq[j] <= item[1])]
 			lfp_power_stress[chann].append(np.sum(freq_band))
 
 	for i, ind in enumerate(lfp_ind_successful_reg):
 		freq, Pxx_den = signal.welch(lfp[chann][ind:ind+samples_lfp_successful_reg[i]], lfp_samprate, nperseg=1024)
 
-		for item in enumerate(bands):
+		for k, item in enumerate(bands):
 			freq_band = [Pxx_den[j] for j in range(len(freq)) if (item[0] <= freq[j] <= item[1])]
 			lfp_power_successful_reg[chann].append(np.sum(freq_band))
 
 	for i, ind in enumerate(lfp_ind_reg):
 		freq, Pxx_den = signal.welch(lfp[chann][ind:ind+samples_lfp_reg[i]], lfp_samprate, nperseg=1024)
 
-		for item in enumerate(bands):
+		for k, item in enumerate(bands):
 			freq_band = [Pxx_den[j] for j in range(len(freq)) if (item[0] <= freq[j] <= item[1])]
 			lfp_power_reg[chann].append(np.sum(freq_band))
