@@ -17,7 +17,7 @@ from logLikelihoodRLPerformance import RLPerformance, logLikelihoodRLPerformance
                                         RLPerformance_additive_Qstimparameter, logLikelihoodRLPerformance_additive_Qstimparameter, RLPerformance_multiplicative_Pstimparameter, \
                                         logLikelihoodRLPerformance_multiplicative_Pstimparameter, RLPerformance_additive_Pstimparameter, logLikelihoodRLPerformance_additive_Pstimparameter
 from probabilisticRewardTaskPerformance import FreeChoicePilotTask_Behavior, FreeChoicePilotTask_Behavior_ProbChooseLow
-
+from basicAnalysis import ComputeRSquared
 
 '''
 Do fit_regularized for regression
@@ -1084,7 +1084,9 @@ sham_RLaccuracy_block3_Qmultiplicative = np.zeros(sham_num_days)
 sham_RLaccuracy_block3_Pmultiplicative = np.zeros(sham_num_days)
 
 sham_RLaccuracy_block3 = np.zeros(sham_num_days)
-sham_RL_max_loglikelihood = np.zeros(sham_num_days)
+sham_RL_max_loglikelihood3 = np.zeros(sham_num_days)
+sham_RL_rsquared1 = np.zeros(sham_num_days)
+sham_RL_rsquared3 = np.zeros(sham_num_days)
 
 stim_prob_choose_low = np.zeros(stim_num_days)
 sham_prob_choose_low = np.zeros(sham_num_days)
@@ -1342,6 +1344,7 @@ for name in sham_hdf_list:
     fc_trial_ind_block3 = np.ravel(np.nonzero(np.equal(np.ravel(trial_block3),2)))
     fc_trial_ind_block1 = np.ravel(np.nonzero(np.equal(np.ravel(trial_block1),2)))
     target_freechoice_block3 = target_block3[fc_trial_ind_block3]
+    target_freechoice_block1 = target_block1[fc_trial_ind_block1]
     #prob_choose_low = 1 - np.sum(target_block3[fc_trial_ind] - 1)/len(target_block3[fc_trial_ind])  # for prob of choosing low value target over all trials
     prob_choose_left_block3 = 1 - np.sum(target_side3[fc_trial_ind_block3])/len(target_side3[fc_trial_ind_block3])  # for prob of choosing low value target over all trials
     choose_left_and_low_block3 = (np.equal(target_side3[fc_trial_ind_block3],0)&np.equal(target_block3[fc_trial_ind_block3],1))
@@ -1408,6 +1411,11 @@ for name in sham_hdf_list:
     alpha_ml_block1, beta_ml_block1 = result1["x"]
     Qlow_block1, Qhigh_block1, prob_low_block1, max_loglikelihood1 = RLPerformance([alpha_ml_block1,beta_ml_block1],Q_initial,reward_block1,target_block1, trial_block1)
     
+    prediction = 1 + (prob_low_block3 > 0.5)  # should be 1 = lv target, 2 = hv target
+    sham_rsquared = ComputeRSquared(target_freechoice_block1, prediction)
+    
+    sham_RL_rsquared1[sham_counter] = sham_rsquared
+
     result3 = op.minimize(nll, [alpha_true, beta_true], args=(Q_initial, reward_block3, target_block3, trial_block3), bounds=[(0,1),(0,None)])
 
     alpha_ml_block3, beta_ml_block3 = result3["x"]
@@ -1415,13 +1423,16 @@ for name in sham_hdf_list:
     BIC3 = -2*max_loglikelihood3 + len(result3["x"])*np.log(target_block3.size)
 
      # Accuracy of fit
+    prediction = 1 + (prob_low_block3 > 0.5)  # should be 1 = lv target, 2 = hv target
     model3 = 0.33*(prob_low_block3 > 0.5) + 0.66*(np.less_equal(prob_low_block3, 0.5))  # scaling by 0.33 and 0.66 just for plotting purposes
     fit3 = np.equal(model3[:-1],(0.33*target_freechoice_block3))
     accuracy3 = float(np.sum(fit3))/model3.size
     
+    sham_rsquared = ComputeRSquared(target_freechoice_block3, prediction)
     
+    sham_RL_rsquared3[sham_counter] = sham_rsquared
     sham_RLaccuracy_block3[sham_counter] = accuracy3
-    sham_RL_max_loglikelihood[sham_counter] = max_loglikelihood3
+    sham_RL_max_loglikelihood3[sham_counter] = max_loglikelihood3
 
     sham_alpha_block1[sham_counter] = alpha_ml_block1
     sham_beta_block1[sham_counter] = beta_ml_block1

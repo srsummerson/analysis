@@ -180,27 +180,27 @@ def probabilisticRewardTaskPerformance_RewardAndTargetSide(days, animal_id):
 	dta = []
 
 	for i in range(0,num_days):
-		name = stim_days[i]
+		name = days[i]
 		hdf_location = 'C:\Users\Samantha Summerson\Dropbox\Carmena Lab'+ animal_id + '\hdf'+name
 		reward1, target1, instructed_or_freechoice_block1, target_side1, reward3, target3, instructed_or_freechoice_block3, target_side3, stim_trials = FreeChoicePilotTask_Behavior(hdf_location)
 		
 		instructed_choice_ind = np.ravel(np.nonzero(np.equal(np.ravel(instructed_or_freechoice_block3),1)))
-		free_choice_ind = [(ind+1) for ind in instructed_choice_ind if (ind + 1) not in instructed_choice_ind]
+		free_choice_ind = [(ind+1) for ind in instructed_choice_ind if ((ind + 1) not in instructed_choice_ind)&(ind + 1 < len(instructed_or_freechoice_block3))]
 
-		rewarded_left = [(1 - target3[i]) for i in free_choice_ind if (target_side3[i-1] == 1)&(reward3[i] == 1)]
-		rewarded_right = [(1 - target3[i]) for i in free_choice_ind if (target_side3[i-1] == 2)&(reward3[i] == 1)]
-		unrewarded_left = [(1 - target3[i]) for i in free_choice_ind if (target3[i-1] == 1)&(reward3[i] == 0)]
-		unrewarded_right = [(1 - target3[i]) for i in free_choice_ind if (target3[i-1] == 2)&(reward3[i] == 0)]
+		rewarded_left = [(2 - target3[i]) for i in free_choice_ind if (target_side3[i-1] == 1)&(reward3[i] == 1)]
+		rewarded_right = [(2 - target3[i]) for i in free_choice_ind if (target_side3[i-1] == 0)&(reward3[i] == 1)]
+		unrewarded_left = [(2 - target3[i]) for i in free_choice_ind if (target_side3[i-1] == 1)&(reward3[i] == 0)]
+		unrewarded_right = [(2 - target3[i]) for i in free_choice_ind if (target_side3[i-1] == 0)&(reward3[i] == 0)]
 
 		prob_lv_stim_rewarded_left = np.sum(rewarded_left)/float(len(rewarded_left))
 		prob_lv_stim_rewarded_right = np.sum(rewarded_right)/float(len(rewarded_right))
 		prob_lv_stim_unrewarded_left = np.sum(unrewarded_left)/float(len(unrewarded_left))
 		prob_lv_stim_unrewarded_right = np.sum(unrewarded_right)/float(len(unrewarded_right))
 
-		rewarded_left = [(target_side3[i]-1) for i in free_choice_ind if (target_side3[i-1] == 1)&(reward3[i] == 1)]
-		rewarded_right = [(target_side3[i]-1) for i in free_choice_ind if (target_side3[i-1] == 2)&(reward3[i] == 1)]
-		unrewarded_left = [(target_side3[i]-1) for i in free_choice_ind if (target3[i-1] == 1)&(reward3[i] == 0)]
-		unrewarded_right = [(target_side3[i]-1) for i in free_choice_ind if (target3[i-1] == 2)&(reward3[i] == 0)]
+		rewarded_left = [target_side3[i] for i in free_choice_ind if (target_side3[i-1] == 1)&(reward3[i] == 1)]
+		rewarded_right = [target_side3[i] for i in free_choice_ind if (target_side3[i-1] == 0)&(reward3[i] == 1)]
+		unrewarded_left = [target_side3[i] for i in free_choice_ind if (target_side3[i-1] == 1)&(reward3[i] == 0)]
+		unrewarded_right = [target_side3[i] for i in free_choice_ind if (target_side3[i-1] == 0)&(reward3[i] == 0)]
 
 		prob_right_stim_rewarded_left = np.sum(rewarded_left)/float(len(rewarded_left))
 		prob_right_stim_rewarded_right = np.sum(rewarded_right)/float(len(rewarded_right))
@@ -1030,22 +1030,42 @@ def probabilisticRewardTaskPerformance_RegressFreeChoiceV2(days, animal_id):
 
 	return fit_glm
 
-def TwoWayMANOVA(x_dta):
+def TwoWayMANOVA(x_dta, factor1, factor2, dv1, dv2):
 	'''
 	Inputs:
 		- x_dta: input of the form pd.DataFrame(dta, columns=['reward', 'stim_targ_side', 'lv_choices', 'right_choices']), 
 				 length is equal to number of days
+		- factor1: string name for first independent variable
+		- factor2: string name for second independent variable
+		- dv1: string name for first dependent variable
+		- dv2: string name for second dependent variable
 
 	Outputs:
 
 	'''
-	g = factor1_numgroups
-	b = factor2_numgroups
-	n = num_obs_within_groups
+	factor1_levels = x_dta[factor1].unique()
+	factor2_levels = x_dta[factor2].unique()
+	g = len(factor1_levels)
+	b = len(factor2_levels)
+	n = np.sum(x_dta[factor1]==factor1_levels[0])/b
+	p = 2
 
-	x_mean_factor1 = 0 # vector of mean values for dependent metrics averages over groups in factor 1
-	x_mean_factor2 = 0 # vector of mean values for dependent metrics averaged over groups in factor 2
-	x_mean = 0 # vector of overall mean values for dependent metrics
+	total_num_obs = len(x_dta)
+
+	factor1_level1_ind = np.ravel(np.nonzero(x_dta[factor1]==factor1_levels[0]))
+	factor1_level2_ind = np.ravel(np.nonzero(x_dta[factor1]==factor1_levels[1]))
+	factor2_level1_ind = np.ravel(np.nonzero(x_dta[factor2]==factor2_levels[0]))
+	factor2_level2_ind = np.ravel(np.nonzero(x_dta[factor2]==factor2_levels[1]))
+
+	x_mean_factor1_level1 = np.array([np.nanmean(x_dta[dv1][factor1_level1_ind]), np.nanmean(x_dta[dv2][factor1_level1_ind])]) # vector of mean values for dependent metrics averages over groups in factor 1
+	x_mean_factor1_level2 = np.array([np.nanmean(x_dta[dv1][factor1_level2_ind]), np.nanmean(x_dta[dv2][factor1_level2_ind])])
+	x_mean_factor2_level1 = np.array([np.nanmean(x_dta[dv1][factor2_level1_ind]), np.nanmean(x_dta[dv2][factor2_level1_ind])]) # vector of mean values for dependent metrics averages over groups in factor 1
+	x_mean_factor2_level2 = np.array([np.nanmean(x_dta[dv1][factor2_level2_ind]), np.nanmean(x_dta[dv2][factor2_level2_ind])])
+	
+	x_mean_factor1 = [x_mean_factor1_level1, x_mean_factor1_level2]
+	x_mean_factor2 = [x_mean_factor2_level1, x_mean_factor2_level2]
+
+	x_mean = np.array([np.nanmean(x_dta[dv1]), np.nanmean(x_dta[dv2])])
 
 	SSP_interaction = 0
 	SSP_residual = 0
@@ -1053,26 +1073,59 @@ def TwoWayMANOVA(x_dta):
 
 	for i in range(g):
 		for j in range(b):
-			x_mean_cross_terms = 0 # vector of mean values for dependent metrics averages over observations for group i in factor 1
-								 # group j in factor 2
-			SSP_interaction += n*(x_mean_cross_terms - x_mean_factor1 - x_mean_factor2 + x_mean)*(x_mean_cross_terms - x_mean_factor1 - x_mean_factor2 + x_mean).T
-			for r in range(n):
-				SSP_residual += (x[i,j,r] - x_mean_cross_terms)*(x[i,j,r] - x_mean_cross_terms).T
-				SSP_corrected += (x[i,j,r] - x_mean)*(x[i,j,r] - x_mean).T
 
-	SSP_factor1 = np.sum(b*n*(x_mean_factor1 - x_mean)*(x_mean_factor1 - x_mean).T)
-	SSP_factor2 = np.sum(g*n*(x_mean_factor2 - x_mean)*(x_mean_factor2 - x_mean).T)
+			factor1_ind = np.ravel(np.nonzero(x_dta[factor1]==factor1_levels[i]))
+			factor2_ind = np.ravel(np.nonzero(x_dta[factor2]==factor2_levels[j]))
+
+			factor_ind = [ind for ind in range(total_num_obs) if (ind in factor1_ind)&(ind in factor2_ind)]
+
+			x_mean_cross_terms = np.array([np.nanmean(x_dta[dv1][factor_ind]), np.nanmean(x_dta[dv2][factor_ind])]) 
+
+			SSP_interaction += n*np.outer(x_mean_cross_terms - x_mean_factor1[i] - x_mean_factor2[j] + x_mean, (x_mean_cross_terms - x_mean_factor1[i] - x_mean_factor2[j] + x_mean))
+			
+			x_dv1_obs = [item for item in x_dta[dv1][factor_ind]]
+			x_dv2_obs = [item for item in x_dta[dv2][factor_ind]]
+			for r in range(n):
+				x_obs = [x_dv1_obs[r], x_dv2_obs[r]]
+				SSP_residual += np.outer((x_obs - x_mean_cross_terms), (x_obs - x_mean_cross_terms))
+				SSP_corrected += np.outer((x_obs - x_mean),(x_obs - x_mean))
+
+	SSP_factor1 = np.outer(b*n*(x_mean_factor1[0] - x_mean).T,(x_mean_factor1[0] - x_mean)) + np.dot(b*n*(x_mean_factor1[1] - x_mean),(x_mean_factor1[1] - x_mean))
+	SSP_factor2 = np.outer(g*n*(x_mean_factor2[0] - x_mean).T,(x_mean_factor2[0] - x_mean)) + np.dot(g*n*(x_mean_factor2[1] - x_mean),(x_mean_factor2[1] - x_mean))
 
 	df_factor1 = g - 1
 	df_factor2 = b - 1
 	df_interaction = (g - 1)*(b - 1)
 	df_residual = g*b*(n - 1)
+	df_corrected = g*b*n - 1
 	
 	F_factor1 = (SSP_factor1/float(df_factor1))/(SSP_residual/float(df_residual))
 	F_factor2 = (SSP_factor2/float(df_factor2))/(SSP_residual/float(df_residual))
 	F_interaction = (SSP_interaction/float(df_interaction))/(SSP_residual/float(df_residual))
 
-	return
+	# Testing for presence of absernce of interaction effect: Wilks statistic
+	wilks_lambda_interaction = np.linalg.det(SSP_residual)/float(np.linalg.det(SSP_residual+ SSP_interaction))
+	chi_squared_comp_interaction = stats.chi2.cdf(0.05, p*df_factor1*df_factor2)
+
+	reject_interaction = -(b*g*(n-1) - (p + 1 - (g-1)*(b-1))/2.)*np.log(wilks_lambda_interaction)
+	interaction_test = (reject_interaction < chi_squared_comp_interaction) 
+	print "Significant interaction term:", interaction_test
+
+	wilks_lambda_factor1 = np.linalg.det(SSP_residual)/float(np.linalg.det(SSP_residual+ SSP_factor1))
+	chi_squared_comp_factor1 = stats.chi2.cdf(0.05, p*df_factor1)
+	reject_factor1 = -(b*g*(n-1) - (p + 1 - df_factor1)/2.)*np.log(wilks_lambda_factor1)
+	factor1_test = (reject_factor1 < chi_squared_comp_factor1)
+
+	print "Factor 1 Significant: ", factor1_test
+
+	wilks_lambda_factor2 = np.linalg.det(SSP_residual)/float(np.linalg.det(SSP_residual + SSP_factor2))
+	chi_squared_comp_factor2 = stats.chi2.cdf(0.05, p*df_factor2)
+	reject_factor2 = -(b*g*(n-1) - (p + 1 - df_factor2)/2.)*np.log(wilks_lambda_factor2)
+	factor2_test = (reject_factor2 < chi_squared_comp_factor2)
+
+	print "Factor 2 Significant:", factor2_test
+	
+	return F_factor1, F_factor2, F_interaction
 
 '''
 papa_hdf_location = 'C:\Users\Samantha Summerson\Dropbox\Carmena Lab\Papa\hdf'
@@ -1148,8 +1201,9 @@ print "Two-way ANOVA analysis: Luigi"
 print(aov_table)
 """
 
-fit_glm = probabilisticRewardTaskPerformance_RegressFreeChoiceV2(luigi_stim_days, '\Luigi')
-
+#fit_glm = probabilisticRewardTaskPerformance_RegressFreeChoiceV2(luigi_stim_days, '\Luigi')
+dta_luigi = probabilisticRewardTaskPerformance_RewardAndTargetSide(luigi_stim_days, '\Luigi')
+F_factor1, F_factor2, F_interaction = TwoWayMANOVA(dta_luigi, 'reward', 'stim_targ_side', 'lv_choices', 'right_choices')
 
 """
 papa_sham_prob_trialaligned, papa_stim_prob_trialaligned, papa_control_prob_trialaligned = probabilisticRewardTaskPerformance_TrialAligned(sham_days, stim_days, control_days, '\Papa')
