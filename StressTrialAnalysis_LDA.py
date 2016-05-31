@@ -103,13 +103,13 @@ if filename == 'Mario20160320':
 	pupil_samprate = 3051.8
 	pulse_data = get_csv_data_singlechannel(HrtR_filename)
 	pulse_samprate = 3051.8
-	hdeeg = dict()
-	hdeeg_samprate = 3051.8
+	lfp = dict()
+	lfp_samprate = 3051.8
 else:
 	r = io.TdtIO(TDT_tank)
 	bl = r.read_block(lazy=False,cascade=True)
 	print "File read."
-	hdeeg = dict()
+	lfp = dict()
 	# Get Pulse and Pupil Data
 	for sig in bl.segments[block_num-1].analogsignals:
 		if (sig.name == 'PupD 1'):
