@@ -218,7 +218,10 @@ def getIBIandPuilDilation(pulse_data, pulse_ind,samples_pulse, pulse_samprate,pu
 		pulse_snippet = pulse_data[pulse_ind[i]:pulse_ind[i]+samples_pulse[i]]
 		ibi_snippet = findIBIs(pulse_snippet,pulse_samprate)
 		all_ibi += ibi_snippet.tolist()
-		ibi_mean.append(np.nanmean(ibi_snippet))
+		if np.isnan(np.nanmean(ibi_snippet)):
+			ibi_mean.append(ibi_mean[-1])   # repeat last measurement
+		else:
+			ibi_mean.append(np.nanmean(ibi_snippet))
 		ibi_std.append(np.nanstd(ibi_snippet))
 		
 		pupil_snippet = pupil_data[pupil_ind[i]:pupil_ind[i]+samples_pupil[i]]
@@ -233,13 +236,9 @@ def getIBIandPuilDilation(pulse_data, pulse_ind,samples_pulse, pulse_samprate,pu
 			eyes_closed_ind += eyes_closed[blink_inds+1].tolist()
 			eyes_closed_ind += [eyes_closed[-1]]
 			eyes_closed_ind.sort()
-			print len(eyes_closed_ind)
-			print len(pupil_snippet)
-			print eyes_closed_ind[0]
+			
 			for i in np.arange(1,len(eyes_closed_ind),2):
-				print np.nanmax(eyes_closed_ind[i-1]-20,0)
-				#print np.nanmin(eyes_closed_ind[i-1] + 20,len(pupil_snippet)-1)
-				rm_range = range(np.nanmax(eyes_closed_ind[i-1]-20,0),np.minimum(eyes_closed_ind[i-1] + 20,len(pupil_snippet)-1))
+				rm_range = range(np.nanmax(eyes_closed_ind[i-1]-20,0),np.minimum(eyes_closed_ind[i] + 20,len(pupil_snippet)-1))
 				rm_indices = [pupil_snippet_range.index(rm_range[ind]) for ind in range(0,len(rm_range)) if (rm_range[ind] in pupil_snippet_range)]
 				pupil_snippet_range = np.delete(pupil_snippet_range,rm_indices)
 				pupil_snippet_range = pupil_snippet_range.tolist()
