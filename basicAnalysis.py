@@ -374,10 +374,11 @@ def LDAforFeatureSelection(X,y):
 	eig_pairs = [(np.abs(eig_vals[i]), eig_vecs[:,i]) for i in range(len(eig_vals))]
 	# Sort the (eigenvalue, eigenvector) tuples from high to low
 	eig_pairs = sorted(eig_pairs, key=lambda k: k[0], reverse=True)
+	eig_pairs_ind = sorted(range(len(eig_pairs)), key=lambda k: eig_pairs[k], reverse=True)
 
 	print('Eigenvalues in decreasing order:\n')
-	for i in eig_pairs:
-		print(i[0])
+	for ind, i in enumerate(eig_pairs):
+		print(i[0], eig_pairs_ind[ind])
 
 	print('Variance explained:\n')
 	eigv_sum = sum(eig_vals)
