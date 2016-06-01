@@ -340,7 +340,7 @@ def LDAforFeatureSelection(X,y):
 
 	# Within-class scatter matrix
 	S_W = np.zeros((num_features, num_features))
-	for cl, mv in zip(range(1,num_features), mean_vectors):
+	for cl, mv in zip(range(0,num_features), mean_vectors):
 		class_sc_mat = np.zeros((num_features,num_features))  					# scatter matrix for every class
 		for row in X[y==cl]:
 			row, mv = row.reshape(num_features,1), mv.reshape(num_features,1)  	# make column vectors
@@ -360,7 +360,7 @@ def LDAforFeatureSelection(X,y):
 	print('Between-class Scatter Matrix:\n', S_B)
 
 	# Solving the generalized eigenvalue problem 
-
+	'''
 	eig_vals, eig_vecs = np.linalg.eig(np.linalg.inv(S_W).dot(S_B))
 
 	for i in range(len(eig_vals)):
@@ -384,5 +384,5 @@ def LDAforFeatureSelection(X,y):
 	for i,j in enumerate(eig_pairs):
 		print('eigenvalue {0:} {1: .2%}'.format(i+1, (j[0]/eigv_sum).real))
 
-
-	return
+	'''
+	return S_W, S_B

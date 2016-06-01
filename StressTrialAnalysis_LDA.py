@@ -304,4 +304,4 @@ y_all = np.append(y_reg, y_stress)
 clf_successful = LinearDiscriminantAnalysis()
 clf_successful.fit(X_successful, y_successful)
 
-LDAforFeatureSelection(X_all,y_all)
+S_W, S_B = LDAforFeatureSelection(X_all,y_all)
