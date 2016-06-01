@@ -234,8 +234,9 @@ X_reg = []
 
 for i, ind in enumerate(lfp_ind_successful_stress):
 	trial_array = []
-	trial_array.append(ibi_stress_mean[i])
 	trial_array.append(pupil_stress_mean[i])
+	trial_array.append(ibi_stress_mean[i])
+	
 		
 	for chann in lfp_channels:
 		freq, Pxx_den = signal.welch(lfp[chann][ind:ind+samples_lfp_successful_stress[i]], lfp_samprate, nperseg=1024)
@@ -258,8 +259,9 @@ for i, ind in enumerate(lfp_ind_stress):
 
 for i, ind in enumerate(lfp_ind_successful_reg):
 	trial_array = []
-	trial_array.append(ibi_reg_mean[i])
 	trial_array.append(pupil_reg_mean[i])
+	trial_array.append(ibi_reg_mean[i])
+	
 		
 	for chann in lfp_channels:
 		freq, Pxx_den = signal.welch(lfp[chann][ind:ind+samples_lfp_successful_reg[i]], lfp_samprate, nperseg=1024)
