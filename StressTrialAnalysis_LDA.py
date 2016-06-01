@@ -12,6 +12,7 @@ from basicAnalysis import plot_cov_ellipse
 from csv_processing import get_csv_data_singlechannel
 from probabilisticRewardTaskPerformance import FreeChoiceBehavior_withStressTrials
 from spectralAnalysis import TrialAveragedPSD
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 
 
 # Set up code for particular day and block
@@ -227,43 +228,60 @@ lfp_power_stress = dict()
 lfp_power_successful_reg = dict()
 lfp_power_reg = dict()
 X_successful_stress = []
+X_stress = []
+X_successful_reg = []
+X_reg = []
 
-for chann in lfp_channels:
-	lfp_power_successful_stress[chann] = []
-	lfp_power_stress[chann] = []
-	lfp_power_successful_reg[chann] = []
-	lfp_power_reg[chann] = []
-
-	for i, ind in enumerate(lfp_ind_successful_stress):
+for i, ind in enumerate(lfp_ind_successful_stress):
+	trial_array = []
+	trial_array.append(ibi_stress_mean[i])
+	trial_array.append(pupil_stress_mean[i])
+		
+	for chann in lfp_channels:
 		freq, Pxx_den = signal.welch(lfp[chann][ind:ind+samples_lfp_successful_stress[i]], lfp_samprate, nperseg=1024)
-		trial_array = []
 		for k, item in enumerate(bands):
 			freq_band = [Pxx_den[j] for j in range(len(freq)) if (item[0] <= freq[j] <= item[1])]
-			lfp_power_successful_stress[chann].append(np.sum(freq_band))
 			trial_array.append(np.sum(freq_band))
-		trial_array.append(ibi_stress_mean[i])
-		trial_array.append(pupil_stress_mean[i])
-		X_successful_stress.append(trial_array)
+	X_successful_stress.append(trial_array)
 
-	for i, ind in enumerate(lfp_ind_stress):
+for i, ind in enumerate(lfp_ind_stress):
+	trial_array = []
+	trial_array.append(ibi_all_stress_mean[i])
+	trial_array.append(pupil_all_stress_mean[i])
+		
+	for chann in lfp_channels:
 		freq, Pxx_den = signal.welch(lfp[chann][ind:ind+samples_lfp_stress[i]], lfp_samprate, nperseg=1024)
-
 		for k, item in enumerate(bands):
 			freq_band = [Pxx_den[j] for j in range(len(freq)) if (item[0] <= freq[j] <= item[1])]
-			lfp_power_stress[chann].append(np.sum(freq_band))
+			trial_array.append(np.sum(freq_band))
+	X_stress.append(trial_array)
 
-	for i, ind in enumerate(lfp_ind_successful_reg):
+for i, ind in enumerate(lfp_ind_successful_reg):
+	trial_array = []
+	trial_array.append(ibi_reg_mean[i])
+	trial_array.append(pupil_reg_mean[i])
+		
+	for chann in lfp_channels:
 		freq, Pxx_den = signal.welch(lfp[chann][ind:ind+samples_lfp_successful_reg[i]], lfp_samprate, nperseg=1024)
-
 		for k, item in enumerate(bands):
 			freq_band = [Pxx_den[j] for j in range(len(freq)) if (item[0] <= freq[j] <= item[1])]
-			lfp_power_successful_reg[chann].append(np.sum(freq_band))
+			trial_array.append(np.sum(freq_band))
+	X_successful_reg.append(trial_array)
 
-	for i, ind in enumerate(lfp_ind_reg):
+for i, ind in enumerate(lfp_ind_reg):
+	trial_array = []
+	trial_array.append(ibi_all_reg_mean[i])
+	trial_array.append(pupil_all_reg_mean[i])
+		
+	for chann in lfp_channels:
 		freq, Pxx_den = signal.welch(lfp[chann][ind:ind+samples_lfp_reg[i]], lfp_samprate, nperseg=1024)
-
 		for k, item in enumerate(bands):
 			freq_band = [Pxx_den[j] for j in range(len(freq)) if (item[0] <= freq[j] <= item[1])]
-			lfp_power_reg[chann].append(np.sum(freq_band))
+			trial_array.append(np.sum(freq_band))
+	X_reg.append(trial_array)
 
 X_successful_stress = np.array(X_successful_stress)
+X_stress = np.array(X_stress)
+X_successful_reg = np.array(X_successful_reg)
+X_reg = np.array(X_reg)
+
