@@ -243,7 +243,7 @@ for chann in lfp_channels:
 			trial_array.append(np.sum(freq_band))
 		trial_array.append(ibi_stress_mean[i])
 		trial_array.append(pupil_stress_mean[i])
-		X_successful_stress + trial_array
+		X_successful_stress += np.array(trial_array)
 
 	for i, ind in enumerate(lfp_ind_stress):
 		freq, Pxx_den = signal.welch(lfp[chann][ind:ind+samples_lfp_stress[i]], lfp_samprate, nperseg=1024)
