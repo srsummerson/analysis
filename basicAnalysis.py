@@ -334,7 +334,7 @@ def LDAforFeatureSelection(X,y):
 	mean_vectors = []
 	for cl in classes:
 		mean_vectors.append(np.nanmean(X[y==cl], axis=0))
-		print('Mean vector class %s: %s\n' %(cl, mean_vectors[cl]))
+		print('Mean vector class %s: %s\n' %(cl, mean_vectors[int(cl)]))
 
 	# Compute the scatter matrices
 
