@@ -349,7 +349,7 @@ def LDAforFeatureSelection(X,y):
 	print('Within-class Scatter Matrix:\n', S_W)
 
 	# Between-class scatter matrix
-	overall_mean = np.mean(X, axis = 0)
+	overall_mean = np.nanmean(X, axis = 0)
 
 	S_B = np.zeros((num_features,num_features))
 	for i, mean_vec in enumerate(mean_vectors):
