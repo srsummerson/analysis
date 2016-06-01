@@ -281,7 +281,23 @@ for i, ind in enumerate(lfp_ind_reg):
 	X_reg.append(trial_array)
 
 X_successful_stress = np.array(X_successful_stress)
+num_successful_stress = X_successful_stress.shape[0]
+y_successful_stress = np.ones(num_successful_stress)
 X_stress = np.array(X_stress)
+num_stress = X_stress.shape[0]
+y_stress = np.ones(num_stress)
 X_successful_reg = np.array(X_successful_reg)
+num_successful_reg = X_successful_reg.shape[0]
+y_successful_reg = np.zeros(num_successful_reg)
 X_reg = np.array(X_reg)
+num_reg = X_reg.shape[0]
+y_reg = np.zeros(num_reg)
 
+X_successful = np.vstack([X_successful_reg, X_successful_stress])
+y_successful = np.append(y_successful_reg,y_successful_stress)
+
+X_all = np.vstack([X_reg, X_stress])
+y_all = np.append(y_reg, y_stress)
+
+clf_successful = LinearDiscriminantAnalysis()
+clf_successful.fit(X_successful, y_successful)
