@@ -361,7 +361,7 @@ def LDAforFeatureSelection(X,y):
 
 	# Solving the generalized eigenvalue problem 
 
-	eig_vals, eig_vecs = np.linalg.eig(np.lingalg.inv(S_W).dot(S_B))
+	eig_vals, eig_vecs = np.linalg.eig(np.linalg.inv(S_W).dot(S_B))
 
 	for i in range(len(eig_vals)):
 		eigvec_sc = eig_vecs[:,i].reshape(num_features,1) 	# make column vector
