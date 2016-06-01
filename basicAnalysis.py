@@ -315,3 +315,74 @@ def ComputeEfronRSquared(xd,xm_prob):
 	r_squared = 1 - ss_res/float(ss_tot)
 
 	return r_squared
+
+def LDAforFeatureSelection(X,y):
+	'''
+	This method performs linear discriminant analysis on the data (X,y) and computes the variances explained by the 
+	features represented in the X matrix. This is based on: http://sebastianraschka.com/Articles/2014_python_lda.html#principal-component-analysis-vs-linear-discriminant-analysis
+	
+	Input:
+		- X: data matrix of shape (num_samples, num_features)
+		- y: class labels for each sample row in X (note: this version assumes classes are numerical and start at 0)
+
+	'''
+	classes = np.unique(y)
+	num_classes = len(classes)
+	num_samples, num_features = X.shape
+
+	# Compute the num-features-dimensional mean vectors of the different classes
+	mean_vectors = []
+	for cl in classes:
+		mean_vectors.append(np.nanmean(X[y==cl], axis=0))
+		print('Mean vector class %s: %s\n', %(cl, mean_vectors[cl]))
+
+	# Compute the scatter matrices
+
+	# Within-class scatter matrix
+	S_W = np.zeros((num_features, num_features))
+	for cl, mv in zip(range(1,num_features), mean_vectors):
+		class_sc_mat = np.zeros((num_features,num_features))  					# scatter matrix for every class
+		for row in X[y==cl]:
+			row, mv = row.reshape(num_features,1), mv.reshape(num_features,1)  	# make column vectors
+			class_sc_mat += (row-mv).dot((row-mv).T)
+		S_W += class_sc_mat 													# sum class scatter matrices
+	print('Within-class Scatter Matrix:\n', S_W)
+
+	# Between-class scatter matrix
+	overall_mean = np.mean(X, axis = 0)
+
+	S_B = np.zeros((num_features,num_features))
+	for i, mean_vec in enumerate(mean_vectors):
+		n = X[y==i,:].shape[0]
+		mean_vec = mean_vec.reshape(num_features,1) 			# make column vector
+		overall_mean = overall_mean.reshape(num_features,1)		# make column vector
+		S_B += n * (mean_vec - overall_mean).dot((mean_vec - overall_mean).T)
+	print('Between-class Scatter Matrix:\n', S_B)
+
+	# Solving the generalized eigenvalue problem 
+
+	eig_vals, eig_vecs = np.linalg.eig(np.lingalg.inv(S_W).dot(S_B))
+
+	for i in range(len(eig_vals)):
+		eigvec_sc = eig_vecs[:,i].reshape(num_features,1) 	# make column vector
+		print('\nEigenvector {}: \n{}'.format(i+1,eigvec_sc.real))
+		print('Eigenvalue {:} {:.2e}'.format(i+1,eig_vals[i].real))
+
+	# Selecting linear discriminants
+
+	# Make a list of (eigvalue, eigvector) tuples
+	eig_pairs = [(np.abs(eig_vals[i]), eig_vecs[:,i]) for i in range(len(eig_vals))]
+	# Sort the (eigenvalue, eigenvector) tuples from high to low
+	eig_pairs = sorted(eig_pairs, key=lambda k: k[0], reverse=True)
+
+	print('Eigenvalues in decreasing order:\n')
+	for i in eig_pairs:
+		print(i[0])
+
+	print('Variance explained:\n')
+	eigv_sum = sum(eig_vals)
+	for i,j in enumerate(eig_pairs):
+		print('eigenvalue {0:} {1: .2%}'.format(i+1, (j[0]/eigv_sum).real))
+
+
+	return

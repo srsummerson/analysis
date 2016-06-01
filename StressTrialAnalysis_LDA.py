@@ -8,7 +8,7 @@ from scipy import signal
 from scipy import stats
 from matplotlib import mlab
 import matplotlib.pyplot as plt
-from basicAnalysis import plot_cov_ellipse
+from basicAnalysis import plot_cov_ellipse, LDAforFeatureSelection
 from csv_processing import get_csv_data_singlechannel
 from probabilisticRewardTaskPerformance import FreeChoiceBehavior_withStressTrials
 from spectralAnalysis import TrialAveragedPSD
@@ -303,3 +303,5 @@ y_all = np.append(y_reg, y_stress)
 
 clf_successful = LinearDiscriminantAnalysis()
 clf_successful.fit(X_successful, y_successful)
+
+LDAforFeatureSelection(X_all,y_all)
