@@ -360,7 +360,7 @@ def LDAforFeatureSelection(X,y):
 	print('Between-class Scatter Matrix:\n', S_B)
 
 	# Solving the generalized eigenvalue problem 
-	'''
+	
 	eig_vals, eig_vecs = np.linalg.eig(np.linalg.inv(S_W).dot(S_B))
 
 	for i in range(len(eig_vals)):
@@ -384,5 +384,5 @@ def LDAforFeatureSelection(X,y):
 	for i,j in enumerate(eig_pairs):
 		print('eigenvalue {0:} {1: .2%}'.format(i+1, (j[0]/eigv_sum).real))
 
-	'''
+	
 	return S_W, S_B
