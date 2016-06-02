@@ -325,4 +325,4 @@ x = sm.add_constant(x,prepend='False')
 
 model_glm = sm.Logit(y_all,x)
 fit_glm = model_glm.fit()
-print fil_glm.summary()
+print fit_glm.summary()
