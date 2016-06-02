@@ -23,8 +23,8 @@ from sklearn.cross_validation import cross_val_score
 
 
 # Set up code for particular day and block
-hdf_filename = 'mari20160513_02_te2081.hdf'
-filename = 'Mario20160513'
+hdf_filename = 'mari20160517_07_te2097.hdf'
+filename = 'Mario20160517'
 TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
 #TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
