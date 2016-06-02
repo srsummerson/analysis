@@ -324,7 +324,6 @@ def plot_step_lda(X_lda,y,labels):
 			marker=marker,
 			color=color,
 			alpha=0.5,
-			label=labels[label]
 			)
 	plt.xlabel('LD1')
 	plt.ylabel('LD2')
