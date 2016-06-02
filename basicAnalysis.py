@@ -1,6 +1,7 @@
 from neo import io
 import numpy as np
 import scipy as sp
+import sys
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
 from scipy import signal
