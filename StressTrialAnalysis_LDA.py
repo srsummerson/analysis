@@ -18,8 +18,8 @@ from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 
 
 # Set up code for particular day and block
-hdf_filename = 'mari20160517_07_te2097.hdf'
-filename = 'Mario20160517'
+hdf_filename = 'mari20160513_02_te2081.hdf'
+filename = 'Mario20160513'
 TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
 #TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
@@ -28,7 +28,7 @@ block_num = 1
 stim_freq = 100
 
 lfp_channels = [29, 13, 27, 11, 25, 9, 10, 26, 12, 28, 14, 30, 20, 4, 18, 2, 63, 1, 17, 3]
-lfp_channels = [10]
+lfp_channels = [29]
 #bands = [[1,8],[8,12],[12,30],[30,55],[65,100]]
 bands = [[12,30]]
 
