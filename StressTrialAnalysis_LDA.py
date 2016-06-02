@@ -3,6 +3,7 @@ import scipy as sp
 import matplotlib as mpl
 import tables
 import sys
+import statsmodels.api as sm
 from neo import io
 from PulseMonitorData import findIBIs, getIBIandPuilDilation
 from scipy import signal
@@ -311,3 +312,15 @@ clf_successful = LinearDiscriminantAnalysis()
 clf_successful.fit(X_successful, y_successful)
 
 LDAforFeatureSelection(X_successful,y_successful,filename,block_num)
+
+'''
+Do regression as well
+'''
+
+x = np.vstack((ibi_all_reg_mean, ibi_all_stress_mean))
+x = np.transpose(x)
+x = sm.add_constant(x,prepend='False')
+
+model_glm = sm.Logit(y_all,x)
+fit_glm = model_glm.fit()
+   
