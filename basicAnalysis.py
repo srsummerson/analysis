@@ -316,7 +316,7 @@ def ComputeEfronRSquared(xd,xm_prob):
 
 	return r_squared
 
-def plot_step_lad(X_lda,y,labels):
+def plot_step_lda(X_lda,y,labels):
 
 	ax = plt.subplot(111)
 	for label, marker, color in zip(range(0,2), ('^','s'),('blue','red')):
