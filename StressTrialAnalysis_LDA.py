@@ -317,7 +317,7 @@ LDAforFeatureSelection(X_successful,y_successful,filename,block_num)
 Do regression as well
 '''
 
-x = np.vstack((ibi_all_reg_mean, ibi_all_stress_mean))
+x = np.vstack((np.append(ibi_all_reg_mean, ibi_all_stress_mean), np.append(pupil_all_reg_mean, pupil_all_stress_mean)))
 x = np.transpose(x)
 x = sm.add_constant(x,prepend='False')
 
