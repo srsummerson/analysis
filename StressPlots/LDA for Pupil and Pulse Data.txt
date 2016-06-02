@@ -1,0 +1,28 @@
+Mean vector class 0.0: [ 0.08864023  0.36387019]
+
+Mean vector class 1.0: [ 0.54325557  0.36927815]
+
+('Within-class Scatter Matrix:\n', array([[  3.15908597e+02,  -4.77921875e-02],
+       [ -4.77921875e-02,   4.93036419e-02]]))
+('Between-class Scatter Matrix:\n', array([[  1.32850451e+01,   1.58034596e-01],
+       [  1.58034596e-01,   1.87992840e-03]]))
+
+Eigenvector 1: 
+[[ 0.01310334]
+ [ 0.99991415]]
+Eigenvalue 1 8.12e-02
+
+Eigenvector 2: 
+[[-0.01189483]
+ [ 0.99992925]]
+Eigenvalue 2 0.00e+00
+Eigenvalues in decreasing order:
+
+(0.081164790486690841, 0)
+(0.0, 1)
+Variance explained:
+
+eigenvalue 1  100.00%
+eigenvalue 2  0.00%
+('Matrix W:\n', array([[ 0.01310334, -0.01189483],
+       [ 0.99991415,  0.99992925]]))
