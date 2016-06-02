@@ -417,7 +417,7 @@ def LDAforFeatureSelection(X,y):
 		print('eigenvalue {0:} {1: .2%}'.format(i+1, (j[0]/eigv_sum).real))
 
 	# Choosing 2 eigenvectors with largest eigenvalues
-	W = np.stack((eig_pairs[0][1].reshape(num_features,1), eig_pairs[1][1].reshape(num_features,1)))
+	W = np.hstack((eig_pairs[0][1].reshape(num_features,1), eig_pairs[1][1].reshape(num_features,1)))
 	print('Matrix W:\n', W.real)
 
 	# Transform the samples onto the new subspace
