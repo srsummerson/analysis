@@ -1,28 +1,28 @@
-Mean vector class 0.0: [ 0.08864023  0.36387019]
+Mean vector class 0.0: [ 0.07181697  0.36432466]
 
-Mean vector class 1.0: [ 0.54325557  0.36927815]
+Mean vector class 1.0: [ 0.83741271  0.36364707]
 
-('Within-class Scatter Matrix:\n', array([[  3.15908597e+02,  -4.77921875e-02],
-       [ -4.77921875e-02,   4.93036419e-02]]))
-('Between-class Scatter Matrix:\n', array([[  1.32850451e+01,   1.58034596e-01],
-       [  1.58034596e-01,   1.87992840e-03]]))
+('Within-class Scatter Matrix:\n', array([[  2.22606503e+02,  -4.27730188e-02],
+       [ -4.27730188e-02,   1.82706027e-02]]))
+('Between-class Scatter Matrix:\n', array([[  2.85553843e+01,  -2.52730845e-02],
+       [ -2.52730845e-02,   2.23680687e-05]]))
 
 Eigenvector 1: 
-[[ 0.01310334]
- [ 0.99991415]]
-Eigenvalue 1 8.12e-02
+[[ 0.11738839]
+ [-0.99308608]]
+Eigenvalue 1 1.29e-01
 
 Eigenvector 2: 
-[[-0.01189483]
- [ 0.99992925]]
-Eigenvalue 2 0.00e+00
+[[  8.85054612e-04]
+ [  9.99999608e-01]]
+Eigenvalue 2 -1.08e-19
 Eigenvalues in decreasing order:
 
-(0.081164790486690841, 0)
-(0.0, 1)
+(0.12902813144928021, 0)
+(1.0842021724855044e-19, 1)
 Variance explained:
 
 eigenvalue 1  100.00%
 eigenvalue 2  0.00%
-('Matrix W:\n', array([[ 0.01310334, -0.01189483],
-       [ 0.99991415,  0.99992925]]))
+('Matrix W:\n', array([[  1.17388392e-01,   8.85054612e-04],
+       [ -9.93086082e-01,   9.99999608e-01]]))
