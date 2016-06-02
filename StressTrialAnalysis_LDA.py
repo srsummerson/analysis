@@ -15,6 +15,11 @@ from csv_processing import get_csv_data_singlechannel
 from probabilisticRewardTaskPerformance import FreeChoiceBehavior_withStressTrials
 from spectralAnalysis import TrialAveragedPSD
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.linear_model import LogisticRegression
+from sklearn.cross_validation import train_test_split
+from sklearn import metrics
+from sklearn.metrics import roc_curve, auc
+from sklearn.cross_validation import cross_val_score
 
 
 # Set up code for particular day and block
@@ -309,15 +314,18 @@ y_successful = np.append(y_successful_reg,y_successful_stress)
 X_all = np.vstack([X_reg, X_stress])
 y_all = np.append(y_reg, y_stress)
 
-clf_successful = LinearDiscriminantAnalysis()
-clf_successful.fit(X_successful, y_successful)
+clf_all = LinearDiscriminantAnalysis()
+clf_all.fit(X_all, y_all)
+scores = cross_val_score(LinearDiscriminantAnalysis(),X_all,y_all,scoring='accuracy',cv=10)
+print "CV (10-fold) scores:", scores
+print "Avg CV score:", scores.mean()
 
-LDAforFeatureSelection(X_successful,y_successful,filename,block_num)
+#LDAforFeatureSelection(X_successful,y_successful,filename,block_num)
 
 '''
 Do regression as well
 '''
-
+"""
 x = np.vstack((np.append(ibi_all_reg_mean, ibi_all_stress_mean), np.append(pupil_all_reg_mean, pupil_all_stress_mean), 
 				np.append(lfp_power_reg, lfp_power_stress)))
 x = np.transpose(x)
@@ -326,3 +334,4 @@ x = sm.add_constant(x,prepend='False')
 model_glm = sm.Logit(y_all,x)
 fit_glm = model_glm.fit()
 print fit_glm.summary()
+"""
