@@ -316,6 +316,37 @@ def ComputeEfronRSquared(xd,xm_prob):
 
 	return r_squared
 
+def plot_step_lad(X_lda,y,labels):
+
+	ax = plt.subplot(111)
+	for label, marker, color in zip(range(0,2), ('^','s'),('blue','red')):
+		plt.scatter(x=X_lda[:,0].real[y==label],
+			marker=marker,
+			color=color,
+			alpha=0.5,
+			label=labels[label]
+			)
+	plt.xlabel('LD1')
+	plt.ylabel('LD2')
+
+	leg = plt.legend(loc='upper right', fancybox = True)
+	leg.get_frame().set_alpha(0.5)
+	plt.title('LDA: Data projection onto the first 2 linear discriminants')
+
+	# hide axis ticks
+	plt.tick_params(axis='both', which='both', bottom = 'off', top = 'off', labelbottom='on', left='off', right = 'off', labelleft = 'on')
+
+	# remove axis spines
+	ax.spines["top"].set_visible(False)
+	ax.spines["right"].set_visible(False)
+	ax.spines["left"].set_visible(False)
+	ax.spines["bottom"].set_visible(False)
+
+	plt.grid()
+	plt.tight_layout()
+
+	return
+
 def LDAforFeatureSelection(X,y):
 	'''
 	This method performs linear discriminant analysis on the data (X,y) and computes the variances explained by the 
@@ -385,5 +416,13 @@ def LDAforFeatureSelection(X,y):
 	for i,j in enumerate(eig_pairs):
 		print('eigenvalue {0:} {1: .2%}'.format(i+1, (j[0]/eigv_sum).real))
 
-	
-	return S_W, S_B
+	# Choosing 2 eigenvectors with largest eigenvalues
+	W = np.stack((eig_pairs[0][1].reshape(num_features,1), eig_pairs[1][1].reshape(num_features,1)))
+	print('Matrix W:\n', W.real)
+
+	# Transform the samples onto the new subspace
+	X_lda = X.dot(W)
+
+	plot_step_lda(X_lda,y,classes)
+
+	return 
