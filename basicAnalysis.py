@@ -423,6 +423,6 @@ def LDAforFeatureSelection(X,y):
 	# Transform the samples onto the new subspace
 	X_lda = X.dot(W)
 
-	plot_step_lda(X_lda,y,classes)
+	plot_step_lda(X_lda,y,['Reg','Stress'])
 
 	return 
