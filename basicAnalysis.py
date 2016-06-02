@@ -348,7 +348,7 @@ def plot_step_lda(X_lda,y,labels):
 
 	return
 
-def LDAforFeatureSelection(X,y):
+def LDAforFeatureSelection(X,y,filename,block_num):
 	'''
 	This method performs linear discriminant analysis on the data (X,y) and computes the variances explained by the 
 	features represented in the X matrix. This is based on: http://sebastianraschka.com/Articles/2014_python_lda.html#principal-component-analysis-vs-linear-discriminant-analysis
@@ -361,6 +361,10 @@ def LDAforFeatureSelection(X,y):
 	classes = np.unique(y)
 	num_classes = len(classes)
 	num_samples, num_features = X.shape
+
+	orig_stdout = sys.stdout
+	f = file('/home/srsummerson/code/analysis/StressPlots/LDA for Pupil and Pulse Data.txt', 'w')
+	sys.stdout = f
 
 	# Compute the num-features-dimensional mean vectors of the different classes
 	mean_vectors = []
@@ -421,9 +425,14 @@ def LDAforFeatureSelection(X,y):
 	W = np.hstack((eig_pairs[0][1].reshape(num_features,1), eig_pairs[1][1].reshape(num_features,1)))
 	print('Matrix W:\n', W.real)
 
+	sys.stdout = orig_stdout
+	f.close()
+
 	# Transform the samples onto the new subspace
 	X_lda = X.dot(W)
 
 	plot_step_lda(X_lda,y,['Reg','Stress'])
+	plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_LDA.svg')
+	plt.close()
 
 	return 
