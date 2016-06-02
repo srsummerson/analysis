@@ -2,6 +2,7 @@ import numpy as np
 import scipy as sp
 import matplotlib as mpl
 import tables
+import sys
 from neo import io
 from PulseMonitorData import findIBIs, getIBIandPuilDilation
 from scipy import signal
