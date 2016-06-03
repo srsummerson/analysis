@@ -336,7 +336,8 @@ for i, ind in enumerate(lfp_ind_successful_stress):
 	
 	'''
 	for chann in lfp_channels:
-		freq, Pxx_den = signal.welch(lfp[chann][ind:ind+samples_lfp_successful_stress[i]], lfp_samprate, nperseg=1024)
+		#freq, Pxx_den = signal.welch(lfp[chann][ind:ind+samples_lfp_successful_stress[i]], lfp_samprate, nperseg=1024)
+		freq, Pxx_den = signal.welch(lfp[chann][ind:ind+lfp_samprate/2], lfp_samprate, nperseg=1024)  # take 0.5 s of data 
 		for k, item in enumerate(bands):
 			freq_band = [Pxx_den[j] for j in range(len(freq)) if (item[0] <= freq[j] <= item[1])]
 			trial_array.append(np.sum(freq_band))
@@ -351,7 +352,8 @@ for i, ind in enumerate(lfp_ind_stress):
 	
 	'''
 	for chann in lfp_channels:
-		freq, Pxx_den = signal.welch(lfp[chann][ind:ind+samples_lfp_stress[i]], lfp_samprate, nperseg=1024)
+		#freq, Pxx_den = signal.welch(lfp[chann][ind:ind+samples_lfp_stress[i]], lfp_samprate, nperseg=1024)
+		freq, Pxx_den = signal.welch(lfp[chann][ind:ind+lfp_samprate/2], lfp_samprate, nperseg=1024)  # take 0.5 s of data 
 		for k, item in enumerate(bands):
 			freq_band = [Pxx_den[j] for j in range(len(freq)) if (item[0] <= freq[j] <= item[1])]
 			trial_array.append(np.sum(freq_band))
@@ -366,7 +368,9 @@ for i, ind in enumerate(lfp_ind_successful_reg):
 	
 	'''
 	for chann in lfp_channels:
-		freq, Pxx_den = signal.welch(lfp[chann][ind:ind+samples_lfp_successful_reg[i]], lfp_samprate, nperseg=1024)
+		#freq, Pxx_den = signal.welch(lfp[chann][ind:ind+samples_lfp_successful_reg[i]], lfp_samprate, nperseg=1024)
+		freq, Pxx_den = signal.welch(lfp[chann][ind:ind+lfp_samprate/2], lfp_samprate, nperseg=1024)  # take 0.5 s of data 
+		
 		for k, item in enumerate(bands):
 			freq_band = [Pxx_den[j] for j in range(len(freq)) if (item[0] <= freq[j] <= item[1])]
 			trial_array.append(np.sum(freq_band))
@@ -380,7 +384,9 @@ for i, ind in enumerate(lfp_ind_reg):
 	trial_array.append(ibi_all_reg_mean[i])
 	'''
 	for chann in lfp_channels:
-		freq, Pxx_den = signal.welch(lfp[chann][ind:ind+samples_lfp_reg[i]], lfp_samprate, nperseg=1024)
+		#freq, Pxx_den = signal.welch(lfp[chann][ind:ind+samples_lfp_reg[i]], lfp_samprate, nperseg=1024)
+		freq, Pxx_den = signal.welch(lfp[chann][ind:ind+lfp_samprate/2], lfp_samprate, nperseg=1024)  # take 0.5 s of data 
+		
 		for k, item in enumerate(bands):
 			freq_band = [Pxx_den[j] for j in range(len(freq)) if (item[0] <= freq[j] <= item[1])]
 			trial_array.append(np.sum(freq_band))
@@ -404,15 +410,19 @@ for i, ind in enumerate(lfp_ind_stress_stim):
 
 # Labels: 0 = regular, 1 = stress
 X_successful_stress = np.array(X_successful_stress)
+X_successful_stress = (X_successful_stress - np.nanmean(X_successful_stress,axis=0))/np.nanstd(X_successful_stress,axis=0)
 num_successful_stress = X_successful_stress.shape[0]
 y_successful_stress = np.ones(num_successful_stress)
 X_stress = np.array(X_stress)
+X_stress = (X_stress - np.nanmean(X_stress,axis=0))/np.nanstd(X_stress,axis=0)
 num_stress = X_stress.shape[0]
 y_stress = np.ones(num_stress)
 X_successful_reg = np.array(X_successful_reg)
+X_successful_reg = (X_successful_reg - np.nanmean(X_successful_reg,axis=0))/np.nanstd(X_successful_reg,axis=0)
 num_successful_reg = X_successful_reg.shape[0]
 y_successful_reg = np.zeros(num_successful_reg)
 X_reg = np.array(X_reg)
+X_reg = (X_reg - np.nanmean(X_reg,axis=0))/np.nanstd(X_reg,axis=0)
 num_reg = X_reg.shape[0]
 y_reg = np.zeros(num_reg)
 
@@ -422,11 +432,9 @@ X_stim = np.array(X_stim)
 X_stim = (X_stim - np.nanmean(X_stim,axis=0))/np.nanstd(X_stim,axis=0)
 
 X_successful = np.vstack([X_successful_reg, X_successful_stress])
-X_successful = (X_successful - np.nanmean(X_successful,axis=0))/np.nanstd(X_successful,axis=0)
 y_successful = np.append(y_successful_reg,y_successful_stress)
 
 X_all = np.vstack([X_reg, X_stress])
-X_all = (X_all - np.nanmean(X_all,axis=0))/np.nanstd(X_all,axis=0)
 y_all = np.append(y_reg, y_stress)
 
 clf_all = LinearDiscriminantAnalysis()

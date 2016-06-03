@@ -5,7 +5,7 @@ from neo import io
 from plexon import plexfile
 from PulseMonitorData import findIBIs
 from basicAnalysis import computePSTH, computeSpikeRatesPerChannel, ElectrodeGridMat
-from spectralAnalysis import TrialAveragedPeakPower, computePeakPowerPerChannel
+from spectralAnalysis import TrialAveragedPeakPower, computePeakPowerPerChannel, TrialAveragedPeakPowerDuringHold
 from scipy import signal
 from scipy import stats
 from matplotlib import mlab
@@ -153,6 +153,10 @@ samples_lfp_successful_reg = np.floor(response_time_successful_reg*lfp_samprate)
 trialaverage_peak_power_reg_10_30 = TrialAveragedPeakPower(lfp, lfp_samprate, lfp_ind_successful_reg, samples_lfp_successful_reg, [10, 30], stim_freq)
 trialaverage_peak_power_stress_10_30 = TrialAveragedPeakPower(lfp, lfp_samprate, lfp_ind_successful_stress, samples_lfp_successful_stress, [10, 30], stim_freq)
 
+# Compute trial-averaged peak powers during hold period across block per channel
+trialaverage_peak_power_hold_reg_10_30 = TrialAveragedPeakPowerDuringHold(lfp, lfp_samprate, lfp_ind_successful_reg, samples_lfp_successful_reg, 0.5,[10, 30], stim_freq)
+trialaverage_peak_power_hold_stress_10_30 = TrialAveragedPeakPowerDuringHold(lfp, lfp_samprate, lfp_ind_successful_stress, samples_lfp_successful_stress, 0.5,[10, 30], stim_freq)
+
 # Compute peak powers across block per channel
 
 peak_power_stress = computePeakPowerPerChannel(lfp, lfp_samprate,stim_freq,sample_start_stress,sample_end_stress,[1,20])
@@ -190,6 +194,18 @@ trialaverage_power_mat_stress_10_30 = np.ma.masked_invalid(trialaverage_power_ma
 trialaverage_power_mat_reg_10_30 = np.ma.masked_invalid(trialaverage_power_mat_reg_10_30)
 trialaverage_power_mat_diff_10_30 = ElectrodeGridMat(trialaverage_peak_power_stress_10_30 - trialaverage_peak_power_reg_10_30)
 trialaverage_power_mat_diff_10_30 = np.ma.masked_invalid(trialaverage_power_mat_diff_10_30)
+
+# trial-averaged peak power during hold
+trialaverage_power_mat_hold_stress_10_30 = ElectrodeGridMat(trialaverage_peak_power_hold_stress_10_30)
+trialaverage_power_mat_hold_reg_10_30 = ElectrodeGridMat(trialaverage_peak_power_hold_reg_10_30)
+trialaverage_power_mat_hold_stress_10_30 = np.ma.masked_invalid(trialaverage_power_hold_mat_stress_10_30)
+trialaverage_power_mat_hold_reg_10_30 = np.ma.masked_invalid(trialaverage_power_hold_mat_reg_10_30)
+trialaverage_power_mat_hold_diff_10_30 = ElectrodeGridMat(trialaverage_peak_power_hold_stress_10_30 - trialaverage_peak_power_hold_reg_10_30)
+trialaverage_power_mat_hold_diff_10_30 = np.ma.masked_invalid(trialaverage_power_hold_mat_diff_10_30)
+
+'''
+stopped here: need to continue adding peak power during hold code
+'''
 
 cmap = plt.get_cmap('RdBu')
 cmap.set_bad(color='k', alpha = 1.)
