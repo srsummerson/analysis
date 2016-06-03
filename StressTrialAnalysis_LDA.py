@@ -432,7 +432,7 @@ print "CV (10-fold) scores:", scores
 print "Avg CV score:", scores.mean()
 
 predict_stim = clf_all.predict(X_stim)
-
+print "Fraction of stimulation trials classified as stress:", np.sum(predict_stim)/len(predict_stim)
 #LDAforFeatureSelection(X_successful,y_successful,filename,block_num)
 
 '''
