@@ -404,6 +404,7 @@ for i, ind in enumerate(lfp_ind_stress_stim):
 
 # Labels: 0 = regular, 1 = stress
 X_successful_stress = np.array(X_successful_stress)
+X_successful_stress = (X_successful_stress - np.nanmean(X_successful_stress,axis=0))/np.nanstd(X_successful_stress,axis=0)
 num_successful_stress = X_successful_stress.shape[0]
 y_successful_stress = np.ones(num_successful_stress)
 X_stress = np.array(X_stress)

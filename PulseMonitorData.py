@@ -246,7 +246,8 @@ def getIBIandPuilDilation(pulse_data, pulse_ind,samples_pulse, pulse_samprate,pu
 		pupil_snippet_mean = np.nanmean(pupil_snippet)
 		pupil_snippet_std = np.nanstd(pupil_snippet)
 		window = np.floor(pupil_samprate/10) # sample window equal to ~100 ms
-		pupil_snippet = (pupil_snippet[0:window]- pupil_snippet_mean)/float(pupil_snippet_std)
+		#pupil_snippet = (pupil_snippet[0:window]- pupil_snippet_mean)/float(pupil_snippet_std)
+		pupil_snippet = pupil_snippet[0:window]
 		all_pupil += pupil_snippet.tolist()
 		if np.isnan(np.nanmean(pupil_snippet)):
 			pupil_mean.append(pupil_mean[-1])
