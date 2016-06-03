@@ -221,7 +221,7 @@ def TrialAveragedPeakPowerDuringHold(lfp, Fs, lfp_ind, samples_lfp, hold_duratio
 
 	for i in range(0,len(lfp_ind)):	
 		for chann in channels:
-			lfp_snippet = lfp[chann][lfp_ind[i]:lfp_ind[i]+np.minimum([hold, samples_lfp[i]])]
+			lfp_snippet = lfp[chann][lfp_ind[i]:lfp_ind[i]+np.minimum(hold, samples_lfp[i])]
 			num_timedom_samples = lfp_snippet.size
 			freq, Pxx_den = signal.welch(lfp_snippet, Fs, nperseg=512, noverlap=256)
 	 		norm_freq = np.append(np.ravel(np.nonzero(np.less(freq,stim_freq-3))),np.ravel(np.nonzero(np.less(freq,stim_freq+3))))
