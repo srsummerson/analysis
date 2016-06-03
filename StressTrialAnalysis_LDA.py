@@ -450,7 +450,7 @@ print "Fraction of stimulation trials classified as stress:", np.sum(predict_sti
 '''
 Do regression as well: power is total power in beta band per trial
 '''
-
+"""
 x = np.vstack((np.append(ibi_all_reg_mean, ibi_all_stress_mean), np.append(pupil_all_reg_mean, pupil_all_stress_mean), 
 				np.append(lfp_power_reg, lfp_power_stress)))
 x = np.transpose(x)
@@ -459,7 +459,7 @@ x = sm.add_constant(x,prepend='False')
 model_glm = sm.Logit(y_all,x)
 fit_glm = model_glm.fit()
 print fit_glm.summary()
-
+"""
 
 '''
 Changes: running LDA for successful trials only, performing regression with total power in beta during hold
