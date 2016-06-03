@@ -404,7 +404,6 @@ for i, ind in enumerate(lfp_ind_stress_stim):
 
 # Labels: 0 = regular, 1 = stress
 X_successful_stress = np.array(X_successful_stress)
-X_successful_stress = (X_successful_stress - np.nanmean(X_successful_stress,axis=0))/np.nanstd(X_successful_stress,axis=0)
 num_successful_stress = X_successful_stress.shape[0]
 y_successful_stress = np.ones(num_successful_stress)
 X_stress = np.array(X_stress)
@@ -418,12 +417,16 @@ num_reg = X_reg.shape[0]
 y_reg = np.zeros(num_reg)
 
 X_successful_stim = np.array(X_successful_stim)
+X_successful_stim = (X_successful_stim - np.nanmean(X_successful_stim,axis=0))/np.nanstd(X_successful_stim,axis=0)
 X_stim = np.array(X_stim)
+X_stim = (X_stim - np.nanmean(X_stim,axis=0))/np.nanstd(X_stim,axis=0)
 
 X_successful = np.vstack([X_successful_reg, X_successful_stress])
+X_successful = (X_successful - np.nanmean(X_successful,axis=0))/np.nanstd(X_successful,axis=0)
 y_successful = np.append(y_successful_reg,y_successful_stress)
 
 X_all = np.vstack([X_reg, X_stress])
+X_all = (X_all - np.nanmean(X_all,axis=0))/np.nanstd(X_all,axis=0)
 y_all = np.append(y_reg, y_stress)
 
 clf_all = LinearDiscriminantAnalysis()
