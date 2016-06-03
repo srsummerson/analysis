@@ -23,9 +23,9 @@ from sklearn.cross_validation import cross_val_score
 
 
 # Set up code for particular day and block
-hdf_filename = 'mari20160517_07_te2097.hdf'
-hdf_filename_stim = 'mari20160517_09_te2099.hdf'
-filename = 'Mario20160517'
+hdf_filename = 'mari20160516_03_te2088.hdf'
+hdf_filename_stim = 'mari20160516_05_te2090.hdf'
+filename = 'Mario20160516'
 TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
 #TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
@@ -443,8 +443,15 @@ scores = cross_val_score(LinearDiscriminantAnalysis(),X_successful,y_successful,
 print "CV (10-fold) scores:", scores
 print "Avg CV score:", scores.mean()
 
+predict_stress = clf_all.predict(X_successful_stress)
+print "Fraction of stress trials classified as stress:", np.sum(predict_stress)/len(predict_stress)
+
 predict_stim = clf_all.predict(X_stim)
-print "Fraction of stimulation trials classified as stress:", np.sum(predict_stim)/len(predict_stim)
+print "Fraction of all stimulation trials classified as stress:", np.sum(predict_stim)/len(predict_stim)
+
+predict_stim = clf_all.predict(X_successful_stim)
+print "Fraction of all successful stimulation trials classified as stress:", np.sum(predict_stim)/len(predict_stim)
+
 #LDAforFeatureSelection(X_successful,y_successful,filename,block_num)
 
 '''
