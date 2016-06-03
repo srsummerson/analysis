@@ -17,8 +17,8 @@ from probabilisticRewardTaskPerformance import FreeChoiceBehavior_withStressTria
 
 
 # Set up code for particular day and block
-hdf_filename = 'mari20160503_03_te2062.hdf'
-filename = 'Mario20160503'
+hdf_filename = 'mari20160517_07_te2097.hdf'
+filename = 'Mario20160517'
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
 #hdf_location = hdffilename
@@ -203,9 +203,6 @@ trialaverage_power_mat_hold_reg_10_30 = np.ma.masked_invalid(trialaverage_power_
 trialaverage_power_mat_hold_diff_10_30 = ElectrodeGridMat(trialaverage_peak_power_hold_stress_10_30 - trialaverage_peak_power_hold_reg_10_30)
 trialaverage_power_mat_hold_diff_10_30 = np.ma.masked_invalid(trialaverage_power_hold_mat_diff_10_30)
 
-'''
-stopped here: need to continue adding peak power during hold code
-'''
 
 cmap = plt.get_cmap('RdBu')
 cmap.set_bad(color='k', alpha = 1.)
@@ -218,6 +215,9 @@ z_min_10_30 = np.min(np.append(peak_power_stress_10_30,peak_power_reg_10_30))
 
 trialaverage_z_max_10_30 = np.max(np.append(trialaverage_peak_power_stress_10_30,trialaverage_peak_power_reg_10_30))
 trialaverage_z_min_10_30 = np.min(np.append(trialaverage_peak_power_stress_10_30,trialaverage_peak_power_reg_10_30))
+
+trialaverage_hold_z_max_10_30 = np.max(np.append(trialaverage_peak_power_hold_stress_10_30,trialaverage_peak_power_hold_reg_10_30))
+trialaverage_hold_z_min_10_30 = np.min(np.append(trialaverage_peak_power_hold_stress_10_30,trialaverage_peak_power_hold_reg_10_30))
 
 z_max_diff = np.max(peak_power_stress - peak_power_reg)
 z_min_diff = np.min(peak_power_stress - peak_power_reg)
@@ -233,6 +233,11 @@ trialaverage_z_max_diff_10_30 = np.max(trialaverage_peak_power_stress_10_30 - tr
 trialaverage_z_min_diff_10_30 = np.min(trialaverage_peak_power_stress_10_30 - trialaverage_peak_power_reg_10_30)
 
 trialaverage_max_diff_10_30 = np.max([trialaverage_z_max_diff_10_30,-trialaverage_z_min_diff_10_30])
+
+trialaverage_hold_z_max_diff_10_30 = np.max(trialaverage_peak_power_hold_stress_10_30 - trialaverage_peak_power_hold_reg_10_30)
+trialaverage_hold_z_min_diff_10_30 = np.min(trialaverage_peak_power_hold_stress_10_30 - trialaverage_peak_power_hold_reg_10_30)
+
+trialaverage_hold_max_diff_10_30 = np.max([trialaverage_hold_z_max_diff_10_30,-trialaverage_hold_z_min_diff_10_30])
 
 plt.figure()
 plt.subplot(1,2,1)
@@ -302,6 +307,35 @@ plt.ylabel('Peak Power: 10-30 Hz')
 plt.axis([x.min(),x.max(),y.min(),y.max()])
 plt.colorbar()
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_TrialAveragedPeakPowerDifference_10_30.svg')
+
+plt.figure()
+plt.subplot(1,2,1)
+plt.pcolormesh(x,y,trialaverage_power_mat_hold_reg_10_30,cmap=cmap,vmin=trialaverage_hold_z_min_10_30,vmax = trialaverage_hold_z_max_10_30)
+plt.title('Regular Block')
+plt.ylabel('Trial-Averaged Peak Power (during Hold): 10-30 Hz')
+plt.axis([x.min(),x.max(),y.min(),y.max()])
+plt.subplot(1,2,2)
+plt.pcolormesh(x,y,trialaverage_power_mat_hold_stress_10_30,cmap=cmap,vmin=trialaverage_hold_z_min_10_30,vmax = trialaverage_hold_z_max_10_30)
+plt.title('Stress Block')
+plt.ylabel('Trial-Averaged Peak Power (during Hold): 10-30 Hz')
+plt.axis([x.min(),x.max(),y.min(),y.max()])
+plt.colorbar()
+plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_TrialAveragedPeakPowersDuringHold_10_30.svg')
+
+plt.figure()
+plt.subplot(1,1,1)
+plt.pcolormesh(x,y,trialaverage_power_mat_hold_diff_10_30,cmap=cmap,vmin= -trialaverage_hold_max_diff_10_30,vmax = trialaverage_hold_max_diff_10_30)
+plt.title('Difference in Trial-Averaged Peak Power (during Hold): Stress - Regular')
+plt.ylabel('Trial-Averaged Peak Power (during Hold): 10-30 Hz')
+plt.axis([x.min(),x.max(),y.min(),y.max()])
+plt.colorbar()
+plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_TrialAveragedPeakPowerDiffDuringHold_10_30.svg')
+
+
+
+
+
+
 plt.close()
 
 
