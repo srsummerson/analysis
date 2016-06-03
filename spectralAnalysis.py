@@ -217,7 +217,7 @@ def TrialAveragedPeakPowerDuringHold(lfp, Fs, lfp_ind, samples_lfp, hold_duratio
 	counter = 0
 	peak_power = np.zeros([len(channels),len(lfp_ind)])
 	density_length = 30
-	hold = Fs*hold 	# length of hold period in samples
+	hold = Fs*hold_duration 	# length of hold period in samples
 
 	for i in range(0,len(lfp_ind)):	
 		for chann in channels:

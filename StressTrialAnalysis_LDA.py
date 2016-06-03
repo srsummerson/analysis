@@ -334,15 +334,15 @@ for i, ind in enumerate(lfp_ind_successful_stress):
 	trial_array.append(pupil_stress_mean[i])
 	trial_array.append(ibi_stress_mean[i])
 	
-	'''
+	
 	for chann in lfp_channels:
 		#freq, Pxx_den = signal.welch(lfp[chann][ind:ind+samples_lfp_successful_stress[i]], lfp_samprate, nperseg=1024)
 		freq, Pxx_den = signal.welch(lfp[chann][ind:ind+lfp_samprate/2], lfp_samprate, nperseg=1024)  # take 0.5 s of data 
 		for k, item in enumerate(bands):
 			freq_band = [Pxx_den[j] for j in range(len(freq)) if (item[0] <= freq[j] <= item[1])]
-			trial_array.append(np.sum(freq_band))
+			#trial_array.append(np.sum(freq_band))
 		lfp_power_successful_stress.append(np.sum(freq_band))
-	'''
+	
 	X_successful_stress.append(trial_array)
 
 for i, ind in enumerate(lfp_ind_stress):
@@ -350,15 +350,15 @@ for i, ind in enumerate(lfp_ind_stress):
 	trial_array.append(pupil_all_stress_mean[i])
 	trial_array.append(ibi_all_stress_mean[i])
 	
-	'''
+	
 	for chann in lfp_channels:
 		#freq, Pxx_den = signal.welch(lfp[chann][ind:ind+samples_lfp_stress[i]], lfp_samprate, nperseg=1024)
 		freq, Pxx_den = signal.welch(lfp[chann][ind:ind+lfp_samprate/2], lfp_samprate, nperseg=1024)  # take 0.5 s of data 
 		for k, item in enumerate(bands):
 			freq_band = [Pxx_den[j] for j in range(len(freq)) if (item[0] <= freq[j] <= item[1])]
-			trial_array.append(np.sum(freq_band))
+			#trial_array.append(np.sum(freq_band))
 		lfp_power_stress.append(np.sum(freq_band))
-	'''
+	
 	X_stress.append(trial_array)
 
 for i, ind in enumerate(lfp_ind_successful_reg):
@@ -366,32 +366,32 @@ for i, ind in enumerate(lfp_ind_successful_reg):
 	trial_array.append(pupil_reg_mean[i])
 	trial_array.append(ibi_reg_mean[i])
 	
-	'''
+	
 	for chann in lfp_channels:
 		#freq, Pxx_den = signal.welch(lfp[chann][ind:ind+samples_lfp_successful_reg[i]], lfp_samprate, nperseg=1024)
 		freq, Pxx_den = signal.welch(lfp[chann][ind:ind+lfp_samprate/2], lfp_samprate, nperseg=1024)  # take 0.5 s of data 
 		
 		for k, item in enumerate(bands):
 			freq_band = [Pxx_den[j] for j in range(len(freq)) if (item[0] <= freq[j] <= item[1])]
-			trial_array.append(np.sum(freq_band))
+			#trial_array.append(np.sum(freq_band))
 		lfp_power_successful_reg.append(np.sum(freq_band))
-	'''
+	
 	X_successful_reg.append(trial_array)
 
 for i, ind in enumerate(lfp_ind_reg):
 	trial_array = []
 	trial_array.append(pupil_all_reg_mean[i])
 	trial_array.append(ibi_all_reg_mean[i])
-	'''
+	
 	for chann in lfp_channels:
 		#freq, Pxx_den = signal.welch(lfp[chann][ind:ind+samples_lfp_reg[i]], lfp_samprate, nperseg=1024)
 		freq, Pxx_den = signal.welch(lfp[chann][ind:ind+lfp_samprate/2], lfp_samprate, nperseg=1024)  # take 0.5 s of data 
 		
 		for k, item in enumerate(bands):
 			freq_band = [Pxx_den[j] for j in range(len(freq)) if (item[0] <= freq[j] <= item[1])]
-			trial_array.append(np.sum(freq_band))
+			#trial_array.append(np.sum(freq_band))
 	lfp_power_reg.append(np.sum(freq_band))
-	'''
+	
 	X_reg.append(trial_array)
 
 for i, ind in enumerate(lfp_ind_successful_stress_stim):
@@ -438,8 +438,8 @@ X_all = np.vstack([X_reg, X_stress])
 y_all = np.append(y_reg, y_stress)
 
 clf_all = LinearDiscriminantAnalysis()
-clf_all.fit(X_all, y_all)
-scores = cross_val_score(LinearDiscriminantAnalysis(),X_all,y_all,scoring='accuracy',cv=10)
+clf_all.fit(X_successful, y_successful)
+scores = cross_val_score(LinearDiscriminantAnalysis(),X_successful,y_successful,scoring='accuracy',cv=10)
 print "CV (10-fold) scores:", scores
 print "Avg CV score:", scores.mean()
 
@@ -448,9 +448,9 @@ print "Fraction of stimulation trials classified as stress:", np.sum(predict_sti
 #LDAforFeatureSelection(X_successful,y_successful,filename,block_num)
 
 '''
-Do regression as well
+Do regression as well: power is total power in beta band per trial
 '''
-"""
+
 x = np.vstack((np.append(ibi_all_reg_mean, ibi_all_stress_mean), np.append(pupil_all_reg_mean, pupil_all_stress_mean), 
 				np.append(lfp_power_reg, lfp_power_stress)))
 x = np.transpose(x)
@@ -459,4 +459,8 @@ x = sm.add_constant(x,prepend='False')
 model_glm = sm.Logit(y_all,x)
 fit_glm = model_glm.fit()
 print fit_glm.summary()
-"""
+
+
+'''
+Changes: running LDA for successful trials only, performing regression with total power in beta during hold
+'''
