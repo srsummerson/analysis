@@ -335,8 +335,8 @@ def FreeChoicePilotTaskPerformance(hdf_file):
     plt.legend()
     
 
-    plt.savefig('C:/Users/Samantha Summerson/Documents/GitHub/analysis/Papa_Performance_figs/FCPerformance_targets_%s.svg' % hdf_file[:-4])    # save this filetype for AI editing
-    #plt.savefig('/home/srsummerson/code/analysis/Luigi_Performance_figs/FCPerformance_targets_%s.svg' % hdf_file[:-4])    # save this filetype for easy viewing
+    #plt.savefig('C:/Users/Samantha Summerson/Documents/GitHub/analysis/Papa_Performance_figs/FCPerformance_targets_%s.svg' % hdf_file[:-4])    # save this filetype for AI editing
+    plt.savefig('/home/srsummerson/code/analysis/Mario_Performance_figs/FCPerformance_targets_%s.svg' % hdf_file[:-4])    # save this filetype for easy viewing
 
     #plt.savefig('C:/Users/Samantha Summerson/Documents/GitHub/analysis/Papa_Performance_figs/FCPerformance_targets_%s.svg' % hdf_file[:-4])    # save this filetype for AI editing
     #plt.savefig('/home/srsummerson/code/analysis/Luigi_Performance_figs/FCPerformance_targets_%s.svg' % hdf_file[:-4])    # save this filetype for easy viewing

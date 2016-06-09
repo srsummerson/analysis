@@ -22,20 +22,23 @@ from sklearn.metrics import roc_curve, auc
 from sklearn.cross_validation import cross_val_score
 
 
-# Set up code for particular day and block
-hdf_filename = 'mari20160516_03_te2088.hdf'
-hdf_filename_stim = 'mari20160516_05_te2090.hdf'
-filename = 'Mario20160516'
+
+
+hdf_filename = 'mari20160418_04_te2002.hdf'
+hdf_filename_stim = 'mari20160418_06_te2004.hdf'
+filename = 'Mario20160418'
+block_num = 1
+print filename
 TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
 #TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
 hdf_location_stim = '/storage/rawdata/hdf/'+hdf_filename_stim
 #hdf_location = hdffilename
-block_num = 1
+
 stim_freq = 100
 
 lfp_channels = [29, 13, 27, 11, 25, 9, 10, 26, 12, 28, 14, 30, 20, 4, 18, 2, 63, 1, 17, 3]
-lfp_channels = [29]
+lfp_channels = [27]
 #bands = [[1,8],[8,12],[12,30],[30,55],[65,100]]
 bands = [[12,30]]
 
@@ -427,9 +430,7 @@ num_reg = X_reg.shape[0]
 y_reg = np.zeros(num_reg)
 
 X_successful_stim = np.array(X_successful_stim)
-#X_successful_stim = (X_successful_stim - np.nanmean(X_successful_stim,axis=0))/np.nanstd(X_successful_stim,axis=0)
 X_stim = np.array(X_stim)
-X_stim = (X_stim - np.nanmean(X_stim,axis=0))/np.nanstd(X_stim,axis=0)
 
 X_successful = np.vstack([X_successful_reg, X_successful_stress])
 y_successful = np.append(y_successful_reg,y_successful_stress)
@@ -437,6 +438,7 @@ y_successful = np.append(y_successful_reg,y_successful_stress)
 X_all = np.vstack([X_reg, X_stress])
 y_all = np.append(y_reg, y_stress)
 
+'''
 clf_all = LinearDiscriminantAnalysis()
 clf_all.fit(X_successful, y_successful)
 scores = cross_val_score(LinearDiscriminantAnalysis(),X_successful,y_successful,scoring='accuracy',cv=10)
@@ -453,21 +455,40 @@ predict_stim = clf_all.predict(X_successful_stim)
 print "Fraction of all successful stimulation trials classified as stress:", np.sum(predict_stim)/len(predict_stim)
 
 #LDAforFeatureSelection(X_successful,y_successful,filename,block_num)
-
+'''
 '''
 Do regression as well: power is total power in beta band per trial
 '''
-"""
+
 x = np.vstack((np.append(ibi_all_reg_mean, ibi_all_stress_mean), np.append(pupil_all_reg_mean, pupil_all_stress_mean), 
 				np.append(lfp_power_reg, lfp_power_stress)))
 x = np.transpose(x)
 x = sm.add_constant(x,prepend='False')
 
+lfp_power_successful_reg = (lfp_power_successful_reg - np.nanmean(lfp_power_successful_reg))/np.nanstd(lfp_power_successful_reg)
+lfp_power_successful_stress = (lfp_power_successful_stress - np.nanmean(lfp_power_successful_stress))/np.nanstd(lfp_power_successful_stress)
+
+x_successful = np.vstack((np.append(ibi_reg_mean, ibi_stress_mean), np.append(pupil_reg_mean, pupil_stress_mean), 
+				np.append(lfp_power_successful_reg, lfp_power_successful_stress)))
+x_successful = np.transpose(x_successful)
+x_successful = sm.add_constant(x_successful,prepend='False')
+
+print "Regression with all trials"
 model_glm = sm.Logit(y_all,x)
 fit_glm = model_glm.fit()
 print fit_glm.summary()
+
+print "Regression with successful trials"
+model_glm = sm.Logit(y_successful,x_successful)
+fit_glm = model_glm.fit()
+print fit_glm.summary()
+
+
+"""
+try z-scoring lfp power data
 """
 
-'''
-Changes: running LDA for successful trials only, performing regression with total power in beta during hold
-'''
+
+
+
+
