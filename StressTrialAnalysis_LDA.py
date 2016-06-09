@@ -454,6 +454,12 @@ print "Fraction of all stimulation trials classified as stress:", np.sum(predict
 predict_stim = clf_all.predict(X_successful_stim)
 print "Fraction of all successful stimulation trials classified as stress:", np.sum(predict_stim)/len(predict_stim)
 
+"""
+Decision boundary given by:
+np.dot(clf.coef_, x) - clf.intercept_ = 0 according to 
+http://stackoverflow.com/questions/36745480/how-to-get-the-equation-of-the-boundary-line-in-linear-discriminant-analysis-wit
+"""
+
 #LDAforFeatureSelection(X_successful,y_successful,filename,block_num)
 '''
 '''
