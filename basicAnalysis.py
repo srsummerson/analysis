@@ -437,3 +437,18 @@ def LDAforFeatureSelection(X,y,filename,block_num):
 	plt.close()
 
 	return 
+
+def computeCursorPathLength(start_times,stop_times,cursor):
+	'''
+	Computes the cursor path lengths for trajectories beginning at times in start_times array and ending at stop_times
+
+	Input: 
+		- start_times: array of hdf row numbers (at 60 Hz rate) for beginning of trajectory
+		- end_times: array of hdf row numbers (at 60 Hz rate) for end of trajectory
+		- cursor: 3XN array of cursor position, corresponding to cursor = hdf.root.task[:]['cursor']
+	Output:
+		- traj_length: array of trajectory lengths, same shape as start_times and end_times arrays
+	'''
+	
+
+	return
