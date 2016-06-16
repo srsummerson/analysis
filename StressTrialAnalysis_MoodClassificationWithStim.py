@@ -568,6 +568,6 @@ plt.ylim((-4,3))
 plt.xlim((0.32,0.46))
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_IBIPupilCovariance.svg')
 
-
-
-
+'''
+Add analysis of what trials were classified online as stress and which were classified offline as stress
+'''
