@@ -5,38 +5,44 @@ def findIBIs(pulse,sampling_rate):
 	# Input to method is pulse data channel extracted from TDT recording file.
 	# Method determines the times of the heart pulses and returns an array of the pulse times.
 	pulse_signal = pulse[np.nonzero(pulse)] # only look at pulse signal when it was saving
-	pulse_peak_amp = np.amax(pulse_signal)
-	pulse_trough_amp = np.amin(pulse_signal)
-	pulse_mean = np.mean(pulse_signal)
-	pulse_std = np.std(pulse_signal)
-	#thres = pulse_trough_amp + 0.6*(pulse_peak_amp - pulse_trough_amp)
-	thres = pulse_mean + 0.2*pulse_std
-	thresholded_pulse = (pulse_signal > thres)
-	pulse_detect = ((thresholded_pulse[1:] - thresholded_pulse[:-1]) > 0.5)  # is 1 when pulse crosses threshold
+	if len(pulse_signal) > 0:
+		pulse_peak_amp = np.amax(pulse_signal)
+		pulse_trough_amp = np.amin(pulse_signal)
+		pulse_mean = np.mean(pulse_signal)
+		pulse_std = np.std(pulse_signal)
+		#thres = pulse_trough_amp + 0.6*(pulse_peak_amp - pulse_trough_amp)
+		thres = pulse_mean + 0.2*pulse_std
+		thresholded_pulse = (pulse_signal > thres)
+		pulse_detect = ((thresholded_pulse[1:] - thresholded_pulse[:-1]) > 0.5)  # is 1 when pulse crosses threshold
 
-	max_rate = 220 # beats per min
-	min_rate = 100 # beats per min
-	max_rate_hz = float(max_rate)/60 # beats per sec
-	min_rate_hz = float(min_rate)/60
-	min_ibi = float(1)/max_rate_hz # minimum time between beats in seconds
-	max_ibi = float(1)/min_rate_hz
-	min_ibi_samples = min_ibi*sampling_rate # minimum time between beats in samples
-	max_ibi_samples = max_ibi*sampling_rate
+		max_rate = 220 # beats per min
+		min_rate = 100 # beats per min
+		max_rate_hz = float(max_rate)/60 # beats per sec
+		min_rate_hz = float(min_rate)/60
+		min_ibi = float(1)/max_rate_hz # minimum time between beats in seconds
+		max_ibi = float(1)/min_rate_hz
+		min_ibi_samples = min_ibi*sampling_rate # minimum time between beats in samples
+		max_ibi_samples = max_ibi*sampling_rate
 
-	pulse_indices = np.nonzero(pulse_detect)
-	pulse_indices = np.ravel(pulse_indices)
-	#realpulse = ((pulse_indices[1:] - pulse_indices[:-1]) > min_ibi_samples)
-	real_indices = [pulse_indices[0]]
-	for ind in range(1,pulse_indices.size):
-		if ((pulse_indices[ind] - real_indices[-1]) > min_ibi_samples):
-			real_indices.append(pulse_indices[ind])
-	#pulse_indices = pulse_indices[realpulse]
-	#IBI = pulse_indices[1:] - pulse_indices[:-1]
-	real_indices = np.ravel(real_indices)
-	IBI = real_indices[1:] - real_indices[:-1]
-	not_too_long_IBI = (IBI < max_ibi_samples)
-	realIBI = IBI[np.nonzero(not_too_long_IBI)]
-	realIBI = realIBI/sampling_rate # IBI is in s
+		pulse_indices = np.nonzero(pulse_detect)
+		pulse_indices = np.ravel(pulse_indices)
+		if len(pulse_indices) > 1:
+			#realpulse = ((pulse_indices[1:] - pulse_indices[:-1]) > min_ibi_samples)
+			real_indices = [pulse_indices[0]]
+			for ind in range(1,pulse_indices.size):
+				if ((pulse_indices[ind] - real_indices[-1]) > min_ibi_samples):
+					real_indices.append(pulse_indices[ind])
+		else:
+			real_indices = pulse_indices
+		#pulse_indices = pulse_indices[realpulse]
+		#IBI = pulse_indices[1:] - pulse_indices[:-1]
+		real_indices = np.ravel(real_indices)
+		IBI = real_indices[1:] - real_indices[:-1]
+		not_too_long_IBI = (IBI < max_ibi_samples)
+		realIBI = IBI[np.nonzero(not_too_long_IBI)]
+		realIBI = realIBI/sampling_rate # IBI is in s
+	else:
+		realIBI = np.array([])
 
 	return realIBI
 

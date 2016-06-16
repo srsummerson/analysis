@@ -24,13 +24,13 @@ from sklearn.cross_validation import cross_val_score
 
 
 
-hdf_filename = 'mari20160418_04_te2002.hdf'
-hdf_filename_stim = 'mari20160418_06_te2004.hdf'
-filename = 'Mario20160418'
+hdf_filename = 'mari20160610_13_te2210.hdf'
+hdf_filename_stim = 'mari20160610_14_te2211.hdf'
+filename = 'Mario20160610'
 block_num = 1
 print filename
-TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
-#TDT_tank = '/home/srsummerson/storage/tdt/'+filename
+#TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
+TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
 hdf_location_stim = '/storage/rawdata/hdf/'+hdf_filename_stim
 #hdf_location = hdffilename
@@ -38,9 +38,9 @@ hdf_location_stim = '/storage/rawdata/hdf/'+hdf_filename_stim
 stim_freq = 100
 
 lfp_channels = [29, 13, 27, 11, 25, 9, 10, 26, 12, 28, 14, 30, 20, 4, 18, 2, 63, 1, 17, 3]
-lfp_channels = [27]
+lfp_channels = [11]
 #bands = [[1,8],[8,12],[12,30],[30,55],[65,100]]
-bands = [[12,30]]
+bands = [[30,55]]
 
 '''
 Load behavior data
@@ -438,7 +438,7 @@ y_successful = np.append(y_successful_reg,y_successful_stress)
 X_all = np.vstack([X_reg, X_stress])
 y_all = np.append(y_reg, y_stress)
 
-'''
+
 clf_all = LinearDiscriminantAnalysis()
 clf_all.fit(X_successful, y_successful)
 scores = cross_val_score(LinearDiscriminantAnalysis(),X_successful,y_successful,scoring='accuracy',cv=10)
@@ -461,7 +461,7 @@ http://stackoverflow.com/questions/36745480/how-to-get-the-equation-of-the-bound
 """
 
 #LDAforFeatureSelection(X_successful,y_successful,filename,block_num)
-'''
+
 '''
 Do regression as well: power is total power in beta band per trial
 '''
@@ -479,10 +479,12 @@ x_successful = np.vstack((np.append(ibi_reg_mean, ibi_stress_mean), np.append(pu
 x_successful = np.transpose(x_successful)
 x_successful = sm.add_constant(x_successful,prepend='False')
 
+'''
 print "Regression with all trials"
 model_glm = sm.Logit(y_all,x)
 fit_glm = model_glm.fit()
 print fit_glm.summary()
+'''
 
 print "Regression with successful trials"
 model_glm = sm.Logit(y_successful,x_successful)
@@ -490,9 +492,7 @@ fit_glm = model_glm.fit()
 print fit_glm.summary()
 
 
-"""
-try z-scoring lfp power data
-"""
+
 
 
 
