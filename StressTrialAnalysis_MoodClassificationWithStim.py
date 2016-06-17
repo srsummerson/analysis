@@ -173,6 +173,12 @@ else:
 		if (sig.name == 'HrtR 1'):
 			pulse_data_stim = np.ravel(sig)
 			pulse_samprate_stim = sig.sampling_rate.item()
+		if (sig.name == 'Hold 1'):
+			hold_cue = np.ravel(sig)
+			hold_samprate = sig.sampling_rate.item()
+		if (sig.name == 'Hold 2'):
+			stim_state = np.ravel(sig)
+			stim_state_samprate = sig.sampling_rate.item()
 		if (sig.name[0:4] == 'LFP1'):
 			channel = sig.channel_index
 			if channel in lfp_channels:
@@ -464,14 +470,15 @@ print "Regression with successful trials"
 model_glm = sm.Logit(y_successful,x_successful)
 fit_glm = model_glm.fit()
 print fit_glm.summary()
-print fit_glm.params
+
 '''
 Classify Block C trials
 '''
-x_stim_block = 
 regression_params = fit_glm.params 
-p_trial_type = params[0]*ibi_stress_mean_stim + params[1]*pupil_stress_mean_stim + params[2]
-
+p_trial_type = regression_params[1]*ibi_stress_mean_stim + regression_params[2]*pupil_stress_mean_stim + regression_params[0]
+y_stress_stim = (p_trial_type > 0.5)
+fraction_stress_stim = np.sum(y_stress_stim)/len(y_stress_stim)
+print "Fraction of Block C trials classified as stress:", fraction_stress_stim
 
 '''
 IBI-PD Covariance plots: need to adjust for trials classified as regular/stress
