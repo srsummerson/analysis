@@ -210,6 +210,8 @@ lfp_dio_sample_num = (float(lfp_samprate)/float(dio_freq))*(dio_tdt_sample - 1) 
 pulse_dio_sample_num_stim = (float(pulse_samprate_stim)/float(dio_freq_stim))*(dio_tdt_sample_stim - 1) + 1
 pupil_dio_sample_num_stim = (float(pupil_samprate_stim)/float(dio_freq_stim))*(dio_tdt_sample_stim - 1) + 1
 lfp_dio_sample_num_stim = (float(lfp_samprate_stim)/float(dio_freq_stim))*(dio_tdt_sample_stim - 1) + 1
+hold_cue_dio_sample_num_stim = (float(hold_samprate)/float(dio_freq_stim))*(dio_tdt_sample_stim - 1) + 1
+stim_state_dio_sample_num_stim = (float(stim_state_samprate)/float(dio_freq_stim))*(dio_tdt_sample_stim - 1) + 1
 
 state_row_ind_successful_stress = state_time[row_ind_successful_stress]
 state_row_ind_successful_reg = state_time[row_ind_successful_reg]
@@ -232,10 +234,14 @@ state_row_ind_successful_stress_stim = state_time_stim[row_ind_successful_stress
 pulse_ind_successful_stress_stim = np.zeros(row_ind_successful_stress_stim.size)
 pupil_ind_successful_stress_stim = np.zeros(row_ind_successful_stress_stim.size)
 lfp_ind_successful_stress_stim = np.zeros(row_ind_successful_stress_stim.size)
+hold_cue_ind_successful_stress_stim = np.zeros(row_ind_successful_stress_stim.size)
+stim_state_ind_successful_stress_stim = np.zeros(row_ind_successful_stress_stim.size)
 state_row_ind_stress_stim = state_time_stim[row_ind_stress_stim]
 pulse_ind_stress_stim = np.zeros(row_ind_stress_stim.size)
 pupil_ind_stress_stim = np.zeros(row_ind_stress_stim.size)
 lfp_ind_stress_stim = np.zeros(row_ind_stress_stim.size)
+hold_cue_ind_stress_stim = np.zeros(row_ind_stress_stim.size)
+stim_state_ind_stress_stim = np.zeros(row_ind_stress_stim.size)
 
 
 for i in range(0,len(row_ind_successful_stress)):
@@ -272,11 +278,15 @@ for i in range(0,len(row_ind_successful_stress_stim)):
 	pulse_ind_successful_stress_stim[i] = pulse_dio_sample_num_stim[hdf_index]
 	pupil_ind_successful_stress_stim[i] = pupil_dio_sample_num_stim[hdf_index]
 	lfp_ind_successful_stress_stim[i] = lfp_dio_sample_num_stim[hdf_index]
+	hold_cue_ind_successful_stress_stim[i] = hold_cue_dio_sample_num_stim[hdf_index]
+	stim_state_ind_successful_stress_stim[i] = stim_state_dio_sample_num_stim[hdf_index]
 for i in range(0,len(row_ind_stress_stim)):
 	hdf_index = np.argmin(np.abs(hdf_rows_stim - state_row_ind_stress_stim[i]))
 	pulse_ind_stress_stim[i] = pulse_dio_sample_num_stim[hdf_index]
 	pupil_ind_stress_stim[i] = pupil_dio_sample_num_stim[hdf_index]
 	lfp_ind_stress_stim[i] = lfp_dio_sample_num_stim[hdf_index]
+	hold_cue_ind_stress_stim[i] = hold_cue_dio_sample_num_stim[hdf_index]
+	stim_state_ind_stress_stim[i] = stim_state_dio_sample_num_stim[hdf_index]
 
 '''
 Process pupil and pulse data
@@ -403,12 +413,22 @@ for i, ind in enumerate(lfp_ind_reg):
 	
 	X_reg.append(trial_array)
 
+trial_success_stim_state = []
+trial_stim_state = []
+
+for ind in stim_state_ind_successful_stress_stim:
+	trial_success_stim_state.append(stim_state[ind])
+
+for ind in stim_state_ind_stress_stim:
+	trial_stim_state.append(stim_state[ind])
+
 for i, ind in enumerate(lfp_ind_successful_stress_stim):
 	trial_array = []
 	trial_array.append(pupil_stress_mean_stim[i])
 	trial_array.append(ibi_stress_mean_stim[i])
 	
 	X_successful_stim.append(trial_array)
+
 
 for i, ind in enumerate(lfp_ind_stress_stim):
 	trial_array = []
