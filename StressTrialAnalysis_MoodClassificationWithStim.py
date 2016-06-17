@@ -495,18 +495,27 @@ print fit_glm.summary()
 Classify Block C trials
 '''
 regression_params = fit_glm.params 
-p_trial_type = regression_params[1]*ibi_stress_mean_stim + regression_params[2]*pupil_stress_mean_stim + regression_params[0]
-y_stress_stim = (p_trial_type > 0.5)
-fraction_stress_stim = np.sum(y_stress_stim)/len(y_stress_stim)
+p_trial_type = regression_params[1]*np.array(ibi_stress_mean_stim) + regression_params[2]*np.array(pupil_stress_mean_stim) + regression_params[0]
+y_stress_blockc = (p_trial_type > 0.5)
+fraction_stress_stim = np.sum(y_stress_blockc)/float(len(y_stress_blockc))
 print "Fraction of Block C trials classified as stress:", fraction_stress_stim
+
+p_trial_type = regression_params[1]*np.array(ibi_reg_mean) + regression_params[2]*np.array(pupil_reg_mean) + regression_params[0]
+y_stress_blocka = (p_trial_type > 0.5)
+
+p_trial_type = regression_params[1]*np.array(ibi_stress_mean) + regression_params[2]*np.array(pupil_stress_mean) + regression_params[0]
+y_stress_blockb = (p_trial_type > 0.5)
+
 
 '''
 IBI-PD Covariance plots: need to adjust for trials classified as regular/stress
 '''
 norm_ibi_all_stress_mean = ibi_all_stress_mean 
 norm_pupil_all_stress_mean = pupil_all_stress_mean
-norm_ibi_all_reg_before_mean = ibi_all_reg_before_mean
-norm_pupil_all_reg_before_mean = pupil_all_reg_before_mean
+norm_ibi_all_reg_mean = ibi_all_reg_mean
+norm_pupil_all_reg_mean = pupil_all_reg_mean
+norm_ibi_all_stim_mean = ibi_all_stress_mean_stim
+norm_pupil_all_stim_mean = pupil_all_stress_mean_stim
 
 #norm_ibi_all_stress_mean = (ibi_all_stress_mean - np.nanmin(ibi_all_stress_mean + ibi_all_reg_before_mean))/np.nanmax(ibi_all_stress_mean + ibi_all_reg_before_mean - np.nanmin(ibi_all_stress_mean + ibi_all_reg_before_mean))
 #norm_pupil_all_stress_mean = (pupil_all_stress_mean - np.nanmin(pupil_all_stress_mean + pupil_all_reg_before_mean))/np.nanmax(pupil_all_stress_mean + pupil_all_reg_before_mean - np.nanmin(pupil_all_stress_mean + pupil_all_reg_before_mean))
@@ -514,14 +523,18 @@ norm_pupil_all_reg_before_mean = pupil_all_reg_before_mean
 #norm_pupil_all_reg_before_mean = (pupil_all_reg_before_mean - np.nanmin(pupil_all_stress_mean + pupil_all_reg_before_mean))/np.nanmax(pupil_all_stress_mean + pupil_all_reg_before_mean - np.nanmin(pupil_all_stress_mean + pupil_all_reg_before_mean))
 
 points_all_stress = np.array([norm_ibi_all_stress_mean,norm_pupil_all_stress_mean])
-points_all_reg_before = np.array([norm_ibi_all_reg_before_mean,norm_pupil_all_reg_before_mean])
+points_all_reg = np.array([norm_ibi_all_reg_mean,norm_pupil_all_reg_mean])
+points_all_stim = np.array([norm_ibi_all_stim_mean, norm_pupil_all_stim_mean])
 cov_all_stress = np.cov(points_all_stress)
-cov_all_reg_before = np.cov(points_all_reg_before)
+cov_all_reg = np.cov(points_all_reg)
+cov_all_stim = np.cov(points_all_stim)
 mean_vec_all_stress = [np.nanmean(norm_ibi_all_stress_mean),np.nanmean(norm_pupil_all_stress_mean)]
-mean_vec_all_reg_before = [np.nanmean(norm_ibi_all_reg_before_mean),np.nanmean(norm_pupil_all_reg_before_mean)]
+mean_vec_all_reg = [np.nanmean(norm_ibi_all_reg_mean),np.nanmean(norm_pupil_all_reg_mean)]
+mean_vec_all_stim = [np.nanmean(norm_ibi_all_stim_mean), np.nanmean(norm_pupil_all_stim_mean)]
 
 cmap_stress = mpl.cm.autumn
-cmap_reg_before = mpl.cm.winter
+cmap_reg = mpl.cm.winter
+cmap_stim = mpl.cm.gray
 
 plt.figure()
 #plt.plot(ibi_all_stress_mean,pupil_all_stress_mean,'ro',label='Stress')
@@ -529,22 +542,30 @@ for i in range(0,len(ibi_all_stress_mean)):
     plt.plot(norm_ibi_all_stress_mean[i],norm_pupil_all_stress_mean[i],color=cmap_stress(i/float(len(ibi_all_stress_mean))),marker='o')
 plot_cov_ellipse(cov_all_stress,mean_vec_all_stress,fc='r',ec='None',a=0.2)
 #plt.plot(ibi_all_reg_before_mean,pupil_all_reg_before_mean,'bo',label='Reg Before')
-for i in range(0,len(ibi_all_reg_before_mean)):
-	plt.plot(norm_ibi_all_reg_before_mean[i],norm_pupil_all_reg_before_mean[i],color=cmap_reg_before(i/float(len(ibi_all_reg_before_mean))),marker='o')
-plot_cov_ellipse(cov_all_reg_before,mean_vec_all_reg_before,fc='b',ec='None',a=0.2)
+for i in range(0,len(ibi_all_reg_mean)):
+	plt.plot(norm_ibi_all_reg_mean[i],norm_pupil_all_reg_mean[i],color=cmap_reg(i/float(len(ibi_all_reg_mean))),marker='o')
+plot_cov_ellipse(cov_all_reg,mean_vec_all_reg,fc='b',ec='None',a=0.2)
+for i in range(0,len(ibi_all_stress_mean_stim)):
+	plt.plot(norm_ibi_all_stim_mean[i],norm_pupil_all_stim_mean[i],color=cmap_stim(i/float(len(ibi_all_stress_mean_stim))),marker='o')
+plot_cov_ellipse(cov_all_stim,mean_vec_all_stim,fc='k',ec='None',a=0.2)
 #plt.legend()
 plt.xlabel('Mean Trial IBI (s)')
 plt.ylabel('Mean Trial PD (AU)')
 plt.title('All Trials')
-sm_reg_before = plt.cm.ScalarMappable(cmap=cmap_reg_before, norm=plt.Normalize(vmin=0, vmax=1))
+sm_reg = plt.cm.ScalarMappable(cmap=cmap_reg, norm=plt.Normalize(vmin=0, vmax=1))
 # fake up the array of the scalar mappable. Urgh...
-sm_reg_before._A = []
-cbar = plt.colorbar(sm_reg_before,ticks=[0,1], orientation='vertical')
+sm_reg._A = []
+cbar = plt.colorbar(sm_reg,ticks=[0,1], orientation='vertical')
 cbar.ax.set_xticklabels(['Early', 'Late'])  # horizontal colorbar
 sm_stress = plt.cm.ScalarMappable(cmap=cmap_stress, norm=plt.Normalize(vmin=0, vmax=1))
 # fake up the array of the scalar mappable. Urgh...
 sm_stress._A = []
 cbar = plt.colorbar(sm_stress,ticks=[0,1], orientation='vertical')
+cbar.ax.set_xticklabels(['Early', 'Late'])  # horizontal colorbar
+sm_stim = plt.cm.ScalarMappable(cmap=cmap_stim, norm=plt.Normalize(vmin=0, vmax=1))
+# fake up the array of the scalar mappable. Urgh...
+sm_stim._A = []
+cbar = plt.colorbar(sm_stim,ticks=[0,1], orientation='vertical')
 cbar.ax.set_xticklabels(['Early', 'Late'])  # horizontal colorbar
 #plt.ylim((-0.05,1.05))
 #plt.xlim((-0.05,1.05))
@@ -552,8 +573,10 @@ plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(blo
 
 norm_ibi_stress_mean = ibi_stress_mean 
 norm_pupil_stress_mean = pupil_stress_mean 
-norm_ibi_reg_before_mean = ibi_reg_before_mean 
-norm_pupil_reg_before_mean = pupil_reg_before_mean 
+norm_ibi_reg_mean = ibi_reg_mean 
+norm_pupil_reg_mean = pupil_reg_mean
+norm_ibi_stim_mean = ibi_stress_mean_stim
+norm_pupil_stim_mean = pupil_stress_mean_stim 
 
 #norm_ibi_stress_mean = (ibi_stress_mean - np.nanmin(ibi_stress_mean + ibi_reg_before_mean))/np.nanmax(ibi_stress_mean + ibi_reg_before_mean - np.nanmin(ibi_stress_mean + ibi_reg_before_mean))
 #norm_pupil_stress_mean = (pupil_stress_mean - np.nanmin(pupil_stress_mean + pupil_reg_before_mean))/np.nanmax(pupil_stress_mean + pupil_reg_before_mean - np.nanmin(pupil_stress_mean + pupil_reg_before_mean))
@@ -561,40 +584,112 @@ norm_pupil_reg_before_mean = pupil_reg_before_mean
 #norm_pupil_reg_before_mean = (pupil_reg_before_mean - np.nanmin(pupil_stress_mean + pupil_reg_before_mean))/np.nanmax(pupil_stress_mean + pupil_reg_before_mean - np.nanmin(pupil_stress_mean + pupil_reg_before_mean))
 
 points_stress = np.array([norm_ibi_stress_mean,norm_pupil_stress_mean])
-points_reg_before = np.array([norm_ibi_reg_before_mean,norm_pupil_reg_before_mean])
+points_reg = np.array([norm_ibi_reg_mean,norm_pupil_reg_mean])
+points_stim = np.array([norm_ibi_stim_mean, norm_pupil_stim_mean])
 cov_stress = np.cov(points_stress)
-cov_reg_before = np.cov(points_reg_before)
+cov_reg = np.cov(points_reg)
+cov_stim = np.cov(points_stim)
 mean_vec_stress = [np.nanmean(norm_ibi_stress_mean),np.nanmean(norm_pupil_stress_mean)]
-mean_vec_reg_before = [np.nanmean(norm_ibi_reg_before_mean),np.nanmean(norm_pupil_reg_before_mean)]
+mean_vec_reg = [np.nanmean(norm_ibi_reg_mean),np.nanmean(norm_pupil_reg_mean)]
+mean_vec_stim = [np.nanmean(norm_ibi_stim_mean), np.nanmean(norm_pupil_stim_mean)]
 
 plt.figure()
 for i in range(0,len(ibi_stress_mean)):
     #plt.plot(norm_ibi_stress_mean[i],norm_pupil_stress_mean[i],color=cmap_stress(i/float(len(ibi_stress_mean))),marker='o',markeredgecolor=None,markeredgewidth=0.0)
     plt.plot(norm_ibi_stress_mean[i],norm_pupil_stress_mean[i],color=cmap_stress(i/float(len(ibi_stress_mean))),marker='o')
 plot_cov_ellipse(cov_stress,mean_vec_stress,fc='r',ec='None',a=0.2)
-for i in range(0,len(ibi_reg_before_mean)):
-	plt.plot(norm_ibi_reg_before_mean[i],norm_pupil_reg_before_mean[i],color=cmap_reg_before(i/float(len(ibi_reg_before_mean))),marker='o')
-plot_cov_ellipse(cov_reg_before,mean_vec_reg_before,fc='b',ec='None',a=0.2)
+for i in range(0,len(ibi_reg_mean)):
+	plt.plot(norm_ibi_reg_mean[i],norm_pupil_reg_mean[i],color=cmap_reg(i/float(len(ibi_reg_mean))),marker='o')
+plot_cov_ellipse(cov_reg,mean_vec_reg,fc='b',ec='None',a=0.2)
+for i in range(0,len(ibi_stress_mean_stim)):
+	plt.plot(norm_ibi_stim_mean[i],norm_pupil_stim_mean[i],color=cmap_stim(i/float(len(ibi_stress_mean_stim))),marker='o')
+plot_cov_ellipse(cov_stim,mean_vec_stim,fc='k',ec='None',a=0.2)
 #plt.legend()
 plt.xlabel('Mean Trial IBI (s)')
 plt.ylabel('Mean Trial PD (AU)')
 plt.title('Successful Trials')
-sm_reg_before = plt.cm.ScalarMappable(cmap=cmap_reg_before, norm=plt.Normalize(vmin=0, vmax=1))
+sm_reg = plt.cm.ScalarMappable(cmap=cmap_reg, norm=plt.Normalize(vmin=0, vmax=1))
 # fake up the array of the scalar mappable. Urgh...
-sm_reg_before._A = []
-cbar = plt.colorbar(sm_reg_before,ticks=[0,1], orientation='vertical')
+sm_reg._A = []
+cbar = plt.colorbar(sm_reg,ticks=[0,1], orientation='vertical')
 cbar.ax.set_xticklabels(['Early', 'Late'])  # horizontal colorbar
 sm_stress = plt.cm.ScalarMappable(cmap=cmap_stress, norm=plt.Normalize(vmin=0, vmax=1))
 # fake up the array of the scalar mappable. Urgh...
 sm_stress._A = []
 cbar = plt.colorbar(sm_stress,ticks=[0,1], orientation='vertical')
 cbar.ax.set_xticklabels(['Early', 'Late'])  # horizontal colorbar
+sm_stim = plt.cm.ScalarMappable(cmap=cmap_stim, norm=plt.Normalize(vmin=0, vmax=1))
+# fake up the array of the scalar mappable. Urgh...
+sm_stim._A = []
+cbar = plt.colorbar(sm_stim,ticks=[0,1], orientation='vertical')
+cbar.ax.set_xticklabels(['Early', 'Late'])  # horizontal colorbar
 #plt.ylim((-0.05,1.05))
 #plt.xlim((-0.05,1.05))
-plt.ylim((-4,3))
-plt.xlim((0.32,0.46))
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_IBIPupilCovariance.svg')
 
 '''
-Add analysis of what trials were classified online as stress and which were classified offline as stress
+Plot points according to classification
 '''
+blocka_reg = np.ravel(np.nonzero(np.ravel(np.equal(y_stress_blocka,0))))
+blocka_stress = np.ravel(np.nonzero(np.ravel(np.equal(y_stress_blocka,1))))
+
+blockb_reg = np.ravel(np.nonzero(np.ravel(np.equal(y_stress_blockb,0))))
+blockb_stress = np.ravel(np.nonzero(np.ravel(np.equal(y_stress_blockb,1))))
+
+blockc_reg = np.ravel(np.nonzero(np.ravel(np.equal(y_stress_blockc,0))))
+blockc_stress = np.ravel(np.nonzero(np.ravel(np.equal(y_stress_blockc,1))))
+
+
+plt.figure()
+plot_cov_ellipse(cov_stress,mean_vec_stress,fc='r',ec='None',a=0.2)
+plot_cov_ellipse(cov_reg,mean_vec_reg,fc='b',ec='None',a=0.2)
+plot_cov_ellipse(cov_stim,mean_vec_stim,fc='k',ec='None',a=0.2)
+
+for ind in blockb_reg:
+    plt.plot(norm_ibi_stress_mean[ind],norm_pupil_stress_mean[ind],color='b',marker='^')
+plt.plot(norm_ibi_stress_mean[ind],norm_pupil_stress_mean[ind],color='b',marker='^',label='Block B - reg')
+for ind in blockb_stress:
+    plt.plot(norm_ibi_stress_mean[ind],norm_pupil_stress_mean[ind],color='r',marker='^')
+for ind in blocka_reg:
+	plt.plot(norm_ibi_reg_mean[ind],norm_pupil_reg_mean[ind],color='b',marker='o')
+for ind in blocka_stress:
+	plt.plot(norm_ibi_reg_mean[ind],norm_pupil_reg_mean[ind],color='r',marker='o')
+for ind in blockc_reg:
+	plt.plot(norm_ibi_stim_mean[ind],norm_pupil_stim_mean[ind],color='b',marker='s')
+for ind in blockc_reg:
+	plt.plot(norm_ibi_stim_mean[ind],norm_pupil_stim_mean[ind],color='r',marker='s')
+plt.legend()
+plt.xlabel('Mean Trial IBI (s)')
+plt.ylabel('Mean Trial PD (AU)')
+plt.title('Successful Trials')
+#plt.ylim((-0.05,1.05))
+#plt.xlim((-0.05,1.05))
+plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_IBIPupilCovariance-Classification.svg')
+
+plt.figure()
+plot_cov_ellipse(cov_stress,mean_vec_stress,fc='r',ec='None',a=0.2)
+plot_cov_ellipse(cov_reg,mean_vec_reg,fc='b',ec='None',a=0.2)
+plot_cov_ellipse(cov_stim,mean_vec_stim,fc='k',ec='None',a=0.2)
+
+for ind in blockb_reg:
+    plt.plot(norm_ibi_stress_mean[ind],norm_pupil_stress_mean[ind],color='b',marker='o')
+plt.plot(norm_ibi_stress_mean[ind],norm_pupil_stress_mean[ind],color='b',marker='o',label='Block B - reg')
+for ind in blockb_stress:
+    plt.plot(norm_ibi_stress_mean[ind],norm_pupil_stress_mean[ind],color='r',marker='^')
+for ind in blocka_reg:
+	plt.plot(norm_ibi_reg_mean[ind],norm_pupil_reg_mean[ind],color='r',marker='o')
+for ind in blocka_stress:
+	plt.plot(norm_ibi_reg_mean[ind],norm_pupil_reg_mean[ind],color='r',marker='o')
+for ind in blockc_reg:
+	plt.plot(norm_ibi_stim_mean[ind],norm_pupil_stim_mean[ind],color='gray',marker='o')
+for ind in blockc_reg:
+	plt.plot(norm_ibi_stim_mean[ind],norm_pupil_stim_mean[ind],color='gray',marker='o')
+plt.legend()
+plt.xlabel('Mean Trial IBI (s)')
+plt.ylabel('Mean Trial PD (AU)')
+plt.title('Successful Trials')
+#plt.ylim((-0.05,1.05))
+#plt.xlim((-0.05,1.05))
+plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_IBIPupilCovariance-SingleColor.svg')
+
+plt.close()
