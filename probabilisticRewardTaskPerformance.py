@@ -905,11 +905,11 @@ def FreeChoiceTask_PathLengths(hdf_file):
 		else:
 			HV_block3.append([start_time, end_time])
 			stim_trials[i-200] = 0
-    
-    LV_block1 = np.array(LV_block1)
-    HV_block1 = np.array(HV_block1)
-    LV_block3 = np.array(LV_block3)
-    HV_block3 = np.array(HV_block3)    
+
+	LV_block1 = np.array(LV_block1)
+	HV_block1 = np.array(HV_block1)
+	LV_block3 = np.array(LV_block3)
+	HV_block3 = np.array(HV_block3)    
 	
 	hdf.close()
 
