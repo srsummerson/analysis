@@ -867,17 +867,17 @@ def FreeChoiceTask_PathLengths(hdf_file):
 	targetL_info = targetL[state_time[ind_target_states]]
 
 	target1 = np.zeros(100)
-    target3 = np.zeros(ind_check_reward_states.size-200)
-   	trial1 = np.zeros(target1.size)
-    trial3 = np.zeros(target3.size)
-    stim_trials = np.zeros(target3.size)
+	target3 = np.zeros(ind_check_reward_states.size-200)
+	trial1 = np.zeros(target1.size)
+	trial3 = np.zeros(target3.size)
+	stim_trials = np.zeros(target3.size)
 
 	# Initialize variables use for in performance computation
+
 	LV_block1 = []
 	HV_block1 = []
 	LV_block3 = []
 	HV_block3 = []
-
 
 	"""
 	Find start and stop state times instructed and free-choice trials only.
