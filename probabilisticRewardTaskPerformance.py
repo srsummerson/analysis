@@ -891,20 +891,20 @@ def FreeChoiceTask_PathLengths(hdf_file):
 			LV_block1.append([start_time, end_time])
 		else:
 			HV_block1.append([start_time, end_time])
-    for i in range(200,num_successful_trials):
-    	end_time = state_time[ind_check_reward_states[i]]
-        start_time = state_time[ind_check_reward_states[i]-3]
-        target_state3 = state[ind_check_reward_states[i] - 2]
-        trial3[i-200] = instructed_or_freechoice[i]
-        if target_state3 == 'hold_targetL':
-            LV_block3.append([start_time, end_time])
-            if trial3[i-200]==1:   # instructed trial to low-value targer paired with stim
-                stim_trials[i-200] = 1
-            else:
-                stim_trials[i-200] = 0
-        else:
-            HV_block3.append([start_time, end_time])
-            stim_trials[i-200] = 0
+	for i in range(200,num_successful_trials):
+		end_time = state_time[ind_check_reward_states[i]]
+		start_time = state_time[ind_check_reward_states[i]-3]
+		target_state3 = state[ind_check_reward_states[i] - 2]
+		trial3[i-200] = instructed_or_freechoice[i]
+		if target_state3 == 'hold_targetL':
+			LV_block3.append([start_time, end_time])
+			if trial3[i-200]==1:   # instructed trial to low-value targer paired with stim
+				stim_trials[i-200] = 1
+			else:
+				stim_trials[i-200] = 0
+		else:
+			HV_block3.append([start_time, end_time])
+			stim_trials[i-200] = 0
     
     LV_block1 = np.array(LV_block1)
     HV_block1 = np.array(HV_block1)
