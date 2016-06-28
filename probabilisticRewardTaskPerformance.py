@@ -3,6 +3,7 @@ import matplotlib
 import numpy as np
 import tables
 from matplotlib import pyplot as plt
+from basicAnalysis import computeCursorPathLength
 
 
 def FreeChoiceTaskPerformance(hdf_file):
@@ -834,3 +835,83 @@ def FreeChoicePilotTask_ChoiceAfterStim(reward3, target3, instructed_or_freechoi
 
 
 	return prob_lv_rewarded, prob_lv_unrewarded
+
+def FreeChoiceTask_PathLengths(hdf_file):
+	hdf = tables.openFile(hdf_file)
+
+	# Task states
+	state = hdf.root.task_msgs[:]['msg']
+	state_time = hdf.root.task_msgs[:]['time']
+	# Target information: high-value target= targetH, low-value target= targetL
+	targetH = hdf.root.task[:]['targetH']
+	targetL = hdf.root.task[:]['targetL']
+	# Reward schedules for each target
+	reward_scheduleH = hdf.root.task[:]['reward_scheduleH']
+	reward_scheduleL = hdf.root.task[:]['reward_scheduleL']
+	# Trial type: instructed (1) or free-choice (2) trial 
+	trial_type = hdf.root.task[:]['target_index']
+
+	ind_wait_states = np.ravel(np.nonzero(state == 'wait'))
+	ind_check_reward_states = np.ravel(np.nonzero(state == 'check_reward'))
+	ind_target_states = ind_check_reward_states - 3 # only look at target targets when the trial was successful (2 states before reward state)
+	num_successful_trials = ind_check_reward_states.size
+	target_times = state_time[ind_target_states]
+	# creates vector same size of state vectors for comparison. instructed (1) and free-choice (2)
+	instructed_or_freechoice = trial_type[state_time[ind_target_states]]
+	# creates vector of same size of state vectors for comparision. (0) = small reward, (1) = large reward.
+	rewarded_reward_scheduleH = reward_scheduleH[state_time[ind_target_states]]
+	rewarded_reward_scheduleL = reward_scheduleL[state_time[ind_target_states]]
+	num_free_choice_trials = sum(instructed_or_freechoice) - num_successful_trials
+	# creates vector of same size of target info: maxtrix of num_successful_trials x 3; (position_offset, reward_prob, left/right)
+	targetH_info = targetH[state_time[ind_target_states]]
+	targetL_info = targetL[state_time[ind_target_states]]
+
+	target1 = np.zeros(100)
+    target3 = np.zeros(ind_check_reward_states.size-200)
+   	trial1 = np.zeros(target1.size)
+    trial3 = np.zeros(target3.size)
+    stim_trials = np.zeros(target3.size)
+
+	# Initialize variables use for in performance computation
+	LV_block1 = []
+	HV_block1 = []
+	LV_block3 = []
+	HV_block3 = []
+
+
+	"""
+	Find start and stop state times instructed and free-choice trials only.
+	"""
+	
+	for i in range(0,100):
+        end_time = state_time[ind_check_reward_states[i]]
+        start_time = state_time[ind_check_reward_states[i]-3]
+        target_state1 = state[ind_check_reward_states[i] - 2]
+        trial1[i] = instructed_or_freechoice[i]
+        if target_state1 == 'hold_targetL':
+            LV_block1.append([start_time, end_time])
+        else:
+            HV_block1.append([start_time, end_time])
+    for i in range(200,num_successful_trials):
+    	end_time = state_time[ind_check_reward_states[i]]
+        start_time = state_time[ind_check_reward_states[i]-3]
+        target_state3 = state[ind_check_reward_states[i] - 2]
+        trial3[i-200] = instructed_or_freechoice[i]
+        if target_state3 == 'hold_targetL':
+            LV_block3.append([start_time, end_time])
+            if trial3[i-200]==1:   # instructed trial to low-value targer paired with stim
+                stim_trials[i-200] = 1
+            else:
+                stim_trials[i-200] = 0
+        else:
+            HV_block3.append([start_time, end_time])
+            stim_trials[i-200] = 0
+    
+    LV_block1 = np.array(LV_block1)
+    HV_block1 = np.array(HV_block1)
+    LV_block3 = np.array(LV_block3)
+    HV_block3 = np.array(HV_block3)    
+	
+	hdf.close()
+
+	return LV_block1, LV_block3, HV_block1, HV_block3
