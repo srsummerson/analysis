@@ -850,6 +850,7 @@ def FreeChoiceTask_PathLengths(hdf_file):
 	reward_scheduleL = hdf.root.task[:]['reward_scheduleL']
 	# Trial type: instructed (1) or free-choice (2) trial 
 	trial_type = hdf.root.task[:]['target_index']
+	cursor = hdf.root.task[:]['cursor']
 
 	ind_wait_states = np.ravel(np.nonzero(state == 'wait'))
 	ind_check_reward_states = np.ravel(np.nonzero(state == 'check_reward'))
@@ -911,6 +912,12 @@ def FreeChoiceTask_PathLengths(hdf_file):
 	LV_block3 = np.array(LV_block3)
 	HV_block3 = np.array(HV_block3)    
 	
+	LV_block1_traj_length = computeCursorPathLength(LV_block1[:,0],LV_block1[:,1],cursor)
+	LV_block3_traj_length = computeCursorPathLength(LV_block3[:,0],LV_block3[:,1],cursor)
+	HV_block1_traj_length = computeCursorPathLength(HV_block1[:,0],HV_block1[:,1],cursor)
+	HV_block3_traj_length = computeCursorPathLength(HV_block3[:,0],HV_block3[:,1],cursor)
+
 	hdf.close()
 
-	return LV_block1, LV_block3, HV_block1, HV_block3
+
+	return LV_block1_traj_length, LV_block3_traj_length, HV_block1_traj_length, HV_block3_traj_length
