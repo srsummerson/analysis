@@ -882,16 +882,15 @@ def FreeChoiceTask_PathLengths(hdf_file):
 	"""
 	Find start and stop state times instructed and free-choice trials only.
 	"""
-	
 	for i in range(0,100):
-        end_time = state_time[ind_check_reward_states[i]]
-        start_time = state_time[ind_check_reward_states[i]-3]
-        target_state1 = state[ind_check_reward_states[i] - 2]
-        trial1[i] = instructed_or_freechoice[i]
-        if target_state1 == 'hold_targetL':
-            LV_block1.append([start_time, end_time])
-        else:
-            HV_block1.append([start_time, end_time])
+		end_time = state_time[ind_check_reward_states[i]]
+		start_time = state_time[ind_check_reward_states[i]-3]
+		target_state1 = state[ind_check_reward_states[i] - 2]
+		trial1[i] = instructed_or_freechoice[i]
+		if target_state1 == 'hold_targetL':
+			LV_block1.append([start_time, end_time])
+		else:
+			HV_block1.append([start_time, end_time])
     for i in range(200,num_successful_trials):
     	end_time = state_time[ind_check_reward_states[i]]
         start_time = state_time[ind_check_reward_states[i]-3]
