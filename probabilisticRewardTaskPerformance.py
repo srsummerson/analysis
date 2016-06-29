@@ -875,10 +875,8 @@ def FreeChoiceTask_PathLengths(hdf_file):
 
 	# Initialize variables use for in performance computation
 
-	LV_block1 = []
-	HV_block1 = []
-	LV_block3 = []
-	HV_block3 = []
+	traj_length1 = []
+	traj_length3 = []
 
 	"""
 	Find start and stop state times instructed and free-choice trials only.
@@ -888,36 +886,28 @@ def FreeChoiceTask_PathLengths(hdf_file):
 		start_time = state_time[ind_check_reward_states[i]-3]
 		target_state1 = state[ind_check_reward_states[i] - 2]
 		trial1[i] = instructed_or_freechoice[i]
+		traj_length1.append([start_time, end_time])
 		if target_state1 == 'hold_targetL':
-			LV_block1.append([start_time, end_time])
+			target1.append(1)
 		else:
-			HV_block1.append([start_time, end_time])
+			target1.append(2)
 	for i in range(200,num_successful_trials):
 		end_time = state_time[ind_check_reward_states[i]]
 		start_time = state_time[ind_check_reward_states[i]-3]
 		target_state3 = state[ind_check_reward_states[i] - 2]
 		trial3[i-200] = instructed_or_freechoice[i]
+		traj_length3.append([start_time, end_time])
 		if target_state3 == 'hold_targetL':
-			LV_block3.append([start_time, end_time])
-			if trial3[i-200]==1:   # instructed trial to low-value targer paired with stim
-				stim_trials[i-200] = 1
-			else:
-				stim_trials[i-200] = 0
+			target3.append(1)
 		else:
-			HV_block3.append([start_time, end_time])
-			stim_trials[i-200] = 0
-
-	LV_block1 = np.array(LV_block1)
-	HV_block1 = np.array(HV_block1)
-	LV_block3 = np.array(LV_block3)
-	HV_block3 = np.array(HV_block3)    
+			target3.append(2)
+			
+	traj_length1 = np.array(traj_length1)
+	traj_length3 = np.array(traj_length3)   
 	
-	LV_block1_traj_length = computeCursorPathLength(LV_block1[:,0],LV_block1[:,1],cursor)
-	LV_block3_traj_length = computeCursorPathLength(LV_block3[:,0],LV_block3[:,1],cursor)
-	HV_block1_traj_length = computeCursorPathLength(HV_block1[:,0],HV_block1[:,1],cursor)
-	HV_block3_traj_length = computeCursorPathLength(HV_block3[:,0],HV_block3[:,1],cursor)
-
+	traj_length1 = computeCursorPathLength(traj_length1[:,0],traj_length1[:,1],cursor)
+	traj_length3 = computeCursorPathLength(traj_length3[:,0],traj_length3[:,1],cursor)
+	
 	hdf.close()
 
-
-	return LV_block1_traj_length, LV_block3_traj_length, HV_block1_traj_length, HV_block3_traj_length
+	return trial1, target1, traj_length1, trial3, target3, traj_length3

@@ -1,4 +1,4 @@
-from probabilisticRewardTaskPerformance import PeriStimulusFreeChoiceBehavior, FreeChoicePilotTask_Behavior, FreeChoiceBehaviorConditionalProbabilities, FreeChoicePilotTask_ChoiceAfterStim, FreeChoiceBehaviorConditionalProbabilitiesAllBlocks
+from probabilisticRewardTaskPerformance import PeriStimulusFreeChoiceBehavior, FreeChoicePilotTask_Behavior, FreeChoiceBehaviorConditionalProbabilities, FreeChoicePilotTask_ChoiceAfterStim, FreeChoiceBehaviorConditionalProbabilitiesAllBlocks, FreeChoiceTask_PathLengths
 import numpy as np
 import scipy.optimize as op
 import statsmodels.api as sm
@@ -1251,11 +1251,79 @@ def OneWayMANOVA(x_dta, factor1, dv1, dv2):
 	
 	return F_factor1, df_factor1, df_residual
 
-papa_sham_prob_lv, papa_stim_prob_lv, papa_control_prob_lv = probabilisticRewardTaskPerformance_LVChoice(sham_days, stim_days, control_days, '\Papa')
-luigi_sham_prob_lv, luigi_stim_prob_lv, luigi_control_prob_lv = probabilisticRewardTaskPerformance_LVChoice(luigi_sham_days, luigi_stim_days, luigi_control_days, '\Luigi')
+
+def probabilisticRewardTaskPerformance_TrajectoryLengths(stim_days,sham_days,control_days, animal_id):
+
+	num_stim_days = len(stim_days)
+	num_sham_days = len(sham_days)
+	num_control_days = len(control_days)
+
+	trial1_stim = []
+	target1_stim = []
+	traj_length1_stim = []
+	trial3_stim = []
+	target3_stim = []
+	traj_length3_stim = []
+
+	trial1_sham = []
+	target1_sham = []
+	traj_length1_sham = []
+	trial3_sham = []
+	target3_sham = []
+	traj_length3_sham = []
+
+	trial1_control = []
+	target1_control = []
+	traj_length1_control = []
+	trial3_control = []
+	target3_control = []
+	traj_length3_control = []
+
+	for i in range(0,num_stim_days):
+		name = stim_days[i]
+		hdf_location = 'C:\Users\Samantha Summerson\Dropbox\Carmena Lab'+ animal_id + '\hdf'+name
+		trial1, target1, traj_length1, trial3, target3, traj_length3 = FreeChoiceTask_PathLengths(hdf_location)
+
+		trial1_stim.append(trial1)
+		target1_stim.append(target1)
+		traj_length1_stim.append(traj_length1)
+		trial3_stim.append(trial3)
+		target3_stim.append(target3)
+		traj_length3_stim.append(traj_length3)
+
+	for i in range(0,num_sham_days):
+		name = sham_days[i]
+		hdf_location = 'C:\Users\Samantha Summerson\Dropbox\Carmena Lab'+ animal_id + '\hdf'+name
+		trial1, target1, traj_length1, trial3, target3, traj_length3 = FreeChoiceTask_PathLengths(hdf_location)
+
+		trial1_sham.append(trial1)
+		target1_sham.append(target1)
+		traj_length1_sham.append(traj_length1)
+		trial3_sham.append(trial3)
+		target3_sham.append(target3)
+		traj_length3_sham.append(traj_length3)
+		
+	for i in range(0,num_control_days):
+		name = control_days[i]
+		hdf_location = 'C:\Users\Samantha Summerson\Dropbox\Carmena Lab'+ animal_id + '\hdf'+name
+		trial1, target1, traj_length1, trial3, target3, traj_length3 = FreeChoiceTask_PathLengths(hdf_location)
+
+		trial1_control.append(trial1)
+		target1_control.append(target1)
+		traj_length1_control.append(traj_length1)
+		trial3_control.append(trial3)
+		target3_control.append(target3)
+		traj_length3_control.append(traj_length3)
+	
+	return trial3_stim, target3_stim, traj_length3_stim
+
+trial3_stim, target3_stim, traj_length3_stim = probabilisticRewardTaskPerformance_TrajectoryLengths(sham_days, stim_days, control_days, '\Papa')
+
+#papa_sham_prob_lv, papa_stim_prob_lv, papa_control_prob_lv = probabilisticRewardTaskPerformance_LVChoice(sham_days, stim_days, control_days, '\Papa')
+#luigi_sham_prob_lv, luigi_stim_prob_lv, luigi_control_prob_lv = probabilisticRewardTaskPerformance_LVChoice(luigi_sham_days, luigi_stim_days, luigi_control_days, '\Luigi')
 
 #dta_papa_lv = make_statsmodel_dtstructure([papa_sham_prob_lv, papa_stim_prob_lv, papa_control_prob_lv], ['Sham', 'Stim', 'Control'], 'lv_choices')
-
+"""
 dta = []
 for data in papa_sham_prob_lv:
 	dta += [(0, data)]
@@ -1285,7 +1353,7 @@ model = ols(formula, dta_luigi_lv).fit()
 aov_table = anova_lm(model, typ=2)
 print aov_table
 
-"""
+
 papa_hdf_location = 'C:\Users\Samantha Summerson\Dropbox\Carmena Lab\Papa\hdf'
 luigi_hdf_location = 'C:\Users\Samantha Summerson\Dropbox\Carmena Lab\Luigi\hdf'
 probabilisticRewardTaskPerformance_ConditionalProbabilities(sham_days, papa_hdf_location,1)
@@ -1297,7 +1365,7 @@ plt.show()
 #probabilisticRewardTaskPerformance_ReactionTimes(stim_days,sham_days,control_days, '\Papa')
 #probabilisticRewardTaskPerformance_ReactionTimes(luigi_stim_days,luigi_sham_days,luigi_control_days,'\Luigi')
 
-
+"""
 papa_stim_rewarded, papa_stim_unrewarded, papa_sham_rewarded, papa_sham_unrewarded, papa_control_rewarded, papa_control_unrewarded = probabilisticRewardTaskPerformance_RewardAndStim(sham_days, stim_days, control_days, '\Papa')
 luigi_stim_rewarded, luigi_stim_unrewarded, luigi_sham_rewarded, luigi_sham_unrewarded, luigi_control_rewarded, luigi_control_unrewarded = probabilisticRewardTaskPerformance_RewardAndStim(luigi_sham_days, luigi_stim_days, luigi_control_days, '\Luigi')
 
@@ -1357,7 +1425,7 @@ aov_table = anova_lm(model, typ=2)
 print "Papa - control days"
 print aov_table
 
-"""
+
 Two-way ANOVA: 
 	Indendent variables (factors):
 		- Stimulation condition: 0 = sham, 1 = stim, 2 = control
@@ -1415,8 +1483,8 @@ print(aov_table)
 """
 
 #fit_glm = probabilisticRewardTaskPerformance_RegressFreeChoiceV2(luigi_stim_days, '\Luigi')
-prob_low_given_lhs, prob_low_given_rhs = probabilisticRewardTaskPerformance_SideBiasAnalysis(luigi_stim_days, '\Luigi')
-
+#prob_low_given_lhs, prob_low_given_rhs = probabilisticRewardTaskPerformance_SideBiasAnalysis(luigi_stim_days, '\Luigi')
+"""
 dta_papa = probabilisticRewardTaskPerformance_RewardAndTargetSide(stim_days, '\Papa')
 F_factor1, F_factor2, F_interaction, df_factor1, df_factor2, df_interaction, df_residual = TwoWayMANOVA(dta_papa, 'reward', 'stim_targ_side', 'lv_choices', 'right_choices')
 
@@ -1425,7 +1493,7 @@ print "Main effect of side: F = ", F_factor2, "df = ", df_factor2
 print "Interaction effect: F = ", F_interaction, "df = ", df_interaction
 print "df error:", df_residual
 
-"""
+
 papa_sham_prob_trialaligned, papa_stim_prob_trialaligned, papa_control_prob_trialaligned = probabilisticRewardTaskPerformance_TrialAligned(sham_days, stim_days, control_days, '\Papa')
 luigi_sham_prob_trialaligned, luigi_stim_prob_trialaligned, luigi_control_prob_trialaligned = probabilisticRewardTaskPerformance_TrialAligned(luigi_sham_days, luigi_stim_days, luigi_control_days, '\Luigi')
 

@@ -452,7 +452,6 @@ def computeCursorPathLength(start_times,stop_times,cursor):
 	traj_length = np.zeros(len(start_times))
 	for j, time in enumerate(start_times):
 		row_nums = np.arange(time,stop_times[j]) 		# row numbers that occur during the course of the path trajectory
-		# need to fix traj_length - not adding up distances correctly	
 		traj_length[j] = np.sum(np.sqrt(np.sum((cursor[row_nums[1:]] - cursor[row_nums[:-1]])**2, axis=1)))
 
 	return traj_length
