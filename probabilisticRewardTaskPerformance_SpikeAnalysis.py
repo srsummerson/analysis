@@ -1,10 +1,14 @@
+import scipy as sp
+import tables
+from neo import io
 from numpy import sin, linspace, pi
 import matplotlib
 import numpy as np
-import tables
 from matplotlib import pyplot as plt
 from basicAnalysis import computePSTH
 from plexon import plexfile
+import matplotlib as mpl
+from matplotlib import mlab
 
 
 def probabilisticRewardTask_PSTH(hdf_filename, filename, block_num):
