@@ -4,6 +4,7 @@ import numpy as np
 import tables
 from matplotlib import pyplot as plt
 from basicAnalysis import computePSTH
+from plexon import plexfile
 
 
 def probabilisticRewardTask_PSTH(hdf_filename, filename, block_num):
