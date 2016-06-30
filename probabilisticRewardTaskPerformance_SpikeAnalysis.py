@@ -168,11 +168,11 @@ def probabilisticRewardTask_PSTH(hdf_filename, filename, block_num):
 	"""
 	
 	hdf.close()
-	return
+	return neural_choose_lv, choose_lv
 
 # Set up code for particular day and block
 hdf_filename = 'mari20160524_11_te2135.hdf'
 filename = 'Mario20160524'
 block_num = 1
 
-probabilisticRewardTask_PSTH(hdf_filename, filename, block_num)
+neural_choose_lv, choose_lv = probabilisticRewardTask_PSTH(hdf_filename, filename, block_num)
