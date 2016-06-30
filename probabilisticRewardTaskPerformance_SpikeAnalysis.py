@@ -114,10 +114,10 @@ def probabilisticRewardTask_PSTH(hdf_filename, filename, block_num):
 	psth_all_trials, smooth_psth_all_trials, labels_all_trials = computePSTH(spike_file1,spike_file2,neural_data_center_hold_times,window_before,window_after, binsize)
 	psth_time_window = np.arange(-window_before,window_after-float(binsize)/1000,float(binsize)/1000)
 
-	"""
+
 	# Compute PSTH for units over trials (free-choice and instructed) where the LV target was selected
 	target_state = state[ind_check_reward_states - 2]
-	
+	"""
 	choose_lv = np.ravel(np.nonzero(target_state == 'hold_targetL'))
 	psth_lv_trials, smooth_psth_lv_trials, labels_lv_trials = computePSTH(spike_file1,spike_file2,neural_data_center_hold_times[choose_lv],window_before,window_after, binsize)
 	
