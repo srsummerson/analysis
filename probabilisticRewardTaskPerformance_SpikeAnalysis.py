@@ -117,7 +117,7 @@ def probabilisticRewardTask_PSTH(hdf_filename, filename, block_num):
 
 	# Compute PSTH for units over trials (free-choice and instructed) where the LV target was selected
 	target_state = state[ind_check_reward_states - 2]
-	"""
+	
 	choose_lv = np.ravel(np.nonzero(target_state == 'hold_targetL'))
 	psth_lv_trials, smooth_psth_lv_trials, labels_lv_trials = computePSTH(spike_file1,spike_file2,neural_data_center_hold_times[choose_lv],window_before,window_after, binsize)
 	
@@ -125,7 +125,7 @@ def probabilisticRewardTask_PSTH(hdf_filename, filename, block_num):
 	choose_hv = np.ravel(np.nonzero(target_state == 'hold_targetH'))
 	psth_hv_trials, smooth_psth_hv_trials, labels_hv_trials = computePSTH(spike_file1,spike_file2,neural_data_center_hold_times[choose_hv],window_before,window_after, binsize)
 
-	
+	"""
 	# Plot PSTHs all together
 	cmap_all = mpl.cm.brg
 	plt.figure()
