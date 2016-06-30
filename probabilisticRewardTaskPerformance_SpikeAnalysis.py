@@ -25,7 +25,7 @@ def probabilisticRewardTask_PSTH(hdf_filename, filename, block_num):
 	spike_file2 = plx2.spikes[:].data
 
 	# Unpack behavioral data
-	hdf = tables.openFile(hdf_filename)
+	hdf = tables.openFile(hdf_location)
 
 	# Task states
 	state = hdf.root.task_msgs[:]['msg']
@@ -119,7 +119,7 @@ def probabilisticRewardTask_PSTH(hdf_filename, filename, block_num):
 	plt.xlabel('Time (s)')
 	plt.ylabel('spks/s')
 	plt.title('PSTH')
-	plt.show()
+	plt.savefig('/home/srsummerson/code/analysis/Mario_Performance_figs/'+filename+'_b'+str(block_num)+'_PSTH-CenterHold.svg')
 
 	plt.figure()
 	for i in range(len(psth_all_trials)):
@@ -128,7 +128,8 @@ def probabilisticRewardTask_PSTH(hdf_filename, filename, block_num):
 	plt.xlabel('Time (s)')
 	plt.ylabel('spks/s')
 	plt.title('Smooth PSTH')
-	plt.show()
+	plt.savefig('/home/srsummerson/code/analysis/Mario_Performance_figs/'+filename+'_b'+str(block_num)+'_SmoothPSTH-CenterHold.svg')
+
 	
 	hdf.close()
 	return
