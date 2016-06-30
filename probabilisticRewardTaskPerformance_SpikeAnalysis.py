@@ -134,8 +134,8 @@ def probabilisticRewardTask_PSTH(hdf_filename, filename, block_num):
 	return
 
 # Set up code for particular day and block
-hdf_filename = 'mari20160418_04_te2002.hdf'
-filename = 'Mario20160418'
+hdf_filename = 'mari20160524_11_te2135.hdf'
+filename = 'Mario20160524'
 block_num = 1
 
 probabilisticRewardTask_PSTH(hdf_filename, filename, block_num)
