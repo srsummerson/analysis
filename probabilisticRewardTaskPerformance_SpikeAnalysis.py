@@ -124,7 +124,7 @@ def probabilisticRewardTask_PSTH(hdf_filename, filename, block_num):
 	choose_hv = np.ravel(np.nonzero(target_state == 'hold_targetH'))
 	psth_hv_trials, smooth_psth_hv_trials, labels_hv_trials = computePSTH(spike_file1,spike_file2,neural_data_center_hold_times[choose_hv],window_before,window_after, binsize)
 
-
+	"""
 	# Plot PSTHs all together
 	cmap_all = mpl.cm.brg
 	plt.figure()
@@ -162,7 +162,7 @@ def probabilisticRewardTask_PSTH(hdf_filename, filename, block_num):
 	plt.ylabel('spks/s')
 	plt.title('Smooth PSTH for Trials with HV Target Selection')
 	plt.savefig('/home/srsummerson/code/analysis/Mario_Performance_figs/'+filename+'_b'+str(block_num)+'_SmoothPSTH-CenterHold-HV.svg')
-
+	"""
 	
 	hdf.close()
 	return
