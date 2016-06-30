@@ -114,6 +114,17 @@ def probabilisticRewardTask_PSTH(hdf_filename, filename, block_num):
 	psth_all_trials, smooth_psth_all_trials, labels_all_trials = computePSTH(spike_file1,spike_file2,neural_data_center_hold_times,window_before,window_after, binsize)
 	psth_time_window = np.arange(-window_before,window_after-float(binsize)/1000,float(binsize)/1000)
 
+	# Compute PSTH for units over trials (free-choice and instructed) where the LV target was selected
+	target_state = state[ind_check_reward_states - 2]
+	
+	choose_lv = np.ravel(np.nonzero(target_state == 'hold_targetL'))
+	psth_lv_trials, smooth_psth_lv_trials, labels_lv_trials = computePSTH(spike_file1,spike_file2,neural_data_center_hold_times[choose_lv],window_before,window_after, binsize)
+	
+	# Compute PSTH for units over trials (free-choice and instructed) where the HV target was selected
+	choose_hv = np.ravel(np.nonzero(target_state == 'hold_targetH'))
+	psth_hv_trials, smooth_psth_hv_trials, labels_hv_trials = computePSTH(spike_file1,spike_file2,neural_data_center_hold_times[choose_hv],window_before,window_after, binsize)
+
+
 	# Plot PSTHs all together
 	cmap_all = mpl.cm.brg
 	plt.figure()
@@ -133,6 +144,24 @@ def probabilisticRewardTask_PSTH(hdf_filename, filename, block_num):
 	plt.ylabel('spks/s')
 	plt.title('Smooth PSTH')
 	plt.savefig('/home/srsummerson/code/analysis/Mario_Performance_figs/'+filename+'_b'+str(block_num)+'_SmoothPSTH-CenterHold.svg')
+
+	plt.figure()
+	for i in range(len(psth_lv_trials)):
+		unit_name = psth_lv_trials.keys()[i]
+		plt.plot(psth_time_window,smooth_psth_lv_trials[unit_name],color=cmap_all(i/float(len(psth_lv_trials))),label=unit_name)
+	plt.xlabel('Time (s)')
+	plt.ylabel('spks/s')
+	plt.title('Smooth PSTH for Trials with LV Target Selection')
+	plt.savefig('/home/srsummerson/code/analysis/Mario_Performance_figs/'+filename+'_b'+str(block_num)+'_SmoothPSTH-CenterHold-LV.svg')
+
+	plt.figure()
+	for i in range(len(psth_hv_trials)):
+		unit_name = psth_hv_trials.keys()[i]
+		plt.plot(psth_time_window,smooth_psth_hv_trials[unit_name],color=cmap_all(i/float(len(psth_hv_trials))),label=unit_name)
+	plt.xlabel('Time (s)')
+	plt.ylabel('spks/s')
+	plt.title('Smooth PSTH for Trials with HV Target Selection')
+	plt.savefig('/home/srsummerson/code/analysis/Mario_Performance_figs/'+filename+'_b'+str(block_num)+'_SmoothPSTH-CenterHold-HV.svg')
 
 	
 	hdf.close()
