@@ -96,16 +96,16 @@ def probabilisticRewardTask_PSTH(hdf_filename, filename, block_num):
 		target_state1 = state[ind_check_reward_states[i] - 2]
 		trial1[i] = instructed_or_freechoice[i]
 		if target_state1 == 'hold_targetL':
-			target1.append(1)
+			target1[i] = 1
 		else:
-			target1.append(2)
+			target1[i] = 2
 	for i in range(200,num_successful_trials):
 		target_state3 = state[ind_check_reward_states[i] - 2]
 		trial3[i-200] = instructed_or_freechoice[i]
 		if target_state3 == 'hold_targetL':
-			target3.append(1)
+			target3[i-200] = 1
 		else:
-			target3.append(2)
+			target3[i-200] = 2
 	
 	# Compute PSTH for units over all trials
 	window_before = 2  # PSTH time window before alignment point in seconds
