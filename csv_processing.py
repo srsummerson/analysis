@@ -2,6 +2,7 @@ import numpy as np
 import scipy as sp
 import re
 from neo import io
+import pandas as pd
 
 def get_csv_data_singlechannel(filename):
 	'''
@@ -77,6 +78,3 @@ def syncHDF_from_csv(tank,dio2_filename, dio3_filename,dio4_filename, dio_sampra
 	sp.io.savemat('/home/srsummerson/storage/syncHDF/'+mat_filename,hdf_times)
 
 	return
-
-
-
