@@ -13,9 +13,9 @@ def convert_OMNI(filename, **kwargs):
 	Input:
 		- filename: string containing the file path for a csv file saved with the OMNI device
 	Optional inputs:
-		- save_mat: True/False to save mat file, default is False
-		- new_file_path: location to save new mat file
-		- animal_id: string containing subject's name, e.g. Mario, for naming of saved mat file
+		- save_pkl: True/False to save pkl file, default is False
+		- new_file_path: location to save new pkl file
+		- animal_id: string containing subject's name, e.g. Mario, for naming of saved pkl file
 		
 	Output:
 		- data: pandas DataFrame, M rows x N columns, M = number of data points, N = number of channels + 1, 
@@ -24,8 +24,8 @@ def convert_OMNI(filename, **kwargs):
 
 	'''
 	kwargsdict = {}
-	kwargsdict['save_mat'] = False
-	expected_args = ['save_mat', 'new_file_path','animal_id']
+	kwargsdict['save_pkl'] = False
+	expected_args = ['save_pkl', 'new_file_path','animal_id']
 	for key in kwargs.keys():
 		if key in expected_args:
 			kwargsdict[key] = kwargs[key]
@@ -41,10 +41,10 @@ def convert_OMNI(filename, **kwargs):
 
 	data = pd.read_csv(filename,sep=',',header=None,skiprows=[0,1])
 
-	if kwargsdict['save_mat']:
-		mat_filename = kwargsdict['animal_id'] + year + month + day + '_OMNIdata.mat'
-		print mat_filename
-		#sp.io.savemat(kwargsdict['new_file_path']+mat_filename,data)
+	if kwargsdict['save_pkl']:
+		pkl_filename = kwargsdict['animal_id'] + year + month + day + '_OMNIdata.pkl'
+		new_filename = kwargsdict['new_file_path']+pkl_filename
+		data.to_pickle(new_filename)
 
 	f.close()
 
