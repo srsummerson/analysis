@@ -38,8 +38,6 @@ state_time, ind_center_states, ind_check_reward_states, all_instructed_or_freech
 
 # Get reaction times for successful trials
 reaction_time, total_vel, stress_indicator = compute_rt_per_trial_StressTask(hdf_location)
-print len(reaction_time)
-print len(stress_indicator)
 
 # Reaction time hists for successful stress versus regular trials
 rt_stress_ind = np.ravel(np.nonzero(stress_indicator))
@@ -49,6 +47,14 @@ hist_successful_reg = hist_successful_reg/float(len(reaction_time[rt_reg_ind]))
 
 hist_successful_stress, bins_stress = np.histogram(reaction_time[rt_stress_ind],10)
 hist_successful_stress = hist_successful_stress/float(len(reaction_time[rt_stress_ind]))
+
+plt.figure()
+plt.plot(bins_reg,hist_successful_reg,'r',label='Regular')
+plt.plot(bins_stress,hist_successful_stress,'b',label='Stress')
+plt.xlabel('Reaction time (s)')
+plt.ylabel('Frequency')
+plt.legend()
+plt.show()
 
 # Total number of trials
 num_trials = ind_center_states.size
