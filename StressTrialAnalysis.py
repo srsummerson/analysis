@@ -12,7 +12,7 @@ from basicAnalysis import plot_cov_ellipse
 from csv_processing import get_csv_data_singlechannel
 from probabilisticRewardTaskPerformance import FreeChoiceBehavior_withStressTrials
 from spectralAnalysis import TrialAveragedPSD
-from rt_calc import compute_rt_per_trial_FreeChoiceTask
+from rt_calc import compute_rt_per_trial_StressTask
 
 
 # Set up code for particular day and block
@@ -37,8 +37,18 @@ Load behavior data
 state_time, ind_center_states, ind_check_reward_states, all_instructed_or_freechoice, all_stress_or_not, successful_stress_or_not,trial_success, target, reward = FreeChoiceBehavior_withStressTrials(hdf_location)
 
 # Get reaction times for successful trials
-reaction_time, total_vel = compute_rt_per_trial_FreeChoiceTask(hdf_location)
+reaction_time, total_vel, stress_indicator = compute_rt_per_trial_StressTask(hdf_location)
 print len(reaction_time)
+print len(stress_indicator)
+
+# Reaction time hists for successful stress versus regular trials
+rt_stress_ind = np.ravel(np.nonzero(stress_indicator))
+rt_reg_ind = np.ravel(np.nonzero(np.logical_not(stress_indicator)))
+hist_successful_reg, bins_reg = np.histogram(reaction_time[rt_reg_ind],10)
+hist_successful_reg = hist_successful_reg/float(len(reaction_time[rt_reg_ind]))
+
+hist_successful_stress, bins_stress = np.histogram(reaction_time[rt_stress_ind],10)
+hist_successful_stress = hist_successful_stress/float(len(reaction_time[rt_stress_ind]))
 
 # Total number of trials
 num_trials = ind_center_states.size
@@ -46,12 +56,10 @@ total_states = state_time.size
 
 # Number of successful stress trials
 tot_successful_stress = np.logical_and(trial_success,all_stress_or_not)
-print np.sum(tot_successful_stress)
 successful_stress_trials = float(np.sum(tot_successful_stress))/np.sum(all_stress_or_not)
 
 # Number of successful non-stress trials
 tot_successful_reg = np.logical_and(trial_success,np.logical_not(all_stress_or_not))
-print np.sum(tot_successful_reg)
 successful_reg_trials = float(np.sum(tot_successful_reg))/(num_trials - np.sum(all_stress_or_not))
 
 # Response times for successful stress trials
@@ -89,13 +97,6 @@ for i in range(0,len(row_ind_successful_reg)):
 	ind = np.where(row_ind_reg == row_ind_successful_reg[i])[0]
 	row_ind_end_reg[ind] = row_ind_successful_reg_reward[i]
 response_time_reg = (state_time[row_ind_end_reg] - state_time[row_ind_reg])/float(60)
-
-# Reaction time hists for successful stress versus regular trials
-hist_successful_reg, bins_reg = np.histogram(reaction_time[ind_successful_reg],10)
-hist_successful_reg = hist_successful_reg/float(len(reaction_time[ind_successful_reg]))
-
-hist_successful_stress, bins_stress = np.histogram(reaction_time[ind_successful_stress],10)
-hist_successful_stress = hist_successful_stress/float(len(reaction_time[ind_successful_stress]))
 
 
 # Target choice for successful stress trials - look at free-choice trials only

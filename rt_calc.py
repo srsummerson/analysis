@@ -31,6 +31,36 @@ def compute_rt_per_trial_FreeChoiceTask(hdf_file):
     
     return kin_feat[:,1], total_vel
 
+def compute_rt_per_trial_StressTask(hdf_file): 
+    # Load HDF file
+    hdf = tables.openFile(hdf_file)
+
+    #Extract go_cue_indices in units of hdf file row number
+    go_cue_ix = np.array([hdf.root.task_msgs[j-3]['time'] for j, i in enumerate(hdf.root.task_msgs) if i['msg']=='check_reward'])
+    ind_check_reward_states = np.ravel(np.nonzero(state == 'check_reward'))
+    successful_stress_or_not = np.ravel(stress_type[state_time[ind_check_reward_states]])
+
+
+    # Calculate filtered velocity and 'velocity mag. in target direction'
+    filt_vel, total_vel, vel_bins = get_cursor_velocity(hdf, go_cue_ix, 0., 2., use_filt_vel=False)
+
+    ## Calculate 'RT' from vel_in_targ_direction: use with get_cusor_velocity_in_targ_dir
+    #kin_feat = get_kin_sig_shenoy_method(vel_in_targ_dir.T, vel_bins, perc=.2, start_tm = .1)
+    #kin_feat = get_rt(total_vel.T, vel_bins, vel_thres = 0.1)
+    kin_feat = get_rt_change_deriv(total_vel.T, vel_bins, d_vel_thres = 0.3, fs=60)
+    
+    '''
+    #PLot first 5 trials in a row
+    for n in range(1):
+        plt.plot(total_vel[:, n], '.-')
+        plt.plot(kin_feat[n, :][0], total_vel[int(kin_feat[n,:][0]), n], '.', markersize=10)
+        plt.show()
+        time.sleep(1.)
+    '''
+    hdf.close()
+    
+    return kin_feat[:,1], total_vel, successful_stress_or_not
+
 def compute_rt_per_trial_CenterOut(hdf_file): 
     # Load HDF file
     hdf = tables.openFile(hdf_file)
