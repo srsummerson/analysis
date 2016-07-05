@@ -16,13 +16,13 @@ from rt_calc import compute_rt_per_trial_FreeChoiceTask
 
 
 # Set up code for particular day and block
-hdf_filename = 'mari20160614_12_te2246.hdf'
+hdf_filename = 'mari20160614_12_te2237.hdf'
 filename = 'Mario20160614'
 #TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
 #hdf_location = hdffilename
-block_num = 3
+block_num = 1
 stim_freq = 100
 
 lfp1_channels = [13, 14, 15, 16, 29, 30]
