@@ -12,6 +12,7 @@ from basicAnalysis import plot_cov_ellipse
 from csv_processing import get_csv_data_singlechannel
 from probabilisticRewardTaskPerformance import FreeChoiceBehavior_withStressTrials
 from spectralAnalysis import TrialAveragedPSD
+from rt_calc import compute_rt_per_trial_FreeChoiceTask
 
 
 # Set up code for particular day and block
@@ -34,6 +35,9 @@ Load behavior data
 ## self.target_index = 1 for instructed, 2 for free choice
 ## self.stress_trial =1 for stress trial, 0 for regular trial
 state_time, ind_center_states, ind_check_reward_states, all_instructed_or_freechoice, all_stress_or_not, successful_stress_or_not,trial_success, target, reward = FreeChoiceBehavior_withStressTrials(hdf_location)
+
+# Get reaction times for successful trials
+reaction_time, total_vel = compute_rt_per_trial_FreeChoiceTask(hdf_location)
 
 # Total number of trials
 num_trials = ind_center_states.size
@@ -82,6 +86,14 @@ for i in range(0,len(row_ind_successful_reg)):
 	ind = np.where(row_ind_reg == row_ind_successful_reg[i])[0]
 	row_ind_end_reg[ind] = row_ind_successful_reg_reward[i]
 response_time_reg = (state_time[row_ind_end_reg] - state_time[row_ind_reg])/float(60)
+
+# Reaction time hists for successful stress versus regular trials
+hist_successful_reg, bins_reg = np.histogram(reaction_time[ind_successful_reg],10)
+hist_successful_reg = hist_successful_reg/float(len(reaction_time[ind_successful_reg]))
+
+hist_successful_stress, bins_stress = np.histogram(reaction_time[ind_successful_stress],10)
+hist_successful_stress = hist_successful_stress/float(len(reaction_time[ind_successful_stress]))
+
 
 # Target choice for successful stress trials - look at free-choice trials only
 tot_successful_fc_stress = np.logical_and(tot_successful_stress,np.ravel(np.equal(all_instructed_or_freechoice,2)))
