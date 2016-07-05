@@ -127,7 +127,7 @@ def probabilisticRewardTask_PSTH(hdf_filename, filename, block_num):
 	choose_hv = np.ravel(np.nonzero(target_state == 'hold_targetH'))
 	psth_hv_trials, smooth_psth_hv_trials, labels_hv_trials = computePSTH(spike_file1,spike_file2,neural_data_center_hold_times[choose_hv],window_before,window_after, binsize)
 
-	"""
+	
 	# Plot PSTHs all together
 	cmap_all = mpl.cm.brg
 	plt.figure()
@@ -155,6 +155,7 @@ def probabilisticRewardTask_PSTH(hdf_filename, filename, block_num):
 	plt.xlabel('Time (s)')
 	plt.ylabel('spks/s')
 	plt.title('Smooth PSTH for Trials with LV Target Selection')
+	plt.legend()
 	plt.savefig('/home/srsummerson/code/analysis/Mario_Performance_figs/'+filename+'_b'+str(block_num)+'_SmoothPSTH-CenterHold-LV.svg')
 
 	plt.figure()
@@ -164,15 +165,16 @@ def probabilisticRewardTask_PSTH(hdf_filename, filename, block_num):
 	plt.xlabel('Time (s)')
 	plt.ylabel('spks/s')
 	plt.title('Smooth PSTH for Trials with HV Target Selection')
+	plt.legend()
 	plt.savefig('/home/srsummerson/code/analysis/Mario_Performance_figs/'+filename+'_b'+str(block_num)+'_SmoothPSTH-CenterHold-HV.svg')
 	
-	"""
+	plt.close()
 	hdf.close()
-	return neural_choose_lv, choose_lv
+	return 
 
 # Set up code for particular day and block
 hdf_filename = 'mari20160524_11_te2135.hdf'
 filename = 'Mario20160524'
 block_num = 1
 
-neural_choose_lv, choose_lv = probabilisticRewardTask_PSTH(hdf_filename, filename, block_num)
+probabilisticRewardTask_PSTH(hdf_filename, filename, block_num)
