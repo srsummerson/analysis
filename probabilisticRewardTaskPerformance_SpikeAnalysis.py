@@ -28,6 +28,8 @@ def probabilisticRewardTask_PSTH(hdf_filename, filename, block_num):
 	plx2 = plexfile.openFile(plx_location2)
 	spike_file2 = plx2.spikes[:].data
 
+	print "Loaded spike data."
+
 	# Unpack behavioral data
 	hdf = tables.openFile(hdf_location)
 
@@ -75,6 +77,8 @@ def probabilisticRewardTask_PSTH(hdf_filename, filename, block_num):
 	hdf_times = dict()
 	mat_filename = filename+'_b'+str(block_num)+'_syncHDF.mat'
 	sp.io.loadmat('/home/srsummerson/storage/syncHDF/'+mat_filename,hdf_times)
+
+	print "Loaded sync data."
 
 	hdf_rows = np.ravel(hdf_times['row_number'])
 	hdf_rows = [val for val in hdf_rows]	# turn into a list so that the index method can be used later
@@ -127,6 +131,7 @@ def probabilisticRewardTask_PSTH(hdf_filename, filename, block_num):
 	choose_hv = np.ravel(np.nonzero(target_state == 'hold_targetH'))
 	psth_hv_trials, smooth_psth_hv_trials, labels_hv_trials = computePSTH(spike_file1,spike_file2,neural_data_center_hold_times[choose_hv],window_before,window_after, binsize)
 
+	print "Plotting results."
 	
 	# Plot PSTHs all together
 	cmap_all = mpl.cm.brg
@@ -142,16 +147,19 @@ def probabilisticRewardTask_PSTH(hdf_filename, filename, block_num):
 	plt.figure()
 	for i in range(len(psth_all_trials)):
 		unit_name = psth_all_trials.keys()[i]
-		plt.plot(psth_time_window,smooth_psth_all_trials[unit_name],color=cmap_all(i/float(len(psth_all_trials))),label=unit_name)
+		if np.max(smooth_psth_all_trials[unit_name]) > 10:
+			plt.plot(psth_time_window,smooth_psth_all_trials[unit_name],color=cmap_all(i/float(len(psth_all_trials))),label=unit_name)
 	plt.xlabel('Time (s)')
 	plt.ylabel('spks/s')
 	plt.title('Smooth PSTH')
+	plt.legend()
 	plt.savefig('/home/srsummerson/code/analysis/Mario_Performance_figs/'+filename+'_b'+str(block_num)+'_SmoothPSTH-CenterHold.svg')
 
 	plt.figure()
 	for i in range(len(psth_lv_trials)):
 		unit_name = psth_lv_trials.keys()[i]
-		plt.plot(psth_time_window,smooth_psth_lv_trials[unit_name],color=cmap_all(i/float(len(psth_lv_trials))),label=unit_name)
+		if np.max(smooth_psth_lv_trials[unit_name]) > 20:
+			plt.plot(psth_time_window,smooth_psth_lv_trials[unit_name],color=cmap_all(i/float(len(psth_lv_trials))),label=unit_name)
 	plt.xlabel('Time (s)')
 	plt.ylabel('spks/s')
 	plt.title('Smooth PSTH for Trials with LV Target Selection')
@@ -161,7 +169,8 @@ def probabilisticRewardTask_PSTH(hdf_filename, filename, block_num):
 	plt.figure()
 	for i in range(len(psth_hv_trials)):
 		unit_name = psth_hv_trials.keys()[i]
-		plt.plot(psth_time_window,smooth_psth_hv_trials[unit_name],color=cmap_all(i/float(len(psth_hv_trials))),label=unit_name)
+		if np.max(smooth_psth_hv_trials[unit_name]) > 20:
+			plt.plot(psth_time_window,smooth_psth_hv_trials[unit_name],color=cmap_all(i/float(len(psth_hv_trials))),label=unit_name)
 	plt.xlabel('Time (s)')
 	plt.ylabel('spks/s')
 	plt.title('Smooth PSTH for Trials with HV Target Selection')
