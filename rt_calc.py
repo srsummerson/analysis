@@ -37,6 +37,7 @@ def compute_rt_per_trial_StressTask(hdf_file):
 
     #Extract go_cue_indices in units of hdf file row number
     go_cue_ix = np.array([hdf.root.task_msgs[j-3]['time'] for j, i in enumerate(hdf.root.task_msgs) if i['msg']=='check_reward'])
+    state = hdf.root.task_msgs[:]['msg']
     ind_check_reward_states = np.ravel(np.nonzero(state == 'check_reward'))
     successful_stress_or_not = np.ravel(stress_type[state_time[ind_check_reward_states]])
 
