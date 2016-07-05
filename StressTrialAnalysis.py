@@ -38,6 +38,7 @@ state_time, ind_center_states, ind_check_reward_states, all_instructed_or_freech
 
 # Get reaction times for successful trials
 reaction_time, total_vel = compute_rt_per_trial_FreeChoiceTask(hdf_location)
+print len(reaction_time)
 
 # Total number of trials
 num_trials = ind_center_states.size
@@ -45,10 +46,12 @@ total_states = state_time.size
 
 # Number of successful stress trials
 tot_successful_stress = np.logical_and(trial_success,all_stress_or_not)
+print np.sum(tot_successful_stress)
 successful_stress_trials = float(np.sum(tot_successful_stress))/np.sum(all_stress_or_not)
 
 # Number of successful non-stress trials
 tot_successful_reg = np.logical_and(trial_success,np.logical_not(all_stress_or_not))
+print np.sum(tot_successful_reg)
 successful_reg_trials = float(np.sum(tot_successful_reg))/(num_trials - np.sum(all_stress_or_not))
 
 # Response times for successful stress trials
