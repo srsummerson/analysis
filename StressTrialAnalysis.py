@@ -16,7 +16,7 @@ from rt_calc import compute_rt_per_trial_FreeChoiceTask
 
 
 # Set up code for particular day and block
-hdf_filename = 'mari20160614_12_te2237.hdf'
+hdf_filename = 'mari20160614_03_te2237.hdf'
 filename = 'Mario20160614'
 #TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
