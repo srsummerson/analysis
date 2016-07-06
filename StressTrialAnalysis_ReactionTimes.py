@@ -46,8 +46,8 @@ bins_reg = (bins_reg[1:] + bins_reg[:-1])/2.
 bins_stress = (bins_stress[1:] + bins_stress[:-1])/2.
 
 # convert units to ms
-bins_reg = bins_reg*1000.
-bins_stress = bins_stress*1000.
+#bins_reg = bins_reg*1000.
+#bins_stress = bins_stress*1000.
 
 plt.figure()
 plt.bar(bins_reg,hist_successful_reg,width=0.02,color='r',label='Regular')
