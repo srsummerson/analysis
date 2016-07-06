@@ -46,8 +46,8 @@ bins_reg = (bins_reg[1:] + bins_reg[:-1])/2.
 bins_stress = (bins_stress[1:] + bins_stress[:-1])/2.
 
 plt.figure()
-plt.bar(bins_reg,hist_successful_reg,width=0.25,color='r',label='Regular')
-plt.bar(bins_stress,hist_successful_stress,width=0.25,color='b',label='Stress')
+plt.bar(bins_reg,hist_successful_reg,width=0.04,color='r',label='Regular')
+plt.bar(bins_stress,hist_successful_stress,width=0.04,color='b',label='Stress')
 plt.xlabel('Reaction time (s)')
 plt.ylabel('Frequency')
 plt.legend()
