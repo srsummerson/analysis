@@ -36,6 +36,9 @@ hist_successful_reg = hist_successful_reg/float(len(reaction_time[rt_reg_ind]))
 hist_successful_stress, bins_stress = np.histogram(reaction_time[rt_stress_ind],10)
 hist_successful_stress = hist_successful_stress/float(len(reaction_time[rt_stress_ind]))
 
+bins_reg = (bins_reg[1:] + bins_reg[:-1])/2.
+bins_stress = (bins_stress[1:] + bins_stress[:-1])/2.
+
 plt.figure()
 plt.plot(bins_reg,hist_successful_reg,'r',label='Regular')
 plt.plot(bins_stress,hist_successful_stress,'b',label='Stress')
