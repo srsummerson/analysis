@@ -14,9 +14,9 @@ from probabilisticRewardTaskPerformance import FreeChoiceBehavior_withStressTria
 from spectralAnalysis import TrialAveragedPSD
 from rt_calc import compute_rt_per_trial_StressTask
 
-hdf_filename = 'mari20160614_03_te2237.hdf'
+hdf_filename = 'mari20160315_10_te1735.hdf'
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
-filename = 'Mario20160614'
+filename = 'Mario20160315'
 block_num = 1
 
 
