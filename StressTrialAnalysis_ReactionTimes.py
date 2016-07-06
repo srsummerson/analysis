@@ -34,7 +34,7 @@ rt_reg_ind = np.ravel(np.nonzero(np.logical_not(stress_indicator)))
 bin_min = np.min(reaction_time)
 bin_max = np.max(reaction_time)
 
-bins = np.arange(bin_min-0.05,bin_max,0.05)
+bins = np.arange(bin_min-0.05,bin_max,0.025)
 
 hist_successful_reg, bins_reg = np.histogram(reaction_time[rt_reg_ind],bins)
 hist_successful_reg = hist_successful_reg/float(len(reaction_time[rt_reg_ind]))
@@ -45,10 +45,14 @@ hist_successful_stress = hist_successful_stress/float(len(reaction_time[rt_stres
 bins_reg = (bins_reg[1:] + bins_reg[:-1])/2.
 bins_stress = (bins_stress[1:] + bins_stress[:-1])/2.
 
+# convert units to ms
+bins_reg = bins_reg*1000.
+bins_stress = bins_stress*1000.
+
 plt.figure()
 plt.bar(bins_reg,hist_successful_reg,width=0.02,color='r',label='Regular')
 plt.bar(bins_stress+0.025,hist_successful_stress,width=0.02,color='b',label='Stress')
-plt.xlabel('Reaction time (s)')
+plt.xlabel('Reaction time (ms)')
 plt.ylabel('Frequency')
 plt.legend()
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_StressTaskReactionTimes.svg')
