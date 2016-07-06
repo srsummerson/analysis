@@ -55,5 +55,6 @@ plt.bar(bins_stress+0.02*1000,hist_successful_stress,width=0.02*1000,color='r',l
 plt.xlabel('Reaction time (ms)')
 plt.ylabel('Frequency')
 plt.xlim((bins_reg[0],bins_reg[-1]+0.02*1000))
+plt.xticks(bins_reg)
 plt.legend()
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_StressTaskReactionTimes.svg')
