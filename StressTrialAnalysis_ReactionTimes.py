@@ -46,12 +46,12 @@ bins_reg = (bins_reg[1:] + bins_reg[:-1])/2.
 bins_stress = (bins_stress[1:] + bins_stress[:-1])/2.
 
 # convert units to ms
-#bins_reg = bins_reg*1000.
-#bins_stress = bins_stress*1000.
+bins_reg = bins_reg*1000.
+bins_stress = bins_stress*1000.
 
 plt.figure()
-plt.bar(bins_reg,hist_successful_reg,width=0.02,color='r',label='Regular')
-plt.bar(bins_stress+0.02,hist_successful_stress,width=0.02,color='b',label='Stress')
+plt.bar(bins_reg,hist_successful_reg,width=0.02*1000,color='b',label='Regular')
+plt.bar(bins_stress+0.02*1000,hist_successful_stress,width=0.02*1000,color='r',label='Stress')
 plt.xlabel('Reaction time (ms)')
 plt.ylabel('Frequency')
 plt.legend()
