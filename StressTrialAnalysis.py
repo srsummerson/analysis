@@ -615,7 +615,7 @@ norm_pupil_all_stress_mean = pupil_all_stress_mean
 norm_ibi_all_reg_before_mean = ibi_all_reg_before_mean
 norm_pupil_all_reg_before_mean = pupil_all_reg_before_mean
 
-print "Starting K-means"
+print "Starting K-means using all (successful and non-succesful trials)"
 # K Means of IBI and PD data
 total_len = len(norm_ibi_all_stress_mean) + len(norm_ibi_all_reg_before_mean)
 X_kmeans = np.zeros([total_len,2])
@@ -631,9 +631,40 @@ plt.subplot(212)
 plt.scatter(norm_ibi_all_stress_mean,norm_pupil_all_stress_mean,c='r')
 plt.scatter(norm_ibi_all_reg_before_mean,norm_pupil_all_reg_before_mean,c='b')
 plt.title('Trial labels')
+plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_KMeans-All.svg')
+
+print "Plotted K-means using all (successful and non-succesful trials)"
+
+print "Starting K-means using successful trials"
+# K Means of IBI and PD data
+total_len = len(norm_ibi_stress_mean) + len(norm_ibi_reg_before_mean)
+X_kmeans = np.zeros([total_len,2])
+X_kmeans[:,0] = np.append(norm_ibi_stress_mean, norm_ibi_reg_before_mean)
+X_kmeans[:,1] = np.append(norm_pupil_stress_mean, norm_pupil_reg_before_mean)
+y_kmeans_pred = KMeans(n_clusters=2).fit_predict(X_kmeans)
+
+plt.figure()
+plt.subplot(211)
+plt.scatter(X_kmeans[:,0],X_kmeans[:,1],c = y_kmeans_pred)
+plt.title('K-means Clusters')
+plt.subplot(212)
+plt.scatter(norm_ibi_stress_mean,norm_pupil_stress_mean,c='r')
+plt.scatter(norm_ibi_reg_before_mean,norm_pupil_reg_before_mean,c='b')
+plt.title('Trial labels')
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_KMeans.svg')
 
-print "Plotted K-means"
+print "Plotted K-means using successful trials"
+
+plt.figure()
+plt.subplot(211)
+plt.scatter(reaction_time[rt_reg_ind],norm_pupil_reg_before_mean,c = 'b')
+plt.scatter(reaction_time[rt_stress_ind],norm_pupil_stress_mean,c='r')
+plt.label('RT vs Pupil Diameter')
+plt.scatter(reaction_time[rt_reg_ind],norm_ibi_reg_before_mean,c = 'b')
+plt.scatter(reaction_time[rt_stress_ind],norm_ibi_stress_mean,c='r')
+plt.label('RT vs IBI')
+plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_RTvsPDvsIBI.svg')
+
 
 #norm_ibi_all_stress_mean = (ibi_all_stress_mean - np.nanmin(ibi_all_stress_mean + ibi_all_reg_before_mean))/np.nanmax(ibi_all_stress_mean + ibi_all_reg_before_mean - np.nanmin(ibi_all_stress_mean + ibi_all_reg_before_mean))
 #norm_pupil_all_stress_mean = (pupil_all_stress_mean - np.nanmin(pupil_all_stress_mean + pupil_all_reg_before_mean))/np.nanmax(pupil_all_stress_mean + pupil_all_reg_before_mean - np.nanmin(pupil_all_stress_mean + pupil_all_reg_before_mean))
