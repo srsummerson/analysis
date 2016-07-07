@@ -17,10 +17,10 @@ from sklearn.cluster import KMeans
 
 
 # Set up code for particular day and block
-hdf_filename = 'mari20160614_03_te2237.hdf'
-filename = 'Mario20160614'
-#TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
-TDT_tank = '/home/srsummerson/storage/tdt/'+filename
+hdf_filename = 'mari20160418_04_te2002.hdf'
+filename = 'Mario20160418'
+TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
+#TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
 #hdf_location = hdffilename
 block_num = 1
@@ -196,6 +196,7 @@ hdf_times = dict()
 mat_filename = filename+'_b'+str(block_num)+'_syncHDF.mat'
 sp.io.loadmat('/home/srsummerson/storage/syncHDF/'+mat_filename,hdf_times)
 
+print "Loading TDT data."
 '''
 Load pupil dilation and heart rate data
 '''
@@ -615,6 +616,11 @@ norm_pupil_all_stress_mean = pupil_all_stress_mean
 norm_ibi_all_reg_before_mean = ibi_all_reg_before_mean
 norm_pupil_all_reg_before_mean = pupil_all_reg_before_mean
 
+norm_ibi_stress_mean = ibi_stress_mean 
+norm_pupil_stress_mean = pupil_stress_mean 
+norm_ibi_reg_before_mean = ibi_reg_before_mean 
+norm_pupil_reg_before_mean = pupil_reg_before_mean 
+
 print "Starting K-means using all (successful and non-succesful trials)"
 # K Means of IBI and PD data
 total_len = len(norm_ibi_all_stress_mean) + len(norm_ibi_all_reg_before_mean)
@@ -659,10 +665,11 @@ plt.figure()
 plt.subplot(211)
 plt.scatter(reaction_time[rt_reg_ind],norm_pupil_reg_before_mean,c = 'b')
 plt.scatter(reaction_time[rt_stress_ind],norm_pupil_stress_mean,c='r')
-plt.label('RT vs Pupil Diameter')
+plt.title('RT vs Pupil Diameter')
+plt.subplot(212)
 plt.scatter(reaction_time[rt_reg_ind],norm_ibi_reg_before_mean,c = 'b')
 plt.scatter(reaction_time[rt_stress_ind],norm_ibi_stress_mean,c='r')
-plt.label('RT vs IBI')
+plt.title('RT vs IBI')
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_RTvsPDvsIBI.svg')
 
 
@@ -708,10 +715,7 @@ cbar.ax.set_xticklabels(['Early', 'Late'])  # horizontal colorbar
 #plt.xlim((-0.05,1.05))
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_IBIPupilCovariance_alltrials.svg')
 
-norm_ibi_stress_mean = ibi_stress_mean 
-norm_pupil_stress_mean = pupil_stress_mean 
-norm_ibi_reg_before_mean = ibi_reg_before_mean 
-norm_pupil_reg_before_mean = pupil_reg_before_mean 
+
 
 #norm_ibi_stress_mean = (ibi_stress_mean - np.nanmin(ibi_stress_mean + ibi_reg_before_mean))/np.nanmax(ibi_stress_mean + ibi_reg_before_mean - np.nanmin(ibi_stress_mean + ibi_reg_before_mean))
 #norm_pupil_stress_mean = (pupil_stress_mean - np.nanmin(pupil_stress_mean + pupil_reg_before_mean))/np.nanmax(pupil_stress_mean + pupil_reg_before_mean - np.nanmin(pupil_stress_mean + pupil_reg_before_mean))
