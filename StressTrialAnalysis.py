@@ -13,6 +13,7 @@ from csv_processing import get_csv_data_singlechannel
 from probabilisticRewardTaskPerformance import FreeChoiceBehavior_withStressTrials
 from spectralAnalysis import TrialAveragedPSD
 from rt_calc import compute_rt_per_trial_StressTask
+from sklearn.cluster import KMeans
 
 
 # Set up code for particular day and block
@@ -42,19 +43,32 @@ reaction_time, total_vel, stress_indicator = compute_rt_per_trial_StressTask(hdf
 # Reaction time hists for successful stress versus regular trials
 rt_stress_ind = np.ravel(np.nonzero(stress_indicator))
 rt_reg_ind = np.ravel(np.nonzero(np.logical_not(stress_indicator)))
-hist_successful_reg, bins_reg = np.histogram(reaction_time[rt_reg_ind],10)
+bin_min = np.min(reaction_time)
+bin_max = np.max(reaction_time)
+
+bins = np.arange(bin_min-0.04,bin_max,0.04)
+
+hist_successful_reg, bins_reg = np.histogram(reaction_time[rt_reg_ind],bins)
 hist_successful_reg = hist_successful_reg/float(len(reaction_time[rt_reg_ind]))
 
-hist_successful_stress, bins_stress = np.histogram(reaction_time[rt_stress_ind],10)
+hist_successful_stress, bins_stress = np.histogram(reaction_time[rt_stress_ind],bins)
 hist_successful_stress = hist_successful_stress/float(len(reaction_time[rt_stress_ind]))
 
+bins_reg = (bins_reg[1:] + bins_reg[:-1])/2.
+bins_stress = (bins_stress[1:] + bins_stress[:-1])/2.
+
+# convert units to ms
+bins_reg = bins_reg*1000.
+bins_stress = bins_stress*1000.
+
 plt.figure()
-plt.plot(bins_reg,hist_successful_reg,'r',label='Regular')
-plt.plot(bins_stress,hist_successful_stress,'b',label='Stress')
-plt.xlabel('Reaction time (s)')
+plt.bar(bins_reg,hist_successful_reg,width=0.02*1000,color='b',label='Regular')
+plt.bar(bins_stress+0.02*1000,hist_successful_stress,width=0.02*1000,color='r',label='Stress')
+plt.xlabel('Reaction time (ms)')
 plt.ylabel('Frequency')
+plt.xlim((bins_reg[0],bins_reg[-1]+0.02*1000))
 plt.legend()
-plt.show()
+plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_StressTaskReactionTimes.svg')
 
 # Total number of trials
 num_trials = ind_center_states.size
@@ -213,7 +227,7 @@ else:
 				hdeeg_samprate = sig.sampling_rate.item()
 				hdeeg[channel] = np.ravel(sig)
 
-
+print "Loaded TDT data."
 '''
 Convert DIO TDT samples for pupil and pulse data for regular and stress trials
 '''
@@ -600,6 +614,26 @@ norm_ibi_all_stress_mean = ibi_all_stress_mean
 norm_pupil_all_stress_mean = pupil_all_stress_mean
 norm_ibi_all_reg_before_mean = ibi_all_reg_before_mean
 norm_pupil_all_reg_before_mean = pupil_all_reg_before_mean
+
+print "Starting K-means"
+# K Means of IBI and PD data
+total_len = len(norm_ibi_all_stress_mean) + len(norm_ibi_all_reg_before_mean)
+X_kmeans = np.zeros([total_len,2])
+X_kmeans[:,0] = np.append(norm_ibi_all_stress_mean, norm_ibi_all_reg_before_mean)
+X_kmeans[:,1] = np.append(norm_pupil_all_stress_mean, norm_pupil_all_reg_before_mean)
+y_kmeans_pred = KMeans(n_clusters=2).fit_predict(X_kmeans)
+
+plt.figure()
+plt.subplot(211)
+plt.scatter(X_kmeans[:,0],X_kmeans[:,1],c = y_kmeans_pred)
+plt.title('K-means Clusters')
+plt.subplot(212)
+plt.scatter(norm_ibi_all_stress_mean,norm_pupil_all_stress_mean,c='r')
+plt.scatter(norm_ibi_all_reg_before_mean,norm_pupil_all_reg_before_mean,c='b')
+plt.title('Trial labels')
+plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_KMeans.svg')
+
+print "Plotted K-means"
 
 #norm_ibi_all_stress_mean = (ibi_all_stress_mean - np.nanmin(ibi_all_stress_mean + ibi_all_reg_before_mean))/np.nanmax(ibi_all_stress_mean + ibi_all_reg_before_mean - np.nanmin(ibi_all_stress_mean + ibi_all_reg_before_mean))
 #norm_pupil_all_stress_mean = (pupil_all_stress_mean - np.nanmin(pupil_all_stress_mean + pupil_all_reg_before_mean))/np.nanmax(pupil_all_stress_mean + pupil_all_reg_before_mean - np.nanmin(pupil_all_stress_mean + pupil_all_reg_before_mean))
