@@ -301,6 +301,8 @@ def probabilisticRewardTask_PSTH_SepSpikeFiles(hdf_filename, filename, block_num
 	plx_location2 = TDT_tank + '/'+'Block-'+ str(block_num) + '/'
 	eNe1_channs = glob.glob(plx_location1+'Offline_eNe1_*.plx')
 	eNe2_channs = glob.glob(plx_location1+'Offline_eNe2_*.plx')
+	print len(eNe1_channs)
+	print len(eNe2_channs)
 	all_channs = []
 	for plx_data in eNe1_channs:
 		chann = int(plx_data[len(plx_location1)+len('Offline_eNe1_CH'):-len('.plx')])
@@ -327,7 +329,7 @@ def probabilisticRewardTask_PSTH_SepSpikeFiles(hdf_filename, filename, block_num
 		print total_units
 	
 	psth_time_window = np.arange(-window_before,window_after-float(binsize)/1000,float(binsize)/1000)
-
+	print len(all_channs)
 	
 	print "Plotting results."
 	
