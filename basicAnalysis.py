@@ -90,7 +90,7 @@ def computePSTH(spike_file1,spike_file2,times,window_before=1,window_after=2, bi
 
 	return psth, smooth_psth, unit_labels
 
-def computePSTH_SingleChannel(spike_file,spike_file_name,times,window_before=1,window_after=2, binsize=1):
+def computePSTH_SingleChannel(spike_file,channel,times,window_before=1,window_after=2, binsize=1):
 	'''
 	Input:
 		- spike_file: sorted spikes for Channels N; spike_file should be the results of 
@@ -105,9 +105,7 @@ def computePSTH_SingleChannel(spike_file,spike_file_name,times,window_before=1,w
 		- unit_labels: names of units on channel
 	'''
 	boxcar_length = 4.
-	channel = float(spike_file_name[15:-4])  # assume spike_file name as format Offline_eNeX_CHX.plx
-	segment = float(spike_file_name[11])
-	channel = channel + (segment - 1)*96  # augment by 96 if from file with eNe2 suffix
+	channel = channel
 	binsize = float(binsize)/1000
 	psth_time_window = np.arange(0,window_before+window_after-float(binsize),float(binsize))
 	boxcar_window = signal.boxcar(boxcar_length)  # 2 ms before, 2 ms after for boxcar smoothing
