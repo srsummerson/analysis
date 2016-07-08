@@ -301,11 +301,10 @@ def probabilisticRewardTask_PSTH_SepSpikeFiles(hdf_filename, filename, block_num
 	plx_location2 = TDT_tank + '/'+'Block-'+ str(block_num) + '/'
 	eNe1_channs = glob.glob(plx_location1+'Offline_eNe1_*.plx')
 	eNe2_channs = glob.glob(plx_location1+'Offline_eNe2_*.plx')
-	
+	print eNe1_channs[0]
 	all_channs = []
 	for plx_data in eNe1_channs[0]:
 		chann = plx_data[len(plx_location1)+len('Offline_eNe1_CH'):-len('.plx')]
-		print plx_data
 		all_channs.append(chann)
 		# Get spike data
 		plx1 = plexfile.openFile(plx_data)
