@@ -303,7 +303,7 @@ def probabilisticRewardTask_PSTH_SepSpikeFiles(hdf_filename, filename, block_num
 	eNe2_channs = glob.glob(plx_location1+'Offline_eNe2_*.plx')
 	
 	all_channs = []
-	for plx_data in eNe1_channs:
+	for plx_data in eNe1_channs[0]:
 		chann = int(plx_data[len(plx_location1)+len('Offline_eNe1_CH'):-len('.plx')])
 		all_channs.append(chann)
 		# Get spike data
@@ -317,7 +317,7 @@ def probabilisticRewardTask_PSTH_SepSpikeFiles(hdf_filename, filename, block_num
 
 		#total_units += len(labels_all_trials)
 		print total_units
-	for plx_data in eNe2_channs:
+	for plx_data in eNe2_channs[0]:
 		chann = int(plx_data[len(plx_location1)+len('Offline_eNe2_CH'):-len('.plx')])+96
 		all_channs.append(chann)
 		# Get spike data
