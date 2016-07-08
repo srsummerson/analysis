@@ -296,9 +296,7 @@ def probabilisticRewardTask_PSTH_WithChanMapping(hdf_filename, filename, block_n
 	plx_location1 = TDT_tank + '/'+'Block-'+ str(block_num) + '/'
 	plx_location2 = TDT_tank + '/'+'Block-'+ str(block_num) + '/'
 	eNe1_channs = loadtxt(plx_location1+plx_filename1_prefix+'.txt',delimiter=',')
-	print eNe1_channs
 	eNe2_channs = loadtxt(plx_location2+plx_filename2_prefix+'.txt',delimiter=',')
-	print eNe2_channs
 	plx_location1 = plx_location1+plx_filename1_prefix+'.plx'
 	plx_location2 = plx_location2+plx_filename2_prefix+'.plx'
 
@@ -306,9 +304,9 @@ def probabilisticRewardTask_PSTH_WithChanMapping(hdf_filename, filename, block_n
 	spike_file1 = plx1.spikes[:].data
 	spike_file1 = remap_spike_channels(spike_file1,eNe1_channs)
 
-	plx1 = plexfile.openFile(plx_location1)
-	spike_file1 = plx1.spikes[:].data
-	spike_file1 = remap_spike_channels(spike_file2,eNe2_channs)
+	plx2 = plexfile.openFile(plx_location2)
+	spike_file2 = plx2.spikes[:].data
+	spike_file2 = remap_spike_channels(spike_file2,eNe2_channs)
 	
 	all_channs = np.append(eNe1_channs,eNe2_channs+96)
 
