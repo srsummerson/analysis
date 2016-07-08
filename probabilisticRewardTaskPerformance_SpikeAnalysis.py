@@ -299,6 +299,7 @@ def probabilisticRewardTask_PSTH_SepSpikeFiles(hdf_filename, filename, block_num
 	print "Getting spike data."
 	plx_location1 = TDT_tank + '/'+'Block-'+ str(block_num) + '/'
 	plx_location2 = TDT_tank + '/'+'Block-'+ str(block_num) + '/'
+	print plx_location1
 	eNe1_channs = glob.glob(plx_location1+'Offline_eNe1_*.plx')
 	eNe2_channs = glob.glob(plx_location1+'Offline_eNe2_*.plx')
 	print len(eNe1_channs)
