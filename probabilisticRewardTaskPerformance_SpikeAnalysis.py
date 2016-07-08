@@ -5,7 +5,7 @@ from numpy import sin, linspace, pi
 import matplotlib
 import numpy as np
 from matplotlib import pyplot as plt
-from basicAnalysis import computePSTH, computePSTH_SingleChannel
+from basicAnalysis import computePSTH, remap_spike_channels
 from plexon import plexfile
 import matplotlib as mpl
 from matplotlib import mlab
@@ -181,10 +181,12 @@ def probabilisticRewardTask_PSTH(hdf_filename, filename, block_num):
 	hdf.close()
 	return
 
-def probabilisticRewardTask_PSTH_SepSpikeFiles(hdf_filename, filename, block_num):
+def probabilisticRewardTask_PSTH_WithChanMapping(hdf_filename, filename, block_num):
 	'''
-	This method computes the PSTH for all sorted single-unit/multi-unit data using separately generated
-	plx files for all channels. PSTHs are aligned to the center hold.
+	This method computes the PSTH for all sorted single-unit/multi-unit data using the plx files and txt files
+	containing the associated channel numbers represented in the plx files. This is to be used when all 96/64 channels
+	are not represented in the plx files. Assumes the channel numbers are stored in the .txt file of the same name with
+	channel numbers deliminated with commas.
 	'''
 	# Define file paths and names 
 	plx_filename1_prefix = 'Offline_eNe1'
@@ -287,94 +289,60 @@ def probabilisticRewardTask_PSTH_SepSpikeFiles(hdf_filename, filename, block_num
 	choose_hv = np.ravel(np.nonzero(target_state == 'hold_targetH'))
 	neural_choose_hv = neural_data_center_hold_times[choose_hv]
 
-	psth_all_trials = dict()
-	psth_lv_trials = dict()
-	psth_hv_trials = dict()
-	smooth_psth_all_trials = dict()
-	smooth_psth_lv_trials = dict()
-	smooth_psth_hv_trials = dict()
-
+	
 	total_units = 0
 	
 	print "Getting spike data."
 	plx_location1 = TDT_tank + '/'+'Block-'+ str(block_num) + '/'
 	plx_location2 = TDT_tank + '/'+'Block-'+ str(block_num) + '/'
-	eNe1_channs = glob.glob(plx_location1+'Offline_eNe1_*.plx')
-	eNe2_channs = glob.glob(plx_location1+'Offline_eNe2_*.plx')
-	
-	all_channs = []
-	for plx_data in eNe1_channs:
-		chann = plx_data[len(plx_location1)+len('Offline_eNe1_CH'):-len('.plx')]
-		print chann
-		all_channs.append(chann)
-		# Get spike data
-		plx1 = plexfile.openFile(plx_data)
-		#spike_file = plx1.spikes[:].data
-		#psth, smooth_psth, labels_all_trials = computePSTH_SingleChannel(spike_file,chann,neural_data_center_hold_times,window_before,window_after, binsize)
-		#psth_all_trials[str(chann)] = psth
-		#smooth_psth_all_trials[str(chann)] = smooth_psth 
-		#psth_lv_trials[str(chann)], smooth_psth_lv_trials[str(chann)], labels_lv_trials = computePSTH_SingleChannel(spike_file,chann,neural_data_center_hold_times[choose_lv],window_before,window_after, binsize)
-		#psth_hv_trials[str(chann)], smooth_psth_hv_trials[str(chann)], labels_hv_trials = computePSTH_SingleChannel(spike_file,chann,neural_data_center_hold_times[choose_hv],window_before,window_after, binsize)
+	eNe1_channs = loadtxt(plx_location1+plx_filename1_prefix+'.txt')
+	eNe2_channs = loadtxt(plx_location2+plx_filename2_prefix+'.txt')
+	plx_location1 = plx_location1+plx_filename1_prefix+'.plx'
+	plx_location2 = plx_location2+plx_filename2_prefix+'.plx'
 
-		#total_units += len(labels_all_trials)
-		print total_units
-	for plx_data in eNe2_channs:
-		chann = float(plx_data[len(plx_location1)+len('Offline_eNe2_CH'):-len('.plx')])+96
-		print chann
-		all_channs.append(chann)
-		# Get spike data
-		#plx2 = plexfile.openFile(plx_data)
-		#spike_file = plx2.spikes[:].data
-		#psth_all_trials[str(chann)+96], smooth_psth_all_trials[str(chann)+96], labels_all_trials = computePSTH_SingleChannel(spike_file,chann,neural_data_center_hold_times,window_before,window_after, binsize)
-		#psth_lv_trials[str(chann)+96], smooth_psth_lv_trials[str(chann)+96], labels_lv_trials = computePSTH_SingleChannel(spike_file,chann,neural_data_center_hold_times[choose_lv],window_before,window_after, binsize)
-		#psth_hv_trials[str(chann)+96], smooth_psth_hv_trials[str(chann)+96], labels_hv_trials = computePSTH_SingleChannel(spike_file,chann,neural_data_center_hold_times[choose_hv],window_before,window_after, binsize)
-		#total_units += len(labels_all_trials)
-		print total_units
+	plx1 = plexfile.openFile(plx_location1)
+	spike_file1 = plx1.spikes[:].data
+	spike_file1 = remap_spike_channels(spike_file1,eNe1_channs)
+
+	plx1 = plexfile.openFile(plx_location1)
+	spike_file1 = plx1.spikes[:].data
+	spike_file1 = remap_spike_channels(spike_file2,eNe2_channs)
 	
+	all_channs = np.append(eNe1_channs,eNe2_channs+96)
+
+	psth_all_trials, smooth_psth_all_trials, labels_all_trials = computePSTH(spike_file1,spike_file2,neural_data_center_hold_times,window_before,window_after, binsize)
+	psth_lv_trials, smooth_psth_lv_trials, labels_lv_trials = computePSTH(spike_file1,spike_file2,neural_data_center_hold_times[choose_lv],window_before,window_after, binsize)
+	psth_hv_trials, smooth_psth_hv_trials, labels_hv_trials = computePSTH(spike_file1,spike_file2,neural_data_center_hold_times[choose_hv],window_before,window_after, binsize)
+
 	psth_time_window = np.arange(-window_before,window_after-float(binsize)/1000,float(binsize)/1000)
-	print len(all_channs)
-	
-	print "Plotting results."
-	
+
 	# Plot PSTHs all together
 	cmap_all = mpl.cm.brg
-	unit_counter = 1.
 	plt.figure()
-	for chann in all_channs:
-		print len(psth_all_trials[str(chann)])
-		for i in range(len(psth_all_trials[str(chann)])):
-			unit_name = psth_all_trials[str(chann)].keys()[i]
-			print unit_name
-			print len(psth_all_trials[str(chann)][unit_name])
-			plt.plot(psth_time_window,psth_all_trials[str(chann)][unit_name],color=cmap_all(unit_counter/total_units),label=unit_name)
-			unit_counter += 1.
+	for i in enumerate(all_channs):
+		unit_name = psth_all_trials.keys()[i]
+		plt.plot(psth_time_window,psth_all_trials[unit_name],color=cmap_all(i/float(len(psth_all_trials))),label=unit_name)
 	plt.xlabel('Time (s)')
 	plt.ylabel('spks/s')
 	plt.title('PSTH')
 	plt.savefig('/home/srsummerson/code/analysis/Mario_Performance_figs/'+filename+'_b'+str(block_num)+'_PSTH-CenterHold.svg')
 
 	plt.figure()
-	unit_counter = 1.
-	for chann in all_channs:
-		for i in range(len(psth_all_trials[str(chann)])):
-			unit_name = psth_all_trials[str(chann)].keys()[i]
-			if np.max(smooth_psth_all_trials[str(chann)][unit_name]) > 10:
-				plt.plot(psth_time_window,smooth_psth_all_trials[str(chann)][unit_name],color=cmap_all(unit_counter/total_units),label=unit_name)
-				unit_counter += 1.
+	for i in enumerate(all_channs):
+		unit_name = psth_all_trials.keys()[i]
+		if np.max(smooth_psth_all_trials[unit_name]) > 10:
+			plt.plot(psth_time_window,smooth_psth_all_trials[unit_name],color=cmap_all(i/float(len(psth_all_trials))),label=unit_name)
 	plt.xlabel('Time (s)')
 	plt.ylabel('spks/s')
 	plt.title('Smooth PSTH')
 	plt.legend()
 	plt.savefig('/home/srsummerson/code/analysis/Mario_Performance_figs/'+filename+'_b'+str(block_num)+'_SmoothPSTH-CenterHold.svg')
-	'''
+
 	plt.figure()
-	unit_counter = 1.
-	for chann in all_channs:
-		for i in range(len(psth_lv_trials[str(chann)])):
-			unit_name = psth_lv_trials[str(chann)].keys()[i]
-			if np.max(smooth_psth_lv_trials[str(chann)][unit_name]) > 20:
-				plt.plot(psth_time_window,smooth_psth_lv_trials[str(chann)][unit_name],color=cmap_all(unit_counter/total_units),label=unit_name)
-				unit_counter += 1.
+	for i in enumerate(all_channs):
+		unit_name = psth_lv_trials.keys()[i]
+		if np.max(smooth_psth_lv_trials[unit_name]) > 20:
+			plt.plot(psth_time_window,smooth_psth_lv_trials[unit_name],color=cmap_all(i/float(len(psth_lv_trials))),label=unit_name)
 	plt.xlabel('Time (s)')
 	plt.ylabel('spks/s')
 	plt.title('Smooth PSTH for Trials with LV Target Selection')
@@ -382,21 +350,19 @@ def probabilisticRewardTask_PSTH_SepSpikeFiles(hdf_filename, filename, block_num
 	plt.savefig('/home/srsummerson/code/analysis/Mario_Performance_figs/'+filename+'_b'+str(block_num)+'_SmoothPSTH-CenterHold-LV.svg')
 
 	plt.figure()
-	unit_counter = 1.
-	for chann in all_channs:
-		unit_name = psth_hv_trials[str(chann)].keys()[i]
-		if np.max(smooth_psth_hv_trials[str(chann)][unit_name]) > 20:
-			plt.plot(psth_time_window,smooth_psth_hv_trials[str(chann)][unit_name],color=cmap_all(unit_counter/total_units),label=unit_name)
-			unit_counter += 1.
+	for i in enumerate(all_channs):
+		unit_name = psth_hv_trials.keys()[i]
+		if np.max(smooth_psth_hv_trials[unit_name]) > 20:
+			plt.plot(psth_time_window,smooth_psth_hv_trials[unit_name],color=cmap_all(i/float(len(psth_hv_trials))),label=unit_name)
 	plt.xlabel('Time (s)')
 	plt.ylabel('spks/s')
 	plt.title('Smooth PSTH for Trials with HV Target Selection')
 	plt.legend()
 	plt.savefig('/home/srsummerson/code/analysis/Mario_Performance_figs/'+filename+'_b'+str(block_num)+'_SmoothPSTH-CenterHold-HV.svg')
-	'''
+	
 	plt.close("all")
 	hdf.close()
-	return 
+	return
 
 # Set up code for particular day and block
 #hdf_filename = 'mari20160524_11_te2135.hdf'
