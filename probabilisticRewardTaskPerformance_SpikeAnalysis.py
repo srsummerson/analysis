@@ -315,7 +315,7 @@ def probabilisticRewardTask_PSTH_SepSpikeFiles(hdf_filename, filename, block_num
 		#psth_lv_trials[str(chann)], smooth_psth_lv_trials[str(chann)], labels_lv_trials = computePSTH_SingleChannel(spike_file,chann,neural_data_center_hold_times[choose_lv],window_before,window_after, binsize)
 		#psth_hv_trials[str(chann)], smooth_psth_hv_trials[str(chann)], labels_hv_trials = computePSTH_SingleChannel(spike_file,chann,neural_data_center_hold_times[choose_hv],window_before,window_after, binsize)
 
-		total_units += len(labels_all_trials)
+		#total_units += len(labels_all_trials)
 		print total_units
 	for plx_data in eNe2_channs:
 		chann = int(plx_data[len(plx_location1)+len('Offline_eNe2_CH'):-len('.plx')])+96
