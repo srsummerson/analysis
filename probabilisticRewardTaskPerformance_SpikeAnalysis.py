@@ -336,8 +336,11 @@ def probabilisticRewardTask_PSTH_SepSpikeFiles(hdf_filename, filename, block_num
 	unit_counter = 1.
 	plt.figure()
 	for chann in all_channs:
+		print len(psth_all_trials[str(chann)])
 		for i in range(len(psth_all_trials[str(chann)])):
 			unit_name = psth_all_trials[str(chann)].keys()[i]
+			print unit_name
+			print len(psth_all_trials[str(chann)][unit_name])
 			plt.plot(psth_time_window,psth_all_trials[str(chann)][unit_name],color=cmap_all(unit_counter/total_units),label=unit_name)
 			unit_counter += 1.
 	plt.xlabel('Time (s)')
