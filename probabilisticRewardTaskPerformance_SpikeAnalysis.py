@@ -295,7 +295,7 @@ def probabilisticRewardTask_PSTH_SepSpikeFiles(hdf_filename, filename, block_num
 	smooth_psth_hv_trials = dict()
 
 	total_units = 0
-
+	'''
 	print "Getting spike data."
 	eNe1_channs = range(1,3)
 	eNe2_channs = range(1,3)
@@ -321,7 +321,7 @@ def probabilisticRewardTask_PSTH_SepSpikeFiles(hdf_filename, filename, block_num
 		psth_hv_trials[str(chann)+96], smooth_psth_hv_trials[str(chann)+96], labels_hv_trials = computePSTH_SingleChannel(spike_file,plx_filename2,neural_data_center_hold_times[choose_hv],window_before,window_after, binsize)
 		total_units += len(labels_all_trials)
 	
-
+	'''
 	psth_time_window = np.arange(-window_before,window_after-float(binsize)/1000,float(binsize)/1000)
 
 	
