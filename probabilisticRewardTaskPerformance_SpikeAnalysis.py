@@ -295,8 +295,10 @@ def probabilisticRewardTask_PSTH_WithChanMapping(hdf_filename, filename, block_n
 	print "Getting spike data."
 	plx_location1 = TDT_tank + '/'+'Block-'+ str(block_num) + '/'
 	plx_location2 = TDT_tank + '/'+'Block-'+ str(block_num) + '/'
-	eNe1_channs = loadtxt(plx_location1+plx_filename1_prefix+'.txt')
-	eNe2_channs = loadtxt(plx_location2+plx_filename2_prefix+'.txt')
+	eNe1_channs = loadtxt(plx_location1+plx_filename1_prefix+'.txt',delimiter=',')
+	print eNe1_channs
+	eNe2_channs = loadtxt(plx_location2+plx_filename2_prefix+'.txt',delimiter=',')
+	print eNe2_channs
 	plx_location1 = plx_location1+plx_filename1_prefix+'.plx'
 	plx_location2 = plx_location2+plx_filename2_prefix+'.plx'
 
