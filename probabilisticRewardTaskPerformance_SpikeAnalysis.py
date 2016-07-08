@@ -304,9 +304,9 @@ def probabilisticRewardTask_PSTH_SepSpikeFiles(hdf_filename, filename, block_num
 		# Get spike data
 		plx1 = plexfile.openFile(plx_location1)
 		spike_file = plx1.spikes[:].data
-		psth_all_trials[str(chann)], smooth_psth_all_trials[str(chann)], labels_all_trials = computePSTH_SingleChannel(spike_file,neural_data_center_hold_times,window_before,window_after, binsize)
-		psth_lv_trials[str(chann)], smooth_psth_lv_trials[str(chann)], labels_lv_trials = computePSTH_SingleChannel(spike_file,neural_data_center_hold_times[choose_lv],window_before,window_after, binsize)
-		psth_hv_trials[str(chann)], smooth_psth_hv_trials[str(chann)], labels_hv_trials = computePSTH_SingleChannel(spike_file,neural_data_center_hold_times[choose_hv],window_before,window_after, binsize)
+		psth_all_trials[str(chann)], smooth_psth_all_trials[str(chann)], labels_all_trials = computePSTH_SingleChannel(spike_file,plx_filename1,neural_data_center_hold_times,window_before,window_after, binsize)
+		psth_lv_trials[str(chann)], smooth_psth_lv_trials[str(chann)], labels_lv_trials = computePSTH_SingleChannel(spike_file,plx_filename1,neural_data_center_hold_times[choose_lv],window_before,window_after, binsize)
+		psth_hv_trials[str(chann)], smooth_psth_hv_trials[str(chann)], labels_hv_trials = computePSTH_SingleChannel(spike_file,plx_filename1,neural_data_center_hold_times[choose_hv],window_before,window_after, binsize)
 
 		total_units += len(labels_all_trials)
 	for chann in eNe2_channs:
@@ -315,9 +315,9 @@ def probabilisticRewardTask_PSTH_SepSpikeFiles(hdf_filename, filename, block_num
 		# Get spike data
 		plx2 = plexfile.openFile(plx_location2)
 		spike_file = plx2.spikes[:].data
-		psth_all_trials[str(chann)+96], smooth_psth_all_trials[str(chann)+96], labels_all_trials = computePSTH_SingleChannel(spike_file,neural_data_center_hold_times,window_before,window_after, binsize)
-		psth_lv_trials[str(chann)+96], smooth_psth_lv_trials[str(chann)+96], labels_lv_trials = computePSTH_SingleChannel(spike_file,neural_data_center_hold_times[choose_lv],window_before,window_after, binsize)
-		psth_hv_trials[str(chann)+96], smooth_psth_hv_trials[str(chann)+96], labels_hv_trials = computePSTH_SingleChannel(spike_file,neural_data_center_hold_times[choose_hv],window_before,window_after, binsize)
+		psth_all_trials[str(chann)+96], smooth_psth_all_trials[str(chann)+96], labels_all_trials = computePSTH_SingleChannel(spike_file,plx_filename2,neural_data_center_hold_times,window_before,window_after, binsize)
+		psth_lv_trials[str(chann)+96], smooth_psth_lv_trials[str(chann)+96], labels_lv_trials = computePSTH_SingleChannel(spike_file,plx_filename2,neural_data_center_hold_times[choose_lv],window_before,window_after, binsize)
+		psth_hv_trials[str(chann)+96], smooth_psth_hv_trials[str(chann)+96], labels_hv_trials = computePSTH_SingleChannel(spike_file,plx_filename2,neural_data_center_hold_times[choose_hv],window_before,window_after, binsize)
 		total_units += len(labels_all_trials)
 	
 
