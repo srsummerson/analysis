@@ -1,7 +1,7 @@
 import scipy as sp
 import tables
 from neo import io
-from numpy import sin, linspace, pi
+from numpy import sin, linspace, pi, loadtxt
 import matplotlib
 import numpy as np
 from matplotlib import pyplot as plt
