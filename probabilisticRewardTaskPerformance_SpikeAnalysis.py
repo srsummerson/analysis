@@ -310,6 +310,7 @@ def probabilisticRewardTask_PSTH_WithChanMapping(hdf_filename, filename, block_n
 	
 	all_channs = np.append(eNe1_channs,eNe2_channs+96)
 
+	print "Computing PSTHs."
 	psth_all_trials, smooth_psth_all_trials, labels_all_trials = computePSTH(spike_file1,spike_file2,neural_data_center_hold_times,window_before,window_after, binsize)
 	psth_lv_trials, smooth_psth_lv_trials, labels_lv_trials = computePSTH(spike_file1,spike_file2,neural_data_center_hold_times[choose_lv],window_before,window_after, binsize)
 	psth_hv_trials, smooth_psth_hv_trials, labels_hv_trials = computePSTH(spike_file1,spike_file2,neural_data_center_hold_times[choose_hv],window_before,window_after, binsize)
@@ -317,6 +318,7 @@ def probabilisticRewardTask_PSTH_WithChanMapping(hdf_filename, filename, block_n
 	psth_time_window = np.arange(-window_before,window_after-float(binsize)/1000,float(binsize)/1000)
 
 	# Plot PSTHs all together
+	print "Plotting."
 	cmap_all = mpl.cm.brg
 	plt.figure()
 	for i in enumerate(all_channs):
