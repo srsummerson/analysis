@@ -189,7 +189,8 @@ def probabilisticRewardTask_PSTH_SepSpikeFiles(hdf_filename, filename, block_num
 	# Define file paths and names 
 	plx_filename1_prefix = 'Offline_eNe1'
 	plx_filename2_prefix = 'Offline_eNe2'
-	TDT_tank = '/home/srsummerson/storage/tdt/'+filename
+	#TDT_tank = '/home/srsummerson/storage/tdt/'+filename
+	TDT_tank = '/backup/subnetsrig/storage/tdt'+filename
 	hdf_location = '/storage/rawdata/hdf/'+hdf_filename
 
 	# Unpack behavioral data
