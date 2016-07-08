@@ -308,7 +308,7 @@ def probabilisticRewardTask_PSTH_SepSpikeFiles(hdf_filename, filename, block_num
 		print chann
 		all_channs.append(chann)
 		# Get spike data
-		#plx1 = plexfile.openFile(plx_data)
+		plx1 = plexfile.openFile(plx_data)
 		#spike_file = plx1.spikes[:].data
 		#psth, smooth_psth, labels_all_trials = computePSTH_SingleChannel(spike_file,chann,neural_data_center_hold_times,window_before,window_after, binsize)
 		#psth_all_trials[str(chann)] = psth
