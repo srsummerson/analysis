@@ -297,8 +297,8 @@ def probabilisticRewardTask_PSTH_SepSpikeFiles(hdf_filename, filename, block_num
 	total_units = 0
 	
 	print "Getting spike data."
-	eNe1_channs = range(1,3)
-	eNe2_channs = range(1,3)
+	eNe1_channs = range(1,97)
+	eNe2_channs = range(1,65)
 	for chann in eNe1_channs:
 		plx_filename1 = plx_filename1_prefix + '_CH'+str(chann)+'.plx'
 		plx_location1 = '/backup/subnetsrig/storage/tdt/'+filename+'/'+'Block-'+ str(block_num) + '/'+plx_filename1
