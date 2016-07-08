@@ -386,8 +386,8 @@ def probabilisticRewardTask_PSTH_SepSpikeFiles(hdf_filename, filename, block_num
 	return 
 
 # Set up code for particular day and block
-hdf_filename = 'mari20160524_11_te2135.hdf'
-filename = 'Mario20160524'
-block_num = 1
+#hdf_filename = 'mari20160524_11_te2135.hdf'
+#filename = 'Mario20160524'
+#block_num = 1
 
-probabilisticRewardTask_PSTH_SepSpikeFiles(hdf_filename, filename, block_num)
+#probabilisticRewardTask_PSTH_SepSpikeFiles(hdf_filename, filename, block_num)
