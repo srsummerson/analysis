@@ -9,7 +9,7 @@ from basicAnalysis import computePSTH, computePSTH_SingleChannel
 from plexon import plexfile
 import matplotlib as mpl
 from matplotlib import mlab
-from glob import glob
+import glob
 
 def probabilisticRewardTask_PSTH(hdf_filename, filename, block_num):
 
