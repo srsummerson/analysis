@@ -321,7 +321,7 @@ def probabilisticRewardTask_PSTH_WithChanMapping(hdf_filename, filename, block_n
 	print "Plotting."
 	cmap_all = mpl.cm.brg
 	plt.figure()
-	for i in enumerate(all_channs):
+	for i in range(len(all_channs)):
 		unit_name = psth_all_trials.keys()[i]
 		plt.plot(psth_time_window,psth_all_trials[unit_name],color=cmap_all(i/float(len(psth_all_trials))),label=unit_name)
 	plt.xlabel('Time (s)')
@@ -330,7 +330,7 @@ def probabilisticRewardTask_PSTH_WithChanMapping(hdf_filename, filename, block_n
 	plt.savefig('/home/srsummerson/code/analysis/Mario_Performance_figs/'+filename+'_b'+str(block_num)+'_PSTH-CenterHold.svg')
 
 	plt.figure()
-	for i in enumerate(all_channs):
+	for i in range(len(all_channs)):
 		unit_name = psth_all_trials.keys()[i]
 		if np.max(smooth_psth_all_trials[unit_name]) > 10:
 			plt.plot(psth_time_window,smooth_psth_all_trials[unit_name],color=cmap_all(i/float(len(psth_all_trials))),label=unit_name)
@@ -341,7 +341,7 @@ def probabilisticRewardTask_PSTH_WithChanMapping(hdf_filename, filename, block_n
 	plt.savefig('/home/srsummerson/code/analysis/Mario_Performance_figs/'+filename+'_b'+str(block_num)+'_SmoothPSTH-CenterHold.svg')
 
 	plt.figure()
-	for i in enumerate(all_channs):
+	for i in range(len(all_channs)):
 		unit_name = psth_lv_trials.keys()[i]
 		if np.max(smooth_psth_lv_trials[unit_name]) > 20:
 			plt.plot(psth_time_window,smooth_psth_lv_trials[unit_name],color=cmap_all(i/float(len(psth_lv_trials))),label=unit_name)
@@ -352,7 +352,7 @@ def probabilisticRewardTask_PSTH_WithChanMapping(hdf_filename, filename, block_n
 	plt.savefig('/home/srsummerson/code/analysis/Mario_Performance_figs/'+filename+'_b'+str(block_num)+'_SmoothPSTH-CenterHold-LV.svg')
 
 	plt.figure()
-	for i in enumerate(all_channs):
+	for i in range(len(all_channs)):
 		unit_name = psth_hv_trials.keys()[i]
 		if np.max(smooth_psth_hv_trials[unit_name]) > 20:
 			plt.plot(psth_time_window,smooth_psth_hv_trials[unit_name],color=cmap_all(i/float(len(psth_hv_trials))),label=unit_name)
