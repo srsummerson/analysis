@@ -27,10 +27,12 @@ from sklearn.cross_validation import cross_val_score
 hdf_filename = 'mari20160709_07_te2324.hdf'
 hdf_filename_stim = 'mari20160709_08_te2325.hdf'
 filename = 'Mario20160709'
+filename2 = 'Mario20160709-2'
 block_num = 1
 print filename
 #TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
+TDT_tank_stim = '/home/srsummerson/storage/tdt/' + filename2
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
 hdf_location_stim = '/storage/rawdata/hdf/'+hdf_filename_stim
 #hdf_location = hdffilename
@@ -132,7 +134,10 @@ mat_filename = filename+'_b'+str(block_num)+'_syncHDF.mat'
 sp.io.loadmat('/home/srsummerson/storage/syncHDF/'+mat_filename,hdf_times)
 
 hdf_times_stim = dict()
-mat_filename_stim = filename+'_b'+str(block_num + 1)+'_syncHDF.mat'
+if filename2 != '':
+	mat_filename_stim = filename2+'_b'+str(block_num)+'_syncHDF.mat'
+else:
+	mat_filename_stim = filename+'_b'+str(block_num + 1)+'_syncHDF.mat'
 sp.io.loadmat('/home/srsummerson/storage/syncHDF/'+mat_filename_stim,hdf_times_stim)
 
 '''
@@ -166,24 +171,46 @@ else:
 			if channel in lfp_channels:
 				lfp_samprate = sig.sampling_rate.item()
 				lfp[channel] = np.ravel(sig)
-	for sig in bl.segments[block_num].analogsignals:
-		if (sig.name == 'PupD 1'):
-			pupil_data_stim = np.ravel(sig)
-			pupil_samprate_stim = sig.sampling_rate.item()
-		if (sig.name == 'HrtR 1'):
-			pulse_data_stim = np.ravel(sig)
-			pulse_samprate_stim = sig.sampling_rate.item()
-		if (sig.name == 'Hold 1'):
-			hold_cue = np.ravel(sig)
-			hold_samprate = sig.sampling_rate.item()
-		if (sig.name == 'Hold 2'):
-			stim_state = np.ravel(sig)
-			stim_state_samprate = sig.sampling_rate.item()
-		if (sig.name[0:4] == 'LFP1'):
-			channel = sig.channel_index
-			if channel in lfp_channels:
-				lfp_samprate_stim = sig.sampling_rate.item()
-				lfp_stim[channel] = np.ravel(sig)
+	if filename2 == 'Mario20160709-2':
+		r = io.TdtIO(TDT_tank_stim)
+		bl = r.read_block(lazy=False, cascade=True)
+		for sig in bl.segments[block_num-1].analogsignals:
+			if (sig.name == 'PupD 1'):
+				pupil_data_stim = np.ravel(sig)
+				pupil_samprate_stim = sig.sampling_rate.item()
+			if (sig.name == 'HrtR 1'):
+				pulse_data_stim = np.ravel(sig)
+				pulse_samprate_stim = sig.sampling_rate.item()
+			if (sig.name == 'Hold 1'):
+				hold_cue = np.ravel(sig)
+				hold_samprate = sig.sampling_rate.item()
+			if (sig.name == 'Hold 2'):
+				stim_state = np.ravel(sig)
+				stim_state_samprate = sig.sampling_rate.item()
+			if (sig.name[0:4] == 'LFP1'):
+				channel = sig.channel_index
+				if channel in lfp_channels:
+					lfp_samprate_stim = sig.sampling_rate.item()
+					lfp_stim[channel] = np.ravel(sig)
+	else:
+		for sig in bl.segments[block_num].analogsignals:
+			if (sig.name == 'PupD 1'):
+				pupil_data_stim = np.ravel(sig)
+				pupil_samprate_stim = sig.sampling_rate.item()
+			if (sig.name == 'HrtR 1'):
+				pulse_data_stim = np.ravel(sig)
+				pulse_samprate_stim = sig.sampling_rate.item()
+			if (sig.name == 'Hold 1'):
+				hold_cue = np.ravel(sig)
+				hold_samprate = sig.sampling_rate.item()
+			if (sig.name == 'Hold 2'):
+				stim_state = np.ravel(sig)
+				stim_state_samprate = sig.sampling_rate.item()
+			if (sig.name[0:4] == 'LFP1'):
+				channel = sig.channel_index
+				if channel in lfp_channels:
+					lfp_samprate_stim = sig.sampling_rate.item()
+					lfp_stim[channel] = np.ravel(sig)
 
 
 '''

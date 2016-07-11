@@ -17,16 +17,17 @@ from sklearn.cluster import KMeans
 
 
 # Set up code for particular day and block
-hdf_filename = 'mari20160418_04_te2002.hdf'
-filename = 'Mario20160418'
-TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
-#TDT_tank = '/home/srsummerson/storage/tdt/'+filename
+hdf_filename = 'mari20160711_02_te2327.hdf'
+filename = 'Mario20160711'
+#TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
+TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
 #hdf_location = hdffilename
 block_num = 1
 stim_freq = 100
 
 lfp1_channels = [13, 14, 15, 16, 29, 30]
+lfp1_channels = [13]
 
 num_avg = 50 	# number of trials to compute running average of trial statistics over
 
@@ -128,7 +129,7 @@ prob_choose_low_successful_stress = np.zeros(len(target_choice_successful_stress
 prob_choose_high_successful_stress = np.zeros(len(target_choice_successful_stress))
 prob_reward_high_successful_stress = np.zeros(len(target_choice_successful_stress))
 prob_reward_low_successful_stress = np.zeros(len(target_choice_successful_stress))
-for i in range(0,len(target_choice_successful_stress)):
+for i in range(0,len(target_choice_successful_stress))[:-1]:
 	chosen_high_freechoice = target_choice_successful_stress[range(np.maximum(0,i - num_avg),i+1)] == 2
 	chosen_low_freechoice = target_choice_successful_stress[range(np.maximum(0,i - num_avg),i+1)] == 1
 	reward_high_freechoice = np.logical_and(chosen_high_freechoice,reward_successful_stress[range(np.maximum(0,i - num_avg),i+1)])
