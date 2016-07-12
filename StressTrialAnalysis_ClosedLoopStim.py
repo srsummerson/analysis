@@ -33,7 +33,9 @@ block_num_stim = 1
 print filename
 #TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
+#TDT_tank_stim = '/backup/subnetsrig/storage/tdt/'+filename_stim
 TDT_tank_stim = '/home/srsummerson/storage/tdt/'+filename_stim
+
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
 hdf_location_stim = '/storage/rawdata/hdf/'+hdf_filename_stim
 #hdf_location = hdffilename
@@ -344,7 +346,7 @@ for i in range(0,len(state_row_ind_successful_reg_stim)):
 	pulse_ind_successful_reg_stim[i] = pulse_dio_sample_num_stim[hdf_index]
 	pupil_ind_successful_reg_stim[i] = pupil_dio_sample_num_stim[hdf_index]
 	lfp_ind_successful_reg_stim[i] = lfp_dio_sample_num_stim[hdf_index]
-	hdf_index_reward = np.argmin(np.abs(hdf_rows_stim - state_row_ind_successful_reg_reward_stim))
+	hdf_index_reward = np.argmin(np.abs(hdf_rows_stim - state_row_ind_successful_reg_reward_stim[i]))
 	mood_state_ind_successful_reg_stim[i] = mood_state_dio_sample_num_stim[hdf_index_reward]
 	CLstim_state_ind_successful_reg_stim[i] = CLstim_state_dio_sample_num_stim[hdf_index_reward]
 for i in range(0,len(state_row_ind_reg_stim)):
@@ -359,13 +361,53 @@ for i in range(0,len(state_row_ind_reg_stim)):
 Find mood state and CL trigger during Block C : need to add in array of trial number versus mood state/CL stim state so
 we can see generally for how long stim is on
 '''
+mood_state_ind_successful_stress_stim = [ind for ind in mood_state_ind_successful_stress_stim]
+mood_state_ind_successful_reg_stim = [ind for ind in mood_state_ind_successful_reg_stim]
+CLstim_state_ind_successful_stress_stim = [ind for ind in CLstim_state_ind_successful_stress_stim]
+CLstim_state_ind_successful_reg_stim = [ind for ind in CLstim_state_ind_successful_reg_stim]
+
 mood_state_successful_stress = mood_state_stim[mood_state_ind_successful_stress_stim]
 CLstim_state_successful_stress = CLstim_state_stim[CLstim_state_ind_successful_stress_stim]
+frac_stim_on_successful_stress = np.sum(CLstim_state_successful_stress)/float(len(CLstim_state_successful_stress))
+
 mood_state_successful_reg = mood_state_stim[mood_state_ind_successful_reg_stim]
 CLstim_state_successful_reg = CLstim_state_stim[CLstim_state_ind_successful_reg_stim]
+frac_stim_on_successful_reg = np.sum(CLstim_state_successful_reg)/float(len(CLstim_state_successful_reg))
 
 mood_state_ind_successful_stim = mood_state_ind_successful_stress_stim + mood_state_ind_successful_reg_stim
 mood_state_ind_successful_stim.sort()
+CLstim_state_ind_successful_stim = CLstim_state_ind_successful_stress_stim + CLstim_state_ind_successful_reg_stim
+CLstim_state_ind_successful_stim.sort()
+mood_state_successful_stim = mood_state_stim[mood_state_ind_successful_stim]
+CLstim_state_successful_stim = CLstim_state_stim[CLstim_state_ind_successful_stim]
+
+# Find out of successful trials which are stress and which are regular
+ind_stress = np.ones([len(ind_successful_stress_stim),2])
+ind_stress[:,1] = ind_successful_stress_stim
+ind_reg = np.zeros([len(ind_successful_reg_stim),2])
+ind_reg[:,1] = ind_successful_reg_stim
+ind_all_successful = np.concatenate((ind_stress,ind_reg))
+ind_all_successful = ind_all_successful[np.argsort(ind_all_successful[:,1])]
+trial_state_successful_stim = ind_all_successful[:,0]
+
+# How long is stimulation on initially?
+stim_off = np.equal(CLstim_state_successful_stim,0)
+stim_off_inds = np.ravel(np.nonzero(stim_off))
+stim_off_begin = (stim_off_inds[0] == 0)*stim_off_inds[1] + (stim_off_inds[0] != 0)*stim_off_inds[0]
+
+plt.figure()
+plt.plot(CLstim_state_successful_stim,'b',label = 'Stim state')
+plt.plot(trial_state_successful_stim,'m',label= 'Trial state')
+plt.legend()
+plt.ylim((-0.1,1.5))
+plt.title('Closed-loop Stim Relative to Trial Type')
+plt.text(10,1.4,'Trial when stim is first turned off: %i' % stim_off_begin)
+plt.text(10,1.3,'Fraction of stress trials with stim on: %f' % frac_stim_on_successful_stress)
+plt.text(10,1.2,'Fraction of regular trials with stim on: %f' % frac_stim_on_successful_reg)
+plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename +'_ClosedLoopStimVersusTrialType.svg')
+
+
+
 """
 '''
 Process pupil and pulse data
