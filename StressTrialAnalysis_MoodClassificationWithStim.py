@@ -24,10 +24,10 @@ from sklearn.cross_validation import cross_val_score
 
 
 
-hdf_filename = 'mari20160709_07_te2324.hdf'
-hdf_filename_stim = 'mari20160709_08_te2325.hdf'
-filename = 'Mario20160709'
-filename2 = 'Mario20160709-2'
+hdf_filename = 'mari20160707_02_te2314.hdf'
+hdf_filename_stim = 'mari20160707_03_te2315.hdf'
+filename = 'Mario20160707'
+filename2 = 'Mario20160707'
 block_num = 1
 print filename
 #TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
@@ -523,6 +523,11 @@ Classify Block C trials
 '''
 regression_params = fit_glm.params 
 p_trial_type = regression_params[1]*np.array(ibi_stress_mean_stim) + regression_params[2]*np.array(pupil_stress_mean_stim) + regression_params[0]
+plt.figure()
+plt.plot(p_trial_type,'r')
+plt.ylabel('Logistic Regression p-value')
+plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_LogisticRegressionPValue.svg')
+
 y_stress_blockc = (p_trial_type > 0.5)
 fraction_stress_stim = np.sum(y_stress_blockc)/float(len(y_stress_blockc))
 print "Fraction of Block C trials classified as stress:", fraction_stress_stim
