@@ -12,19 +12,22 @@ from basicAnalysis import plot_cov_ellipse
 from csv_processing import get_csv_data_singlechannel
 from probabilisticRewardTaskPerformance import FreeChoiceBehavior_withStressTrials
 from spectralAnalysis import TrialAveragedPSD
+from rt_calc import compute_rt_per_trial_StressTask
+from sklearn.cluster import KMeans
 
 
 # Set up code for particular day and block
-hdf_filename = 'mari20160614_12_te2246.hdf'
-filename = 'Mario20160614'
+hdf_filename = 'mari20160711_02_te2327.hdf'
+filename = 'Mario20160711'
 #TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
 #hdf_location = hdffilename
-block_num = 3
+block_num = 1
 stim_freq = 100
 
 lfp1_channels = [13, 14, 15, 16, 29, 30]
+lfp1_channels = [13]
 
 num_avg = 50 	# number of trials to compute running average of trial statistics over
 
@@ -34,6 +37,39 @@ Load behavior data
 ## self.target_index = 1 for instructed, 2 for free choice
 ## self.stress_trial =1 for stress trial, 0 for regular trial
 state_time, ind_center_states, ind_check_reward_states, all_instructed_or_freechoice, all_stress_or_not, successful_stress_or_not,trial_success, target, reward = FreeChoiceBehavior_withStressTrials(hdf_location)
+
+# Get reaction times for successful trials
+reaction_time, total_vel, stress_indicator = compute_rt_per_trial_StressTask(hdf_location)
+
+# Reaction time hists for successful stress versus regular trials
+rt_stress_ind = np.ravel(np.nonzero(stress_indicator))
+rt_reg_ind = np.ravel(np.nonzero(np.logical_not(stress_indicator)))
+bin_min = np.min(reaction_time)
+bin_max = np.max(reaction_time)
+
+bins = np.arange(bin_min-0.04,bin_max,0.04)
+
+hist_successful_reg, bins_reg = np.histogram(reaction_time[rt_reg_ind],bins)
+hist_successful_reg = hist_successful_reg/float(len(reaction_time[rt_reg_ind]))
+
+hist_successful_stress, bins_stress = np.histogram(reaction_time[rt_stress_ind],bins)
+hist_successful_stress = hist_successful_stress/float(len(reaction_time[rt_stress_ind]))
+
+bins_reg = (bins_reg[1:] + bins_reg[:-1])/2.
+bins_stress = (bins_stress[1:] + bins_stress[:-1])/2.
+
+# convert units to ms
+bins_reg = bins_reg*1000.
+bins_stress = bins_stress*1000.
+
+plt.figure()
+plt.bar(bins_reg,hist_successful_reg,width=0.02*1000,color='b',label='Regular')
+plt.bar(bins_stress+0.02*1000,hist_successful_stress,width=0.02*1000,color='r',label='Stress')
+plt.xlabel('Reaction time (ms)')
+plt.ylabel('Frequency')
+plt.xlim((bins_reg[0],bins_reg[-1]+0.02*1000))
+plt.legend()
+plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_StressTaskReactionTimes.svg')
 
 # Total number of trials
 num_trials = ind_center_states.size
@@ -83,6 +119,7 @@ for i in range(0,len(row_ind_successful_reg)):
 	row_ind_end_reg[ind] = row_ind_successful_reg_reward[i]
 response_time_reg = (state_time[row_ind_end_reg] - state_time[row_ind_reg])/float(60)
 
+
 # Target choice for successful stress trials - look at free-choice trials only
 tot_successful_fc_stress = np.logical_and(tot_successful_stress,np.ravel(np.equal(all_instructed_or_freechoice,2)))
 ind_successful_fc_stress = np.ravel(np.nonzero(tot_successful_fc_stress))
@@ -92,7 +129,7 @@ prob_choose_low_successful_stress = np.zeros(len(target_choice_successful_stress
 prob_choose_high_successful_stress = np.zeros(len(target_choice_successful_stress))
 prob_reward_high_successful_stress = np.zeros(len(target_choice_successful_stress))
 prob_reward_low_successful_stress = np.zeros(len(target_choice_successful_stress))
-for i in range(0,len(target_choice_successful_stress)):
+for i in range(0,len(target_choice_successful_stress))[:-1]:
 	chosen_high_freechoice = target_choice_successful_stress[range(np.maximum(0,i - num_avg),i+1)] == 2
 	chosen_low_freechoice = target_choice_successful_stress[range(np.maximum(0,i - num_avg),i+1)] == 1
 	reward_high_freechoice = np.logical_and(chosen_high_freechoice,reward_successful_stress[range(np.maximum(0,i - num_avg),i+1)])
@@ -160,6 +197,7 @@ hdf_times = dict()
 mat_filename = filename+'_b'+str(block_num)+'_syncHDF.mat'
 sp.io.loadmat('/home/srsummerson/storage/syncHDF/'+mat_filename,hdf_times)
 
+print "Loading TDT data."
 '''
 Load pupil dilation and heart rate data
 '''
@@ -191,7 +229,7 @@ else:
 				hdeeg_samprate = sig.sampling_rate.item()
 				hdeeg[channel] = np.ravel(sig)
 
-
+print "Loaded TDT data."
 '''
 Convert DIO TDT samples for pupil and pulse data for regular and stress trials
 '''
@@ -579,6 +617,63 @@ norm_pupil_all_stress_mean = pupil_all_stress_mean
 norm_ibi_all_reg_before_mean = ibi_all_reg_before_mean
 norm_pupil_all_reg_before_mean = pupil_all_reg_before_mean
 
+norm_ibi_stress_mean = ibi_stress_mean 
+norm_pupil_stress_mean = pupil_stress_mean 
+norm_ibi_reg_before_mean = ibi_reg_before_mean 
+norm_pupil_reg_before_mean = pupil_reg_before_mean 
+
+print "Starting K-means using all (successful and non-succesful trials)"
+# K Means of IBI and PD data
+total_len = len(norm_ibi_all_stress_mean) + len(norm_ibi_all_reg_before_mean)
+X_kmeans = np.zeros([total_len,2])
+X_kmeans[:,0] = np.append(norm_ibi_all_stress_mean, norm_ibi_all_reg_before_mean)
+X_kmeans[:,1] = np.append(norm_pupil_all_stress_mean, norm_pupil_all_reg_before_mean)
+y_kmeans_pred = KMeans(n_clusters=2).fit_predict(X_kmeans)
+
+plt.figure()
+plt.subplot(211)
+plt.scatter(X_kmeans[:,0],X_kmeans[:,1],c = y_kmeans_pred)
+plt.title('K-means Clusters')
+plt.subplot(212)
+plt.scatter(norm_ibi_all_stress_mean,norm_pupil_all_stress_mean,c='r')
+plt.scatter(norm_ibi_all_reg_before_mean,norm_pupil_all_reg_before_mean,c='b')
+plt.title('Trial labels')
+plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_KMeans-All.svg')
+
+print "Plotted K-means using all (successful and non-succesful trials)"
+
+print "Starting K-means using successful trials"
+# K Means of IBI and PD data
+total_len = len(norm_ibi_stress_mean) + len(norm_ibi_reg_before_mean)
+X_kmeans = np.zeros([total_len,2])
+X_kmeans[:,0] = np.append(norm_ibi_stress_mean, norm_ibi_reg_before_mean)
+X_kmeans[:,1] = np.append(norm_pupil_stress_mean, norm_pupil_reg_before_mean)
+y_kmeans_pred = KMeans(n_clusters=2).fit_predict(X_kmeans)
+
+plt.figure()
+plt.subplot(211)
+plt.scatter(X_kmeans[:,0],X_kmeans[:,1],c = y_kmeans_pred)
+plt.title('K-means Clusters')
+plt.subplot(212)
+plt.scatter(norm_ibi_stress_mean,norm_pupil_stress_mean,c='r')
+plt.scatter(norm_ibi_reg_before_mean,norm_pupil_reg_before_mean,c='b')
+plt.title('Trial labels')
+plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_KMeans.svg')
+
+print "Plotted K-means using successful trials"
+
+plt.figure()
+plt.subplot(211)
+plt.scatter(reaction_time[rt_reg_ind],norm_pupil_reg_before_mean,c = 'b')
+plt.scatter(reaction_time[rt_stress_ind],norm_pupil_stress_mean,c='r')
+plt.title('RT vs Pupil Diameter')
+plt.subplot(212)
+plt.scatter(reaction_time[rt_reg_ind],norm_ibi_reg_before_mean,c = 'b')
+plt.scatter(reaction_time[rt_stress_ind],norm_ibi_stress_mean,c='r')
+plt.title('RT vs IBI')
+plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_RTvsPDvsIBI.svg')
+
+
 #norm_ibi_all_stress_mean = (ibi_all_stress_mean - np.nanmin(ibi_all_stress_mean + ibi_all_reg_before_mean))/np.nanmax(ibi_all_stress_mean + ibi_all_reg_before_mean - np.nanmin(ibi_all_stress_mean + ibi_all_reg_before_mean))
 #norm_pupil_all_stress_mean = (pupil_all_stress_mean - np.nanmin(pupil_all_stress_mean + pupil_all_reg_before_mean))/np.nanmax(pupil_all_stress_mean + pupil_all_reg_before_mean - np.nanmin(pupil_all_stress_mean + pupil_all_reg_before_mean))
 #norm_ibi_all_reg_before_mean = (ibi_all_reg_before_mean - np.nanmin(ibi_all_stress_mean + ibi_all_reg_before_mean))/np.nanmax(ibi_all_stress_mean + ibi_all_reg_before_mean - np.nanmin(ibi_all_stress_mean + ibi_all_reg_before_mean))
@@ -621,10 +716,7 @@ cbar.ax.set_xticklabels(['Early', 'Late'])  # horizontal colorbar
 #plt.xlim((-0.05,1.05))
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_IBIPupilCovariance_alltrials.svg')
 
-norm_ibi_stress_mean = ibi_stress_mean 
-norm_pupil_stress_mean = pupil_stress_mean 
-norm_ibi_reg_before_mean = ibi_reg_before_mean 
-norm_pupil_reg_before_mean = pupil_reg_before_mean 
+
 
 #norm_ibi_stress_mean = (ibi_stress_mean - np.nanmin(ibi_stress_mean + ibi_reg_before_mean))/np.nanmax(ibi_stress_mean + ibi_reg_before_mean - np.nanmin(ibi_stress_mean + ibi_reg_before_mean))
 #norm_pupil_stress_mean = (pupil_stress_mean - np.nanmin(pupil_stress_mean + pupil_reg_before_mean))/np.nanmax(pupil_stress_mean + pupil_reg_before_mean - np.nanmin(pupil_stress_mean + pupil_reg_before_mean))

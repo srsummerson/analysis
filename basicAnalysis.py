@@ -90,6 +90,118 @@ def computePSTH(spike_file1,spike_file2,times,window_before=1,window_after=2, bi
 
 	return psth, smooth_psth, unit_labels
 
+def computePSTH_WithChanMapping(spike_file1,spike_file2,channels,times,window_before=1,window_after=2, binsize=1):
+	'''
+	Input:
+		- spike_file1: sorted spikes for Channels 1 - 96
+		- spike_file2: sorted spikes for Channels 97 - 160
+		- channels: array of channels 
+		- times: time points to align peri-stimulus time histograms to
+		- window_before: amount of time before alignment points to include in time window, units in seconds
+		- window_after: amount of time after alignment points to include in time window, units in seconds
+		- binsize: time length of bins for estimating spike rates, units in milleseconds
+	Output:
+		- psth: peri-stimulus time histogram over window [window_before, window_after] averaged over trials
+	'''
+	boxcar_length = 4.
+	channels = np.arange(1,161)
+	binsize = float(binsize)/1000
+	psth_time_window = np.arange(0,window_before+window_after-float(binsize),float(binsize))
+	boxcar_window = signal.boxcar(boxcar_length)  # 2 ms before, 2 ms after for boxcar smoothing
+	psth = dict()
+	smooth_psth = dict()
+	unit_labels = []
+
+	for channel in channels:
+		if channel < 97: 
+			channel_spikes = [entry for entry in spike_file1 if (entry[1]==channel)]
+		else:
+			channel2 = channel % 96
+			channel_spikes = [entry for entry in spike_file2 if (entry[1]==channel2)]
+		units = [spike[2] for spike in channel_spikes]
+		unit_vals = set(units)  # number of units
+		if len(unit_vals) > 0:
+			unit_vals.remove(0) 	# value 0 are units marked as noise events
+
+		for unit in unit_vals:
+			unit_name = 'Ch'+str(channel) +'_' + str(unit)
+			spike_times = [spike[0] for spike in channel_spikes if (spike[2]==unit)]
+			psth[unit_name] = np.zeros(len(psth_time_window))
+			unit_labels.append(unit_name)
+			
+			for time in times:
+				epoch_bins = np.arange(time-window_before,time+window_after,float(binsize)) 
+				counts, bins = np.histogram(spike_times,epoch_bins)
+				psth[unit_name] += counts[0:len(psth_time_window)]/binsize	# collect all rates into a N-dim array
+
+			psth[unit_name] = psth[unit_name]/float(len(times))
+			smooth_psth[unit_name] = np.convolve(psth[unit_name], boxcar_window,mode='same')/boxcar_length
+
+	return psth, smooth_psth, unit_labels
+
+def computePSTH_SingleChannel(spike_file,channel,times,window_before=1,window_after=2, binsize=1):
+	'''
+	Input:
+		- spike_file: sorted spikes for Channels N; spike_file should be the results of 
+			plx = plexfile.openFile('filename.plx') and spike_file = plx.spikes[:].data
+		- times: time points to align peri-stimulus time histograms to
+		- window_before: amount of time before alignment points to include in time window, units in seconds
+		- window_after: amount of time after alignment points to include in time window, units in seconds
+		- binsize: time length of bins for estimating spike rates, units in milleseconds
+	Output:
+		- psth: peri-stimulus time histogram over window [window_before, window_after] averaged over trials
+		- smooth_psth: psth smoothed using boxcar filter
+		- unit_labels: names of units on channel
+	'''
+	boxcar_length = 4.
+	channel = channel
+	binsize = float(binsize)/1000
+	psth_time_window = np.arange(0,window_before+window_after-float(binsize),float(binsize))
+	boxcar_window = signal.boxcar(boxcar_length)  # 2 ms before, 2 ms after for boxcar smoothing
+	psth = dict()
+	smooth_psth = dict()
+	unit_labels = []
+
+	units = [spike[2] for spike in spike_file]
+	unit_vals = set(units)  # number of units
+
+	if len(unit_vals) > 0:
+		unit_vals.remove(0) 	# value 0 are units marked as noise events
+
+	for unit in unit_vals:
+		unit_name = 'Ch'+str(channel) +'_' + str(unit)
+		spike_times = [spike[0] for spike in spike_file if (spike[2]==unit)]
+		psth[unit_name] = np.zeros(len(psth_time_window))
+		unit_labels.append(unit_name)
+		
+		for time in times:
+			epoch_bins = np.arange(time-window_before,time+window_after,float(binsize)) 
+			counts, bins = np.histogram(spike_times,epoch_bins)
+			psth[unit_name] += counts[0:len(psth_time_window)]/binsize	# collect all rates into a N-dim array
+
+		psth[unit_name] = psth[unit_name]/float(len(times))
+		smooth_psth[unit_name] = np.convolve(psth[unit_name], boxcar_window,mode='same')/boxcar_length
+
+	return psth, smooth_psth, unit_labels
+
+def remap_spike_channels(spike_data,channel_mapping):
+	'''
+	This method takes an array of spike data, the result of plx = plexfile.openFile('filename.plx') and 
+	plx.spike[:].data and remaps the channel numbers according to the channel mapping file.
+
+	Inputs:
+		- spike_data: an array of spike data, the result of spike_data = plexfile.openFile('filename.plx').spike[:].data
+		- channel_mapping: array of floats indicated the new channel numbers, should be extracting from 'filename.txt'
+	Outputs:
+		- mapped_spiked_data: array of same size as spike_data, but with new channel numbers
+	'''
+	mapped_spiked_data = spike_data
+
+	for i in range(len(spike_data)):
+		mapped_spiked_data[i][1] = channel_mapping[spike_data[i][1]-1]
+
+	return mapped_spiked_data
+
 def computeSpikeRatesPerChannel(spike_file1,spike_file2,t_start,t_end):
 	'''
 	Input:
@@ -455,3 +567,21 @@ def computeCursorPathLength(start_times,stop_times,cursor):
 		traj_length[j] = np.sum(np.sqrt(np.sum((cursor[row_nums[1:]] - cursor[row_nums[:-1]])**2, axis=1)))
 
 	return traj_length
+
+def plot_raster(event_times_list, color='k'):
+    """
+    Creates a raster plot
+    Parameters
+    ----------
+    event_times_list : iterable, a list of event time iterables
+    color : string, color of vlines
+    Returns
+    -------
+    ax : an axis containing the raster plot
+    """
+    ax = plt.gca()
+    for ith, trial in enumerate(event_times_list):
+        plt.vlines(trial, ith + .5, ith + 1.5, color=color)
+    plt.ylim(.5, len(event_times_list) + .5)
+    return ax
+

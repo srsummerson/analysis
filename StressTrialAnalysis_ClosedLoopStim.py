@@ -27,12 +27,13 @@ from sklearn.cross_validation import cross_val_score
 hdf_filename = 'mari20160709_07_te2324.hdf'
 hdf_filename_stim = 'mari20160709_08_te2325.hdf'
 filename = 'Mario20160709'
-filename2 = 'Mario20160709-2'
+filename_stim = 'Mario20160709-2'
 block_num = 1
+block_num_stim = 1
 print filename
 #TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
-TDT_tank_stim = '/home/srsummerson/storage/tdt/' + filename2
+TDT_tank_stim = '/home/srsummerson/storage/tdt/'+filename_stim
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
 hdf_location_stim = '/storage/rawdata/hdf/'+hdf_filename_stim
 #hdf_location = hdffilename
@@ -69,6 +70,9 @@ successful_stress_trials_stim = float(np.sum(tot_successful_stress_stim))/np.sum
 # Number of successful non-stress trials
 tot_successful_reg = np.logical_and(trial_success,np.logical_not(all_stress_or_not))
 successful_reg_trials = float(np.sum(tot_successful_reg))/(num_trials - np.sum(all_stress_or_not))
+
+tot_successful_reg_stim = np.logical_and(trial_success_stim,np.logical_not(all_stress_or_not_stim))
+successful_reg_trials_stim = float(np.sum(tot_successful_reg_stim))/(num_trials_stim - np.sum(all_stress_or_not_stim))
 
 # Response times for successful stress trials
 ind_successful_stress = np.ravel(np.nonzero(tot_successful_stress))   	# gives trial index, not row index
@@ -113,6 +117,12 @@ ind_successful_reg_reward = np.ravel(np.nonzero(np.logical_not(successful_stress
 row_ind_successful_reg_reward = ind_check_reward_states[ind_successful_reg_reward]
 response_time_successful_reg = (state_time[row_ind_successful_reg_reward] - state_time[row_ind_successful_reg])/float(60)
 
+ind_successful_reg_stim = np.ravel(np.nonzero(tot_successful_reg_stim))
+row_ind_successful_reg_stim = ind_center_states_stim[ind_successful_reg_stim]
+ind_successful_reg_reward_stim = np.ravel(np.nonzero(np.logical_not(successful_stress_or_not_stim)))
+row_ind_successful_reg_reward_stim = ind_check_reward_states_stim[ind_successful_reg_reward_stim]
+response_time_successful_reg_stim = (state_time_stim[row_ind_successful_reg_reward_stim] - state_time_stim[row_ind_successful_reg_stim])/float(60)
+
 # Response time for all regular trials
 ind_reg = np.ravel(np.nonzero(np.logical_not(all_stress_or_not)))
 row_ind_reg = ind_center_states[ind_reg]
@@ -122,6 +132,15 @@ for i in range(0,len(row_ind_successful_reg)):
 	ind = np.where(row_ind_reg == row_ind_successful_reg[i])[0]
 	row_ind_end_reg[ind] = row_ind_successful_reg_reward[i]
 response_time_reg = (state_time[row_ind_end_reg] - state_time[row_ind_reg])/float(60)
+
+ind_reg_stim = np.ravel(np.nonzero(np.logical_not(all_stress_or_not_stim)))
+row_ind_reg_stim = ind_center_states_stim[ind_reg_stim]
+row_ind_end_reg_stim = np.zeros(len(row_ind_reg_stim))
+row_ind_end_reg_stim = np.minimum(row_ind_reg_stim + 5,total_states_stim-1)  # target_transition state occues two states later for successful trials
+for i in range(0,len(row_ind_successful_reg_stim)):
+	ind = np.where(row_ind_reg_stim == row_ind_successful_reg_stim[i])[0]
+	row_ind_end_reg_stim[ind] = row_ind_successful_reg_reward_stim[i]
+response_time_reg_stim = (state_time_stim[row_ind_end_reg_stim] - state_time_stim[row_ind_reg_stim])/float(60)
 
 
 '''
@@ -134,83 +153,72 @@ mat_filename = filename+'_b'+str(block_num)+'_syncHDF.mat'
 sp.io.loadmat('/home/srsummerson/storage/syncHDF/'+mat_filename,hdf_times)
 
 hdf_times_stim = dict()
-if filename2 != '':
-	mat_filename_stim = filename2+'_b'+str(block_num)+'_syncHDF.mat'
-else:
-	mat_filename_stim = filename+'_b'+str(block_num + 1)+'_syncHDF.mat'
+mat_filename_stim = filename_stim+'_b'+str(block_num_stim)+'_syncHDF.mat'
 sp.io.loadmat('/home/srsummerson/storage/syncHDF/'+mat_filename_stim,hdf_times_stim)
 
 '''
 Load pupil dilation and heart rate data
 '''
-if filename == 'Mario20160320':
-	PupD_filename = '/home/srsummerson/storage/tdt/Mario20160320_plex/Mario20160320_Block-1_PupD.csv'
-	HrtR_filename = '/home/srsummerson/storage/tdt/Mario20160320_plex/Mario20160320_Block-1_HrtR.csv'
-	pupil_data = get_csv_data_singlechannel(PupD_filename)
-	pupil_samprate = 3051.8
-	pulse_data = get_csv_data_singlechannel(HrtR_filename)
-	pulse_samprate = 3051.8
-	lfp = dict()
-	lfp_samprate = 3051.8
-else:
-	r = io.TdtIO(TDT_tank)
-	bl = r.read_block(lazy=False,cascade=True)
-	print "File read."
-	lfp = dict()
-	lfp_stim = dict()
-	# Get Pulse and Pupil Data
-	for sig in bl.segments[block_num-1].analogsignals:
+r = io.TdtIO(TDT_tank)
+bl = r.read_block(lazy=False,cascade=True)
+print "Blocks A and B recording data read."
+lfp = dict()
+lfp_stim = dict()
+# Get Pulse and Pupil Data
+for sig in bl.segments[block_num-1].analogsignals:
+	if (sig.name == 'PupD 1'):
+		pupil_data = np.ravel(sig)
+		pupil_samprate = sig.sampling_rate.item()
+	if (sig.name == 'HrtR 1'):
+		pulse_data = np.ravel(sig)
+		pulse_samprate = sig.sampling_rate.item()
+	if (sig.name[0:4] == 'LFP1'):
+		channel = sig.channel_index
+		if channel in lfp_channels:
+			lfp_samprate = sig.sampling_rate.item()
+			lfp[channel] = np.ravel(sig)
+if filename == filename_stim:
+	print "Block C recording data read."
+	for sig in bl.segments[block_num_stim-1].analogsignals:
 		if (sig.name == 'PupD 1'):
-			pupil_data = np.ravel(sig)
-			pupil_samprate = sig.sampling_rate.item()
+			pupil_data_stim = np.ravel(sig)
+			pupil_samprate_stim = sig.sampling_rate.item()
 		if (sig.name == 'HrtR 1'):
-			pulse_data = np.ravel(sig)
-			pulse_samprate = sig.sampling_rate.item()
+			pulse_data_stim = np.ravel(sig)
+			pulse_samprate_stim = sig.sampling_rate.item()
 		if (sig.name[0:4] == 'LFP1'):
 			channel = sig.channel_index
 			if channel in lfp_channels:
-				lfp_samprate = sig.sampling_rate.item()
-				lfp[channel] = np.ravel(sig)
-	if filename2 == 'Mario20160709-2':
-		r = io.TdtIO(TDT_tank_stim)
-		bl = r.read_block(lazy=False, cascade=True)
-		for sig in bl.segments[block_num-1].analogsignals:
-			if (sig.name == 'PupD 1'):
-				pupil_data_stim = np.ravel(sig)
-				pupil_samprate_stim = sig.sampling_rate.item()
-			if (sig.name == 'HrtR 1'):
-				pulse_data_stim = np.ravel(sig)
-				pulse_samprate_stim = sig.sampling_rate.item()
-			if (sig.name == 'Hold 1'):
-				hold_cue = np.ravel(sig)
-				hold_samprate = sig.sampling_rate.item()
-			if (sig.name == 'Hold 2'):
-				stim_state = np.ravel(sig)
-				stim_state_samprate = sig.sampling_rate.item()
-			if (sig.name[0:4] == 'LFP1'):
-				channel = sig.channel_index
-				if channel in lfp_channels:
-					lfp_samprate_stim = sig.sampling_rate.item()
-					lfp_stim[channel] = np.ravel(sig)
-	else:
-		for sig in bl.segments[block_num].analogsignals:
-			if (sig.name == 'PupD 1'):
-				pupil_data_stim = np.ravel(sig)
-				pupil_samprate_stim = sig.sampling_rate.item()
-			if (sig.name == 'HrtR 1'):
-				pulse_data_stim = np.ravel(sig)
-				pulse_samprate_stim = sig.sampling_rate.item()
-			if (sig.name == 'Hold 1'):
-				hold_cue = np.ravel(sig)
-				hold_samprate = sig.sampling_rate.item()
-			if (sig.name == 'Hold 2'):
-				stim_state = np.ravel(sig)
-				stim_state_samprate = sig.sampling_rate.item()
-			if (sig.name[0:4] == 'LFP1'):
-				channel = sig.channel_index
-				if channel in lfp_channels:
-					lfp_samprate_stim = sig.sampling_rate.item()
-					lfp_stim[channel] = np.ravel(sig)
+				lfp_samprate_stim = sig.sampling_rate.item()
+				lfp_stim[channel] = np.ravel(sig)
+		if (sig.name == 'StTg 2'):
+			mood_state_stim = np.ravel(sig)
+			mood_state_samprate_stim = sig.sampling_rate.item()
+		if (sig.name == 'Hold 2'):
+			CLstim_state_stim = np.ravel(sig)
+			CLstim_state_samprate_stim = sig.sampling_rate.item()
+else:
+	r = io.TdtIO(TDT_tank_stim)
+	bl = r.read_block(lazy=False,cascade=True)
+	print "Block C recording data read."
+	for sig in bl.segments[block_num_stim-1].analogsignals:
+		if (sig.name == 'PupD 1'):
+			pupil_data_stim = np.ravel(sig)
+			pupil_samprate_stim = sig.sampling_rate.item()
+		if (sig.name == 'HrtR 1'):
+			pulse_data_stim = np.ravel(sig)
+			pulse_samprate_stim = sig.sampling_rate.item()
+		if (sig.name[0:4] == 'LFP1'):
+			channel = sig.channel_index
+			if channel in lfp_channels:
+				lfp_samprate_stim = sig.sampling_rate.item()
+				lfp_stim[channel] = np.ravel(sig)
+		if (sig.name == 'StTg 2'):
+			mood_state_stim = np.ravel(sig)
+			mood_state_samprate_stim = sig.sampling_rate.item()
+		if (sig.name == 'Hold 2'):
+			CLstim_state_stim = np.ravel(sig)
+			CLstim_state_samprate_stim = sig.sampling_rate.item()
 
 
 '''
@@ -237,8 +245,8 @@ lfp_dio_sample_num = (float(lfp_samprate)/float(dio_freq))*(dio_tdt_sample - 1) 
 pulse_dio_sample_num_stim = (float(pulse_samprate_stim)/float(dio_freq_stim))*(dio_tdt_sample_stim - 1) + 1
 pupil_dio_sample_num_stim = (float(pupil_samprate_stim)/float(dio_freq_stim))*(dio_tdt_sample_stim - 1) + 1
 lfp_dio_sample_num_stim = (float(lfp_samprate_stim)/float(dio_freq_stim))*(dio_tdt_sample_stim - 1) + 1
-hold_cue_dio_sample_num_stim = (float(hold_samprate)/float(dio_freq_stim))*(dio_tdt_sample_stim - 1) + 1
-stim_state_dio_sample_num_stim = (float(stim_state_samprate)/float(dio_freq_stim))*(dio_tdt_sample_stim - 1) + 1
+mood_state_dio_sample_num_stim = (float(mood_state_samprate_stim)/float(dio_freq_stim))*(dio_tdt_sample_stim - 1) + 1
+CLstim_state_dio_sample_num_stim = (float(CLstim_state_samprate_stim)/float(dio_freq_stim))*(dio_tdt_sample_stim - 1) + 1
 
 state_row_ind_successful_stress = state_time[row_ind_successful_stress]
 state_row_ind_successful_reg = state_time[row_ind_successful_reg]
@@ -258,17 +266,32 @@ pupil_ind_reg = []
 lfp_ind_reg = []
 
 state_row_ind_successful_stress_stim = state_time_stim[row_ind_successful_stress_stim]
+state_row_ind_successful_reg_stim = state_time_stim[row_ind_successful_reg_stim]
+state_row_ind_successful_stress_reward_stim = state_time_stim[row_ind_successful_stress_reward_stim]
+state_row_ind_successful_reg_reward_stim = state_time_stim[row_ind_successful_reg_reward_stim]
 pulse_ind_successful_stress_stim = np.zeros(row_ind_successful_stress_stim.size)
 pupil_ind_successful_stress_stim = np.zeros(row_ind_successful_stress_stim.size)
 lfp_ind_successful_stress_stim = np.zeros(row_ind_successful_stress_stim.size)
-hold_cue_ind_successful_stress_stim = np.zeros(row_ind_successful_stress_stim.size)
-stim_state_ind_successful_stress_stim = np.zeros(row_ind_successful_stress_stim.size)
+mood_state_ind_successful_stress_stim = np.zeros(row_ind_successful_stress_stim.size)
+CLstim_state_ind_successful_stress_stim = np.zeros(row_ind_successful_stress_stim.size)
+pulse_ind_successful_reg_stim = np.zeros(row_ind_successful_reg_stim.size)
+pupil_ind_successful_reg_stim = np.zeros(row_ind_successful_reg_stim.size)
+lfp_ind_successful_reg_stim = np.zeros(row_ind_successful_reg_stim.size)
+mood_state_ind_successful_reg_stim = np.zeros(row_ind_successful_reg_stim.size)
+CLstim_state_ind_successful_reg_stim = np.zeros(row_ind_successful_reg_stim.size)
+
 state_row_ind_stress_stim = state_time_stim[row_ind_stress_stim]
+state_row_ind_reg_stim = state_time_stim[row_ind_reg_stim]
 pulse_ind_stress_stim = np.zeros(row_ind_stress_stim.size)
 pupil_ind_stress_stim = np.zeros(row_ind_stress_stim.size)
 lfp_ind_stress_stim = np.zeros(row_ind_stress_stim.size)
-hold_cue_ind_stress_stim = np.zeros(row_ind_stress_stim.size)
-stim_state_ind_stress_stim = np.zeros(row_ind_stress_stim.size)
+mood_state_ind_stress_stim = np.zeros(row_ind_stress_stim.size)
+CLstim_state_ind_stress_stim = np.zeros(row_ind_stress_stim.size)
+pulse_ind_reg_stim = np.zeros(row_ind_reg_stim.size)
+pupil_ind_reg_stim = np.zeros(row_ind_reg_stim.size)
+lfp_ind_reg_stim = np.zeros(row_ind_reg_stim.size)
+mood_state_ind_reg_stim = np.zeros(row_ind_reg_stim.size)
+CLstim_state_ind_reg_stim = np.zeros(row_ind_reg_stim.size)
 
 
 for i in range(0,len(row_ind_successful_stress)):
@@ -305,16 +328,45 @@ for i in range(0,len(row_ind_successful_stress_stim)):
 	pulse_ind_successful_stress_stim[i] = pulse_dio_sample_num_stim[hdf_index]
 	pupil_ind_successful_stress_stim[i] = pupil_dio_sample_num_stim[hdf_index]
 	lfp_ind_successful_stress_stim[i] = lfp_dio_sample_num_stim[hdf_index]
-	hold_cue_ind_successful_stress_stim[i] = hold_cue_dio_sample_num_stim[hdf_index]
-	stim_state_ind_successful_stress_stim[i] = stim_state_dio_sample_num_stim[hdf_index]
+	hdf_index_reward = np.argmin(np.abs(hdf_rows_stim - state_row_ind_successful_stress_reward_stim[i]))
+	mood_state_ind_successful_stress_stim[i] = mood_state_dio_sample_num_stim[hdf_index_reward]
+	CLstim_state_ind_successful_stress_stim[i] = CLstim_state_dio_sample_num_stim[hdf_index_reward]
 for i in range(0,len(row_ind_stress_stim)):
 	hdf_index = np.argmin(np.abs(hdf_rows_stim - state_row_ind_stress_stim[i]))
 	pulse_ind_stress_stim[i] = pulse_dio_sample_num_stim[hdf_index]
 	pupil_ind_stress_stim[i] = pupil_dio_sample_num_stim[hdf_index]
 	lfp_ind_stress_stim[i] = lfp_dio_sample_num_stim[hdf_index]
-	hold_cue_ind_stress_stim[i] = hold_cue_dio_sample_num_stim[hdf_index]
-	stim_state_ind_stress_stim[i] = stim_state_dio_sample_num_stim[hdf_index]
+	mood_state_ind_stress_stim[i] = mood_state_dio_sample_num_stim[hdf_index]
+	CLstim_state_ind_stress_stim[i] = CLstim_state_dio_sample_num_stim[hdf_index]
 
+for i in range(0,len(state_row_ind_successful_reg_stim)):
+	hdf_index = np.argmin(np.abs(hdf_rows_stim - state_row_ind_successful_reg_stim[i]))
+	pulse_ind_successful_reg_stim[i] = pulse_dio_sample_num_stim[hdf_index]
+	pupil_ind_successful_reg_stim[i] = pupil_dio_sample_num_stim[hdf_index]
+	lfp_ind_successful_reg_stim[i] = lfp_dio_sample_num_stim[hdf_index]
+	hdf_index_reward = np.argmin(np.abs(hdf_rows_stim - state_row_ind_successful_reg_reward_stim))
+	mood_state_ind_successful_reg_stim[i] = mood_state_dio_sample_num_stim[hdf_index_reward]
+	CLstim_state_ind_successful_reg_stim[i] = CLstim_state_dio_sample_num_stim[hdf_index_reward]
+for i in range(0,len(state_row_ind_reg_stim)):
+	hdf_index = np.argmin(np.abs(hdf_rows_stim - state_row_ind_reg_stim[i]))
+	pulse_ind_reg_stim[i] = pulse_dio_sample_num_stim[hdf_index]
+	pupil_ind_reg_stim[i] = pupil_dio_sample_num_stim[hdf_index]
+	lfp_ind_reg_stim[i] = lfp_dio_sample_num_stim[hdf_index]
+	mood_state_ind_reg_stim[i] = mood_state_dio_sample_num_stim[hdf_index]
+	CLstim_state_ind_reg_stim[i] = CLstim_state_dio_sample_num_stim[hdf_index]
+
+'''
+Find mood state and CL trigger during Block C : need to add in array of trial number versus mood state/CL stim state so
+we can see generally for how long stim is on
+'''
+mood_state_successful_stress = mood_state_stim[mood_state_ind_successful_stress_stim]
+CLstim_state_successful_stress = CLstim_state_stim[CLstim_state_ind_successful_stress_stim]
+mood_state_successful_reg = mood_state_stim[mood_state_ind_successful_reg_stim]
+CLstim_state_successful_reg = CLstim_state_stim[CLstim_state_ind_successful_reg_stim]
+
+mood_state_ind_successful_stim = mood_state_ind_successful_stress_stim + mood_state_ind_successful_reg_stim
+mood_state_ind_successful_stim.sort()
+"""
 '''
 Process pupil and pulse data
 '''
@@ -440,22 +492,12 @@ for i, ind in enumerate(lfp_ind_reg):
 	
 	X_reg.append(trial_array)
 
-trial_success_stim_state = []
-trial_stim_state = []
-
-for ind in stim_state_ind_successful_stress_stim:
-	trial_success_stim_state.append(stim_state[ind])
-
-for ind in stim_state_ind_stress_stim:
-	trial_stim_state.append(stim_state[ind])
-
 for i, ind in enumerate(lfp_ind_successful_stress_stim):
 	trial_array = []
 	trial_array.append(pupil_stress_mean_stim[i])
 	trial_array.append(ibi_stress_mean_stim[i])
 	
 	X_successful_stim.append(trial_array)
-
 
 for i, ind in enumerate(lfp_ind_stress_stim):
 	trial_array = []
@@ -464,24 +506,21 @@ for i, ind in enumerate(lfp_ind_stress_stim):
 	
 	X_stim.append(trial_array)
 
-'''
-Set up IBI/PD data for logisitic regression on trial type
-'''
-
 # Labels: 0 = regular, 1 = stress
 X_successful_stress = np.array(X_successful_stress)
+#X_successful_stress = (X_successful_stress - np.nanmean(X_successful_stress,axis=0))/np.nanstd(X_successful_stress,axis=0)
 num_successful_stress = X_successful_stress.shape[0]
 y_successful_stress = np.ones(num_successful_stress)
-
 X_stress = np.array(X_stress)
+#X_stress = (X_stress - np.nanmean(X_stress,axis=0))/np.nanstd(X_stress,axis=0)
 num_stress = X_stress.shape[0]
 y_stress = np.ones(num_stress)
-
 X_successful_reg = np.array(X_successful_reg)
+#X_successful_reg = (X_successful_reg - np.nanmean(X_successful_reg,axis=0))/np.nanstd(X_successful_reg,axis=0)
 num_successful_reg = X_successful_reg.shape[0]
 y_successful_reg = np.zeros(num_successful_reg)
-
 X_reg = np.array(X_reg)
+#X_reg = (X_reg - np.nanmean(X_reg,axis=0))/np.nanstd(X_reg,axis=0)
 num_reg = X_reg.shape[0]
 y_reg = np.zeros(num_reg)
 
@@ -494,15 +533,45 @@ y_successful = np.append(y_successful_reg,y_successful_stress)
 X_all = np.vstack([X_reg, X_stress])
 y_all = np.append(y_reg, y_stress)
 
+
+clf_all = LinearDiscriminantAnalysis()
+clf_all.fit(X_successful, y_successful)
+scores = cross_val_score(LinearDiscriminantAnalysis(),X_successful,y_successful,scoring='accuracy',cv=10)
+print "CV (10-fold) scores:", scores
+print "Avg CV score:", scores.mean()
+
+predict_stress = clf_all.predict(X_successful_stress)
+print "Fraction of stress trials classified as stress:", np.sum(predict_stress)/len(predict_stress)
+
+predict_stim = clf_all.predict(X_stim)
+print "Fraction of all stimulation trials classified as stress:", np.sum(predict_stim)/len(predict_stim)
+
+predict_stim = clf_all.predict(X_successful_stim)
+print "Fraction of all successful stimulation trials classified as stress:", np.sum(predict_stim)/len(predict_stim)
+
+"""
+"""
+Decision boundary given by:
+np.dot(clf.coef_, x) - clf.intercept_ = 0 according to 
+http://stackoverflow.com/questions/36745480/how-to-get-the-equation-of-the-boundary-line-in-linear-discriminant-analysis-wit
+"""
+
+#LDAforFeatureSelection(X_successful,y_successful,filename,block_num)
+"""
 '''
-Logistic Regression of trial type using data from Blocks A and B
+Do regression as well: power is total power in beta band per trial
 '''
 
-x = np.vstack((np.append(ibi_all_reg_mean, ibi_all_stress_mean), np.append(pupil_all_reg_mean, pupil_all_stress_mean)))
+x = np.vstack((np.append(ibi_all_reg_mean, ibi_all_stress_mean), np.append(pupil_all_reg_mean, pupil_all_stress_mean), 
+				np.append(lfp_power_reg, lfp_power_stress)))
 x = np.transpose(x)
 x = sm.add_constant(x,prepend='False')
 
-x_successful = np.vstack((np.append(ibi_reg_mean, ibi_stress_mean), np.append(pupil_reg_mean, pupil_stress_mean)))
+lfp_power_successful_reg = (lfp_power_successful_reg - np.nanmean(lfp_power_successful_reg))/np.nanstd(lfp_power_successful_reg)
+lfp_power_successful_stress = (lfp_power_successful_stress - np.nanmean(lfp_power_successful_stress))/np.nanstd(lfp_power_successful_stress)
+
+x_successful = np.vstack((np.append(ibi_reg_mean, ibi_stress_mean), np.append(pupil_reg_mean, pupil_stress_mean), 
+				np.append(lfp_power_successful_reg, lfp_power_successful_stress)))
 x_successful = np.transpose(x_successful)
 x_successful = sm.add_constant(x_successful,prepend='False')
 
@@ -517,206 +586,11 @@ print "Regression with successful trials"
 model_glm = sm.Logit(y_successful,x_successful)
 fit_glm = model_glm.fit()
 print fit_glm.summary()
-
-'''
-Classify Block C trials
-'''
-regression_params = fit_glm.params 
-p_trial_type = regression_params[1]*np.array(ibi_stress_mean_stim) + regression_params[2]*np.array(pupil_stress_mean_stim) + regression_params[0]
-y_stress_blockc = (p_trial_type > 0.5)
-fraction_stress_stim = np.sum(y_stress_blockc)/float(len(y_stress_blockc))
-print "Fraction of Block C trials classified as stress:", fraction_stress_stim
-
-p_trial_type = regression_params[1]*np.array(ibi_reg_mean) + regression_params[2]*np.array(pupil_reg_mean) + regression_params[0]
-y_stress_blocka = (p_trial_type > 0.5)
-
-p_trial_type = regression_params[1]*np.array(ibi_stress_mean) + regression_params[2]*np.array(pupil_stress_mean) + regression_params[0]
-y_stress_blockb = (p_trial_type > 0.5)
+"""
 
 
-'''
-IBI-PD Covariance plots: need to adjust for trials classified as regular/stress
-'''
-norm_ibi_all_stress_mean = ibi_all_stress_mean 
-norm_pupil_all_stress_mean = pupil_all_stress_mean
-norm_ibi_all_reg_mean = ibi_all_reg_mean
-norm_pupil_all_reg_mean = pupil_all_reg_mean
-norm_ibi_all_stim_mean = ibi_all_stress_mean_stim
-norm_pupil_all_stim_mean = pupil_all_stress_mean_stim
-
-#norm_ibi_all_stress_mean = (ibi_all_stress_mean - np.nanmin(ibi_all_stress_mean + ibi_all_reg_before_mean))/np.nanmax(ibi_all_stress_mean + ibi_all_reg_before_mean - np.nanmin(ibi_all_stress_mean + ibi_all_reg_before_mean))
-#norm_pupil_all_stress_mean = (pupil_all_stress_mean - np.nanmin(pupil_all_stress_mean + pupil_all_reg_before_mean))/np.nanmax(pupil_all_stress_mean + pupil_all_reg_before_mean - np.nanmin(pupil_all_stress_mean + pupil_all_reg_before_mean))
-#norm_ibi_all_reg_before_mean = (ibi_all_reg_before_mean - np.nanmin(ibi_all_stress_mean + ibi_all_reg_before_mean))/np.nanmax(ibi_all_stress_mean + ibi_all_reg_before_mean - np.nanmin(ibi_all_stress_mean + ibi_all_reg_before_mean))
-#norm_pupil_all_reg_before_mean = (pupil_all_reg_before_mean - np.nanmin(pupil_all_stress_mean + pupil_all_reg_before_mean))/np.nanmax(pupil_all_stress_mean + pupil_all_reg_before_mean - np.nanmin(pupil_all_stress_mean + pupil_all_reg_before_mean))
-
-points_all_stress = np.array([norm_ibi_all_stress_mean,norm_pupil_all_stress_mean])
-points_all_reg = np.array([norm_ibi_all_reg_mean,norm_pupil_all_reg_mean])
-points_all_stim = np.array([norm_ibi_all_stim_mean, norm_pupil_all_stim_mean])
-cov_all_stress = np.cov(points_all_stress)
-cov_all_reg = np.cov(points_all_reg)
-cov_all_stim = np.cov(points_all_stim)
-mean_vec_all_stress = [np.nanmean(norm_ibi_all_stress_mean),np.nanmean(norm_pupil_all_stress_mean)]
-mean_vec_all_reg = [np.nanmean(norm_ibi_all_reg_mean),np.nanmean(norm_pupil_all_reg_mean)]
-mean_vec_all_stim = [np.nanmean(norm_ibi_all_stim_mean), np.nanmean(norm_pupil_all_stim_mean)]
-
-cmap_stress = mpl.cm.autumn
-cmap_reg = mpl.cm.winter
-cmap_stim = mpl.cm.gray
-
-plt.figure()
-#plt.plot(ibi_all_stress_mean,pupil_all_stress_mean,'ro',label='Stress')
-for i in range(0,len(ibi_all_stress_mean)):
-    plt.plot(norm_ibi_all_stress_mean[i],norm_pupil_all_stress_mean[i],color=cmap_stress(i/float(len(ibi_all_stress_mean))),marker='o')
-plot_cov_ellipse(cov_all_stress,mean_vec_all_stress,fc='r',ec='None',a=0.2)
-#plt.plot(ibi_all_reg_before_mean,pupil_all_reg_before_mean,'bo',label='Reg Before')
-for i in range(0,len(ibi_all_reg_mean)):
-	plt.plot(norm_ibi_all_reg_mean[i],norm_pupil_all_reg_mean[i],color=cmap_reg(i/float(len(ibi_all_reg_mean))),marker='o')
-plot_cov_ellipse(cov_all_reg,mean_vec_all_reg,fc='b',ec='None',a=0.2)
-for i in range(0,len(ibi_all_stress_mean_stim)):
-	plt.plot(norm_ibi_all_stim_mean[i],norm_pupil_all_stim_mean[i],color=cmap_stim(i/float(len(ibi_all_stress_mean_stim))),marker='o')
-plot_cov_ellipse(cov_all_stim,mean_vec_all_stim,fc='k',ec='None',a=0.2)
-#plt.legend()
-plt.xlabel('Mean Trial IBI (s)')
-plt.ylabel('Mean Trial PD (AU)')
-plt.title('All Trials')
-sm_reg = plt.cm.ScalarMappable(cmap=cmap_reg, norm=plt.Normalize(vmin=0, vmax=1))
-# fake up the array of the scalar mappable. Urgh...
-sm_reg._A = []
-cbar = plt.colorbar(sm_reg,ticks=[0,1], orientation='vertical')
-cbar.ax.set_xticklabels(['Early', 'Late'])  # horizontal colorbar
-sm_stress = plt.cm.ScalarMappable(cmap=cmap_stress, norm=plt.Normalize(vmin=0, vmax=1))
-# fake up the array of the scalar mappable. Urgh...
-sm_stress._A = []
-cbar = plt.colorbar(sm_stress,ticks=[0,1], orientation='vertical')
-cbar.ax.set_xticklabels(['Early', 'Late'])  # horizontal colorbar
-sm_stim = plt.cm.ScalarMappable(cmap=cmap_stim, norm=plt.Normalize(vmin=0, vmax=1))
-# fake up the array of the scalar mappable. Urgh...
-sm_stim._A = []
-cbar = plt.colorbar(sm_stim,ticks=[0,1], orientation='vertical')
-cbar.ax.set_xticklabels(['Early', 'Late'])  # horizontal colorbar
-#plt.ylim((-0.05,1.05))
-#plt.xlim((-0.05,1.05))
-plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_IBIPupilCovariance_alltrials.svg')
-
-norm_ibi_stress_mean = ibi_stress_mean 
-norm_pupil_stress_mean = pupil_stress_mean 
-norm_ibi_reg_mean = ibi_reg_mean 
-norm_pupil_reg_mean = pupil_reg_mean
-norm_ibi_stim_mean = ibi_stress_mean_stim
-norm_pupil_stim_mean = pupil_stress_mean_stim 
-
-#norm_ibi_stress_mean = (ibi_stress_mean - np.nanmin(ibi_stress_mean + ibi_reg_before_mean))/np.nanmax(ibi_stress_mean + ibi_reg_before_mean - np.nanmin(ibi_stress_mean + ibi_reg_before_mean))
-#norm_pupil_stress_mean = (pupil_stress_mean - np.nanmin(pupil_stress_mean + pupil_reg_before_mean))/np.nanmax(pupil_stress_mean + pupil_reg_before_mean - np.nanmin(pupil_stress_mean + pupil_reg_before_mean))
-#norm_ibi_reg_before_mean = (ibi_reg_before_mean - np.nanmin(ibi_stress_mean + ibi_reg_before_mean))/np.nanmax(ibi_stress_mean + ibi_reg_before_mean - np.nanmin(ibi_stress_mean + ibi_reg_before_mean))
-#norm_pupil_reg_before_mean = (pupil_reg_before_mean - np.nanmin(pupil_stress_mean + pupil_reg_before_mean))/np.nanmax(pupil_stress_mean + pupil_reg_before_mean - np.nanmin(pupil_stress_mean + pupil_reg_before_mean))
-
-points_stress = np.array([norm_ibi_stress_mean,norm_pupil_stress_mean])
-points_reg = np.array([norm_ibi_reg_mean,norm_pupil_reg_mean])
-points_stim = np.array([norm_ibi_stim_mean, norm_pupil_stim_mean])
-cov_stress = np.cov(points_stress)
-cov_reg = np.cov(points_reg)
-cov_stim = np.cov(points_stim)
-mean_vec_stress = [np.nanmean(norm_ibi_stress_mean),np.nanmean(norm_pupil_stress_mean)]
-mean_vec_reg = [np.nanmean(norm_ibi_reg_mean),np.nanmean(norm_pupil_reg_mean)]
-mean_vec_stim = [np.nanmean(norm_ibi_stim_mean), np.nanmean(norm_pupil_stim_mean)]
-
-plt.figure()
-for i in range(0,len(ibi_stress_mean)):
-    #plt.plot(norm_ibi_stress_mean[i],norm_pupil_stress_mean[i],color=cmap_stress(i/float(len(ibi_stress_mean))),marker='o',markeredgecolor=None,markeredgewidth=0.0)
-    plt.plot(norm_ibi_stress_mean[i],norm_pupil_stress_mean[i],color=cmap_stress(i/float(len(ibi_stress_mean))),marker='o')
-plot_cov_ellipse(cov_stress,mean_vec_stress,fc='r',ec='None',a=0.2)
-for i in range(0,len(ibi_reg_mean)):
-	plt.plot(norm_ibi_reg_mean[i],norm_pupil_reg_mean[i],color=cmap_reg(i/float(len(ibi_reg_mean))),marker='o')
-plot_cov_ellipse(cov_reg,mean_vec_reg,fc='b',ec='None',a=0.2)
-for i in range(0,len(ibi_stress_mean_stim)):
-	plt.plot(norm_ibi_stim_mean[i],norm_pupil_stim_mean[i],color=cmap_stim(i/float(len(ibi_stress_mean_stim))),marker='o')
-plot_cov_ellipse(cov_stim,mean_vec_stim,fc='k',ec='None',a=0.2)
-#plt.legend()
-plt.xlabel('Mean Trial IBI (s)')
-plt.ylabel('Mean Trial PD (AU)')
-plt.title('Successful Trials')
-sm_reg = plt.cm.ScalarMappable(cmap=cmap_reg, norm=plt.Normalize(vmin=0, vmax=1))
-# fake up the array of the scalar mappable. Urgh...
-sm_reg._A = []
-cbar = plt.colorbar(sm_reg,ticks=[0,1], orientation='vertical')
-cbar.ax.set_xticklabels(['Early', 'Late'])  # horizontal colorbar
-sm_stress = plt.cm.ScalarMappable(cmap=cmap_stress, norm=plt.Normalize(vmin=0, vmax=1))
-# fake up the array of the scalar mappable. Urgh...
-sm_stress._A = []
-cbar = plt.colorbar(sm_stress,ticks=[0,1], orientation='vertical')
-cbar.ax.set_xticklabels(['Early', 'Late'])  # horizontal colorbar
-sm_stim = plt.cm.ScalarMappable(cmap=cmap_stim, norm=plt.Normalize(vmin=0, vmax=1))
-# fake up the array of the scalar mappable. Urgh...
-sm_stim._A = []
-cbar = plt.colorbar(sm_stim,ticks=[0,1], orientation='vertical')
-cbar.ax.set_xticklabels(['Early', 'Late'])  # horizontal colorbar
-#plt.ylim((-0.05,1.05))
-#plt.xlim((-0.05,1.05))
-plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_IBIPupilCovariance.svg')
-
-'''
-Plot points according to classification
-'''
-blocka_reg = np.ravel(np.nonzero(np.ravel(np.equal(y_stress_blocka,0))))
-blocka_stress = np.ravel(np.nonzero(np.ravel(np.equal(y_stress_blocka,1))))
-
-blockb_reg = np.ravel(np.nonzero(np.ravel(np.equal(y_stress_blockb,0))))
-blockb_stress = np.ravel(np.nonzero(np.ravel(np.equal(y_stress_blockb,1))))
-
-blockc_reg = np.ravel(np.nonzero(np.ravel(np.equal(y_stress_blockc,0))))
-blockc_stress = np.ravel(np.nonzero(np.ravel(np.equal(y_stress_blockc,1))))
 
 
-plt.figure()
-plot_cov_ellipse(cov_stress,mean_vec_stress,fc='r',ec='None',a=0.2)
-plot_cov_ellipse(cov_reg,mean_vec_reg,fc='b',ec='None',a=0.2)
-plot_cov_ellipse(cov_stim,mean_vec_stim,fc='k',ec='None',a=0.2)
 
-for ind in blockb_reg:
-    plt.plot(norm_ibi_stress_mean[ind],norm_pupil_stress_mean[ind],color='b',marker='^')
-plt.plot(norm_ibi_stress_mean[ind],norm_pupil_stress_mean[ind],color='b',marker='^',label='Block B - reg')
-for ind in blockb_stress:
-    plt.plot(norm_ibi_stress_mean[ind],norm_pupil_stress_mean[ind],color='r',marker='^')
-for ind in blocka_reg:
-	plt.plot(norm_ibi_reg_mean[ind],norm_pupil_reg_mean[ind],color='b',marker='o')
-for ind in blocka_stress:
-	plt.plot(norm_ibi_reg_mean[ind],norm_pupil_reg_mean[ind],color='r',marker='o')
-for ind in blockc_reg:
-	plt.plot(norm_ibi_stim_mean[ind],norm_pupil_stim_mean[ind],color='b',marker='s')
-for ind in blockc_reg:
-	plt.plot(norm_ibi_stim_mean[ind],norm_pupil_stim_mean[ind],color='r',marker='s')
-plt.legend()
-plt.xlabel('Mean Trial IBI (s)')
-plt.ylabel('Mean Trial PD (AU)')
-plt.title('Successful Trials')
-#plt.ylim((-0.05,1.05))
-#plt.xlim((-0.05,1.05))
-plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_IBIPupilCovariance-Classification.svg')
 
-plt.figure()
-plot_cov_ellipse(cov_stress,mean_vec_stress,fc='r',ec='None',a=0.2)
-plot_cov_ellipse(cov_reg,mean_vec_reg,fc='b',ec='None',a=0.2)
-plot_cov_ellipse(cov_stim,mean_vec_stim,fc='k',ec='None',a=0.2)
 
-for ind in blockb_reg:
-    plt.plot(norm_ibi_stress_mean[ind],norm_pupil_stress_mean[ind],color='b',marker='o')
-plt.plot(norm_ibi_stress_mean[ind],norm_pupil_stress_mean[ind],color='b',marker='o',label='Block B - reg')
-for ind in blockb_stress:
-    plt.plot(norm_ibi_stress_mean[ind],norm_pupil_stress_mean[ind],color='r',marker='^')
-for ind in blocka_reg:
-	plt.plot(norm_ibi_reg_mean[ind],norm_pupil_reg_mean[ind],color='r',marker='o')
-for ind in blocka_stress:
-	plt.plot(norm_ibi_reg_mean[ind],norm_pupil_reg_mean[ind],color='r',marker='o')
-for ind in blockc_reg:
-	plt.plot(norm_ibi_stim_mean[ind],norm_pupil_stim_mean[ind],color='gray',marker='o')
-for ind in blockc_reg:
-	plt.plot(norm_ibi_stim_mean[ind],norm_pupil_stim_mean[ind],color='gray',marker='o')
-plt.legend()
-plt.xlabel('Mean Trial IBI (s)')
-plt.ylabel('Mean Trial PD (AU)')
-plt.title('Successful Trials')
-#plt.ylim((-0.05,1.05))
-#plt.xlim((-0.05,1.05))
-plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_IBIPupilCovariance-SingleColor.svg')
-
-plt.close()
