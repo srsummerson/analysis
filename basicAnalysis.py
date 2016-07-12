@@ -568,3 +568,20 @@ def computeCursorPathLength(start_times,stop_times,cursor):
 
 	return traj_length
 
+def plot_raster(event_times_list, color='k'):
+    """
+    Creates a raster plot
+    Parameters
+    ----------
+    event_times_list : iterable, a list of event time iterables
+    color : string, color of vlines
+    Returns
+    -------
+    ax : an axis containing the raster plot
+    """
+    ax = plt.gca()
+    for ith, trial in enumerate(event_times_list):
+        plt.vlines(trial, ith + .5, ith + 1.5, color=color)
+    plt.ylim(.5, len(event_times_list) + .5)
+    return ax
+
