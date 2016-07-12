@@ -1284,40 +1284,101 @@ def probabilisticRewardTaskPerformance_TrajectoryLengths(stim_days,sham_days,con
 		hdf_location = 'C:\Users\Samantha Summerson\Dropbox\Carmena Lab'+ animal_id + '\hdf'+name
 		trial1, target1, traj_length1, trial3, target3, traj_length3 = FreeChoiceTask_PathLengths(hdf_location)
 
-		trial1_stim.append(trial1)
-		target1_stim.append(target1)
-		traj_length1_stim.append(traj_length1)
-		trial3_stim.append(trial3)
-		target3_stim.append(target3)
-		traj_length3_stim.append(traj_length3)
+		trial1_stim = np.append(trial1_stim, trial1)
+		target1_stim = np.append(target1_stim, target1)
+		traj_length1_stim = np.append(traj_length1_stim, traj_length1)
+		trial3_stim = np.append(trial3_stim, trial3)
+		target3_stim = np.append(target3_stim, target3)
+		traj_length3_stim = np.append(traj_length3_stim, traj_length3)
 
 	for i in range(0,num_sham_days):
 		name = sham_days[i]
 		hdf_location = 'C:\Users\Samantha Summerson\Dropbox\Carmena Lab'+ animal_id + '\hdf'+name
 		trial1, target1, traj_length1, trial3, target3, traj_length3 = FreeChoiceTask_PathLengths(hdf_location)
 
-		trial1_sham.append(trial1)
-		target1_sham.append(target1)
-		traj_length1_sham.append(traj_length1)
-		trial3_sham.append(trial3)
-		target3_sham.append(target3)
-		traj_length3_sham.append(traj_length3)
+		trial1_sham = np.append(trial1_sham, trial1)
+		target1_sham = np.append(target1_sham, target1)
+		traj_length1_sham = np.append(traj_length1_sham, traj_length1)
+		trial3_sham = np.append(trial3_sham, trial3)
+		target3_sham = np.append(target3_sham, target3)
+		traj_length3_sham = np.append(traj_length3_sham, traj_length3)
 		
 	for i in range(0,num_control_days):
 		name = control_days[i]
 		hdf_location = 'C:\Users\Samantha Summerson\Dropbox\Carmena Lab'+ animal_id + '\hdf'+name
 		trial1, target1, traj_length1, trial3, target3, traj_length3 = FreeChoiceTask_PathLengths(hdf_location)
 
-		trial1_control.append(trial1)
-		target1_control.append(target1)
-		traj_length1_control.append(traj_length1)
-		trial3_control.append(trial3)
-		target3_control.append(target3)
-		traj_length3_control.append(traj_length3)
-	
-	return trial3_stim, target3_stim, traj_length3_stim
+		trial1_control = np.append(trial1_control, trial1)
+		target1_control = np.append(target1_control, target1)
+		traj_length1_control = np.append(traj_length1_control, traj_length1)
+		trial3_control = np.append(trial3_control, trial3)
+		target3_control = np.append(target3_control, target3)
+		traj_length3_control = np.append(traj_length3_control, traj_length3)
 
-trial3_stim, target3_stim, traj_length3_stim = probabilisticRewardTaskPerformance_TrajectoryLengths(sham_days, stim_days, control_days, '\Papa')
+	'''
+	Find density of path lengths for selection of LV and HV targets during free-choice trials.
+	'''
+	lv_freechoice3_stim = np.ravel(np.nonzero(np.logical_and(np.equal(trial3_stim,2), np.equal(target3_stim,1))))
+	traj_lv_freechoice3_stim = traj_length3_stim[lv_freechoice3_stim]
+
+	hv_freechoice3_stim = np.ravel(np.nonzero(np.logical_and(np.equal(trial3_stim,2), np.equal(target3_stim,2))))
+	traj_hv_freechoice3_stim = traj_length3_stim[hv_freechoice3_stim]
+
+	lv_freechoice3_sham = np.ravel(np.nonzero(np.logical_and(np.equal(trial3_sham,2), np.equal(target3_sham,1))))
+	traj_lv_freechoice3_sham = traj_length3_sham[lv_freechoice3_sham]
+
+	hv_freechoice3_sham = np.ravel(np.nonzero(np.logical_and(np.equal(trial3_sham,2), np.equal(target3_sham,2))))
+	traj_hv_freechoice3_sham = traj_length3_sham[hv_freechoice3_sham]
+
+	total_traj_stim = np.append(traj_lv_freechoice3_stim,traj_hv_freechoice3_stim)
+	total_traj_sham = np.append(traj_lv_freechoice3_sham,traj_hv_freechoice3_sham)
+
+	total_traj = np.append(total_traj_stim,total_traj_sham)
+	
+	max_range = np.max(total_traj)
+	min_range = np.min(total_traj)
+
+	traj_bins = np.arange(min_range,max_range,(max_range - min_range)/50.)
+
+	bin_traj_lv_freechoice3_stim, bins = np.histogram(traj_lv_freechoice3_stim,traj_bins)
+	bin_traj_hv_freechoice3_stim, bins = np.histogram(traj_hv_freechoice3_stim,traj_bins)
+
+	bin_traj_lv_freechoice3_stim = bin_traj_lv_freechoice3_stim/float(np.sum(bin_traj_lv_freechoice3_stim))
+	bin_traj_hv_freechoice3_stim = bin_traj_hv_freechoice3_stim/float(np.sum(bin_traj_hv_freechoice3_stim))
+
+	bin_traj_lv_freechoice3_sham, bins = np.histogram(traj_lv_freechoice3_sham,traj_bins)
+	bin_traj_hv_freechoice3_sham, bins = np.histogram(traj_hv_freechoice3_sham,traj_bins)
+
+	bin_traj_lv_freechoice3_sham = bin_traj_lv_freechoice3_sham/float(np.sum(bin_traj_lv_freechoice3_sham))
+	bin_traj_hv_freechoice3_sham = bin_traj_hv_freechoice3_sham/float(np.sum(bin_traj_hv_freechoice3_sham))
+
+	plt.figure()
+	plt.subplot(1,2,1)
+	plt.plot(traj_bins[1:],bin_traj_lv_freechoice3_stim,'r',label='LV')
+	plt.plot(traj_bins[1:],bin_traj_hv_freechoice3_stim,'b',label='HV')
+	plt.legend()
+	plt.title('Stim')
+	plt.xlabel('Trajectory Length (cm)')
+	plt.ylabel('Frequency')
+	plt.xlim((min_range,max_range))
+	plt.ylim((0,0.5))
+
+	plt.subplot(1,2,2)
+	plt.plot(traj_bins[1:],bin_traj_lv_freechoice3_sham,'r',label='LV')
+	plt.plot(traj_bins[1:],bin_traj_hv_freechoice3_sham,'b',label='HV')
+	plt.legend()
+	plt.title('Sham')
+	plt.xlabel('Trajectory Length (cm)')
+	plt.ylabel('Frequency')
+	plt.xlim((min_range,max_range))
+	plt.ylim((0,0.5))
+	
+	plt.show()
+
+	return bin_traj_lv_freechoice3_stim, bin_traj_hv_freechoice3_stim, bin_traj_lv_freechoice3_sham, bin_traj_hv_freechoice3_sham
+
+bin_traj_lv_freechoice3_stim, bin_traj_hv_freechoice3_stim, bin_traj_lv_freechoice3_sham, bin_traj_hv_freechoice3_sham = probabilisticRewardTaskPerformance_TrajectoryLengths(sham_days, stim_days, control_days, '\Papa')
+bin_traj_lv_freechoice3_stim, bin_traj_hv_freechoice3_stim, bin_traj_lv_freechoice3_sham, bin_traj_hv_freechoice3_sham = probabilisticRewardTaskPerformance_TrajectoryLengths(luigi_sham_days, luigi_stim_days, luigi_control_days, '\Luigi')
 
 #papa_sham_prob_lv, papa_stim_prob_lv, papa_control_prob_lv = probabilisticRewardTaskPerformance_LVChoice(sham_days, stim_days, control_days, '\Papa')
 #luigi_sham_prob_lv, luigi_stim_prob_lv, luigi_control_prob_lv = probabilisticRewardTaskPerformance_LVChoice(luigi_sham_days, luigi_stim_days, luigi_control_days, '\Luigi')
