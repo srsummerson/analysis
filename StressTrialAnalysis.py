@@ -16,6 +16,12 @@ from rt_calc import compute_rt_per_trial_StressTask
 from sklearn.cluster import KMeans
 
 
+'''
+To do: add in lfp2_channels for lfp data from last 64 channels for data extraction, also add in lfp2_channels for 
+pulling out power features, around 682 add in extracting lfp features for well-clusted trials only
+'''
+
+
 # Set up code for particular day and block
 hdf_filename = 'mari20160711_02_te2327.hdf'
 filename = 'Mario20160711'
@@ -28,6 +34,8 @@ stim_freq = 100
 
 lfp1_channels = [13, 14, 15, 16, 29, 30]
 lfp1_channels = [13]
+#bands = [[1,8],[8,12],[12,30],[30,55],[65,100]]
+bands = [[12,30]]
 
 num_avg = 50 	# number of trials to compute running average of trial statistics over
 
@@ -350,6 +358,47 @@ ibi_reg_after_mean, ibi_reg_after_std, pupil_reg_after_mean, pupil_reg_after_std
 ibi_all_reg_before_mean, ibi_all_reg_before_std, pupil_all_reg_before_mean, pupil_all_reg_before_std, nbins_ibi_all_reg_before, ibi_all_reg_before_hist, nbins_pupil_all_reg_before, pupil_all_reg_before_hist = getIBIandPuilDilation(pulse_data, pulse_ind_reg_before,samples_pulse_reg_before, pulse_samprate,pupil_data, pupil_ind_reg_before,samples_pupil_reg_before,pupil_samprate)
 ibi_all_reg_after_mean, ibi_all_reg_after_std, pupil_all_reg_after_mean, pupil_all_reg_after_std, nbins_ibi_all_reg_after, ibi_all_reg_after_hist, nbins_pupil_all_reg_after, pupil_all_reg_after_hist = getIBIandPuilDilation(pulse_data, pulse_ind_reg_after,samples_pulse_reg_after, pulse_samprate,pupil_data, pupil_ind_reg_after,samples_pupil_reg_after,pupil_samprate)
 
+'''
+Get power in designated frequency bands per trial
+'''
+lfp_power_successful_stress = []
+lfp_power_successful_reg = []
+X_successful_stress = []
+X_successful_reg = []
+
+
+for i, ind in enumerate(lfp_ind_successful_stress):
+	trial_array = []
+	trial_array.append(pupil_stress_mean[i])
+	trial_array.append(ibi_stress_mean[i])
+	
+	
+	for chann in lfp_channels:
+		#freq, Pxx_den = signal.welch(lfp[chann][ind:ind+samples_lfp_successful_stress[i]], lfp_samprate, nperseg=1024)
+		freq, Pxx_den = signal.welch(lfp[chann][ind:ind+lfp_samprate/2], lfp_samprate, nperseg=1024)  # take 0.5 s of data 
+		for k, item in enumerate(bands):
+			freq_band = [Pxx_den[j] for j in range(len(freq)) if (item[0] <= freq[j] <= item[1])]
+			#trial_array.append(np.sum(freq_band))
+		lfp_power_successful_stress.append(np.sum(freq_band))
+	
+	X_successful_stress.append(trial_array)
+
+for i, ind in enumerate(lfp_ind_successful_reg):
+	trial_array = []
+	trial_array.append(pupil_reg_mean[i])
+	trial_array.append(ibi_reg_mean[i])
+	
+	
+	for chann in lfp_channels:
+		#freq, Pxx_den = signal.welch(lfp[chann][ind:ind+samples_lfp_successful_reg[i]], lfp_samprate, nperseg=1024)
+		freq, Pxx_den = signal.welch(lfp[chann][ind:ind+lfp_samprate/2], lfp_samprate, nperseg=1024)  # take 0.5 s of data 
+		
+		for k, item in enumerate(bands):
+			freq_band = [Pxx_den[j] for j in range(len(freq)) if (item[0] <= freq[j] <= item[1])]
+			#trial_array.append(np.sum(freq_band))
+		lfp_power_successful_reg.append(np.sum(freq_band))
+	
+	X_successful_reg.append(trial_array)
 
 
 '''
@@ -661,6 +710,26 @@ plt.title('Trial labels')
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_KMeans.svg')
 
 print "Plotted K-means using successful trials"
+
+# Assign label to majority cluster for each trial type
+cluster_vals = set(y_kmeans_pred)
+stress_cluster_assignment = y_kmeans_pred[0:len(norm_ibi_stress_mean)]
+stress_cluster_vals = [list(stress_cluster_assignment).count(x) for x in cluster_vals]
+stress_majority_cluster = cluster_vals[np.argmax(stress_cluster_vals)]
+reg_cluster_assignment = y_kmeans_pred[len(norm_ibi_stress_mean):]
+reg_cluster_vals = [list(reg_cluster_assignment).count(x) for x in cluster_vals]
+reg_majority_cluster = cluster_vals[np.argmax(reg_cluster_vals)]
+
+# Put out trials of each type that are categorized in the labeled majority cluster
+if stress_majority_cluster != reg_majority_cluster:
+	stress_well_clustered_ind = np.ravel(np.nonzero(stress_cluster_assignment == stress_majority_cluster))
+	well_clustered_ibi_stress = norm_ibi_stress_mean[stress_well_clustered_ind]
+	well_clustered_pupil_stress = norm_pupil_stress_mean[stress_well_clustered_ind]
+
+	reg_well_clustered_ind = np.ravel(np.nonzero(reg_cluster_assignment == reg_majority_cluster))
+	well_clustered_ibi_reg = norm_ibi_reg_before_mean[reg_well_clustered_ind]
+	well_clustered_pupil_reg = norm_pupil_reg_before_mean[reg_well_clustered_ind]
+
 
 plt.figure()
 plt.subplot(211)

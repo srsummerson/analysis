@@ -375,8 +375,41 @@ model_glm = sm.Logit(y_successful,x_successful)
 fit_glm = model_glm.fit()
 print fit_glm.summary()
 
+norm_ibi_stress_mean = ibi_stress_mean 
+norm_pupil_stress_mean = pupil_stress_mean 
+norm_ibi_reg_before_mean = ibi_reg_before_mean 
+norm_pupil_reg_before_mean = pupil_reg_before_mean 
 
+cmap_stress = mpl.cm.autumn
+cmap_reg_before = mpl.cm.winter
 
+plt.figure()
+for i in range(0,len(ibi_stress_mean)):
+    #plt.plot(norm_ibi_stress_mean[i],norm_pupil_stress_mean[i],color=cmap_stress(i/float(len(ibi_stress_mean))),marker='o',markeredgecolor=None,markeredgewidth=0.0)
+    plt.plot(norm_ibi_stress_mean[i],norm_pupil_stress_mean[i],color=cmap_stress(i/float(len(ibi_stress_mean))),marker='o')
+plot_cov_ellipse(cov_stress,mean_vec_stress,fc='r',ec='None',a=0.2)
+for i in range(0,len(ibi_reg_before_mean)):
+	plt.plot(norm_ibi_reg_before_mean[i],norm_pupil_reg_before_mean[i],color=cmap_reg_before(i/float(len(ibi_reg_before_mean))),marker='o')
+plot_cov_ellipse(cov_reg_before,mean_vec_reg_before,fc='b',ec='None',a=0.2)
+#plt.legend()
+plt.xlabel('Mean Trial IBI (s)')
+plt.ylabel('Mean Trial PD (AU)')
+plt.title('Successful Trials')
+sm_reg_before = plt.cm.ScalarMappable(cmap=cmap_reg_before, norm=plt.Normalize(vmin=0, vmax=1))
+# fake up the array of the scalar mappable. Urgh...
+sm_reg_before._A = []
+cbar = plt.colorbar(sm_reg_before,ticks=[0,1], orientation='vertical')
+cbar.ax.set_xticklabels(['Early', 'Late'])  # horizontal colorbar
+sm_stress = plt.cm.ScalarMappable(cmap=cmap_stress, norm=plt.Normalize(vmin=0, vmax=1))
+# fake up the array of the scalar mappable. Urgh...
+sm_stress._A = []
+cbar = plt.colorbar(sm_stress,ticks=[0,1], orientation='vertical')
+cbar.ax.set_xticklabels(['Early', 'Late'])  # horizontal colorbar
+#plt.ylim((-0.05,1.05))
+#plt.xlim((-0.05,1.05))
+plt.ylim((-4,3))
+plt.xlim((0.32,0.46))
+plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_IBIPupilCovariance.svg')
 
 
 
