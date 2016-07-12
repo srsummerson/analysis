@@ -869,6 +869,7 @@ def FreeChoiceTask_PathLengths(hdf_file):
 
 	target1 = np.zeros(100)
 	target3 = np.zeros(ind_check_reward_states.size-200)
+	target3 = np.zeros(np.min([num_successful_trials,300])-200)
 	trial1 = np.zeros(target1.size)
 	trial3 = np.zeros(target3.size)
 	stim_trials = np.zeros(target3.size)
@@ -888,19 +889,19 @@ def FreeChoiceTask_PathLengths(hdf_file):
 		trial1[i] = instructed_or_freechoice[i]
 		traj_length1.append([start_time, end_time])
 		if target_state1 == 'hold_targetL':
-			target1.append(1)
+			target1[i] = 1
 		else:
-			target1.append(2)
-	for i in range(200,num_successful_trials):
+			target1[i] = 2
+	for i in range(200,np.min([num_successful_trials,300])):
 		end_time = state_time[ind_check_reward_states[i]]
 		start_time = state_time[ind_check_reward_states[i]-3]
 		target_state3 = state[ind_check_reward_states[i] - 2]
 		trial3[i-200] = instructed_or_freechoice[i]
 		traj_length3.append([start_time, end_time])
 		if target_state3 == 'hold_targetL':
-			target3.append(1)
+			target3[i-200] = 1
 		else:
-			target3.append(2)
+			target3[i-200] = 2
 			
 	traj_length1 = np.array(traj_length1)
 	traj_length3 = np.array(traj_length3)   
