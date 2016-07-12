@@ -18,7 +18,8 @@ from sklearn.cluster import KMeans
 
 '''
 To do: add in lfp2_channels for lfp data from last 64 channels for data extraction, also add in lfp2_channels for 
-pulling out power features, around 682 add in extracting lfp features for well-clusted trials only
+pulling out power features, around 682 add in extracting lfp features for well-clustered trials only, add plot of well-clustered
+ibi/pd covariance with faded out markers for trials not included (i.e. not well clustered)
 '''
 
 
