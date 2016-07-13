@@ -24,12 +24,12 @@ from sklearn.cross_validation import cross_val_score
 
 
 
-hdf_filename = 'mari20160709_07_te2324.hdf'
-hdf_filename_stim = 'mari20160709_08_te2325.hdf'
-filename = 'Mario20160709'
-filename_stim = 'Mario20160709-2'
+hdf_filename = 'mari20160712_03_te2333.hdf'
+hdf_filename_stim = 'mari20160712_07_te2337.hdf'
+filename = 'Mario20160712'
+filename_stim = 'Mario20160712'
 block_num = 1
-block_num_stim = 1
+block_num_stim = 2
 print filename
 #TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
@@ -199,6 +199,9 @@ if filename == filename_stim:
 		if (sig.name == 'Hold 2'):
 			CLstim_state_stim = np.ravel(sig)
 			CLstim_state_samprate_stim = sig.sampling_rate.item()
+		if (sig.name == 'StTg 3'):
+			pvalue_state_stim = np.ravel(sig)
+			pvalue_state_samprate_stim = sig.sampling_rate.item()
 else:
 	r = io.TdtIO(TDT_tank_stim)
 	bl = r.read_block(lazy=False,cascade=True)
@@ -221,6 +224,9 @@ else:
 		if (sig.name == 'Hold 2'):
 			CLstim_state_stim = np.ravel(sig)
 			CLstim_state_samprate_stim = sig.sampling_rate.item()
+		if (sig.name == 'StTg 3'):
+			pvalue_state_stim = np.ravel(sig)
+			pvalue_state_stim = sig.sampling_rate.item()
 
 
 '''
@@ -249,6 +255,7 @@ pupil_dio_sample_num_stim = (float(pupil_samprate_stim)/float(dio_freq_stim))*(d
 lfp_dio_sample_num_stim = (float(lfp_samprate_stim)/float(dio_freq_stim))*(dio_tdt_sample_stim - 1) + 1
 mood_state_dio_sample_num_stim = (float(mood_state_samprate_stim)/float(dio_freq_stim))*(dio_tdt_sample_stim - 1) + 1
 CLstim_state_dio_sample_num_stim = (float(CLstim_state_samprate_stim)/float(dio_freq_stim))*(dio_tdt_sample_stim - 1) + 1
+pvalue_state_dio_sample_num_stim = (float(pvalue_state_samprate_stim)/float(dio_freq_stim))*(dio_tdt_sample_stim - 1) + 1
 
 state_row_ind_successful_stress = state_time[row_ind_successful_stress]
 state_row_ind_successful_reg = state_time[row_ind_successful_reg]
@@ -276,11 +283,13 @@ pupil_ind_successful_stress_stim = np.zeros(row_ind_successful_stress_stim.size)
 lfp_ind_successful_stress_stim = np.zeros(row_ind_successful_stress_stim.size)
 mood_state_ind_successful_stress_stim = np.zeros(row_ind_successful_stress_stim.size)
 CLstim_state_ind_successful_stress_stim = np.zeros(row_ind_successful_stress_stim.size)
+pvalue_state_ind_successful_stress_stim = np.zeros(row_ind_successful_stress_stim.size)
 pulse_ind_successful_reg_stim = np.zeros(row_ind_successful_reg_stim.size)
 pupil_ind_successful_reg_stim = np.zeros(row_ind_successful_reg_stim.size)
 lfp_ind_successful_reg_stim = np.zeros(row_ind_successful_reg_stim.size)
 mood_state_ind_successful_reg_stim = np.zeros(row_ind_successful_reg_stim.size)
 CLstim_state_ind_successful_reg_stim = np.zeros(row_ind_successful_reg_stim.size)
+pvalue_state_ind_successful_reg_stim = np.zeros(row_ind_successful_reg_stim.size)
 
 state_row_ind_stress_stim = state_time_stim[row_ind_stress_stim]
 state_row_ind_reg_stim = state_time_stim[row_ind_reg_stim]
@@ -289,11 +298,13 @@ pupil_ind_stress_stim = np.zeros(row_ind_stress_stim.size)
 lfp_ind_stress_stim = np.zeros(row_ind_stress_stim.size)
 mood_state_ind_stress_stim = np.zeros(row_ind_stress_stim.size)
 CLstim_state_ind_stress_stim = np.zeros(row_ind_stress_stim.size)
+pvalue_state_ind_stress_stim = np.zeros(row_ind_stress_stim.size)
 pulse_ind_reg_stim = np.zeros(row_ind_reg_stim.size)
 pupil_ind_reg_stim = np.zeros(row_ind_reg_stim.size)
 lfp_ind_reg_stim = np.zeros(row_ind_reg_stim.size)
 mood_state_ind_reg_stim = np.zeros(row_ind_reg_stim.size)
 CLstim_state_ind_reg_stim = np.zeros(row_ind_reg_stim.size)
+pvalue_state_ind_reg_stim = np.zeros(row_ind_reg_stim.size)
 
 
 for i in range(0,len(row_ind_successful_stress)):
@@ -333,6 +344,8 @@ for i in range(0,len(row_ind_successful_stress_stim)):
 	hdf_index_reward = np.argmin(np.abs(hdf_rows_stim - state_row_ind_successful_stress_reward_stim[i]))
 	mood_state_ind_successful_stress_stim[i] = mood_state_dio_sample_num_stim[hdf_index_reward]
 	CLstim_state_ind_successful_stress_stim[i] = CLstim_state_dio_sample_num_stim[hdf_index_reward]
+	pvalue_state_ind_successful_stress_stim[i] = pvalue_state_dio_sample_num_stim[hdf_index_reward]
+
 for i in range(0,len(row_ind_stress_stim)):
 	hdf_index = np.argmin(np.abs(hdf_rows_stim - state_row_ind_stress_stim[i]))
 	pulse_ind_stress_stim[i] = pulse_dio_sample_num_stim[hdf_index]
@@ -340,6 +353,7 @@ for i in range(0,len(row_ind_stress_stim)):
 	lfp_ind_stress_stim[i] = lfp_dio_sample_num_stim[hdf_index]
 	mood_state_ind_stress_stim[i] = mood_state_dio_sample_num_stim[hdf_index]
 	CLstim_state_ind_stress_stim[i] = CLstim_state_dio_sample_num_stim[hdf_index]
+	pvalue_state_ind_stress_stim[i] = pvalue_state_dio_sample_num_stim[hdf_index]
 
 for i in range(0,len(state_row_ind_successful_reg_stim)):
 	hdf_index = np.argmin(np.abs(hdf_rows_stim - state_row_ind_successful_reg_stim[i]))
@@ -349,6 +363,8 @@ for i in range(0,len(state_row_ind_successful_reg_stim)):
 	hdf_index_reward = np.argmin(np.abs(hdf_rows_stim - state_row_ind_successful_reg_reward_stim[i]))
 	mood_state_ind_successful_reg_stim[i] = mood_state_dio_sample_num_stim[hdf_index_reward]
 	CLstim_state_ind_successful_reg_stim[i] = CLstim_state_dio_sample_num_stim[hdf_index_reward]
+	pvalue_state_ind_successful_reg_stim[i] = pvalue_state_dio_sample_num_stim[hdf_index_reward]
+
 for i in range(0,len(state_row_ind_reg_stim)):
 	hdf_index = np.argmin(np.abs(hdf_rows_stim - state_row_ind_reg_stim[i]))
 	pulse_ind_reg_stim[i] = pulse_dio_sample_num_stim[hdf_index]
@@ -356,6 +372,7 @@ for i in range(0,len(state_row_ind_reg_stim)):
 	lfp_ind_reg_stim[i] = lfp_dio_sample_num_stim[hdf_index]
 	mood_state_ind_reg_stim[i] = mood_state_dio_sample_num_stim[hdf_index]
 	CLstim_state_ind_reg_stim[i] = CLstim_state_dio_sample_num_stim[hdf_index]
+	pvalue_state_ind_reg_stim[i] = pvalue_state_dio_sample_num_stim[hdf_index]
 
 '''
 Find mood state and CL trigger during Block C : need to add in array of trial number versus mood state/CL stim state so
@@ -365,21 +382,28 @@ mood_state_ind_successful_stress_stim = [ind for ind in mood_state_ind_successfu
 mood_state_ind_successful_reg_stim = [ind for ind in mood_state_ind_successful_reg_stim]
 CLstim_state_ind_successful_stress_stim = [ind for ind in CLstim_state_ind_successful_stress_stim]
 CLstim_state_ind_successful_reg_stim = [ind for ind in CLstim_state_ind_successful_reg_stim]
+pvalue_state_ind_successful_stress_stim = [ind for ind in pvalue_state_ind_successful_stress_stim]
+pvalue_state_ind_successful_reg_stim = [ind for ind in pvalue_state_ind_successful_reg_stim]
 
 mood_state_successful_stress = mood_state_stim[mood_state_ind_successful_stress_stim]
 CLstim_state_successful_stress = CLstim_state_stim[CLstim_state_ind_successful_stress_stim]
+pvalue_state_successful_stress = pvalue_state_stim[pvalue_state_ind_successful_stress_stim]
 frac_stim_on_successful_stress = np.sum(CLstim_state_successful_stress)/float(len(CLstim_state_successful_stress))
 
 mood_state_successful_reg = mood_state_stim[mood_state_ind_successful_reg_stim]
 CLstim_state_successful_reg = CLstim_state_stim[CLstim_state_ind_successful_reg_stim]
+pvalue_state_successful_reg = pvalue_state_stim[pvalue_state_ind_successful_reg_stim]
 frac_stim_on_successful_reg = np.sum(CLstim_state_successful_reg)/float(len(CLstim_state_successful_reg))
 
 mood_state_ind_successful_stim = mood_state_ind_successful_stress_stim + mood_state_ind_successful_reg_stim
 mood_state_ind_successful_stim.sort()
 CLstim_state_ind_successful_stim = CLstim_state_ind_successful_stress_stim + CLstim_state_ind_successful_reg_stim
 CLstim_state_ind_successful_stim.sort()
+pvalue_state_ind_successful_stim = pvalue_state_ind_successful_stress_stim + pvalue_state_ind_successful_reg_stim
+pvalue_state_ind_successful_stim.sort()
 mood_state_successful_stim = mood_state_stim[mood_state_ind_successful_stim]
 CLstim_state_successful_stim = CLstim_state_stim[CLstim_state_ind_successful_stim]
+pvalue_state_successful_stim = pvalue_state_stim[pvalue_state_ind_successful_stim]
 
 # Find out of successful trials which are stress and which are regular
 ind_stress = np.ones([len(ind_successful_stress_stim),2])
@@ -396,14 +420,22 @@ stim_off_inds = np.ravel(np.nonzero(stim_off))
 stim_off_begin = (stim_off_inds[0] == 0)*stim_off_inds[1] + (stim_off_inds[0] != 0)*stim_off_inds[0]
 
 plt.figure()
+plt.subplot(211)
 plt.plot(CLstim_state_successful_stim,'b',label = 'Stim state')
 plt.plot(trial_state_successful_stim,'m',label= 'Trial state')
+plt.plot(pvalue_state_successful_stim,'c',label='p-value')
 plt.legend()
 plt.ylim((-0.1,1.5))
 plt.title('Closed-loop Stim Relative to Trial Type')
 plt.text(10,1.4,'Trial when stim is first turned off: %i' % stim_off_begin)
 plt.text(10,1.3,'Fraction of stress trials with stim on: %f' % frac_stim_on_successful_stress)
 plt.text(10,1.2,'Fraction of regular trials with stim on: %f' % frac_stim_on_successful_reg)
+plt.subplot(212)
+plt.plot(CLstim_state_successful_stress,'b',label = 'Stim state')
+plt.plot(pvalue_state_successful_stress,'c',label='p-value')
+plt.legend()
+plt.ylim((-0.1,1.5))
+plt.title('Closed-loop Stim During Stress Trials')
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename +'_ClosedLoopStimVersusTrialType.svg')
 
 
