@@ -24,8 +24,8 @@ from sklearn.cross_validation import cross_val_score
 
 
 
-hdf_filename = 'mari20160711_02_te2327.hdf'
-filename = 'Mario20160711'
+hdf_filename = 'mari20160712_03_te2333.hdf'
+filename = 'Mario20160712'
 block_num = 1
 print filename
 #TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
@@ -377,8 +377,15 @@ print fit_glm.summary()
 
 norm_ibi_stress_mean = ibi_stress_mean 
 norm_pupil_stress_mean = pupil_stress_mean 
-norm_ibi_reg_before_mean = ibi_reg_before_mean 
-norm_pupil_reg_before_mean = pupil_reg_before_mean 
+norm_ibi_reg_before_mean = ibi_reg_mean 
+norm_pupil_reg_before_mean = pupil_reg_mean 
+
+points_stress = np.array([norm_ibi_stress_mean,norm_pupil_stress_mean])
+points_reg_before = np.array([norm_ibi_reg_before_mean,norm_pupil_reg_before_mean])
+cov_stress = np.cov(points_stress)
+cov_reg_before = np.cov(points_reg_before)
+mean_vec_stress = [np.nanmean(norm_ibi_stress_mean),np.nanmean(norm_pupil_stress_mean)]
+mean_vec_reg_before = [np.nanmean(norm_ibi_reg_before_mean),np.nanmean(norm_pupil_reg_before_mean)]
 
 cmap_stress = mpl.cm.autumn
 cmap_reg_before = mpl.cm.winter
@@ -388,8 +395,8 @@ for i in range(0,len(ibi_stress_mean)):
     #plt.plot(norm_ibi_stress_mean[i],norm_pupil_stress_mean[i],color=cmap_stress(i/float(len(ibi_stress_mean))),marker='o',markeredgecolor=None,markeredgewidth=0.0)
     plt.plot(norm_ibi_stress_mean[i],norm_pupil_stress_mean[i],color=cmap_stress(i/float(len(ibi_stress_mean))),marker='o')
 plot_cov_ellipse(cov_stress,mean_vec_stress,fc='r',ec='None',a=0.2)
-for i in range(0,len(ibi_reg_before_mean)):
-	plt.plot(norm_ibi_reg_before_mean[i],norm_pupil_reg_before_mean[i],color=cmap_reg_before(i/float(len(ibi_reg_before_mean))),marker='o')
+for i in range(0,len(ibi_reg_mean)):
+	plt.plot(norm_ibi_reg_before_mean[i],norm_pupil_reg_before_mean[i],color=cmap_reg_before(i/float(len(ibi_reg_mean))),marker='o')
 plot_cov_ellipse(cov_reg_before,mean_vec_reg_before,fc='b',ec='None',a=0.2)
 #plt.legend()
 plt.xlabel('Mean Trial IBI (s)')
