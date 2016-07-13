@@ -12,7 +12,7 @@ from matplotlib import mlab
 import matplotlib.pyplot as plt
 from basicAnalysis import plot_cov_ellipse, LDAforFeatureSelection
 from csv_processing import get_csv_data_singlechannel
-from probabilisticRewardTaskPerformance import FreeChoiceBehavior_withStressTrials
+from probabilisticRewardTaskPerformance import FreeChoiceBehavior_withStressTrials_CLStim
 from spectralAnalysis import TrialAveragedPSD
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.linear_model import LogisticRegression
@@ -50,8 +50,8 @@ bands = [[30,55]]
 '''
 Load behavior data
 '''
-state_time, ind_center_states, ind_check_reward_states, all_instructed_or_freechoice, all_stress_or_not, successful_stress_or_not,trial_success, target, reward = FreeChoiceBehavior_withStressTrials(hdf_location)
-state_time_stim, ind_center_states_stim, ind_check_reward_states_stim, all_instructed_or_freechoice_stim, all_stress_or_not_stim, successful_stress_or_not_stim,trial_success_stim, target_stim, reward_stim = FreeChoiceBehavior_withStressTrials(hdf_location_stim)
+state_time, ind_center_states, ind_target_states,ind_check_reward_states, all_instructed_or_freechoice, all_stress_or_not, successful_stress_or_not,trial_success, target, reward = FreeChoiceBehavior_withStressTrials_CLStim(hdf_location)
+state_time_stim, ind_center_states_stim, ind_target_states_stim,ind_check_reward_states_stim, all_instructed_or_freechoice_stim, all_stress_or_not_stim, successful_stress_or_not_stim,trial_success_stim, target_stim, reward_stim = FreeChoiceBehavior_withStressTrials_CLStim(hdf_location_stim)
 
 print "Behavior data loaded."
 
@@ -87,6 +87,7 @@ ind_successful_stress_stim = np.ravel(np.nonzero(tot_successful_stress_stim))   
 row_ind_successful_stress_stim = ind_center_states_stim[ind_successful_stress_stim]		# gives row index
 ind_successful_stress_reward_stim = np.ravel(np.nonzero(successful_stress_or_not_stim))
 row_ind_successful_stress_reward_stim = ind_check_reward_states_stim[ind_successful_stress_reward_stim]
+row_ind_successful_stress_target_stim = ind_target_states_stim[ind_successful_stress_reward_stim]
 response_time_successful_stress_stim = (state_time_stim[row_ind_successful_stress_reward_stim] - state_time_stim[row_ind_successful_stress_stim])/float(60)		# hdf rows are written at a rate of 60 Hz
 
 # Response time for all stress trials
@@ -123,6 +124,7 @@ ind_successful_reg_stim = np.ravel(np.nonzero(tot_successful_reg_stim))
 row_ind_successful_reg_stim = ind_center_states_stim[ind_successful_reg_stim]
 ind_successful_reg_reward_stim = np.ravel(np.nonzero(np.logical_not(successful_stress_or_not_stim)))
 row_ind_successful_reg_reward_stim = ind_check_reward_states_stim[ind_successful_reg_reward_stim]
+row_ind_successful_reg_target_stim = ind_target_states_stim[ind_successful_reg_reward_stim]
 response_time_successful_reg_stim = (state_time_stim[row_ind_successful_reg_reward_stim] - state_time_stim[row_ind_successful_reg_stim])/float(60)
 
 # Response time for all regular trials
@@ -277,7 +279,9 @@ lfp_ind_reg = []
 state_row_ind_successful_stress_stim = state_time_stim[row_ind_successful_stress_stim]
 state_row_ind_successful_reg_stim = state_time_stim[row_ind_successful_reg_stim]
 state_row_ind_successful_stress_reward_stim = state_time_stim[row_ind_successful_stress_reward_stim]
+state_row_ind_successful_stress_target_stim = state_time_stim[row_ind_successful_stress_target_stim]
 state_row_ind_successful_reg_reward_stim = state_time_stim[row_ind_successful_reg_reward_stim]
+state_row_ind_successful_reg_target_stim = state_time_stim[row_ind_successful_reg_target_stim]
 pulse_ind_successful_stress_stim = np.zeros(row_ind_successful_stress_stim.size)
 pupil_ind_successful_stress_stim = np.zeros(row_ind_successful_stress_stim.size)
 lfp_ind_successful_stress_stim = np.zeros(row_ind_successful_stress_stim.size)
@@ -344,7 +348,8 @@ for i in range(0,len(row_ind_successful_stress_stim)):
 	hdf_index_reward = np.argmin(np.abs(hdf_rows_stim - state_row_ind_successful_stress_reward_stim[i]))
 	mood_state_ind_successful_stress_stim[i] = mood_state_dio_sample_num_stim[hdf_index_reward]
 	CLstim_state_ind_successful_stress_stim[i] = CLstim_state_dio_sample_num_stim[hdf_index_reward]
-	pvalue_state_ind_successful_stress_stim[i] = pvalue_state_dio_sample_num_stim[hdf_index_reward]
+	hdf_index_target = np.argmin(np.abs(hdf_rows_stim - state_row_ind_successful_stress_target_stim[i]))
+	pvalue_state_ind_successful_stress_stim[i] = pvalue_state_dio_sample_num_stim[hdf_index_target]
 
 for i in range(0,len(row_ind_stress_stim)):
 	hdf_index = np.argmin(np.abs(hdf_rows_stim - state_row_ind_stress_stim[i]))
@@ -363,7 +368,8 @@ for i in range(0,len(state_row_ind_successful_reg_stim)):
 	hdf_index_reward = np.argmin(np.abs(hdf_rows_stim - state_row_ind_successful_reg_reward_stim[i]))
 	mood_state_ind_successful_reg_stim[i] = mood_state_dio_sample_num_stim[hdf_index_reward]
 	CLstim_state_ind_successful_reg_stim[i] = CLstim_state_dio_sample_num_stim[hdf_index_reward]
-	pvalue_state_ind_successful_reg_stim[i] = pvalue_state_dio_sample_num_stim[hdf_index_reward]
+	hdf_index_target = np.argmin(np.abs(hdf_rows_stim - state_row_ind_successful_reg_target_stim[i]))
+	pvalue_state_ind_successful_reg_stim[i] = pvalue_state_dio_sample_num_stim[hdf_index_target]
 
 for i in range(0,len(state_row_ind_reg_stim)):
 	hdf_index = np.argmin(np.abs(hdf_rows_stim - state_row_ind_reg_stim[i]))
