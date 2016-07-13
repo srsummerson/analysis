@@ -414,8 +414,8 @@ cbar = plt.colorbar(sm_stress,ticks=[0,1], orientation='vertical')
 cbar.ax.set_xticklabels(['Early', 'Late'])  # horizontal colorbar
 #plt.ylim((-0.05,1.05))
 #plt.xlim((-0.05,1.05))
-plt.ylim((-4,3))
-plt.xlim((0.32,0.46))
+#plt.ylim((-4,3))
+#plt.xlim((0.32,0.46))
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_IBIPupilCovariance.svg')
 
 
