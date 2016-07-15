@@ -354,7 +354,7 @@ Find mood state and CL trigger during Block C : need to add in array of trial nu
 we can see generally for how long stim is on
 '''
 target_states = np.ravel(np.nonzero(target_state_stim))
-target_states = [val for val in target_states if (val-1) not in target_states]
+target_states = np.array([val for val in target_states if (val-1) not in target_states])
 
 target_state_trial_type = np.ravel(stress_type_stim[state_time_stim[ind_target_states_stim]])
 
