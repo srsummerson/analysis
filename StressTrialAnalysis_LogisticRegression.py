@@ -388,7 +388,7 @@ mean_vec_stress = [np.nanmean(norm_ibi_stress_mean),np.nanmean(norm_pupil_stress
 mean_vec_reg = [np.nanmean(norm_ibi_reg_mean),np.nanmean(norm_pupil_reg_mean)]
 
 cmap_stress = mpl.cm.autumn
-cmap_reg_before = mpl.cm.winter
+cmap_reg = mpl.cm.winter
 
 plt.figure()
 for i in range(0,len(ibi_stress_mean)):
@@ -411,11 +411,6 @@ sm_stress = plt.cm.ScalarMappable(cmap=cmap_stress, norm=plt.Normalize(vmin=0, v
 # fake up the array of the scalar mappable. Urgh...
 sm_stress._A = []
 cbar = plt.colorbar(sm_stress,ticks=[0,1], orientation='vertical')
-cbar.ax.set_xticklabels(['Early', 'Late'])  # horizontal colorbar
-sm_stim = plt.cm.ScalarMappable(cmap=cmap_stim, norm=plt.Normalize(vmin=0, vmax=1))
-# fake up the array of the scalar mappable. Urgh...
-sm_stim._A = []
-cbar = plt.colorbar(sm_stim,ticks=[0,1], orientation='vertical')
 cbar.ax.set_xticklabels(['Early', 'Late'])  # horizontal colorbar
 #plt.ylim((-0.05,1.05))
 #plt.xlim((-0.05,1.05))
