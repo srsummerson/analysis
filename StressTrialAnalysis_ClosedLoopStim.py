@@ -431,8 +431,8 @@ else:
 	print "Num reg trials ", len(target_state_trial_type) - np.sum(target_state_trial_type)
 	print "Num triggered target states ", len(target_states)
 
-	stress_state_ind = [i for i in range(0,len(target_state_trial_type)) if (target_state_trial_type[i] == 1)&(i < len(target_states))]
-	reg_state_ind = [i for i in range(0,len(target_state_trial_type)) if (target_state_trial_type[i] == 0)&(i < len(target_states))]
+	stress_state_ind = [i for i in range(0,len(target_states)) if (target_state_trial_type[i] == 1)]
+	reg_state_ind = [i for i in range(0,len(target_states)) if (target_state_trial_type[i] == 0)]
 	target_states_stress = target_states[stress_state_ind]
 	target_states_reg = target_states[reg_state_ind]
 
