@@ -856,7 +856,7 @@ def FreeChoiceBehavior_withStressTrials_CLStim(hdf_file):
 			reward[i] = 0 	# no reward givens
 
 	hdf.close()
-	return state_time, ind_center_states, ind_target_states, ind_check_reward_states, all_instructed_or_freechoice, all_stress_or_not, successful_stress_or_not,trial_success, target, reward
+	return state_time, stress_type, ind_center_states, ind_target_states, ind_check_reward_states, all_instructed_or_freechoice, all_stress_or_not, successful_stress_or_not,trial_success, target, reward
 
 def FreeChoicePilotTask_ChoiceAfterStim(reward3, target3, instructed_or_freechoice_block3,stim_trials):
 	'''
