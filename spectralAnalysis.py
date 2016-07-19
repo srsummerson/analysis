@@ -269,3 +269,50 @@ def computePeakPowerPerChannel(lfp,Fs,stim_freq,t_start,t_end,freq_window):
  		counter += 1
 
 	return peak_power
+
+def LFPPowerPerTrial_SingleBand_PerChannel(lfp,Fs,channels,t_start,t_before,t_after,freq_window):
+	'''
+	This method computes the power in a single band defined by power_band over sliding windows in the range 
+	[window_start_times-time_before,window_start_times + time_after]. This is done per trial and then a plot of 
+	power in the specified band is produce with time in the x-axis and trial in the y-axis. This is done per channel.
+
+	Inputs:
+		- lfp: lfp data arrange in an array of data x channel
+		- channels: list of channels for which to apply this method
+		- Fs: sampling rate of data in lfp_data array in Hz
+		- t_start: window start times in units of sample numbers 
+		- t_before: length of time in s to look at before the alignment times in window_start_times
+		- t_after: length of time in s to look at after the alignment times 
+		- freq_window: list defining the window of frequencies to look at, should be of the form power_band = [f_min,f_max]
+	'''
+	# Initialize parameters: convert to units of samples
+	t_before_samp = np.floor(t_before*Fs)  	# convert to units of samples
+	t_after_samp = np.floor(t_after*Fs)
+
+	# Set up plotting variables
+	# Set up matrix for plotting peak powers
+
+	for chann in channels:
+		trial_power = []
+		for i, time in enumerate(window_start_times):
+			Sxx,f,t = specgram(lfp[time - t_before_samp:time + t_after_samp,chann],Fs=Fs)
+			f_band_ind = [ind for ind in range(0,len(f)) if (f[ind] <= freq_window[1])&(freq_window[0] <= f[ind])]
+			f_band = np.sum(Sxx[f_band_ind,:],axis=0)
+			trial_power.append(f_band)
+		
+		power_mat = np.zeros([len(window_start_times),len(trial_power[0])])
+		for ind in range(0,len(window_start_times)):
+			power_mat[i,:] = trial_power[i]
+
+		dx, dy = float(t_before+t_after)/len(t), 1
+		y, x = np.mgrid[slice(0,len(window_start_times),dy),
+			slice(-t_before,t_after,dx)]
+		cmap = plt.get_cmap('RdBu')
+		plt.figure()
+		plt.title('Channel %i - Power in band [%f,%f]' % (chann,freq_window[0],freq_window[1]))
+		plt.pcolormesh(x,y,power_mat,cmap=cmap)
+		plt.ylabel('Trial num')
+		plt.xlabel('Time (s)')
+		plt.axis([x.min(),x.max(),y.min(),y.max()])
+		plt.show()
+	

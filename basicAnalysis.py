@@ -90,55 +90,6 @@ def computePSTH(spike_file1,spike_file2,times,window_before=1,window_after=2, bi
 
 	return psth, smooth_psth, unit_labels
 
-def computePSTH_WithChanMapping(spike_file1,spike_file2,channels,times,window_before=1,window_after=2, binsize=1):
-	'''
-	Input:
-		- spike_file1: sorted spikes for Channels 1 - 96
-		- spike_file2: sorted spikes for Channels 97 - 160
-		- channels: array of channels 
-		- times: time points to align peri-stimulus time histograms to
-		- window_before: amount of time before alignment points to include in time window, units in seconds
-		- window_after: amount of time after alignment points to include in time window, units in seconds
-		- binsize: time length of bins for estimating spike rates, units in milleseconds
-	Output:
-		- psth: peri-stimulus time histogram over window [window_before, window_after] averaged over trials
-	'''
-	boxcar_length = 4.
-	channels = np.arange(1,161)
-	binsize = float(binsize)/1000
-	psth_time_window = np.arange(0,window_before+window_after-float(binsize),float(binsize))
-	boxcar_window = signal.boxcar(boxcar_length)  # 2 ms before, 2 ms after for boxcar smoothing
-	psth = dict()
-	smooth_psth = dict()
-	unit_labels = []
-
-	for channel in channels:
-		if channel < 97: 
-			channel_spikes = [entry for entry in spike_file1 if (entry[1]==channel)]
-		else:
-			channel2 = channel % 96
-			channel_spikes = [entry for entry in spike_file2 if (entry[1]==channel2)]
-		units = [spike[2] for spike in channel_spikes]
-		unit_vals = set(units)  # number of units
-		if len(unit_vals) > 0:
-			unit_vals.remove(0) 	# value 0 are units marked as noise events
-
-		for unit in unit_vals:
-			unit_name = 'Ch'+str(channel) +'_' + str(unit)
-			spike_times = [spike[0] for spike in channel_spikes if (spike[2]==unit)]
-			psth[unit_name] = np.zeros(len(psth_time_window))
-			unit_labels.append(unit_name)
-			
-			for time in times:
-				epoch_bins = np.arange(time-window_before,time+window_after,float(binsize)) 
-				counts, bins = np.histogram(spike_times,epoch_bins)
-				psth[unit_name] += counts[0:len(psth_time_window)]/binsize	# collect all rates into a N-dim array
-
-			psth[unit_name] = psth[unit_name]/float(len(times))
-			smooth_psth[unit_name] = np.convolve(psth[unit_name], boxcar_window,mode='same')/boxcar_length
-
-	return psth, smooth_psth, unit_labels
-
 def computePSTH_SingleChannel(spike_file,channel,times,window_before=1,window_after=2, binsize=1):
 	'''
 	Input:
@@ -249,6 +200,24 @@ def computeSpikeRatesPerChannel(spike_file1,spike_file2,t_start,t_end):
 	#unit_labels = unit_labels[:counter]
 
 	return spike_rates, spike_sem, unit_labels
+
+def LFPPowerPerTrial_SingleBand_PerChannel(lfp_data,chann,sampling_rate,window_start_times,time_before,time_after,power_band):
+	'''
+	This method computes the power in a single band defined by power_band over sliding windows in the range 
+	[window_start_times-time_before,window_start_times + time_after]. This is done per trial and then a plot of 
+	power in the specified band is produce with time in the x-axis and trial in the y-axis. This is done per channel.
+
+	Inputs:
+		- lfp_data: lfp data arrange in an array of data x channel
+		- chann: list of channels for which to apply this method
+		- sampling_rate: sampling rate of data in lfp_data array in Hz
+		- window_start_times: window start times in units of sample numbers 
+		- time_before: length of time in s to look at before the alignment times in window_start_times
+		- time_after: length of time in s to look at after the alignment times 
+		- power_band: list defining the window of frequencies to look at, should be of the form power_band = [f_min,f_max]
+	'''
+	for i, time in enumerate(window_start_times):
+		
 
 
 def plot_point_cov(points, nstd=2, ax=None, **kwargs):
