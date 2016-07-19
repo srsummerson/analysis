@@ -24,10 +24,10 @@ from sklearn.cross_validation import cross_val_score
 
 
 
-hdf_filename = 'mari20160714_03_te2351.hdf'
-hdf_filename_stim = 'mari20160714_05_te2353.hdf'
-filename = 'Mario20160714'
-filename2 = 'Mario20160714'
+hdf_filename = 'mari20160716_03_te2361.hdf'
+filename = 'Mario20160716'
+hdf_filename_stim = 'mari20160716_04_te2362.hdf'
+filename2 = 'Mario20160716'
 block_num = 1
 block_num_stim = 2
 print filename
