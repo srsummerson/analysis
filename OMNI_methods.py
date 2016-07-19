@@ -16,10 +16,7 @@ def convert_OMNI(filename, **kwargs):
 
 	Input:
 		- filename: string containing the file path for a csv file saved with the OMNI device
-	Optional inputs:
-		- save_pkl: True/False to save pkl file, default is False
-		- new_file_path: location to save new pkl file
-		- animal_id: string containing subject's name, e.g. Mario, for naming of saved pkl file
+	
 		
 	Output:
 		- data: pandas DataFrame, M rows x N columns, M = number of data points, N = number of channels + 1, 
@@ -27,33 +24,15 @@ def convert_OMNI(filename, **kwargs):
 				contains the timestamps 
 
 	'''
-	kwargsdict = {}
-	kwargsdict['save_pkl'] = False
-	expected_args = ['save_pkl', 'new_file_path','animal_id']
-	for key in kwargs.keys():
-		if key in expected_args:
-			kwargsdict[key] = kwargs[key]
-		else:
-			raise Exception("Unexpected Argument")
-
-	f = open(filename,'r')
-
-	header = [line.strip() for i,line in enumerate(f) if (line.strip() != '')&(i < 2)]
-	year = header[1][:4]  	# assumes date has format YYYY-MM-DD
-	month = header[1][5:7] 	# assumes date has format YYYY-MM-DD
-	day = header[1][8:10] 	# assumes date has format YYYY-MM-DD
-
 	data = pd.read_csv(filename,sep=',',header=None,skiprows=[0,1])
-	data = np.array(data)
+	time_samps, num_col = data.shape
+	channel_data = np.zeros([time_samps,num_col-3])  # 3 fewer columns since one is crv flag, one is ramp, and one is time samples
+	crc_flag = data[:][0]
+	for col in range(0,num_col-3):
+		channel_data[:,col] = data[:][num_col+1]
+	timestamps = np.array(data[:][num_col-1])
 
-	if kwargsdict['save_pkl']:
-		pkl_filename = kwargsdict['animal_id'] + year + month + day + '_OMNIdata.pkl'
-		new_filename = kwargsdict['new_file_path']+pkl_filename
-		data.to_pickle(new_filename)
-
-	f.close()
-
-	return data
+	return channel_data, timestamps, crc_flag
 
 
 def plotRawLFPTraces(data, **kwargs):
