@@ -117,4 +117,28 @@ def plotRawLFPTraces(data, **kwargs):
 
 	plt.show()
 
-	return 
+	return
+
+def get_stim_sync_sig(tdt_tank):
+	r = io.TdtIO(dirname = tdt_tank)
+	bl = r.read_block(lazy=False,cascade=True)
+
+	for sig in bl.segments[0].analogsignals:
+		if (sig.name == 'StWv 1'):
+			# Signal is output of stimulator monitor recording voltage on channel stimulation is delivered on
+			stim_monitor = np.ravel(sig)
+		if (sig.name == 'StWv 2'):
+			# Stimulation signal used: this is the base stimulation signal that is turned on/off
+			stim_signal = np.ravel(sig)
+		if (sig.name == 'StWv 4'):
+			# Trigger signal for stimulation. High is ON, Low is OFF.
+			stim_on_trig = np.ravel(sig)
+		if (sig.name == 'StWv 3'):
+			# Control signal for stimulator. When stim_on_trig = 1, this signal equals stim_signal
+			stim_delivered = np.ravel(sig)
+			stwv_samprate = sig.sampling_rate.item()
+
+	return stim_signal, stim_on_trig, stim_delivered, stwv_samprate
+
+
+		
