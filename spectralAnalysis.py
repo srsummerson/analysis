@@ -341,17 +341,27 @@ def LFPPowerPerTrial_SingleBand_PerChannel_Timestamps(lfp,timestamps,Avg_Fs,chan
 
 	for chann in channels:
 		trial_power = []
+		trial_times = []
 		for i, time in enumerate(t_start):
-			lfp_snippet = [lfp[ind] for ind in range(0,len(timestamps)) if (timestamps[ind] <= t_start + t_after)&(t_start - t_before <= timestamps[ind])]
-			Sxx,f,t = specgram(lfp_snippet,Fs=Avg_Fs)
+			lfp_snippet = []
+			lfp_snippet = [lfp[ind,chann] for ind in range(0,len(timestamps)) if (timestamps[ind] <= time + t_after)&(time - t_before <= timestamps[ind])]
+			lfp_snippet = np.array(lfp_snippet)
+			
+			Sxx,f,t, fig = specgram(lfp_snippet,NFFT = 128,Fs=Avg_Fs,noverlap=56,scale_by_freq=False)
 			f_band_ind = [ind for ind in range(0,len(f)) if (f[ind] <= freq_window[1])&(freq_window[0] <= f[ind])]
 			f_band = np.sum(Sxx[f_band_ind,:],axis=0)
-			trial_power.append(f_band)
+			f_band_norm = f_band/np.sum(f_band)
+			trial_power.append(f_band_norm)
+			trial_times.append(t)
 		
 		power_mat = np.zeros([len(t_start),len(trial_power[0])])
+		
 		for ind in range(0,len(t_start)):
-			power_mat[i,:] = trial_power[i]
-
+			if len(trial_power[ind]) == len(trial_power[0]):
+				power_mat[ind,:] = trial_power[ind]
+			else:
+				power_mat[ind,:] = np.append(trial_power[ind],np.zeros(len(trial_power[0])-len(trial_power[ind])))
+		
 		dx, dy = float(t_before+t_after)/len(t), 1
 		y, x = np.mgrid[slice(0,len(t_start),dy),
 			slice(-t_before,t_after,dx)]
@@ -363,4 +373,6 @@ def LFPPowerPerTrial_SingleBand_PerChannel_Timestamps(lfp,timestamps,Avg_Fs,chan
 		plt.xlabel('Time (s)')
 		plt.axis([x.min(),x.max(),y.min(),y.max()])
 		plt.show()
+		
+	return trial_power, trial_times
 	

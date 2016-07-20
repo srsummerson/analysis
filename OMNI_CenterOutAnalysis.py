@@ -9,6 +9,7 @@ import matplotlib as mpl
 from matplotlib import mlab
 from OMNI_methods import convert_OMNI, get_stim_sync_sig
 from spectralAnalysis import LFPPowerPerTrial_SingleBand_PerChannel_Timestamps
+import tables
 
 omni_filename = 'stream_behavioral.csv'
 hdf_filename = 'mari20160718_17_te2379.hdf'
@@ -20,7 +21,7 @@ hdf_location = '/storage/rawdata/hdf/'+hdf_filename
 TDT_location = '/home/srsummerson/storage/tdt/'+filename
 
 channels = [10]  		# picking subset of channels to analyze
-freq_window = [10,30]	# defining frequency window of interest
+freq_window = [20,40]	# defining frequency window of interest
 
 '''
 Load syncing data for behavior and TDT recording
@@ -75,4 +76,4 @@ Translate behavioral timestamps to timestamps recorded with OMNI device
 # times in s on the OMNI device for when the task state occurs
 omni_time_ind = tdt_time_ind + omni_time_offset
 
-LFPPowerPerTrial_SingleBand_PerChannel_Timestamps(channel_data,timestamps,Avg_Fs,channels,omni_time_ind,1,2,freq_window)
+Sxx = LFPPowerPerTrial_SingleBand_PerChannel_Timestamps(channel_data,timestamps,Avg_Fs,channels,omni_time_ind,1,2,freq_window)

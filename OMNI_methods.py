@@ -7,6 +7,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 import matplotlib as mpl
 from matplotlib import mlab
+import tables
 
 
 def convert_OMNI(filename, **kwargs):
@@ -27,9 +28,9 @@ def convert_OMNI(filename, **kwargs):
 	data = pd.read_csv(filename,sep=',',header=None,skiprows=[0,1])
 	time_samps, num_col = data.shape
 	channel_data = np.zeros([time_samps,num_col-3])  # 3 fewer columns since one is crv flag, one is ramp, and one is time samples
-	crc_flag = data[:][0]
+	crc_flag = np.array(data[:][0])
 	for col in range(0,num_col-3):
-		channel_data[:,col] = data[:][num_col+1]
+		channel_data[:,col] = data[:][col+1]
 	timestamps = np.array(data[:][num_col-1])
 
 	return channel_data, timestamps, crc_flag
