@@ -270,7 +270,7 @@ def computePeakPowerPerChannel(lfp,Fs,stim_freq,t_start,t_end,freq_window):
 
 	return peak_power
 
-def LFPPowerPerTrial_SingleBand_PerChannel(lfp,Fs,channels,t_start,t_before,t_after,freq_window):
+def LFPPowerPerTrial_SingleBand_PerChannel(lfp,Fs,channels,window_start_times,t_before,t_after,freq_window):
 	'''
 	This method computes the power in a single band defined by power_band over sliding windows in the range 
 	[window_start_times-time_before,window_start_times + time_after]. This is done per trial and then a plot of 
@@ -280,7 +280,7 @@ def LFPPowerPerTrial_SingleBand_PerChannel(lfp,Fs,channels,t_start,t_before,t_af
 		- lfp: lfp data arrange in an array of data x channel
 		- channels: list of channels for which to apply this method
 		- Fs: sampling rate of data in lfp_data array in Hz
-		- t_start: window start times in units of sample numbers 
+		- window_start_times: window start times in units of sample numbers 
 		- t_before: length of time in s to look at before the alignment times in window_start_times
 		- t_after: length of time in s to look at after the alignment times 
 		- freq_window: list defining the window of frequencies to look at, should be of the form power_band = [f_min,f_max]
@@ -306,6 +306,54 @@ def LFPPowerPerTrial_SingleBand_PerChannel(lfp,Fs,channels,t_start,t_before,t_af
 
 		dx, dy = float(t_before+t_after)/len(t), 1
 		y, x = np.mgrid[slice(0,len(window_start_times),dy),
+			slice(-t_before,t_after,dx)]
+		cmap = plt.get_cmap('RdBu')
+		plt.figure()
+		plt.title('Channel %i - Power in band [%f,%f]' % (chann,freq_window[0],freq_window[1]))
+		plt.pcolormesh(x,y,power_mat,cmap=cmap)
+		plt.ylabel('Trial num')
+		plt.xlabel('Time (s)')
+		plt.axis([x.min(),x.max(),y.min(),y.max()])
+		plt.show()
+
+def LFPPowerPerTrial_SingleBand_PerChannel_Timestamps(lfp,timestamps,Avg_Fs,channels,t_start,t_before,t_after,freq_window):
+	'''
+	This method computes the power in a single band defined by power_band over sliding windows in the range 
+	[window_start_times-time_before,window_start_times + time_after]. This is done per trial and then a plot of 
+	power in the specified band is produce with time in the x-axis and trial in the y-axis. This is done per channel.
+
+	Main difference with LFPPowerPerTrial_SingleBand_PerChannel is that t_start is in seconds and we don't assume
+	a fixed time between samples.
+
+	Inputs:
+		- lfp: lfp data arrange in an array of data x channel
+		- timestamps: time stamps for lfp samples, which may occur at irregular intervals
+		- channels: list of channels for which to apply this method
+		- Fs: sampling rate of data in lfp_data array in Hz
+		- t_start: window start times in units of s 
+		- t_before: length of time in s to look at before the alignment times in window_start_times
+		- t_after: length of time in s to look at after the alignment times 
+		- freq_window: list defining the window of frequencies to look at, should be of the form power_band = [f_min,f_max]
+	'''
+
+	# Set up plotting variables
+	# Set up matrix for plotting peak powers
+
+	for chann in channels:
+		trial_power = []
+		for i, time in enumerate(t_start):
+			lfp_snippet = [lfp[ind] for ind in range(0,len(timestamps)) if (timestamps[ind] <= t_start + t_after)&(t_start - t_before <= timestamps[ind])]
+			Sxx,f,t = specgram(lfp_snippet,Fs=Avg_Fs)
+			f_band_ind = [ind for ind in range(0,len(f)) if (f[ind] <= freq_window[1])&(freq_window[0] <= f[ind])]
+			f_band = np.sum(Sxx[f_band_ind,:],axis=0)
+			trial_power.append(f_band)
+		
+		power_mat = np.zeros([len(t_start),len(trial_power[0])])
+		for ind in range(0,len(t_start)):
+			power_mat[i,:] = trial_power[i]
+
+		dx, dy = float(t_before+t_after)/len(t), 1
+		y, x = np.mgrid[slice(0,len(t_start),dy),
 			slice(-t_before,t_after,dx)]
 		cmap = plt.get_cmap('RdBu')
 		plt.figure()
