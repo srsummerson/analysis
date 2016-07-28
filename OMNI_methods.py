@@ -27,13 +27,34 @@ def convert_OMNI(filename, **kwargs):
 	'''
 	data = pd.read_csv(filename,sep=',',header=None,skiprows=[0,1])
 	time_samps, num_col = data.shape
-	channel_data = np.zeros([time_samps,num_col-3])  # 3 fewer columns since one is crv flag, one is ramp, and one is time samples
 	crc_flag = np.array(data[:][0])
-	for col in range(0,num_col-3):
-		channel_data[:,col] = data[:][col+1]
-	timestamps = np.array(data[:][num_col-1])
+	ind_crc_pass = [ind for ind in range(0,len(crc)) if crc[ind]==170]
 
-	return channel_data, timestamps, crc_flag
+	channel_data = np.zeros([len(ind_crc_pass),num_col-3])  # 3 fewer columns since one is crv flag, one is ramp, and one is time samples
+	
+	for col in range(0,num_col-3):
+		channel_data[:,col] = data[ind_crc_pass][col+1]
+	timestamps = np.array(data[ind_crc_pass][num_col-1])
+	counter_ramp = np.array(data[ind_crc_pass][num_col-2])
+
+	corrected_channel_data = [data[0,:]]
+	corrected_counter = [counter_ramp[0]]
+	num_cycle = 0
+
+	for i in range(1,len(counter_ramp)):
+		diff = counter_ramp[i] - counter_ramp[i-1]
+		if (diff==1):
+			corrected_channel_data.append(data[i,:])
+			corrected_counter.append(counter_ramp[i] + num_cycle*(2**16))
+		elif (diff == -2**16 +1):
+			num_cycle += 1
+			corrected_channel_data.append(data[i,:])
+			corrected_counter.append(counter_ramp[i] + num_cycle*(2**16))
+		else:
+			num_samples_insert = diff - 1.
+			corrected_counter.append((counter_ramp[i-1] + range(1,diff) + num_cycle*(2**16)).tolist())
+
+	return channel_data, timestamps, crc_flag, counter_ramp
 
 
 def plotRawLFPTraces(data, **kwargs):
@@ -121,4 +142,61 @@ def get_stim_sync_sig(tdt_tank):
 	return stim_signal, stim_on_trig, stim_delivered, stwv_samprate
 
 
+def test_convert_OMNI(data, **kwargs):
+	
+	#data = pd.read_csv(filename,sep=',',header=None,skiprows=[0,1])
+	data = np.array(data)
+	time_samps, num_col = data.shape
+	crc_flag = np.array(data[:,0])
+	ind_crc_pass = [ind for ind in range(0,len(crc_flag)) if crc_flag[ind]==170]
+
+	channel_data = np.zeros([len(ind_crc_pass),num_col-3])  # 3 fewer columns since one is crv flag, one is ramp, and one is time samples
+	
+	for col in range(0,num_col-3):
+		channel_data[:,col] = data[ind_crc_pass,col+1]
+	timestamps = data[ind_crc_pass,num_col-1]
+	counter_ramp = data[ind_crc_pass,num_col-2]
+
+	corrected_channel_data = channel_data[0,:]
+	corrected_counter = [counter_ramp[0]]
+	num_cycle = 0
+
+	for i in range(1,len(counter_ramp)):
+	#for i in range(1,17000):
+		diff = counter_ramp[i] - counter_ramp[i-1]
+		diff = int(diff)
+		if (i % 1000 == 0):
+			print i, diff
+		elif (diff > 1):
+			print i, diff
+		if (diff==1):
+			corrected_counter.append(counter_ramp[i] + num_cycle*(2**16))
+			corrected_channel_data = np.vstack([corrected_channel_data,channel_data[i,:]])
+		elif (diff == -2**16 +1):
+			num_cycle += 1
+			corrected_counter.append(counter_ramp[i] + num_cycle*(2**16))
+			corrected_channel_data = np.vstack([corrected_channel_data,channel_data[i,:]])
+		else:
+			num_samples_insert = diff - 1.
+			corrected_counter.extend((counter_ramp[i-1] + range(1,diff+1) + num_cycle*(2**16)).tolist())
+			print len(counter_ramp[i-1] + range(1,diff+1) + num_cycle*(2**16))
+			print num_samples_insert
+			inter_mat = np.zeros([num_samples_insert+1,num_col-3])
+			for j in range(0,num_col-3):
+				y = np.interp(range(1,diff),[0, diff], [channel_data[i-1,j], channel_data[i,j]])
+				y = np.append(y,channel_data[i,j])
+				inter_mat[:,j] = y
+			corrected_channel_data = np.vstack([corrected_channel_data,inter_mat])
 		
+
+	return corrected_counter, corrected_channel_data
+
+
+filename_prefix = 'C:/Users/Samantha Summerson/Dropbox/Carmena Lab/OMNI_Device/Data/streams7_20/'
+filename = filename_prefix + '20160720-163020.csv'
+#filename = filename_prefix + '20160720-171300.csv'
+#filename = filename_prefix + '20160720-174338.csv'
+data = pd.read_csv(filename,sep=',',header=None,skiprows=[0,1])
+print "Data read."
+corrected_counter, corrected_channel_data = test_convert_OMNI(data)
+

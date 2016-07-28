@@ -374,5 +374,5 @@ def LFPPowerPerTrial_SingleBand_PerChannel_Timestamps(lfp,timestamps,Avg_Fs,chan
 		plt.axis([x.min(),x.max(),y.min(),y.max()])
 		plt.show()
 		
-	return trial_power, trial_times
+	return Sxx, f, t
 	

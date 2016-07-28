@@ -16,8 +16,10 @@ hdf_filename = 'mari20160718_17_te2379.hdf'
 filename = 'Mario20160718-OMNI'
 block_num = 1
 
-omni_location = '/storage/omni_data/' + omni_filename
-hdf_location = '/storage/rawdata/hdf/'+hdf_filename
+#omni_location = '/storage/omni_data/' + omni_filename
+omni_location = 'C:/Users/Samantha Summerson/Dropbox/Carmena Lab/OMNI_device/Data/' + omni_filename
+#hdf_location = '/storage/rawdata/hdf/'+hdf_filename
+hdf_location = 'C:/Users/Samantha Summerson/Dropbox/Carmena Lab/OMNI_device/Data/' + hdf_filename
 TDT_location = '/home/srsummerson/storage/tdt/'+filename
 
 channels = [10]  		# picking subset of channels to analyze
@@ -30,7 +32,8 @@ print "Loading syncing data."
 
 hdf_times = dict()
 mat_filename = filename+'_b'+str(block_num)+'_syncHDF.mat'
-sp.io.loadmat('/home/srsummerson/storage/syncHDF/'+mat_filename,hdf_times)
+#sp.io.loadmat('/home/srsummerson/storage/syncHDF/'+mat_filename,hdf_times)
+sp.io.loadmat('C:/Users/Samantha Summerson/Dropbox/Carmena Lab/OMNI_device/Data/' + mat_filename,hdf_times)
 
 hdf_rows = np.ravel(hdf_times['row_number'])
 hdf_rows = [val for val in hdf_rows]	# turn into a list so that the index method can be used later
@@ -47,8 +50,8 @@ Avg_Fs = len(timestamps)/float(timestamps[-1] - timestamps[0])  	# estimate samp
 '''
 Get sync data
 '''
-stim_signal, stim_on_trig, stim_delivered, stwv_samprate = get_stim_sync_sig(TDT_location)
-
+#stim_signal, stim_on_trig, stim_delivered, stwv_samprate = get_stim_sync_sig(TDT_location)
+stwv_samprate = 24414.0625
 first_pulse = timestamps[4063]  # time in s (found by inspection)
 tdt_first_pulse = 23477./stwv_samprate  # time in s (found by inspection)
 omni_time_offset = first_pulse - tdt_first_pulse
