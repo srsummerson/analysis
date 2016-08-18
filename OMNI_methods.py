@@ -8,53 +8,9 @@ from matplotlib import pyplot as plt
 import matplotlib as mpl
 from matplotlib import mlab
 import tables
+from pylab import specgram
 
 
-def convert_OMNI(filename, **kwargs):
-	'''
-	This method converts csv files saved using the OMNI device to a pandas DataFrame for easy
-	analysis in Python.
-
-	Input:
-		- filename: string containing the file path for a csv file saved with the OMNI device
-	
-		
-	Output:
-		- data: pandas DataFrame, M rows x N columns, M = number of data points, N = number of channels + 1, 
-				first N -1 columns corresponds to data from the differnt channels while the Nth column 
-				contains the timestamps 
-
-	'''
-	data = pd.read_csv(filename,sep=',',header=None,skiprows=[0,1])
-	time_samps, num_col = data.shape
-	crc_flag = np.array(data[:][0])
-	ind_crc_pass = [ind for ind in range(0,len(crc)) if crc[ind]==170]
-
-	channel_data = np.zeros([len(ind_crc_pass),num_col-3])  # 3 fewer columns since one is crv flag, one is ramp, and one is time samples
-	
-	for col in range(0,num_col-3):
-		channel_data[:,col] = data[ind_crc_pass][col+1]
-	timestamps = np.array(data[ind_crc_pass][num_col-1])
-	counter_ramp = np.array(data[ind_crc_pass][num_col-2])
-
-	corrected_channel_data = [data[0,:]]
-	corrected_counter = [counter_ramp[0]]
-	num_cycle = 0
-
-	for i in range(1,len(counter_ramp)):
-		diff = counter_ramp[i] - counter_ramp[i-1]
-		if (diff==1):
-			corrected_channel_data.append(data[i,:])
-			corrected_counter.append(counter_ramp[i] + num_cycle*(2**16))
-		elif (diff == -2**16 +1):
-			num_cycle += 1
-			corrected_channel_data.append(data[i,:])
-			corrected_counter.append(counter_ramp[i] + num_cycle*(2**16))
-		else:
-			num_samples_insert = diff - 1.
-			corrected_counter.append((counter_ramp[i-1] + range(1,diff) + num_cycle*(2**16)).tolist())
-
-	return channel_data, timestamps, crc_flag, counter_ramp
 
 
 def plotRawLFPTraces(data, **kwargs):
@@ -160,6 +116,7 @@ def test_convert_OMNI(data, **kwargs):
 	corrected_channel_data = channel_data[0,:]
 	corrected_counter = [counter_ramp[0]]
 	num_cycle = 0
+	samps_ind = []
 
 	for i in range(1,len(counter_ramp)):
 	#for i in range(1,17000):
@@ -171,32 +128,215 @@ def test_convert_OMNI(data, **kwargs):
 			print i, diff
 		if (diff==1):
 			corrected_counter.append(counter_ramp[i] + num_cycle*(2**16))
-			corrected_channel_data = np.vstack([corrected_channel_data,channel_data[i,:]])
+			#corrected_channel_data = np.vstack([corrected_channel_data,channel_data[i,:]])
 		elif (diff == -2**16 +1):
 			num_cycle += 1
 			corrected_counter.append(counter_ramp[i] + num_cycle*(2**16))
-			corrected_channel_data = np.vstack([corrected_channel_data,channel_data[i,:]])
+			#corrected_channel_data = np.vstack([corrected_channel_data,channel_data[i,:]])
 		else:
+			samps_ind.append(i)
 			num_samples_insert = diff - 1.
 			corrected_counter.extend((counter_ramp[i-1] + range(1,diff+1) + num_cycle*(2**16)).tolist())
-			print len(counter_ramp[i-1] + range(1,diff+1) + num_cycle*(2**16))
-			print num_samples_insert
-			inter_mat = np.zeros([num_samples_insert+1,num_col-3])
-			for j in range(0,num_col-3):
-				y = np.interp(range(1,diff),[0, diff], [channel_data[i-1,j], channel_data[i,j]])
-				y = np.append(y,channel_data[i,j])
-				inter_mat[:,j] = y
-			corrected_channel_data = np.vstack([corrected_channel_data,inter_mat])
+			#inter_mat = np.zeros([num_samples_insert+1,num_col-3])
+			#for j in range(0,num_col-3):
+			#	y = np.interp(range(1,diff),[0, diff], [channel_data[i-1,j], channel_data[i,j]])
+			#	y = np.append(y,channel_data[i,j])
+			#	inter_mat[:,j] = y
+			#corrected_channel_data = np.vstack([corrected_channel_data,inter_mat])
 		
 
-	return corrected_counter, corrected_channel_data
+	return corrected_counter, corrected_channel_data, samps_ind
+
+def convert_OMNI(data, **kwargs):
+	'''
+	This method converts csv files saved using the OMNI device to a pandas DataFrame for easy
+	analysis in Python.
+
+	Input:
+		- filename: string containing the file path for a csv file saved with the OMNI device
+	
+		
+	Output:
+		- data: pandas DataFrame, M rows x N columns, M = number of data points, N = number of channels + 1, 
+				first N -1 columns corresponds to data from the differnt channels while the Nth column 
+				contains the timestamps 
+
+	'''
+	#data = pd.read_csv(filename,sep=',',header=None,skiprows=[0,1])
+	data = np.array(data)
+	time_samps, num_col = data.shape
+	crc_flag = np.array(data[:,0])
+	ind_crc_pass = [ind for ind in range(0,len(crc_flag)) if crc_flag[ind]==170]
+
+	channel_data = np.zeros([len(ind_crc_pass),num_col-3])  # 3 fewer columns since one is crv flag, one is ramp, and one is time samples
+	
+	for col in range(0,num_col-3):
+		channel_data[:,col] = data[ind_crc_pass,col+1]
+	timestamps = data[ind_crc_pass,num_col-1]
+	counter_ramp = data[ind_crc_pass,num_col-2]
+
+	corrected_counter = [counter_ramp[0]]
+	num_cycle = 0
+
+	# Counter is 16 bit and resets at 2**16. This loop unwraps this cycling so that values are monotonically increasing.
+	for i in range(1,len(counter_ramp)):
+	#for i in range(1,17000):
+		diff = counter_ramp[i] - counter_ramp[i-1]
+		diff = int(diff)
+		
+		if (diff == -2**16 +1):
+			num_cycle += 1
+			corrected_counter.append(counter_ramp[i] + num_cycle*(2**16))
+		else:
+			corrected_counter.append(counter_ramp[i] + num_cycle*(2**16))
+	
+	corrected_counter = np.array(corrected_counter)
+	diff_corrected_counter = corrected_counter[1:] - corrected_counter[:-1]
+	miss_samp_index = np.ravel(np.nonzero(np.greater(diff_corrected_counter,1)))
+
+	corrected_channel_data = channel_data[0:miss_samp_index[0]+1,:]
+	diff = corrected_counter[miss_samp_index[0]+1] - corrected_counter[miss_samp_index[0]]
+	diff = int(diff)
+	inter_mat = np.zeros([diff,num_col-3])
+	for j in range(0,num_col-3):
+		y = np.interp(range(1,diff),[0, diff], [channel_data[miss_samp_index[0],j], channel_data[miss_samp_index[0]+1,j]])
+		y = np.append(y,channel_data[miss_samp_index[0]+1,j])
+		inter_mat[:,j] = y
+	corrected_channel_data = np.vstack([corrected_channel_data, inter_mat])
+	
+	print "There are %i instances of missed samples." % len(miss_samp_index)
+	print "Beginning looping through regeneration of data"
+	for i in range(1,len(miss_samp_index)):
+		print i
+		# pad with good data first
+		corrected_channel_data = np.vstack([corrected_channel_data, channel_data[miss_samp_index[i-1] + 2:miss_samp_index[i]+1,:]])
+		# check number of samples that were skipped and need to be regenerated
+		diff = corrected_counter[miss_samp_index[i]+1] - corrected_counter[miss_samp_index[i]]
+		diff = int(diff)
+		inter_mat = np.zeros([diff,num_col-3])
+		# interpolate values to regenerate missing data
+		for j in range(0,num_col-3):
+			y = np.interp(range(1,diff),[0, diff], [channel_data[miss_samp_index[i],j], channel_data[miss_samp_index[i]+1,j]])
+			y = np.append(y,channel_data[miss_samp_index[i]+1,j])
+			inter_mat[:,j] = y
+		corrected_channel_data = np.vstack([corrected_channel_data,inter_mat])
+
+	if (miss_samp_index[-1]+1 != len(ind_crc_pass)-1):
+		print "adding last zeros"
+		corrected_channel_data = np.vstack([corrected_channel_data, channel_data[miss_samp_index[-1] + 2:,:]])
+		
+
+	return corrected_counter, corrected_channel_data, channel_data, miss_samp_index
 
 
+def computePowersWithChirplets(channel_data,Avg_Fs,channel,event_indices,t_before, t_after, center_freq):
+	'''
+	This method extracts spectral amplitudes around a defined center frequency by convolving raw LFP data with Gabor 
+	time-frequency basis functions (Gaussian envelope).
+
+	Inputs:
+		- channel_data: raw LFP data formatted as a multi-dimensional array of size N_samps x N_channels
+		- Avg_Fs: sampling frequency of LFP data
+		- channel: channel to perform analysis on, all values should be in range [1,N_channels]
+		- event_indices: sample indices that correspond to trial events data is aligned to, one-dimensional of length N_trials 
+		- t_before: time before event index to include in analysis, measured in seconds
+		- t_after: time after event index to include in analysis, measured in seconds
+		- center_freq: center frequency parameter that is used in definition of Gabor atom
+	Outputs:
+		- trial_powers: power amplitudes formatterd a multi-dimensional array of size N_trials x N_timepoints, where N_timepoints is defined by the window
+		                size dictated by the t_before and t_after parameter
+		- times: vector of time points for easy plotting after analysis is complete
+	'''
+	# Define Gabor atom parameters
+	v_0 = center_freq
+	s_0 = -5.075
+	t_0 = 0
+
+	# Define other parameters
+	win_before = int(t_before*Avg_Fs)
+	win_after = int(t_after*Avg_Fs)
+	channel = np.array(channel) - 1 	# adjust so that counting starts at 0
+	print "Defining variables"
+	times = np.arange(-t_before,t_after,float(t_after + t_before)/(win_after + win_before))
+	trial_powers = np.zeros([len(event_indices),2*944])
+	windows = np.zeros([len(event_indices),len(times)])
+
+	for i,ind in enumerate(event_indices):
+		print i,'/',len(event_indices)
+		window = range(int(ind) - win_before,int(ind) + win_after)
+		windows[i,:] = window
+		#t_0 = -t_before + 1
+		gabor_atom = (2**0.25)*np.exp(-0.25*s_0 - np.pi*((times - t_0)**2)*np.exp(-s_0) + 1j*np.pi*(times - t_0)*(2*v_0))
+		complex_power = np.convolve(channel_data[window,channel],gabor_atom,mode='full')
+		trial_powers[i,:] = np.absolute(complex_power[3*944:5*944]) 	# get power magnitudes
+		#trial_powers[i,:] = np.absolute(complex_power) 	# get power magnitudes
+
+	#mlab.specgram(channel_data[window,channel], NFFT=256, Fs=Avg_Fs)
+	print "Done looping"
+	return trial_powers, times, complex_power, channel_data[window,channel], windows
+
+def powersWithFFT(channel_data,Avg_Fs,channel,event_indices,t_before, t_after):
+
+	win_before = int(t_before*Avg_Fs)
+	win_after = int(t_after*Avg_Fs)
+	channel = np.array(channel) - 1 	# adjust so that counting starts at 0
+
+	times = np.arange(-t_before,t_after,float(t_after + t_before)/(win_after + win_before))
+	window_times = np.arange(-win_before,win_after)
+	trial_powers = np.zeros([len(event_indices),len(times)])
+
+
+	T = 1./Avg_Fs
+	N = 256
+	x = np.linspace(0.0, N*T, N)
+	xf = np.linspace(0.0, 1.0/(2.0*T), N/2)
+	for j,ind in enumerate(event_indices[0:10]):
+		for i in range(0,len(times)):
+			print i,'/',len(times)
+			t = np.arange(ind + times[i],ind+256 + times[i],1./Avg_Fs)
+			data = channel_data[ind + window_times[i]:ind+256 + window_times[i],channel]/np.sum(channel_data[ind + window_times[i]:ind+256 + window_times[i],channel])
+			sp = np.fft.fft(data)
+			trial_powers[j,i] = np.absolute(sp[5])**2
+	print len(xf)
+	print len(sp)
+	
+	return trial_powers, xf
+
+def powersWithSpecgram(channel_data,Avg_Fs,channel,event_indices,t_before, t_after):
+
+	win_before = int(t_before*Avg_Fs)
+	win_after = int(t_after*Avg_Fs)
+	channel = np.array(channel) - 1 	# adjust so that counting starts at 0
+
+	times = np.arange(-t_before,t_after,float(t_after + t_before)/(win_after + win_before))
+	trial_powers = np.zeros([len(event_indices),28])
+
+	for j,ind in enumerate(event_indices):
+		data = channel_data[ind - win_before:ind + win_after,channel]
+		data = np.ravel(data)
+		Sxx, f, t, fig = specgram(data,Fs=Avg_Fs)
+		Sxx = Sxx/np.sum(Sxx)
+		Sxx = 10*np.log10(Sxx)
+		trial_powers[j,:] = np.sum(Sxx[3:5,:],axis=0)/2.
+		#trial_powers[j,:] = Sxx[4,:]
+	return trial_powers, t, f
+	#return trial_powers, data
+
+'''
 filename_prefix = 'C:/Users/Samantha Summerson/Dropbox/Carmena Lab/OMNI_Device/Data/streams7_20/'
 filename = filename_prefix + '20160720-163020.csv'
 #filename = filename_prefix + '20160720-171300.csv'
 #filename = filename_prefix + '20160720-174338.csv'
 data = pd.read_csv(filename,sep=',',header=None,skiprows=[0,1])
 print "Data read."
-corrected_counter, corrected_channel_data = test_convert_OMNI(data)
+#test_corrected_counter, test_corrected_channel_data, counter = test_convert_OMNI(data)
+corrected_counter, corrected_channel_data, channel_data, miss_samp_index = convert_OMNI(data)
+'''
+
+
+'''
+-generate .mat arrays of OMNI sample numbers for the go cue and reward events, sample numbers should be regenerated data coordinates
+-calculate true sampling rate
+
+'''
 
