@@ -357,6 +357,13 @@ print "Avg CV score:", scores.mean()
 predict_stress = clf_all.predict(X_successful_stress)
 print "Fraction of stress trials classified as stress:", np.sum(predict_stress)/len(predict_stress)
 
+x_successful = sm.add_constant(X_successful,prepend='False')
+
+print "Regression with successful, well-clustered trials"
+model_glm = sm.Logit(y_successful,x_successful)
+fit_glm = model_glm.fit()
+print fit_glm.summary()
+
 """
 Decision boundary given by:
 np.dot(clf.coef_, x) - clf.intercept_ = 0 according to 
@@ -369,11 +376,6 @@ http://stackoverflow.com/questions/36745480/how-to-get-the-equation-of-the-bound
 Do regression as well: power is total power in beta band per trial
 '''
 '''
-x = np.vstack((np.append(ibi_all_reg_mean, ibi_all_stress_mean), np.append(pupil_all_reg_mean, pupil_all_stress_mean), 
-				np.append(lfp_power_reg, lfp_power_stress)))
-x = np.transpose(x)
-x = sm.add_constant(x,prepend='False')
-
 lfp_power_successful_reg = (lfp_power_successful_reg - np.nanmean(lfp_power_successful_reg))/np.nanstd(lfp_power_successful_reg)
 lfp_power_successful_stress = (lfp_power_successful_stress - np.nanmean(lfp_power_successful_stress))/np.nanstd(lfp_power_successful_stress)
 
