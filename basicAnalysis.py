@@ -201,25 +201,7 @@ def computeSpikeRatesPerChannel(spike_file1,spike_file2,t_start,t_end):
 
 	return spike_rates, spike_sem, unit_labels
 
-def LFPPowerPerTrial_SingleBand_PerChannel(lfp_data,chann,sampling_rate,window_start_times,time_before,time_after,power_band):
-	'''
-	This method computes the power in a single band defined by power_band over sliding windows in the range 
-	[window_start_times-time_before,window_start_times + time_after]. This is done per trial and then a plot of 
-	power in the specified band is produce with time in the x-axis and trial in the y-axis. This is done per channel.
-
-	Inputs:
-		- lfp_data: lfp data arrange in an array of data x channel
-		- chann: list of channels for which to apply this method
-		- sampling_rate: sampling rate of data in lfp_data array in Hz
-		- window_start_times: window start times in units of sample numbers 
-		- time_before: length of time in s to look at before the alignment times in window_start_times
-		- time_after: length of time in s to look at after the alignment times 
-		- power_band: list defining the window of frequencies to look at, should be of the form power_band = [f_min,f_max]
-	'''
-	for i, time in enumerate(window_start_times):
 		
-
-
 def plot_point_cov(points, nstd=2, ax=None, **kwargs):
 	"""
 	Plots an `nstd` sigma ellipse based on the mean and covariance of a point
