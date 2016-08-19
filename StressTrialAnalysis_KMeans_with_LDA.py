@@ -20,7 +20,7 @@ from sklearn.cross_validation import train_test_split
 from sklearn import metrics
 from sklearn.metrics import roc_curve, auc
 from sklearn.cross_validation import cross_val_score
-
+from sklearn.cluster import KMeans
 
 
 
