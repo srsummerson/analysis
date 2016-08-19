@@ -24,8 +24,8 @@ from sklearn.cluster import KMeans
 
 
 
-hdf_filename = 'mari20160610_13_te2210.hdf'
-filename = 'Mario20160610'
+hdf_filename = 'mari20160711_02_te2327.hdf'
+filename = 'Mario20160711'
 block_num = 1
 print filename
 TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
