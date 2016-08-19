@@ -323,13 +323,13 @@ Need to do norm of data first: no normalizing now
 '''
 norm_ibi_all_stress_mean = ibi_all_stress_mean 
 norm_pupil_all_stress_mean = pupil_all_stress_mean
-norm_ibi_all_reg_before_mean = ibi_all_reg_before_mean
-norm_pupil_all_reg_before_mean = pupil_all_reg_before_mean
+norm_ibi_all_reg_before_mean = ibi_all_reg_mean
+norm_pupil_all_reg_before_mean = pupil_all_reg_mean
 
 norm_ibi_stress_mean = ibi_stress_mean 
 norm_pupil_stress_mean = pupil_stress_mean 
-norm_ibi_reg_before_mean = ibi_reg_before_mean 
-norm_pupil_reg_before_mean = pupil_reg_before_mean 
+norm_ibi_reg_before_mean = ibi_reg_mean 
+norm_pupil_reg_before_mean = pupil_reg_mean 
 
 '''
 Do K-means to get well-clustered trials
