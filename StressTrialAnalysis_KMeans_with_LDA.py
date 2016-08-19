@@ -389,10 +389,10 @@ X_reg = []
 X_successful_stim = []
 X_stim = []
 
-for i, ind in enumerate(lfp_ind_successful_stress):
+for i, ind in enumerate(lfp_ind_successful_stress[stress_well_clustered_ind]):
 	trial_array = []
-	trial_array.append(pupil_stress_mean[i])
-	trial_array.append(ibi_stress_mean[i])
+	trial_array.append(well_clustered_pupil_stress[i])
+	trial_array.append(well_clustered_ibi_stress[i])
 	
 	
 	for chann in lfp_channels:
@@ -405,26 +405,10 @@ for i, ind in enumerate(lfp_ind_successful_stress):
 	
 	X_successful_stress.append(trial_array)
 
-for i, ind in enumerate(lfp_ind_stress):
+for i, ind in enumerate(lfp_ind_successful_reg[reg_well_clustered_ind]):
 	trial_array = []
-	trial_array.append(pupil_all_stress_mean[i])
-	trial_array.append(ibi_all_stress_mean[i])
-	
-	
-	for chann in lfp_channels:
-		#freq, Pxx_den = signal.welch(lfp[chann][ind:ind+samples_lfp_stress[i]], lfp_samprate, nperseg=1024)
-		freq, Pxx_den = signal.welch(lfp[chann][ind:ind+lfp_samprate/2], lfp_samprate, nperseg=1024)  # take 0.5 s of data 
-		for k, item in enumerate(bands):
-			freq_band = [Pxx_den[j] for j in range(len(freq)) if (item[0] <= freq[j] <= item[1])]
-			#trial_array.append(np.sum(freq_band))
-		lfp_power_stress.append(np.sum(freq_band))
-	
-	X_stress.append(trial_array)
-
-for i, ind in enumerate(lfp_ind_successful_reg):
-	trial_array = []
-	trial_array.append(pupil_reg_mean[i])
-	trial_array.append(ibi_reg_mean[i])
+	trial_array.append(well_clustered_pupil_reg[i])
+	trial_array.append(well_clustered_ibi_reg[i])
 	
 	
 	for chann in lfp_channels:
@@ -438,63 +422,19 @@ for i, ind in enumerate(lfp_ind_successful_reg):
 	
 	X_successful_reg.append(trial_array)
 
-for i, ind in enumerate(lfp_ind_reg):
-	trial_array = []
-	trial_array.append(pupil_all_reg_mean[i])
-	trial_array.append(ibi_all_reg_mean[i])
-	
-	for chann in lfp_channels:
-		#freq, Pxx_den = signal.welch(lfp[chann][ind:ind+samples_lfp_reg[i]], lfp_samprate, nperseg=1024)
-		freq, Pxx_den = signal.welch(lfp[chann][ind:ind+lfp_samprate/2], lfp_samprate, nperseg=1024)  # take 0.5 s of data 
-		
-		for k, item in enumerate(bands):
-			freq_band = [Pxx_den[j] for j in range(len(freq)) if (item[0] <= freq[j] <= item[1])]
-			#trial_array.append(np.sum(freq_band))
-	lfp_power_reg.append(np.sum(freq_band))
-	
-	X_reg.append(trial_array)
-
-for i, ind in enumerate(lfp_ind_successful_stress_stim):
-	trial_array = []
-	trial_array.append(pupil_stress_mean_stim[i])
-	trial_array.append(ibi_stress_mean_stim[i])
-	
-	X_successful_stim.append(trial_array)
-
-for i, ind in enumerate(lfp_ind_stress_stim):
-	trial_array = []
-	trial_array.append(pupil_all_stress_mean_stim[i])
-	trial_array.append(ibi_all_stress_mean_stim[i])
-	
-	X_stim.append(trial_array)
 
 # Labels: 0 = regular, 1 = stress
 X_successful_stress = np.array(X_successful_stress)
 #X_successful_stress = (X_successful_stress - np.nanmean(X_successful_stress,axis=0))/np.nanstd(X_successful_stress,axis=0)
 num_successful_stress = X_successful_stress.shape[0]
 y_successful_stress = np.ones(num_successful_stress)
-X_stress = np.array(X_stress)
-#X_stress = (X_stress - np.nanmean(X_stress,axis=0))/np.nanstd(X_stress,axis=0)
-num_stress = X_stress.shape[0]
-y_stress = np.ones(num_stress)
 X_successful_reg = np.array(X_successful_reg)
 #X_successful_reg = (X_successful_reg - np.nanmean(X_successful_reg,axis=0))/np.nanstd(X_successful_reg,axis=0)
 num_successful_reg = X_successful_reg.shape[0]
 y_successful_reg = np.zeros(num_successful_reg)
-X_reg = np.array(X_reg)
-#X_reg = (X_reg - np.nanmean(X_reg,axis=0))/np.nanstd(X_reg,axis=0)
-num_reg = X_reg.shape[0]
-y_reg = np.zeros(num_reg)
-
-X_successful_stim = np.array(X_successful_stim)
-X_stim = np.array(X_stim)
 
 X_successful = np.vstack([X_successful_reg, X_successful_stress])
 y_successful = np.append(y_successful_reg,y_successful_stress)
-
-X_all = np.vstack([X_reg, X_stress])
-y_all = np.append(y_reg, y_stress)
-
 
 clf_all = LinearDiscriminantAnalysis()
 clf_all.fit(X_successful, y_successful)
@@ -504,12 +444,6 @@ print "Avg CV score:", scores.mean()
 
 predict_stress = clf_all.predict(X_successful_stress)
 print "Fraction of stress trials classified as stress:", np.sum(predict_stress)/len(predict_stress)
-
-predict_stim = clf_all.predict(X_stim)
-print "Fraction of all stimulation trials classified as stress:", np.sum(predict_stim)/len(predict_stim)
-
-predict_stim = clf_all.predict(X_successful_stim)
-print "Fraction of all successful stimulation trials classified as stress:", np.sum(predict_stim)/len(predict_stim)
 
 """
 Decision boundary given by:
@@ -522,7 +456,7 @@ http://stackoverflow.com/questions/36745480/how-to-get-the-equation-of-the-bound
 '''
 Do regression as well: power is total power in beta band per trial
 '''
-
+'''
 x = np.vstack((np.append(ibi_all_reg_mean, ibi_all_stress_mean), np.append(pupil_all_reg_mean, pupil_all_stress_mean), 
 				np.append(lfp_power_reg, lfp_power_stress)))
 x = np.transpose(x)
@@ -536,19 +470,12 @@ x_successful = np.vstack((np.append(ibi_reg_mean, ibi_stress_mean), np.append(pu
 x_successful = np.transpose(x_successful)
 x_successful = sm.add_constant(x_successful,prepend='False')
 
-'''
-print "Regression with all trials"
-model_glm = sm.Logit(y_all,x)
-fit_glm = model_glm.fit()
-print fit_glm.summary()
-'''
-
 print "Regression with successful trials"
 model_glm = sm.Logit(y_successful,x_successful)
 fit_glm = model_glm.fit()
 print fit_glm.summary()
 
-
+'''
 
 
 
