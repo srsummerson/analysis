@@ -25,17 +25,12 @@ from sklearn.cluster import KMeans
 
 
 hdf_filename = 'mari20160610_13_te2210.hdf'
-hdf_filename_stim = 'mari20160610_14_te2211.hdf'
 filename = 'Mario20160610'
 block_num = 1
 print filename
 TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
 #TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
-hdf_location_stim = '/storage/rawdata/hdf/'+hdf_filename_stim
-#hdf_location = hdffilename
-
-stim_freq = 100
 
 lfp_channels = [29, 13, 27, 11, 25, 9, 10, 26, 12, 28, 14, 30, 20, 4, 18, 2, 63, 1, 17, 3]
 lfp_channels = [11]
@@ -46,7 +41,6 @@ bands = [[30,55]]
 Load behavior data
 '''
 state_time, ind_center_states, ind_check_reward_states, all_instructed_or_freechoice, all_stress_or_not, successful_stress_or_not,trial_success, target, reward = FreeChoiceBehavior_withStressTrials(hdf_location)
-state_time_stim, ind_center_states_stim, ind_check_reward_states_stim, all_instructed_or_freechoice_stim, all_stress_or_not_stim, successful_stress_or_not_stim,trial_success_stim, target_stim, reward_stim = FreeChoiceBehavior_withStressTrials(hdf_location_stim)
 
 print "Behavior data loaded."
 
@@ -54,15 +48,9 @@ print "Behavior data loaded."
 num_trials = ind_center_states.size
 total_states = state_time.size
 
-num_trials_stim = ind_center_states_stim.size
-total_states_stim = state_time_stim.size
-
 # Number of successful stress trials
 tot_successful_stress = np.logical_and(trial_success,all_stress_or_not)
 successful_stress_trials = float(np.sum(tot_successful_stress))/np.sum(all_stress_or_not)
-
-tot_successful_stress_stim = np.logical_and(trial_success_stim,all_stress_or_not_stim)
-successful_stress_trials_stim = float(np.sum(tot_successful_stress_stim))/np.sum(all_stress_or_not_stim)
 
 # Number of successful non-stress trials
 tot_successful_reg = np.logical_and(trial_success,np.logical_not(all_stress_or_not))
@@ -75,12 +63,6 @@ ind_successful_stress_reward = np.ravel(np.nonzero(successful_stress_or_not))
 row_ind_successful_stress_reward = ind_check_reward_states[ind_successful_stress_reward]
 response_time_successful_stress = (state_time[row_ind_successful_stress_reward] - state_time[row_ind_successful_stress])/float(60)		# hdf rows are written at a rate of 60 Hz
 
-ind_successful_stress_stim = np.ravel(np.nonzero(tot_successful_stress_stim))   	# gives trial index, not row index
-row_ind_successful_stress_stim = ind_center_states_stim[ind_successful_stress_stim]		# gives row index
-ind_successful_stress_reward_stim = np.ravel(np.nonzero(successful_stress_or_not_stim))
-row_ind_successful_stress_reward_stim = ind_check_reward_states_stim[ind_successful_stress_reward_stim]
-response_time_successful_stress_stim = (state_time_stim[row_ind_successful_stress_reward_stim] - state_time_stim[row_ind_successful_stress_stim])/float(60)		# hdf rows are written at a rate of 60 Hz
-
 # Response time for all stress trials
 ind_stress = np.ravel(np.nonzero(all_stress_or_not))
 row_ind_stress = ind_center_states[ind_stress]  # gives row index
@@ -88,21 +70,10 @@ row_ind_end_stress = np.zeros(len(row_ind_stress))
 row_ind_end_stress = row_ind_stress + 2  # targ_transition state occurs two states later for unsuccessful trials
 row_ind_end_stress[-1] = np.min([row_ind_end_stress[-1],len(state_time)-1])  # correct final incomplete trial
 
-ind_stress_stim = np.ravel(np.nonzero(all_stress_or_not_stim))
-row_ind_stress_stim = ind_center_states_stim[ind_stress_stim]  # gives row index
-row_ind_end_stress_stim = np.zeros(len(row_ind_stress_stim))
-row_ind_end_stress_stim = row_ind_stress_stim + 2  # targ_transition state occurs two states later for unsuccessful trials
-row_ind_end_stress_stim[-1] = np.min([row_ind_end_stress_stim[-1],len(state_time_stim)-1])  # correct final incomplete trial
-
 for i in range(0,len(row_ind_successful_stress)):
 	ind = np.where(row_ind_stress == row_ind_successful_stress[i])[0]
 	row_ind_end_stress[ind] = row_ind_successful_stress_reward[i]  # for successful trials, update with real end of trial
 response_time_stress = (state_time[row_ind_end_stress] - state_time[row_ind_stress])/float(60)
-
-for i in range(0,len(row_ind_successful_stress_stim)):
-	ind = np.where(row_ind_stress_stim == row_ind_successful_stress_stim[i])[0]
-	row_ind_end_stress_stim[ind] = row_ind_successful_stress_reward_stim[i]  # for successful trials, update with real end of trial
-response_time_stress_stim = (state_time_stim[row_ind_end_stress_stim] - state_time_stim[row_ind_stress_stim])/float(60)
 
 # Response times for successful regular trials
 ind_successful_reg = np.ravel(np.nonzero(tot_successful_reg))
@@ -130,10 +101,6 @@ print "Loading syncing data."
 hdf_times = dict()
 mat_filename = filename+'_b'+str(block_num)+'_syncHDF.mat'
 sp.io.loadmat('/home/srsummerson/storage/syncHDF/'+mat_filename,hdf_times)
-
-hdf_times_stim = dict()
-mat_filename_stim = filename+'_b'+str(block_num + 1)+'_syncHDF.mat'
-sp.io.loadmat('/home/srsummerson/storage/syncHDF/'+mat_filename_stim,hdf_times_stim)
 
 '''
 Load pupil dilation and heart rate data
@@ -166,18 +133,6 @@ else:
 			if channel in lfp_channels:
 				lfp_samprate = sig.sampling_rate.item()
 				lfp[channel] = np.ravel(sig)
-	for sig in bl.segments[block_num].analogsignals:
-		if (sig.name == 'PupD 1'):
-			pupil_data_stim = np.ravel(sig)
-			pupil_samprate_stim = sig.sampling_rate.item()
-		if (sig.name == 'HrtR 1'):
-			pulse_data_stim = np.ravel(sig)
-			pulse_samprate_stim = sig.sampling_rate.item()
-		if (sig.name[0:4] == 'LFP1'):
-			channel = sig.channel_index
-			if channel in lfp_channels:
-				lfp_samprate_stim = sig.sampling_rate.item()
-				lfp_stim[channel] = np.ravel(sig)
 
 
 '''
@@ -189,11 +144,6 @@ hdf_rows = [val for val in hdf_rows]	# turn into a list so that the index method
 dio_tdt_sample = np.ravel(hdf_times['tdt_samplenumber'])
 dio_freq = np.ravel(hdf_times['tdt_dio_samplerate'])
 
-hdf_rows_stim = np.ravel(hdf_times_stim['row_number'])
-hdf_rows_stim = [val for val in hdf_rows_stim]	# turn into a list so that the index method can be used later
-dio_tdt_sample_stim = np.ravel(hdf_times_stim['tdt_samplenumber'])
-dio_freq_stim = np.ravel(hdf_times_stim['tdt_dio_samplerate'])
-
 # Convert DIO TDT sample numbers to for pupil and pulse data:
 # if dio sample num is x, then data sample number is R*(x-1) + 1 where
 # R = data_sample_rate/dio_sample_rate
@@ -201,35 +151,22 @@ pulse_dio_sample_num = (float(pulse_samprate)/float(dio_freq))*(dio_tdt_sample -
 pupil_dio_sample_num = (float(pupil_samprate)/float(dio_freq))*(dio_tdt_sample - 1) + 1
 lfp_dio_sample_num = (float(lfp_samprate)/float(dio_freq))*(dio_tdt_sample - 1) + 1
 
-pulse_dio_sample_num_stim = (float(pulse_samprate_stim)/float(dio_freq_stim))*(dio_tdt_sample_stim - 1) + 1
-pupil_dio_sample_num_stim = (float(pupil_samprate_stim)/float(dio_freq_stim))*(dio_tdt_sample_stim - 1) + 1
-lfp_dio_sample_num_stim = (float(lfp_samprate_stim)/float(dio_freq_stim))*(dio_tdt_sample_stim - 1) + 1
-
 state_row_ind_successful_stress = state_time[row_ind_successful_stress]
 state_row_ind_successful_reg = state_time[row_ind_successful_reg]
 pulse_ind_successful_stress = np.zeros(row_ind_successful_stress.size)
 pupil_ind_successful_stress = np.zeros(row_ind_successful_stress.size)
 lfp_ind_successful_stress = np.zeros(row_ind_successful_stress.size)
-pulse_ind_successful_reg = []
-pupil_ind_successful_reg = []
-lfp_ind_successful_reg = []
+pulse_ind_successful_reg = np.zeros(row_ind_successful_reg.size)
+pupil_ind_successful_reg = np.zeros(row_ind_successful_reg.size)
+lfp_ind_successful_reg = np.zeros(row_ind_successful_reg.size)
 state_row_ind_stress = state_time[row_ind_stress]
 state_row_ind_reg = state_time[row_ind_reg]
 pulse_ind_stress = np.zeros(row_ind_stress.size)
 pupil_ind_stress = np.zeros(row_ind_stress.size)
 lfp_ind_stress = np.zeros(row_ind_stress.size)
-pulse_ind_reg = []
-pupil_ind_reg = []
-lfp_ind_reg = []
-
-state_row_ind_successful_stress_stim = state_time_stim[row_ind_successful_stress_stim]
-pulse_ind_successful_stress_stim = np.zeros(row_ind_successful_stress_stim.size)
-pupil_ind_successful_stress_stim = np.zeros(row_ind_successful_stress_stim.size)
-lfp_ind_successful_stress_stim = np.zeros(row_ind_successful_stress_stim.size)
-state_row_ind_stress_stim = state_time_stim[row_ind_stress_stim]
-pulse_ind_stress_stim = np.zeros(row_ind_stress_stim.size)
-pupil_ind_stress_stim = np.zeros(row_ind_stress_stim.size)
-lfp_ind_stress_stim = np.zeros(row_ind_stress_stim.size)
+pulse_ind_reg = np.zeros(row_ind_reg.size)
+pupil_ind_reg = np.zeros(row_ind_reg.size)
+lfp_ind_reg = np.zeros(row_ind_reg.size)
 
 
 for i in range(0,len(row_ind_successful_stress)):
@@ -251,26 +188,16 @@ else:
 ind_start_all_stress = row_ind_stress[0]
 for i in range(0,len(state_row_ind_successful_reg)):
 	hdf_index = np.argmin(np.abs(hdf_rows - state_row_ind_successful_reg[i]))
-	pulse_ind_successful_reg.append(pulse_dio_sample_num[hdf_index])
-	pupil_ind_successful_reg.append(pupil_dio_sample_num[hdf_index])
-	lfp_ind_successful_reg.append(lfp_dio_sample_num[hdf_index])
+	pulse_ind_successful_reg[i] = pulse_dio_sample_num[hdf_index]
+	pupil_ind_successful_reg[i] = pupil_dio_sample_num[hdf_index]
+	lfp_ind_successful_reg[i] = lfp_dio_sample_num[hdf_index]
 	
 for i in range(0,len(state_row_ind_reg)):
 	hdf_index = np.argmin(np.abs(hdf_rows - state_row_ind_reg[i]))
-	pulse_ind_reg.append(pulse_dio_sample_num[hdf_index])
-	pupil_ind_reg.append(pupil_dio_sample_num[hdf_index])
-	lfp_ind_reg.append(lfp_dio_sample_num[hdf_index])
+	pulse_ind_reg[i] = pulse_dio_sample_num[hdf_index]
+	pupil_ind_reg[i] = pupil_dio_sample_num[hdf_index]
+	lfp_ind_reg[i] = lfp_dio_sample_num[hdf_index]
 
-for i in range(0,len(row_ind_successful_stress_stim)):
-	hdf_index = np.argmin(np.abs(hdf_rows_stim - state_row_ind_successful_stress_stim[i]))
-	pulse_ind_successful_stress_stim[i] = pulse_dio_sample_num_stim[hdf_index]
-	pupil_ind_successful_stress_stim[i] = pupil_dio_sample_num_stim[hdf_index]
-	lfp_ind_successful_stress_stim[i] = lfp_dio_sample_num_stim[hdf_index]
-for i in range(0,len(row_ind_stress_stim)):
-	hdf_index = np.argmin(np.abs(hdf_rows_stim - state_row_ind_stress_stim[i]))
-	pulse_ind_stress_stim[i] = pulse_dio_sample_num_stim[hdf_index]
-	pupil_ind_stress_stim[i] = pupil_dio_sample_num_stim[hdf_index]
-	lfp_ind_stress_stim[i] = lfp_dio_sample_num_stim[hdf_index]
 
 '''
 Process pupil and pulse data
@@ -304,19 +231,6 @@ samples_lfp_reg = np.floor(response_time_reg*lfp_samprate)
 
 ibi_all_reg_mean, ibi_all_reg_std, pupil_all_reg_mean, pupil_all_reg_std, nbins_ibi_all_reg, ibi_all_reg_hist, nbins_pupil_all_reg, pupil_all_reg_hist = getIBIandPuilDilation(pulse_data, pulse_ind_reg,samples_pulse_reg, pulse_samprate,pupil_data, pupil_ind_reg,samples_pupil_reg,pupil_samprate)
 
-# Find IBIs and pupil data for all successful stress trials with stimulation. 
-samples_pulse_successful_stress_stim = np.floor(response_time_successful_stress_stim*pulse_samprate_stim) 	#number of samples in trial interval for pulse signal
-samples_pupil_successful_stress_stim = np.floor(response_time_successful_stress_stim*pupil_samprate_stim)
-samples_lfp_successful_stress_stim = np.floor(response_time_successful_stress_stim*lfp_samprate_stim)
-
-ibi_stress_mean_stim, ibi_stress_std_stim, pupil_stress_mean_stim, pupil_stress_std_stim, nbins_ibi_stress_stim, ibi_stress_hist_stim, nbins_pupil_stress_stim, pupil_stress_hist_stim = getIBIandPuilDilation(pulse_data_stim, pulse_ind_successful_stress_stim,samples_pulse_successful_stress_stim, pulse_samprate_stim,pupil_data_stim, pupil_ind_successful_stress_stim,samples_pupil_successful_stress_stim,pupil_samprate_stim)
-
-# Find IBIs and pupil data for all stress trials with stimulation.
-samples_pulse_stress_stim = np.floor(response_time_stress_stim*pulse_samprate_stim) 	#number of samples in trial interval for pulse signal
-samples_pupil_stress_stim = np.floor(response_time_stress_stim*pupil_samprate_stim)
-samples_lfp_stress_stim = np.floor(response_time_stress_stim*lfp_samprate_stim)
-
-ibi_all_stress_mean_stim, ibi_all_stress_std_stim, pupil_all_stress_mean_stim, pupil_all_stress_std_stim, nbins_ibi_all_stress_stim, ibi_all_stress_hist_stim, nbins_pupil_all_stress_stim, pupil_all_stress_hist_stim = getIBIandPuilDilation(pulse_data_stim, pulse_ind_stress_stim,samples_pulse_stress_stim, pulse_samprate_stim,pupil_data_stim, pupil_ind_stress_stim,samples_pupil_stress_stim,pupil_samprate_stim)
 
 '''
 Need to do norm of data first: no normalizing now 
@@ -386,8 +300,6 @@ X_successful_stress = []
 X_stress = []
 X_successful_reg = []
 X_reg = []
-X_successful_stim = []
-X_stim = []
 
 for i, ind in enumerate(lfp_ind_successful_stress[stress_well_clustered_ind]):
 	trial_array = []
