@@ -356,6 +356,7 @@ print "Plotted K-means using successful trials"
 
 # Assign label to majority cluster for each trial type
 cluster_vals = set(y_kmeans_pred)
+cluster_vals = [val for val in cluster_vals]
 stress_cluster_assignment = y_kmeans_pred[0:len(norm_ibi_stress_mean)]
 stress_cluster_vals = [list(stress_cluster_assignment).count(x) for x in cluster_vals]
 stress_majority_cluster = cluster_vals[np.argmax(stress_cluster_vals)]
