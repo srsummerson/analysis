@@ -403,7 +403,7 @@ def computePowerFeatures(lfp_data, Fs, power_bands, event_indices, t_window):
 		- power_bands: list of power bands 
 		- event_indices: N x M array of event indices, where N is the number of trials and M is the number of 
 		                 different events 
-		- t_window: length M array of time window to compute features over, one element for each feature 
+		- t_window: length M array of time window (in seconds) to compute features over, one element for each feature 
 	Outputs
 		- features: dictionary with N entries (one per trial), with a C x K matric which C is the number of channels 
 					and K is the number of features (number of power bands times M)
@@ -412,9 +412,9 @@ def computePowerFeatures(lfp_data, Fs, power_bands, event_indices, t_window):
 	noverlap = int(Fs*0.125)
 
 	N, M = event_indices.shape
-	times = np.array([])
-	for time in t_window:
-		times.append(time*np.ones(N))
+	times = np.array([N,M])
+	for t,time in enumerate(t_window):
+		times[:,t] = time*np.ones(N)
 
 	features = dict()
 
@@ -426,8 +426,8 @@ def computePowerFeatures(lfp_data, Fs, power_bands, event_indices, t_window):
 			chann_data = data[chann]
 			feat_counter = 0
 			trial_powers = np.zeros([N,M*len(power_bands)])
-			for ind in events:
-				data = chann_data[ind:ind + times[j]]
+			for i,ind in enumerate(events):
+				data = chann_data[ind:ind + times[trial,i]]
 				data = np.ravel(data)
 				Sxx, f, t, fig = specgram(data,Fs=Avg_Fs)
 				Sxx = Sxx/np.sum(Sxx)
