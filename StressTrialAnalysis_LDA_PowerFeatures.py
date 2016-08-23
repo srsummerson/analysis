@@ -291,8 +291,26 @@ lfp_after_reward_states = np.append(lfp_ind_successful_stress_check_reward, lfp_
 event_indices = np.vstack([lfp_center_states,lfp_before_reward_states,lfp_after_reward_states]).T
 t_window = [0.5,0.5,0.5]
 print "Computing LFP features."
-lfp_features,Sxx, f, t = computePowerFeatures(lfp, lfp_samprate, bands, event_indices, t_window)
+lfp_features,Sxx, f, t, samp_data = computePowerFeatures(lfp, lfp_samprate, bands, event_indices, t_window)
 
+'''
+X_successful = []
+lfp_features_keys = lfp_features.keys()
+for key in lfp_features_keys:
+	trial_features = lfp_features[key].flatten()
+	X_successful.append(trial_features)
+
+y_successful_reg = np.zeros(num_successful_reg)
+y_successful_stress = np.ones(num_successful_stress)
+y_successful = np.append(y_successful_reg,y_successful_stress)
+
+clf_all = LinearDiscriminantAnalysis()
+clf_all.fit(X_successful, y_successful)
+scores = cross_val_score(LinearDiscriminantAnalysis(),X_successful,y_successful,scoring='accuracy',cv=10)
+print "CV (10-fold) scores:", scores
+print "Avg CV score:", scores.mean()
+
+'''
 '''
 # Labels: 0 = regular, 1 = stress
 X_successful_stress = np.array(X_successful_stress)
