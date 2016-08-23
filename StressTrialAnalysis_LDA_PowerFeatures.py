@@ -64,9 +64,9 @@ successful_reg_trials = float(np.sum(tot_successful_reg))/(num_trials - np.sum(a
 # Response times for successful stress trials
 ind_successful_stress = np.ravel(np.nonzero(tot_successful_stress))   	# gives trial index, not row index
 row_ind_successful_stress = ind_center_states[ind_successful_stress]		# gives row index
-row_ind_successful_stress_check_reward = ind_check_reward_states[ind_successful_stress]
 ind_successful_stress_reward = np.ravel(np.nonzero(successful_stress_or_not))
 row_ind_successful_stress_reward = ind_check_reward_states[ind_successful_stress_reward]
+row_ind_successful_stress_check_reward = ind_check_reward_states[ind_successful_stress_reward]
 response_time_successful_stress = (state_time[row_ind_successful_stress_reward] - state_time[row_ind_successful_stress])/float(60)		# hdf rows are written at a rate of 60 Hz
 
 # Response time for all stress trials
@@ -87,9 +87,9 @@ response_time_stress = (state_time[row_ind_end_stress] - state_time[row_ind_stre
 # Response times for successful regular trials
 ind_successful_reg = np.ravel(np.nonzero(tot_successful_reg))
 row_ind_successful_reg = ind_center_states[ind_successful_reg]
-row_ind_successful_reg_check_reward = ind_check_reward_states[ind_successful_reg]
 ind_successful_reg_reward = np.ravel(np.nonzero(np.logical_not(successful_stress_or_not)))
 row_ind_successful_reg_reward = ind_check_reward_states[ind_successful_reg_reward]
+row_ind_successful_reg_check_reward = ind_check_reward_states[ind_successful_reg_reward]
 response_time_successful_reg = (state_time[row_ind_successful_reg_reward] - state_time[row_ind_successful_reg])/float(60)
 
 # Response time for all regular trials
