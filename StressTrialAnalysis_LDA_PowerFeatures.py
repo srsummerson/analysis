@@ -312,13 +312,18 @@ for key in lfp_features_keys:
 		trial_features = lfp_features[key].flatten()
 		X_successful.append(trial_features)
 
+X_successful_mean = np.abs(np.mean(X_successful))
+X_successful_std = np.abs(np.std(X_successful))
+
+X_successful = (X_successful - X_successful_mean)/X_successful_std
+
 y_successful_reg = np.zeros(len(ind_successful_reg))
 y_successful_stress = np.ones(len(ind_successful_stress))
 y_successful = np.append(y_successful_reg,y_successful_stress)
 
-clf_all = LinearDiscriminantAnalysis()
+clf_all = LinearDiscriminantAnalysis(solver='eigen', shrinkage = 'auto')
 clf_all.fit(X_successful, y_successful)
-scores = cross_val_score(LinearDiscriminantAnalysis(),X_successful,y_successful,scoring='accuracy',cv=10)
+scores = cross_val_score(LinearDiscriminantAnalysis(solver='eigen', shrinkage = 'auto'),X_successful,y_successful,scoring='accuracy',cv=10)
 print "CV (10-fold) scores:", scores
 print "Avg CV score:", scores.mean()
 
