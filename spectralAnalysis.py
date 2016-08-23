@@ -430,7 +430,7 @@ def computePowerFeatures(lfp_data, Fs, power_bands, event_indices, t_window):
 			for i,ind in enumerate(events):
 				data = chann_data[ind:ind + times[trial,i]]
 				data = np.ravel(data)
-				Sxx, f, t, fig = specgram(data,Fs=Avg_Fs)
+				Sxx, f, t, fig = specgram(data,Fs=Fs)
 				Sxx = Sxx/np.sum(Sxx)
 				Sxx = 10*np.log10(Sxx)
 				for k in range(0,len(power_bands)):
