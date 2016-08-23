@@ -36,79 +36,80 @@ hdf_location = '/storage/rawdata/hdf/'+hdf_filename
 pf_location = '/home/srsummerson/storage/PowerFeatures/'
 pf_filename = pf_location + filename+'_b'+str(block_num)+'_PowerFeatures.mat'
 
+
+lfp_channels = range(0,160)
+lfp_channels.pop(129)  # delete channel 129
+lfp_channels.pop(130)  # delete channel 131
+lfp_channels.pop(143)  # delete channel 145
+#bands = [[1,8],[8,12],[12,30],[30,55],[65,100]]
+bands = [[0,20],[20,40],[40,60]]
+
+'''
+Load behavior data
+'''
+state_time, ind_center_states, ind_check_reward_states, all_instructed_or_freechoice, all_stress_or_not, successful_stress_or_not,trial_success, target, reward = FreeChoiceBehavior_withStressTrials(hdf_location)
+
+print "Behavior data loaded."
+
+# Total number of trials
+num_trials = ind_center_states.size
+total_states = state_time.size
+
+# Number of successful stress trials
+tot_successful_stress = np.logical_and(trial_success,all_stress_or_not)
+successful_stress_trials = float(np.sum(tot_successful_stress))/np.sum(all_stress_or_not)
+
+# Number of successful non-stress trials
+tot_successful_reg = np.logical_and(trial_success,np.logical_not(all_stress_or_not))
+successful_reg_trials = float(np.sum(tot_successful_reg))/(num_trials - np.sum(all_stress_or_not))
+
+# Response times for successful stress trials
+ind_successful_stress = np.ravel(np.nonzero(tot_successful_stress))   	# gives trial index, not row index
+row_ind_successful_stress = ind_center_states[ind_successful_stress]		# gives row index
+ind_successful_stress_reward = np.ravel(np.nonzero(successful_stress_or_not))
+row_ind_successful_stress_reward = ind_check_reward_states[ind_successful_stress_reward]
+row_ind_successful_stress_check_reward = ind_check_reward_states[ind_successful_stress_reward]
+response_time_successful_stress = (state_time[row_ind_successful_stress_reward] - state_time[row_ind_successful_stress])/float(60)		# hdf rows are written at a rate of 60 Hz
+
+# Response time for all stress trials
+ind_stress = np.ravel(np.nonzero(all_stress_or_not))
+row_ind_stress = ind_center_states[ind_stress]  # gives row index
+#row_ind_stress_check_reward = ind_check_reward_states[ind_stress]
+row_ind_end_stress = np.zeros(len(row_ind_stress))
+row_ind_end_stress = row_ind_stress + 2  # targ_transition state occurs two states later for unsuccessful trials
+row_ind_end_stress[-1] = np.min([row_ind_end_stress[-1],len(state_time)-1])  # correct final incomplete trial
+
+
+for i in range(0,len(row_ind_successful_stress)):
+	ind = np.where(row_ind_stress == row_ind_successful_stress[i])[0]
+	row_ind_end_stress[ind] = row_ind_successful_stress_reward[i]  # for successful trials, update with real end of trial
+response_time_stress = (state_time[row_ind_end_stress] - state_time[row_ind_stress])/float(60)
+
+
+# Response times for successful regular trials
+ind_successful_reg = np.ravel(np.nonzero(tot_successful_reg))
+row_ind_successful_reg = ind_center_states[ind_successful_reg]
+ind_successful_reg_reward = np.ravel(np.nonzero(np.logical_not(successful_stress_or_not)))
+row_ind_successful_reg_reward = ind_check_reward_states[ind_successful_reg_reward]
+row_ind_successful_reg_check_reward = ind_check_reward_states[ind_successful_reg_reward]
+response_time_successful_reg = (state_time[row_ind_successful_reg_reward] - state_time[row_ind_successful_reg])/float(60)
+
+# Response time for all regular trials
+ind_reg = np.ravel(np.nonzero(np.logical_not(all_stress_or_not)))
+row_ind_reg = ind_center_states[ind_reg]
+#row_ind_reg_check_reward = ind_check_reward_states[ind_reg]
+row_ind_end_reg = np.zeros(len(row_ind_reg))
+row_ind_end_reg = np.minimum(row_ind_reg + 5,total_states-1)  # target_transition state occues two states later for successful trials
+for i in range(0,len(row_ind_successful_reg)):
+	ind = np.where(row_ind_reg == row_ind_successful_reg[i])[0]
+	row_ind_end_reg[ind] = row_ind_successful_reg_reward[i]
+response_time_reg = (state_time[row_ind_end_reg] - state_time[row_ind_reg])/float(60)
+
 if os.path.exists(pf_filename):
 	print "Power features previously computed. Loading now."
 	lfp_features = dict()
 	sp.io.loadmat(pf_filename,lfp_features)
 else:
-	lfp_channels = range(0,160)
-	lfp_channels.pop(129)  # delete channel 129
-	lfp_channels.pop(130)  # delete channel 131
-	lfp_channels.pop(143)  # delete channel 145
-	#bands = [[1,8],[8,12],[12,30],[30,55],[65,100]]
-	bands = [[0,20],[20,40],[40,60]]
-
-	'''
-	Load behavior data
-	'''
-	state_time, ind_center_states, ind_check_reward_states, all_instructed_or_freechoice, all_stress_or_not, successful_stress_or_not,trial_success, target, reward = FreeChoiceBehavior_withStressTrials(hdf_location)
-
-	print "Behavior data loaded."
-
-	# Total number of trials
-	num_trials = ind_center_states.size
-	total_states = state_time.size
-
-	# Number of successful stress trials
-	tot_successful_stress = np.logical_and(trial_success,all_stress_or_not)
-	successful_stress_trials = float(np.sum(tot_successful_stress))/np.sum(all_stress_or_not)
-
-	# Number of successful non-stress trials
-	tot_successful_reg = np.logical_and(trial_success,np.logical_not(all_stress_or_not))
-	successful_reg_trials = float(np.sum(tot_successful_reg))/(num_trials - np.sum(all_stress_or_not))
-
-	# Response times for successful stress trials
-	ind_successful_stress = np.ravel(np.nonzero(tot_successful_stress))   	# gives trial index, not row index
-	row_ind_successful_stress = ind_center_states[ind_successful_stress]		# gives row index
-	ind_successful_stress_reward = np.ravel(np.nonzero(successful_stress_or_not))
-	row_ind_successful_stress_reward = ind_check_reward_states[ind_successful_stress_reward]
-	row_ind_successful_stress_check_reward = ind_check_reward_states[ind_successful_stress_reward]
-	response_time_successful_stress = (state_time[row_ind_successful_stress_reward] - state_time[row_ind_successful_stress])/float(60)		# hdf rows are written at a rate of 60 Hz
-
-	# Response time for all stress trials
-	ind_stress = np.ravel(np.nonzero(all_stress_or_not))
-	row_ind_stress = ind_center_states[ind_stress]  # gives row index
-	#row_ind_stress_check_reward = ind_check_reward_states[ind_stress]
-	row_ind_end_stress = np.zeros(len(row_ind_stress))
-	row_ind_end_stress = row_ind_stress + 2  # targ_transition state occurs two states later for unsuccessful trials
-	row_ind_end_stress[-1] = np.min([row_ind_end_stress[-1],len(state_time)-1])  # correct final incomplete trial
-
-
-	for i in range(0,len(row_ind_successful_stress)):
-		ind = np.where(row_ind_stress == row_ind_successful_stress[i])[0]
-		row_ind_end_stress[ind] = row_ind_successful_stress_reward[i]  # for successful trials, update with real end of trial
-	response_time_stress = (state_time[row_ind_end_stress] - state_time[row_ind_stress])/float(60)
-
-
-	# Response times for successful regular trials
-	ind_successful_reg = np.ravel(np.nonzero(tot_successful_reg))
-	row_ind_successful_reg = ind_center_states[ind_successful_reg]
-	ind_successful_reg_reward = np.ravel(np.nonzero(np.logical_not(successful_stress_or_not)))
-	row_ind_successful_reg_reward = ind_check_reward_states[ind_successful_reg_reward]
-	row_ind_successful_reg_check_reward = ind_check_reward_states[ind_successful_reg_reward]
-	response_time_successful_reg = (state_time[row_ind_successful_reg_reward] - state_time[row_ind_successful_reg])/float(60)
-
-	# Response time for all regular trials
-	ind_reg = np.ravel(np.nonzero(np.logical_not(all_stress_or_not)))
-	row_ind_reg = ind_center_states[ind_reg]
-	#row_ind_reg_check_reward = ind_check_reward_states[ind_reg]
-	row_ind_end_reg = np.zeros(len(row_ind_reg))
-	row_ind_end_reg = np.minimum(row_ind_reg + 5,total_states-1)  # target_transition state occues two states later for successful trials
-	for i in range(0,len(row_ind_successful_reg)):
-		ind = np.where(row_ind_reg == row_ind_successful_reg[i])[0]
-		row_ind_end_reg[ind] = row_ind_successful_reg_reward[i]
-	response_time_reg = (state_time[row_ind_end_reg] - state_time[row_ind_reg])/float(60)
-
 
 	'''
 	Load syncing data for behavior and TDT recording
@@ -305,21 +306,23 @@ else:
 
 X_successful = []
 lfp_features_keys = lfp_features.keys()
+skip_keys = ['__globals__','__header__','__version__']
 for key in lfp_features_keys:
-	trial_features = lfp_features[key].flatten()
-	X_successful.append(trial_features)
+	if key not in skip_keys:
+		trial_features = lfp_features[key].flatten()
+		X_successful.append(trial_features)
 
 y_successful_reg = np.zeros(len(ind_successful_reg))
 y_successful_stress = np.ones(len(ind_successful_stress))
 y_successful = np.append(y_successful_reg,y_successful_stress)
-'''
+
 clf_all = LinearDiscriminantAnalysis()
 clf_all.fit(X_successful, y_successful)
 scores = cross_val_score(LinearDiscriminantAnalysis(),X_successful,y_successful,scoring='accuracy',cv=10)
 print "CV (10-fold) scores:", scores
 print "Avg CV score:", scores.mean()
 
-'''
+
 '''
 # Labels: 0 = regular, 1 = stress
 X_successful_stress = np.array(X_successful_stress)
