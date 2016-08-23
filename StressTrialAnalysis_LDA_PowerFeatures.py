@@ -72,7 +72,7 @@ response_time_successful_stress = (state_time[row_ind_successful_stress_reward] 
 # Response time for all stress trials
 ind_stress = np.ravel(np.nonzero(all_stress_or_not))
 row_ind_stress = ind_center_states[ind_stress]  # gives row index
-row_ind_stress_check_reward = ind_check_reward_states[ind_stress]
+#row_ind_stress_check_reward = ind_check_reward_states[ind_stress]
 row_ind_end_stress = np.zeros(len(row_ind_stress))
 row_ind_end_stress = row_ind_stress + 2  # targ_transition state occurs two states later for unsuccessful trials
 row_ind_end_stress[-1] = np.min([row_ind_end_stress[-1],len(state_time)-1])  # correct final incomplete trial
@@ -95,7 +95,7 @@ response_time_successful_reg = (state_time[row_ind_successful_reg_reward] - stat
 # Response time for all regular trials
 ind_reg = np.ravel(np.nonzero(np.logical_not(all_stress_or_not)))
 row_ind_reg = ind_center_states[ind_reg]
-row_ind_reg_check_reward = ind_check_reward_states[ind_reg]
+#row_ind_reg_check_reward = ind_check_reward_states[ind_reg]
 row_ind_end_reg = np.zeros(len(row_ind_reg))
 row_ind_end_reg = np.minimum(row_ind_reg + 5,total_states-1)  # target_transition state occues two states later for successful trials
 for i in range(0,len(row_ind_successful_reg)):
