@@ -423,24 +423,22 @@ def computePowerFeatures(lfp_data, Fs, power_bands, event_indices, t_window):
 
 	for trial in range(0,N):
 		events = event_indices[trial,:]  # should be array of length M
+		trial_powers = np.zeros([len(channels),M*len(power_bands)])
 		for j, chann in enumerate(channels):
 			chann_data = lfp_data[chann]
 			feat_counter = 0
-			trial_powers = np.zeros([len(channels),M*len(power_bands)])
-			print trial_powers.shape
 			for i,ind in enumerate(events):
 				data = chann_data[ind:ind + times[trial,i]]
-				print len(data)
 				data = np.ravel(data)
 				Sxx, f, t, fig = specgram(data, NFFT=NFFT, Fs=Fs, noverlap=noverlap)
 				Sxx = Sxx/np.sum(Sxx)
 				Sxx = 10*np.log10(Sxx)
-				print Sxx.shape
 				for k in range(0,len(power_bands)):
 					low_band, high_band = power_bands[k]
 					freqs = np.ravel(np.nonzero(np.greater(f,low_band)&np.less_equal(f,high_band)))
 					tot_power_band = np.sum(Sxx[freqs,:],axis=0)
 					trial_powers[j,feat_counter] = np.sum(tot_power_band)/float(len(tot_power_band))
+					#trial_powers[j,i*len(power_bands) + k] = np.sum(tot_power_band)/float(len(tot_power_band))
 					feat_counter += 1
 		features[trial] = trial_powers
 
