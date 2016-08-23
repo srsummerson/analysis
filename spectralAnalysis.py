@@ -425,7 +425,7 @@ def computePowerFeatures(lfp_data, Fs, power_bands, event_indices, t_window):
 		for j, chann in enumerate(channels):
 			chann_data = lfp_data[chann]
 			feat_counter = 0
-			trial_powers = np.zeros([N,M*len(power_bands)])
+			trial_powers = np.zeros([len(channels),M*len(power_bands)])
 			for i,ind in enumerate(events):
 				data = chann_data[ind:ind + times[trial,i]]
 				data = np.ravel(data)
