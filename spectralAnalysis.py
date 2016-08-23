@@ -440,6 +440,6 @@ def computePowerFeatures(lfp_data, Fs, power_bands, event_indices, t_window):
 					trial_powers[j,feat_counter] = np.sum(tot_power_band)/float(len(tot_power_band))
 					#trial_powers[j,i*len(power_bands) + k] = np.sum(tot_power_band)/float(len(tot_power_band))
 					feat_counter += 1
-		features[trial] = trial_powers
+		features[str(trial)] = trial_powers
 
 	return features

@@ -37,6 +37,7 @@ pf_location = '/home/srsummerson/storage/PowerFeatures/'
 pf_filename = pf_location + filename+'_b'+str(block_num)+'_PowerFeatures.mat'
 
 if os.path.exists(pf_filename):
+	print "Power features previously computed. Loading now."
 	lfp_features = dict()
 	sp.io.loadmat(pf_filename,lfp_features)
 else:
@@ -300,7 +301,7 @@ else:
 	lfp_features = computePowerFeatures(lfp, lfp_samprate, bands, event_indices, t_window)
 	#pf_filename = filename+'_b'+str(block_num)+'_PowerFeatures.mat'
 	#sp.io.savemat('/home/srsummerson/storage/PowerFeatures/'+pf_filename,lfp_features)
-	sp.io.savemat(pf_location,lfp_features)
+	sp.io.savemat(pf_filename,lfp_features)
 
 X_successful = []
 lfp_features_keys = lfp_features.keys()
