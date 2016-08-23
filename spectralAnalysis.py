@@ -439,11 +439,8 @@ def computePowerFeatures(lfp_data, Fs, power_bands, event_indices, t_window):
 				for k in range(0,len(power_bands)):
 					low_band, high_band = power_bands[k]
 					freqs = np.ravel(np.nonzero(np.greater(f,low_band)&np.less_equal(f,high_band)))
-					check = np.sum(Sxx[freqs,:],axis=0)
-					print check, len(freqs)
-					check = np.sum(Sxx[freqs,:])
-					print check
-					trial_powers[j,feat_counter] = np.sum(Sxx[freqs,:],axis=0)/float(len(freqs))
+					tot_power_band = np.sum(Sxx[freqs,:],axis=0)
+					trial_powers[j,feat_counter] = np.sum(tot_power_band)/float(len(tot_power_band))
 					feat_counter += 1
 		features[trial] = trial_powers
 
