@@ -442,4 +442,4 @@ def computePowerFeatures(lfp_data, Fs, power_bands, event_indices, t_window):
 					feat_counter += 1
 		features[trial] = trial_powers
 
-	return features, Sxx, f, t, data
+	return features
