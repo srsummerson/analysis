@@ -427,12 +427,15 @@ def computePowerFeatures(lfp_data, Fs, power_bands, event_indices, t_window):
 			chann_data = lfp_data[chann]
 			feat_counter = 0
 			trial_powers = np.zeros([len(channels),M*len(power_bands)])
+			print trial_powers.shape
 			for i,ind in enumerate(events):
 				data = chann_data[ind:ind + times[trial,i]]
+				print len(data)
 				data = np.ravel(data)
 				Sxx, f, t, fig = specgram(data, NFFT=NFFT, Fs=Fs, noverlap=noverlap)
 				Sxx = Sxx/np.sum(Sxx)
 				Sxx = 10*np.log10(Sxx)
+				print Sxx.shape
 				for k in range(0,len(power_bands)):
 					low_band, high_band = power_bands[k]
 					freqs = np.ravel(np.nonzero(np.greater(f,low_band)&np.less_equal(f,high_band)))
