@@ -38,8 +38,8 @@ lfp_channels = range(0,160)
 lfp_channels.pop(129)  # delete channel 129
 lfp_channels.pop(130)  # delete channel 131
 lfp_channels.pop(143)  # delete channel 145
-bands = [[1,8],[8,12],[12,30],[30,55],[65,100]]
-
+#bands = [[1,8],[8,12],[12,30],[30,55],[65,100]]
+bands = [[0,20],[20,40],[40,60]]
 
 '''
 Load behavior data
@@ -141,9 +141,14 @@ else:
 			pulse_samprate = sig.sampling_rate.item()
 		if (sig.name[0:4] == 'LFP1'):
 			channel = sig.channel_index
-			if channel in lfp_channels:
+			if (channel in lfp_channels)&(channel < 97):
 				lfp_samprate = sig.sampling_rate.item()
 				lfp[channel] = np.ravel(sig)
+		if (sig.name[0:4] == 'LFP2'):
+			channel = sig.channel_index
+			if (channel % 96) in lfp_channels:
+				channel_name = channel + 96
+				lfp[channel_name] = np.ravel(sig)
 
 print "Finished loading TDT data."
 '''
@@ -286,7 +291,7 @@ lfp_after_reward_states = np.append(lfp_ind_successful_stress_check_reward, lfp_
 event_indices = np.vstack([lfp_center_states,lfp_before_reward_states,lfp_after_reward_states]).T
 t_window = [0.5,0.5,0.5]
 print "Computing LFP features."
-lfp_features = computePowerFeatures(lfp, lfp_samprate, bands, event_indices, t_window)
+lfp_features,Sxx, f, t = computePowerFeatures(lfp, lfp_samprate, bands, event_indices, t_window)
 
 '''
 # Labels: 0 = regular, 1 = stress
