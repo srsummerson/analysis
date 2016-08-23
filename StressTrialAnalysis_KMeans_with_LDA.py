@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 from basicAnalysis import plot_cov_ellipse, LDAforFeatureSelection
 from csv_processing import get_csv_data_singlechannel
 from probabilisticRewardTaskPerformance import FreeChoiceBehavior_withStressTrials
-from spectralAnalysis import TrialAveragedPSD
+from spectralAnalysis import TrialAveragedPSD, powersWithSpecgram
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.linear_model import LogisticRegression
 from sklearn.cross_validation import train_test_split
@@ -353,6 +353,7 @@ clf_all.fit(X_successful, y_successful)
 scores = cross_val_score(LinearDiscriminantAnalysis(),X_successful,y_successful,scoring='accuracy',cv=10)
 print "CV (10-fold) scores:", scores
 print "Avg CV score:", scores.mean()
+print "Percentage of variance explained by each factor",clf_all.explained_variance_ratio_
 
 predict_stress = clf_all.predict(X_successful_stress)
 print "Fraction of stress trials classified as stress:", np.sum(predict_stress)/len(predict_stress)

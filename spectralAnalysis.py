@@ -375,4 +375,68 @@ def LFPPowerPerTrial_SingleBand_PerChannel_Timestamps(lfp,timestamps,Avg_Fs,chan
 		plt.show()
 		
 	return Sxx, f, t
-	
+
+def powersWithSpecgram(channel_data,Avg_Fs,channel,event_indices,t_before, t_after):
+
+	win_before = int(t_before*Avg_Fs)
+	win_after = int(t_after*Avg_Fs)
+	channel = np.array(channel) - 1 	# adjust so that counting starts at 0
+
+	times = np.arange(-t_before,t_after,float(t_after + t_before)/(win_after + win_before))
+	spec = dict()
+
+	for j,ind in enumerate(event_indices):
+		data = channel_data[ind - win_before:ind + win_after,channel]
+		data = np.ravel(data)
+		Sxx, f, t, fig = specgram(data,Fs=Avg_Fs)
+		Sxx = Sxx/np.sum(Sxx)
+		Sxx = 10*np.log10(Sxx)
+		spec[str(j)] = Sxx
+
+	return spec, t, f
+
+def computePowerFeatures(lfp_data, Fs, power_bands, event_indices, t_window):
+	'''
+	Inputs
+		- data: dictionary of data, with one entry for each channel 
+		- Fs: sampling frequency 
+		- power_bands: list of power bands 
+		- event_indices: N x M array of event indices, where N is the number of trials and M is the number of 
+		                 different events 
+		- t_window: length M array of time window to compute features over, one element for each feature 
+	Outputs
+		- features: dictionary with N entries (one per trial), with a C x K matric which C is the number of channels 
+					and K is the number of features (number of power bands times M)
+	'''
+	NFFT = int(Fs*0.25)
+	noverlap = int(Fs*0.125)
+
+	N, M = event_indices.shape
+	times = np.array([])
+	for time in t_window:
+		times.append(time*np.ones(N))
+
+	features = dict()
+
+	channels = lfp_data.keys()
+
+	for trial in range(0,N):
+		events = event_indices[trial,:]  # should be array of length M
+		for j, chann in enumerate(channels):
+			chann_data = data[chann]
+			feat_counter = 0
+			trial_powers = np.zeros([N,M*len(power_bands)])
+			for ind in events:
+				data = chann_data[ind:ind + times[j]]
+				data = np.ravel(data)
+				Sxx, f, t, fig = specgram(data,Fs=Avg_Fs)
+				Sxx = Sxx/np.sum(Sxx)
+				Sxx = 10*np.log10(Sxx)
+				for k in range(0,len(power_bands)):
+					low_band, high_band = power_bands[k]
+					freqs = np.ravel(np.nonzero(np.greater(f,low_band)&np.less_equal(f,high_band)))
+					trial_powers[j,feat_counter] = np.sum(Sxx[freqs,:],axis=0)/float(len(freqs))
+					feat_counter += 1
+		features[trial] = trial_powers
+
+	return features
