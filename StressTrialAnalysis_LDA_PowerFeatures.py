@@ -24,9 +24,8 @@ from sklearn.cross_validation import cross_val_score
 
 
 
-hdf_filename = 'mari20160610_13_te2210.hdf'
-hdf_filename_stim = 'mari20160610_14_te2211.hdf'
-filename = 'Mario20160610'
+hdf_filename = 'mari20160712_03_te2333.hdf'
+filename = 'Mario20160712'
 block_num = 1
 print filename
 TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
@@ -113,6 +112,7 @@ hdf_times = dict()
 mat_filename = filename+'_b'+str(block_num)+'_syncHDF.mat'
 sp.io.loadmat('/home/srsummerson/storage/syncHDF/'+mat_filename,hdf_times)
 
+print "Loading TDT data."
 '''
 Load pupil dilation and heart rate data
 '''
