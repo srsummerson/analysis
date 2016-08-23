@@ -29,8 +29,8 @@ hdf_filename_stim = 'mari20160610_14_te2211.hdf'
 filename = 'Mario20160610'
 block_num = 1
 print filename
-#TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
-TDT_tank = '/home/srsummerson/storage/tdt/'+filename
+TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
+#TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
 #hdf_location = hdffilename
 
