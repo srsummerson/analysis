@@ -181,7 +181,7 @@ pupil_ind_stress = np.zeros(row_ind_stress.size)
 lfp_ind_stress = np.zeros(row_ind_stress.size)
 pulse_ind_reg = []
 pupil_ind_reg = []
-lfp_ind_reg = []
+lfp_ind_reg = np.zeros(row_ind_reg.size)
 
 
 for i in range(0,len(row_ind_successful_stress)):
