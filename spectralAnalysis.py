@@ -412,7 +412,8 @@ def computePowerFeatures(lfp_data, Fs, power_bands, event_indices, t_window):
 	noverlap = int(Fs*0.125)
 
 	N, M = event_indices.shape
-	times = np.array([N,M])
+	print N, M
+	times = np.ones([N,M])
 	for t,time in enumerate(t_window):
 		times[:,t] = time*np.ones(N)
 
