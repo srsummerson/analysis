@@ -262,8 +262,8 @@ else:
 	pupil_ind_successful_stress = np.zeros(row_ind_successful_stress.size)
 	lfp_ind_successful_stress_center = np.zeros(row_ind_successful_stress.size)
 	lfp_ind_successful_stress_check_reward = np.zeros(row_ind_successful_stress.size)
-	pulse_ind_successful_reg = []
-	pupil_ind_successful_reg = []
+	pulse_ind_successful_reg = np.zeros(row_ind_successful_reg.size)
+	pupil_ind_successful_reg = np.zeros(row_ind_successful_reg.size)
 	lfp_ind_successful_reg_center = np.zeros(row_ind_successful_reg.size)
 	lfp_ind_successful_reg_check_reward = np.zeros(row_ind_successful_reg.size)
 	state_row_ind_stress = state_time[row_ind_stress]
@@ -289,8 +289,8 @@ else:
 
 	for i in range(0,len(row_ind_successful_stress)):
 		hdf_index = np.argmin(np.abs(hdf_rows - state_row_ind_successful_stress[i]))
-		#pulse_ind_successful_stress[i] = pulse_dio_sample_num[hdf_index]
-		#pupil_ind_successful_stress[i] = pupil_dio_sample_num[hdf_index]
+		pulse_ind_successful_stress[i] = pulse_dio_sample_num[hdf_index]
+		pupil_ind_successful_stress[i] = pupil_dio_sample_num[hdf_index]
 		lfp_ind_successful_stress_center[i] = lfp_dio_sample_num[hdf_index]
 		hdf_index = np.argmin(np.abs(hdf_rows - state_row_ind_successful_stress_check_reward[i]))
 		lfp_ind_successful_stress_check_reward[i] = lfp_dio_sample_num[hdf_index]
@@ -308,8 +308,8 @@ else:
 	ind_start_all_stress = row_ind_stress[0]
 	for i in range(0,len(state_row_ind_successful_reg)):
 		hdf_index = np.argmin(np.abs(hdf_rows - state_row_ind_successful_reg[i]))
-		#pulse_ind_successful_reg.append(pulse_dio_sample_num[hdf_index])
-		#pupil_ind_successful_reg.append(pupil_dio_sample_num[hdf_index])
+		pulse_ind_successful_reg.append(pulse_dio_sample_num[hdf_index])
+		pupil_ind_successful_reg.append(pupil_dio_sample_num[hdf_index])
 		lfp_ind_successful_reg_center[i] = lfp_dio_sample_num[hdf_index]
 		hdf_index = np.argmin(np.abs(hdf_rows - state_row_ind_successful_reg_check_reward[i]))
 		lfp_ind_successful_reg_check_reward[i] = lfp_dio_sample_num[hdf_index]
@@ -322,8 +322,8 @@ else:
 
 	for i in range(0,len(row_ind_successful_stress_stim)):
 		hdf_index = np.argmin(np.abs(hdf_rows_stim - state_row_ind_successful_stress_stim[i]))
-		#pulse_ind_successful_stress_stim[i] = pulse_dio_sample_num_stim[hdf_index]
-		#pupil_ind_successful_stress_stim[i] = pupil_dio_sample_num_stim[hdf_index]
+		pulse_ind_successful_stress_stim[i] = pulse_dio_sample_num_stim[hdf_index]
+		pupil_ind_successful_stress_stim[i] = pupil_dio_sample_num_stim[hdf_index]
 		lfp_ind_successful_stress_stim[i] = lfp_dio_sample_num_stim[hdf_index]
 		hdf_index = np.argmin(np.abs(hdf_rows - state_row_ind_successful_stress_stim_check_reward[i]))
 		lfp_ind_successful_stress_stim_check_reward[i] = lfp_dio_sample_num_stim[hdf_index]
@@ -332,7 +332,7 @@ else:
 	'''
 	Process pupil and pulse data
 	'''
-	'''
+	
 	# Find IBIs and pupil data for all successful stress trials. 
 	samples_pulse_successful_stress = np.floor(response_time_successful_stress*pulse_samprate) 	#number of samples in trial interval for pulse signal
 	samples_pupil_successful_stress = np.floor(response_time_successful_stress*pupil_samprate)
@@ -340,34 +340,34 @@ else:
 
 	ibi_stress_mean, ibi_stress_std, pupil_stress_mean, pupil_stress_std, nbins_ibi_stress, ibi_stress_hist, nbins_pupil_stress, pupil_stress_hist = getIBIandPuilDilation(pulse_data, pulse_ind_successful_stress,samples_pulse_successful_stress, pulse_samprate,pupil_data, pupil_ind_successful_stress,samples_pupil_successful_stress,pupil_samprate)
 
-
+	'''
 	# Find IBIs and pupil data for all stress trials
 	samples_pulse_stress = np.floor(response_time_stress*pulse_samprate) 	#number of samples in trial interval for pulse signal
 	samples_pupil_stress = np.floor(response_time_stress*pupil_samprate)
 	samples_lfp_stress = np.floor(response_time_stress*lfp_samprate)
 
 	ibi_all_stress_mean, ibi_all_stress_std, pupil_all_stress_mean, pupil_all_stress_std, nbins_ibi_all_stress, ibi_all_stress_hist, nbins_pupil_all_stress, pupil_all_stress_hist = getIBIandPuilDilation(pulse_data, pulse_ind_stress,samples_pulse_stress, pulse_samprate,pupil_data, pupil_ind_stress,samples_pupil_stress,pupil_samprate)
-
+	'''
 	# Find IBIs and pupil data for successful and all regular trials. 
 	samples_pulse_successful_reg = np.floor(response_time_successful_reg*pulse_samprate)
 	samples_pupil_successful_reg = np.floor(response_time_successful_reg*pupil_samprate)
 	samples_lfp_successful_reg = np.floor(response_time_successful_reg*lfp_samprate)
 
 	ibi_reg_mean, ibi_reg_std, pupil_reg_mean, pupil_reg_std, nbins_ibi_reg, ibi_reg_hist, nbins_pupil_reg, pupil_reg_hist = getIBIandPuilDilation(pulse_data, pulse_ind_successful_reg,samples_pulse_successful_reg, pulse_samprate,pupil_data, pupil_ind_successful_reg,samples_pupil_successful_reg,pupil_samprate)
-
+	'''
 	samples_pulse_reg = np.floor(response_time_reg*pulse_samprate)
 	samples_pupil_reg = np.floor(response_time_reg*pupil_samprate)
 	samples_lfp_reg = np.floor(response_time_reg*lfp_samprate)
 
 	ibi_all_reg_mean, ibi_all_reg_std, pupil_all_reg_mean, pupil_all_reg_std, nbins_ibi_all_reg, ibi_all_reg_hist, nbins_pupil_all_reg, pupil_all_reg_hist = getIBIandPuilDilation(pulse_data, pulse_ind_reg,samples_pulse_reg, pulse_samprate,pupil_data, pupil_ind_reg,samples_pupil_reg,pupil_samprate)
-
+	'''
 	# Find IBIs and pupil data for all successful stress trials with stimulation. 
 	samples_pulse_successful_stress_stim = np.floor(response_time_successful_stress_stim*pulse_samprate_stim) 	#number of samples in trial interval for pulse signal
 	samples_pupil_successful_stress_stim = np.floor(response_time_successful_stress_stim*pupil_samprate_stim)
 	samples_lfp_successful_stress_stim = np.floor(response_time_successful_stress_stim*lfp_samprate_stim)
 
 	ibi_stress_mean_stim, ibi_stress_std_stim, pupil_stress_mean_stim, pupil_stress_std_stim, nbins_ibi_stress_stim, ibi_stress_hist_stim, nbins_pupil_stress_stim, pupil_stress_hist_stim = getIBIandPuilDilation(pulse_data_stim, pulse_ind_successful_stress_stim,samples_pulse_successful_stress_stim, pulse_samprate_stim,pupil_data_stim, pupil_ind_successful_stress_stim,samples_pupil_successful_stress_stim,pupil_samprate_stim)
-
+	'''
 	# Find IBIs and pupil data for all stress trials with stimulation.
 	samples_pulse_stress_stim = np.floor(response_time_stress_stim*pulse_samprate_stim) 	#number of samples in trial interval for pulse signal
 	samples_pupil_stress_stim = np.floor(response_time_stress_stim*pupil_samprate_stim)
@@ -434,14 +434,14 @@ for key in lfp_features_stim_keys:
 X_successful_mean = np.abs(np.mean(X_successful))
 X_successful_std = np.abs(np.std(X_successful))
 
-#X_successful = (X_successful - X_successful_mean)/X_successful_std
-X_successful = np.array(X_successful)
+X_successful = (X_successful - X_successful_mean)/X_successful_std
+#X_successful = np.array(X_successful)
 
 X_successful_stim_mean = np.abs(np.mean(X_successful_stim))
 X_successful_stim_std = np.abs(np.std(X_successful_stim))
 
-#X_successful_stim = (X_successful_stim - X_successful_stim_mean)/X_successful_stim_std
-X_successful_stim = np.array(X_successful_stim)
+X_successful_stim = (X_successful_stim - X_successful_stim_mean)/X_successful_stim_std
+#X_successful_stim = np.array(X_successful_stim)
 
 y_successful_reg = np.zeros(len(ind_successful_reg))
 y_successful_stress = np.ones(len(ind_successful_stress))
