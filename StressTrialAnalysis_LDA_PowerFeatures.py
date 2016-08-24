@@ -363,16 +363,14 @@ print "Number of training patterns: ", len(trndata)
 print "Input and output dimensions: ", trndata.indim, trndata.outdim
 print "First sample (input, target, class):"
 print trndata['input'][0], trndata['target'][0], trndata['class'][0]
-'''
+
 # build the ANN
 # 50 hidden layers (52 layers total)
 fnn = buildNetwork(trndata.indim, 3, trndata.outdim, outclass=SoftmaxLayer)
  # create the trainer
 trainer = BackpropTrainer(fnn, dataset=trndata)
     
-    
-    
-for i in xrange(12000): # given how many features there are, lots of iterations are required
+for i in xrange(100): # given how many features there are, lots of iterations are required
     # classify the data
     trainer.train() # can choose how many epochs to train on using trainEpochs()
     
@@ -381,87 +379,11 @@ tstresult = percentError(trainer.testOnClassData(dataset = tstdata), tstdata['cl
 print "epoch: %4d" % trainer.totalepochs, \
     " train error: %5.2f%%" % trnresult, \
     " test error: %5.2f%%" % tstresult
-'''
-'''
-# Labels: 0 = regular, 1 = stress
-X_successful_stress = np.array(X_successful_stress)
-#X_successful_stress = (X_successful_stress - np.nanmean(X_successful_stress,axis=0))/np.nanstd(X_successful_stress,axis=0)
-num_successful_stress = X_successful_stress.shape[0]
-y_successful_stress = np.ones(num_successful_stress)
-X_stress = np.array(X_stress)
-#X_stress = (X_stress - np.nanmean(X_stress,axis=0))/np.nanstd(X_stress,axis=0)
-num_stress = X_stress.shape[0]
-y_stress = np.ones(num_stress)
-X_successful_reg = np.array(X_successful_reg)
-#X_successful_reg = (X_successful_reg - np.nanmean(X_successful_reg,axis=0))/np.nanstd(X_successful_reg,axis=0)
-num_successful_reg = X_successful_reg.shape[0]
-y_successful_reg = np.zeros(num_successful_reg)
-X_reg = np.array(X_reg)
-#X_reg = (X_reg - np.nanmean(X_reg,axis=0))/np.nanstd(X_reg,axis=0)
-num_reg = X_reg.shape[0]
-y_reg = np.zeros(num_reg)
-
-X_successful_stim = np.array(X_successful_stim)
-X_stim = np.array(X_stim)
-
-X_successful = np.vstack([X_successful_reg, X_successful_stress])
-y_successful = np.append(y_successful_reg,y_successful_stress)
-
-X_all = np.vstack([X_reg, X_stress])
-y_all = np.append(y_reg, y_stress)
 
 
-clf_all = LinearDiscriminantAnalysis()
-clf_all.fit(X_successful, y_successful)
-scores = cross_val_score(LinearDiscriminantAnalysis(),X_successful,y_successful,scoring='accuracy',cv=10)
-print "CV (10-fold) scores:", scores
-print "Avg CV score:", scores.mean()
+x_successful = sm.add_constant(X_successful,prepend='False')
 
-predict_stress = clf_all.predict(X_successful_stress)
-print "Fraction of stress trials classified as stress:", np.sum(predict_stress)/len(predict_stress)
-
-predict_stim = clf_all.predict(X_stim)
-print "Fraction of all stimulation trials classified as stress:", np.sum(predict_stim)/len(predict_stim)
-
-predict_stim = clf_all.predict(X_successful_stim)
-print "Fraction of all successful stimulation trials classified as stress:", np.sum(predict_stim)/len(predict_stim)
-
-"""
-Decision boundary given by:
-np.dot(clf.coef_, x) - clf.intercept_ = 0 according to 
-http://stackoverflow.com/questions/36745480/how-to-get-the-equation-of-the-boundary-line-in-linear-discriminant-analysis-wit
-"""
-
-#LDAforFeatureSelection(X_successful,y_successful,filename,block_num)
-'''
-'''
-Do regression as well: power is total power in beta band per trial
-'''
-'''
-x = np.vstack((np.append(ibi_all_reg_mean, ibi_all_stress_mean), np.append(pupil_all_reg_mean, pupil_all_stress_mean), 
-				np.append(lfp_power_reg, lfp_power_stress)))
-x = np.transpose(x)
-x = sm.add_constant(x,prepend='False')
-
-lfp_power_successful_reg = (lfp_power_successful_reg - np.nanmean(lfp_power_successful_reg))/np.nanstd(lfp_power_successful_reg)
-lfp_power_successful_stress = (lfp_power_successful_stress - np.nanmean(lfp_power_successful_stress))/np.nanstd(lfp_power_successful_stress)
-
-x_successful = np.vstack((np.append(ibi_reg_mean, ibi_stress_mean), np.append(pupil_reg_mean, pupil_stress_mean), 
-				np.append(lfp_power_successful_reg, lfp_power_successful_stress)))
-x_successful = np.transpose(x_successful)
-x_successful = sm.add_constant(x_successful,prepend='False')
-'''
-'''
 print "Regression with all trials"
-model_glm = sm.Logit(y_all,x)
+model_glm = sm.Logit(y_successful,x_successful)
 fit_glm = model_glm.fit()
 print fit_glm.summary()
-'''
-
-
-
-
-
-
-
-
