@@ -48,7 +48,7 @@ lfp_channels.pop(130)  # delete channel 131
 lfp_channels.pop(143)  # delete channel 145
 #bands = [[1,8],[8,12],[12,30],[30,55],[65,100]]
 bands = [[0,20],[20,40],[40,60]]
-bands = [[0,20]]
+bands = [[20,40]]
 '''
 Load behavior data
 '''
