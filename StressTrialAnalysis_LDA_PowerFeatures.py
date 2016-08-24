@@ -29,9 +29,15 @@ from pybrain.supervised.trainers import BackpropTrainer
 from pybrain.structure.modules import SoftmaxLayer
 from pybrain.datasets import SupervisedDataSet
 
+'''
+Do 6/14 and 7/12
 
-hdf_filename = 'mari20160713_10_te2348.hdf'
-hdf_filename_stim = 'mari20160716_04_te2362.hdf'
+mari20160614_03_te2237.hdf, mari20160614_09_te2243.hdf
+'''
+
+
+hdf_filename = 'mari20160712_03_te2333.hdf'
+hdf_filename_stim = 'mari20160712_07_te2337.hdf'
 filename = 'Mario20160712'
 filename2 = 'Mario20160712'
 block_num = 1
@@ -211,7 +217,7 @@ else:
 			if (sig.name[0:4] == 'LFP1'):
 				channel = sig.channel_index
 				if (channel in lfp_channels)&(channel < 97):
-					lfp_samprate = sig.sampling_rate.item()
+					lfp_samprate_stim = sig.sampling_rate.item()
 					lfp_stim[channel] = np.ravel(sig)
 			if (sig.name[0:4] == 'LFP2'):
 				channel = sig.channel_index
@@ -438,15 +444,15 @@ y_successful_reg = np.zeros(len(ind_successful_reg))
 y_successful_stress = np.ones(len(ind_successful_stress))
 y_successful = np.append(y_successful_reg,y_successful_stress)
 
-y_successful_stim = np.ones(len(ind_successful_stim))
-
+y_successful_stim = np.ones(len(ind_successful_stress_stim))
+'''
 print "LDA using Power Features:"
 clf_all = LinearDiscriminantAnalysis(solver='eigen', shrinkage = 'auto')
 clf_all.fit(X_successful, y_successful)
 scores = cross_val_score(LinearDiscriminantAnalysis(solver='eigen', shrinkage = 'auto'),X_successful,y_successful,scoring='accuracy',cv=10)
 print "CV (10-fold) scores:", scores
 print "Avg CV score:", scores.mean()
-
+'''
 '''
 Using ANN to predict classes.
 '''
@@ -463,7 +469,7 @@ for xnum in xrange(num_trials):
     alldata.addSample(X_successful[xnum,:],y_successful[xnum])
 
 # add the features and dummy class labels into the stim dataset
-for xnum in xrange(num_stim_trials):
+for xnum in xrange(len(ind_successful_stress_stim)):
 	stimalldata.addSample(X_successful_stim[xnum,:],y_successful_stim[xnum])
 
 # split the data into testing and training data
@@ -515,13 +521,23 @@ for i in xrange(1000): # given how many features there are, lots of iterations a
     
 trnresult = percentError(trainer.testOnClassData(), trndata['class'])
 tstresult = percentError(trainer.testOnClassData(dataset = tstdata), tstdata['class'])
-print "epoch: %4d" % trainer.totalepochs, \
-    " train error: %5.2f%%" % trnresult, \
-    " test error: %5.2f%%" % tstresult
+valresult = percentError(trainer.testOnClassData(dataset = valdata), valdata['class'])
 
+orig_std = sys.stdout
+f = file(pf_location + filename + '.txt', 'w')
+sys.stdout = f
 
-x_successful = sm.add_constant(X_successful,prepend='False')
+print "epoch: %4d" % trainer.totalepochs
+print "\n train error: %5.2f%%" % trnresult
+print "\n test error: %5.2f%%" % tstresult
+print "\n stim trial rate of reg classification: %5.2f%%" % valresult
+
+sys.stdout = orig_std
+f.close()
+
 '''
+x_successful = sm.add_constant(X_successful,prepend='False')
+
 print "Regression with all trials"
 model_glm = sm.Logit(y_successful,x_successful)
 fit_glm = model_glm.fit()
