@@ -314,9 +314,9 @@ lfp_features_keys = lfp_features.keys()
 skip_keys = ['__globals__','__header__','__version__']
 for key in lfp_features_keys:
 	if key not in skip_keys:
-		trial_features = lfp_features[key]
+		trial_features = lfp_features[key].flatten()
 		#trial_features = trial_features[:,0:2*len(bands)].flatten()  # take only powers from first event
-		trial_features = trial_features.flatten()
+		#trial_features = trial_features.flatten()
 		X_successful.append(trial_features)
 
 X_successful_mean = np.abs(np.mean(X_successful))
@@ -346,7 +346,7 @@ for xnum in xrange(num_trials):
     alldata.addSample(X_successful[xnum,:],y_successful[xnum])
 
 # split the data into testing and training data
-tstdata_temp, trndata_temp = alldata.splitWithProportion(0.2)
+tstdata_temp, trndata_temp = alldata.splitWithProportion(0.25)
 
 # small bug with _convertToOneOfMany function.  This fixes that
 tstdata = ClassificationDataSet(num_features,1,nb_classes=2)
@@ -372,6 +372,15 @@ print trndata['input'][0], trndata['target'][0], trndata['class'][0]
 fnn = buildNetwork(trndata.indim,50, trndata.outdim, outclass=SoftmaxLayer)
  # create the trainer
 trainer = BackpropTrainer(fnn, dataset=trndata)
+
+# Adding plotting
+ticks = arange(-3.,6.,0.2)
+X, Y = meshgrid(ticks, ticks)
+# need column vectors in dataset, not arrays
+griddata = ClassificationDataSet(num_features,1, nb_classes=2)
+for i in xrange(X.size):
+    griddata.addSample([X.ravel()[i],Y.ravel()[i]], [0])
+griddata._convertToOneOfMany()  # this is still needed to make the fnn feel comfy
     
 for i in xrange(1000): # given how many features there are, lots of iterations are required
     # classify the data
