@@ -434,12 +434,12 @@ for key in lfp_features_stim_keys:
 X_successful_mean = np.abs(np.mean(X_successful))
 X_successful_std = np.abs(np.std(X_successful))
 
-X_successful = (X_successful - X_successful_mean)/X_successful_std
+#X_successful = (X_successful - X_successful_mean)/X_successful_std
 
 X_successful_stim_mean = np.abs(np.mean(X_successful_stim))
 X_successful_stim_std = np.abs(np.std(X_successful_stim))
 
-X_successful_stim = (X_successful_stim - X_successful_stim_mean)/X_successful_stim_std
+#X_successful_stim = (X_successful_stim - X_successful_stim_mean)/X_successful_stim_std
 
 y_successful_reg = np.zeros(len(ind_successful_reg))
 y_successful_stress = np.ones(len(ind_successful_stress))
@@ -524,7 +524,11 @@ trnresult = percentError(trainer.testOnClassData(), trndata['class'])
 tstresult = percentError(trainer.testOnClassData(dataset = tstdata), tstdata['class'])
 valresult = percentError(trainer.testOnClassData(dataset = valdata), valdata['class'])
 
-print "epoch: %4d" % trainer.totalepochs
+print 'LDA Analysis:'
+print "\n CV (10-fold) scores:", scores
+print "\n Avg CV score:", scores.mean()
+print '\n\n ANN Analysis:'
+print "\n epoch: %4d" % trainer.totalepochs
 print "\n train error: %5.2f%%" % trnresult
 print "\n test error: %5.2f%%" % tstresult
 print "\n stim trial rate of reg classification: %5.2f%%" % valresult
