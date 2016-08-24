@@ -372,7 +372,7 @@ print trndata['input'][0], trndata['target'][0], trndata['class'][0]
 fnn = buildNetwork(trndata.indim,50, trndata.outdim, outclass=SoftmaxLayer)
  # create the trainer
 trainer = BackpropTrainer(fnn, dataset=trndata)
-
+'''
 # Adding plotting
 ticks = np.arange(-3.,6.,0.2)
 X, Y = np.meshgrid(ticks, ticks)
@@ -381,7 +381,7 @@ griddata = ClassificationDataSet(num_features,1, nb_classes=2)
 for i in xrange(X.size):
     griddata.addSample([X.ravel()[i],Y.ravel()[i]], [0])
 griddata._convertToOneOfMany()  # this is still needed to make the fnn feel comfy
-    
+'''  
 for i in xrange(1000): # given how many features there are, lots of iterations are required
     # classify the data
     trainer.train() # can choose how many epochs to train on using trainEpochs()
