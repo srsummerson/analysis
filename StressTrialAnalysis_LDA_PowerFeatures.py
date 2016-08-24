@@ -315,7 +315,7 @@ skip_keys = ['__globals__','__header__','__version__']
 for key in lfp_features_keys:
 	if key not in skip_keys:
 		trial_features = lfp_features[key]
-		trial_features = trial_features[:,0:len(bands)].flatten()  # take only powers from first event
+		trial_features = trial_features[:,len(bands):2*len(bands)].flatten()  # take only powers from first event
 		X_successful.append(trial_features)
 
 X_successful_mean = np.abs(np.mean(X_successful))
