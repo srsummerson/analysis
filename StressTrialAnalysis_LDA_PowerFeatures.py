@@ -32,8 +32,8 @@ from pybrain.datasets import SupervisedDataSet
 
 hdf_filename = 'mari20160713_10_te2348.hdf'
 hdf_filename_stim = 'mari20160716_04_te2362.hdf'
-filename = 'Mario20160713'
-filename2 = 'Mario20160716'
+filename = 'Mario20160712'
+filename2 = 'Mario20160712'
 block_num = 1
 block_num_stim = 2
 print filename
@@ -478,9 +478,15 @@ trndata = ClassificationDataSet(num_features,1,nb_classes=2)
 for n in xrange(0,trndata_temp.getLength()):
     trndata.addSample(trndata_temp.getSample(n)[0],trndata_temp.getSample(n)[1])
 
+valdata = ClassificationDataSet(num_features,1,nb_classes=2)
+for n in xrange(0,stimalldata.getLength()):
+    valdata.addSample(stimalldata.getSample(n)[0],stimalldata.getSample(n)[1])
+
 # organizes dataset for pybrain
 trndata._convertToOneOfMany()
 tstdata._convertToOneOfMany()
+
+valdata._convertToOneOfMany()
 
 # sample printouts before running classifier
 print "Number of training patterns: ", len(trndata)
