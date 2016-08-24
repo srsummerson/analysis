@@ -366,7 +366,7 @@ print trndata['input'][0], trndata['target'][0], trndata['class'][0]
 
 # build the ANN
 # 50 hidden layers (52 layers total)
-fnn = buildNetwork(trndata.indim, 3, trndata.outdim, outclass=SoftmaxLayer)
+fnn = buildNetwork(trndata.indim, 1, trndata.outdim, outclass=SoftmaxLayer)
  # create the trainer
 trainer = BackpropTrainer(fnn, dataset=trndata)
     
@@ -382,8 +382,9 @@ print "epoch: %4d" % trainer.totalepochs, \
 
 
 x_successful = sm.add_constant(X_successful,prepend='False')
-
+'''
 print "Regression with all trials"
 model_glm = sm.Logit(y_successful,x_successful)
 fit_glm = model_glm.fit()
 print fit_glm.summary()
+'''
