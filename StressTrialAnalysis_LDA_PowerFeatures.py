@@ -22,7 +22,12 @@ from sklearn.metrics import roc_curve, auc
 from sklearn.cross_validation import cross_val_score
 import os.path
 
-
+from pybrain.datasets import ClassificationDataSet
+from pybrain.utilities import percentError
+from pybrain.tools.shortcuts import buildNetwork
+from pybrain.supervised.trainers import BackpropTrainer
+from pybrain.structure.modules import SoftmaxLayer
+from pybrain.datasets import SupervisedDataSet
 
 
 hdf_filename = 'mari20160713_10_te2348.hdf'
@@ -321,13 +326,62 @@ y_successful_reg = np.zeros(len(ind_successful_reg))
 y_successful_stress = np.ones(len(ind_successful_stress))
 y_successful = np.append(y_successful_reg,y_successful_stress)
 
+print "LDA using Power Features:"
 clf_all = LinearDiscriminantAnalysis(solver='eigen', shrinkage = 'auto')
 clf_all.fit(X_successful, y_successful)
 scores = cross_val_score(LinearDiscriminantAnalysis(solver='eigen', shrinkage = 'auto'),X_successful,y_successful,scoring='accuracy',cv=10)
 print "CV (10-fold) scores:", scores
 print "Avg CV score:", scores.mean()
 
+print "Artificial Neural Network with Power Features:"
+# Create a dummy dataset with pybrain
+num_trials, num_features = X_successful.shape
+alldata = SupervisedDataSet(num_features,1) 
 
+# add the features and target locations into the dataset
+for xnum in xrange(num_trials): 
+    alldata.addSample(X_successful[xnum,:],y_successful[xnum])
+
+# split the data into testing and training data
+tstdata_temp, trndata_temp = alldata.splitWithProportion(0.2)
+
+# small bug with _convertToOneOfMany function.  This fixes that
+tstdata = ClassificationDataSet(num_features,1,nb_classes=2)
+for n in xrange(0, tstdata_temp.getLength()):
+    tstdata.addSample(tstdata_temp.getSample(n)[0], tstdata_temp.getSample(n)[1])
+
+trndata = ClassificationDataSet(num_features,1,nb_classes=2)
+for n in xrange(0,trndata_temp.getLength()):
+    trndata.addSample(trndata_temp.getSample(n)[0],trndata_temp.getSample(n)[1])
+
+# organizes dataset for pybrain
+trndata._convertToOneOfMany()
+tstdata._convertToOneOfMany()
+
+# sample printouts before running classifier
+print "Number of training patterns: ", len(trndata)
+print "Input and output dimensions: ", trndata.indim, trndata.outdim
+print "First sample (input, target, class):"
+print trndata['input'][0], trndata['target'][0], trndata['class'][0]
+'''
+# build the ANN
+# 50 hidden layers (52 layers total)
+fnn = buildNetwork(trndata.indim, 3, trndata.outdim, outclass=SoftmaxLayer)
+ # create the trainer
+trainer = BackpropTrainer(fnn, dataset=trndata)
+    
+    
+    
+for i in xrange(12000): # given how many features there are, lots of iterations are required
+    # classify the data
+    trainer.train() # can choose how many epochs to train on using trainEpochs()
+    
+trnresult = percentError(trainer.testOnClassData(), trndata['class'])
+tstresult = percentError(trainer.testOnClassData(dataset = tstdata), tstdata['class'])
+print "epoch: %4d" % trainer.totalepochs, \
+    " train error: %5.2f%%" % trnresult, \
+    " test error: %5.2f%%" % tstresult
+'''
 '''
 # Labels: 0 = regular, 1 = stress
 X_successful_stress = np.array(X_successful_stress)
