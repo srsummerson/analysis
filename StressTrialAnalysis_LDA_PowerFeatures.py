@@ -502,7 +502,7 @@ print trndata['input'][0], trndata['target'][0], trndata['class'][0]
 
 # build the ANN
 # 50 hidden layers (52 layers total)
-fnn = buildNetwork(trndata.indim,50, trndata.outdim, outclass=SoftmaxLayer)
+fnn = buildNetwork(trndata.indim,5, trndata.outdim, outclass=SoftmaxLayer)
  # create the trainer
 trainer = BackpropTrainer(fnn, dataset=trndata)
 '''
@@ -522,6 +522,11 @@ for i in xrange(1000): # given how many features there are, lots of iterations a
 trnresult = percentError(trainer.testOnClassData(), trndata['class'])
 tstresult = percentError(trainer.testOnClassData(dataset = tstdata), tstdata['class'])
 valresult = percentError(trainer.testOnClassData(dataset = valdata), valdata['class'])
+
+print "epoch: %4d" % trainer.totalepochs
+print "\n train error: %5.2f%%" % trnresult
+print "\n test error: %5.2f%%" % tstresult
+print "\n stim trial rate of reg classification: %5.2f%%" % valresult
 
 orig_std = sys.stdout
 f = file(pf_location + filename + '.txt', 'w')
