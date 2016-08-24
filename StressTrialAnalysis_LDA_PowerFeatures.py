@@ -374,8 +374,8 @@ fnn = buildNetwork(trndata.indim,50, trndata.outdim, outclass=SoftmaxLayer)
 trainer = BackpropTrainer(fnn, dataset=trndata)
 
 # Adding plotting
-ticks = arange(-3.,6.,0.2)
-X, Y = meshgrid(ticks, ticks)
+ticks = np.arange(-3.,6.,0.2)
+X, Y = np.meshgrid(ticks, ticks)
 # need column vectors in dataset, not arrays
 griddata = ClassificationDataSet(num_features,1, nb_classes=2)
 for i in xrange(X.size):
