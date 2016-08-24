@@ -103,6 +103,12 @@ row_ind_end_stress = np.zeros(len(row_ind_stress))
 row_ind_end_stress = row_ind_stress + 2  # targ_transition state occurs two states later for unsuccessful trials
 row_ind_end_stress[-1] = np.min([row_ind_end_stress[-1],len(state_time)-1])  # correct final incomplete trial
 
+ind_stress_stim = np.ravel(np.nonzero(all_stress_or_not_stim))
+row_ind_stress_stim = ind_center_states_stim[ind_stress_stim]  # gives row index
+row_ind_end_stress_stim = np.zeros(len(row_ind_stress_stim))
+row_ind_end_stress_stim = row_ind_stress_stim + 2  # targ_transition state occurs two states later for unsuccessful trials
+row_ind_end_stress_stim[-1] = np.min([row_ind_end_stress_stim[-1],len(state_time_stim)-1])  # correct final incomplete trial
+
 
 for i in range(0,len(row_ind_successful_stress)):
 	ind = np.where(row_ind_stress == row_ind_successful_stress[i])[0]
