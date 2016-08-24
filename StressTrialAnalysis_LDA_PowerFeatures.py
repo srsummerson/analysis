@@ -48,7 +48,7 @@ lfp_channels.pop(130)  # delete channel 131
 lfp_channels.pop(143)  # delete channel 145
 #bands = [[1,8],[8,12],[12,30],[30,55],[65,100]]
 bands = [[0,20],[20,40],[40,60]]
-bands = [[0,20],[20,40]]
+
 '''
 Load behavior data
 '''
@@ -314,7 +314,8 @@ lfp_features_keys = lfp_features.keys()
 skip_keys = ['__globals__','__header__','__version__']
 for key in lfp_features_keys:
 	if key not in skip_keys:
-		trial_features = lfp_features[key].flatten()
+		trial_features = lfp_features[key]
+		trial_features = trial_features[:,0:len(bands)].flatten()  # take only powers from first event
 		X_successful.append(trial_features)
 
 X_successful_mean = np.abs(np.mean(X_successful))
@@ -335,6 +336,7 @@ print "Avg CV score:", scores.mean()
 
 print "Artificial Neural Network with Power Features:"
 # Create a dummy dataset with pybrain
+
 num_trials, num_features = X_successful.shape
 alldata = SupervisedDataSet(num_features,1) 
 
