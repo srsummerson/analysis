@@ -33,13 +33,14 @@ from pybrain.datasets import SupervisedDataSet
 Do 6/14 and 7/12
 
 mari20160614_03_te2237.hdf, mari20160614_09_te2243.hdf
+'mari20160712_03_te2333.hdf, mari20160712_07_te2337.hdf
 '''
 
 
-hdf_filename = 'mari20160712_03_te2333.hdf'
-hdf_filename_stim = 'mari20160712_07_te2337.hdf'
-filename = 'Mario20160712'
-filename2 = 'Mario20160712'
+hdf_filename = 'mari20160614_03_te2237.hdf'
+hdf_filename_stim = 'mari20160614_09_te2243.hdf'
+filename = 'Mario20160614'
+filename2 = 'Mario20160614'
 block_num = 1
 block_num_stim = 2
 print filename
@@ -473,7 +474,7 @@ for xnum in xrange(len(ind_successful_stress_stim)):
 	stimalldata.addSample(X_successful_stim[xnum,:],y_successful_stim[xnum])
 
 # split the data into testing and training data
-tstdata_temp, trndata_temp = alldata.splitWithProportion(0.25)
+tstdata_temp, trndata_temp = alldata.splitWithProportion(0.2)
 
 # small bug with _convertToOneOfMany function.  This fixes that
 tstdata = ClassificationDataSet(num_features,1,nb_classes=2)
