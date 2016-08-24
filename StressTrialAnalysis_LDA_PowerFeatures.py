@@ -48,7 +48,7 @@ lfp_channels.pop(130)  # delete channel 131
 lfp_channels.pop(143)  # delete channel 145
 #bands = [[1,8],[8,12],[12,30],[30,55],[65,100]]
 bands = [[0,20],[20,40],[40,60]]
-
+bands = [[0,20]]
 '''
 Load behavior data
 '''
@@ -370,7 +370,7 @@ fnn = buildNetwork(trndata.indim, 2, trndata.outdim, outclass=SoftmaxLayer)
  # create the trainer
 trainer = BackpropTrainer(fnn, dataset=trndata)
     
-for i in xrange(100): # given how many features there are, lots of iterations are required
+for i in xrange(1000): # given how many features there are, lots of iterations are required
     # classify the data
     trainer.train() # can choose how many epochs to train on using trainEpochs()
     
