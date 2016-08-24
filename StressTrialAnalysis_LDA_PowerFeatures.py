@@ -31,16 +31,20 @@ from pybrain.datasets import SupervisedDataSet
 
 
 hdf_filename = 'mari20160713_10_te2348.hdf'
+hdf_filename_stim = 'mari20160716_04_te2362.hdf'
 filename = 'Mario20160713'
+filename2 = 'Mario20160716'
 block_num = 1
+block_num_stim = 2
 print filename
 TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
 #TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
+hdf_location_stim = '/storage/rawdata/hdf/'+hdf_filename_stim
 #hdf_location = hdffilename
 pf_location = '/home/srsummerson/storage/PowerFeatures/'
 pf_filename = pf_location + filename+'_b'+str(block_num)+'_PowerFeatures.mat'
-
+pf_filename_stim = pf_location + filename+'_b'+str(block_num_stim)+'_PowerFeatures.mat'
 
 lfp_channels = range(0,160)
 lfp_channels.pop(129)  # delete channel 129
@@ -53,6 +57,7 @@ bands = [[0,20],[20,40],[40,60]]
 Load behavior data
 '''
 state_time, ind_center_states, ind_check_reward_states, all_instructed_or_freechoice, all_stress_or_not, successful_stress_or_not,trial_success, target, reward = FreeChoiceBehavior_withStressTrials(hdf_location)
+state_time_stim, ind_center_states_stim, ind_check_reward_states_stim, all_instructed_or_freechoice_stim, all_stress_or_not_stim, successful_stress_or_not_stim,trial_success_stim, target_stim, reward_stim = FreeChoiceBehavior_withStressTrials(hdf_location_stim)
 
 print "Behavior data loaded."
 
@@ -60,9 +65,15 @@ print "Behavior data loaded."
 num_trials = ind_center_states.size
 total_states = state_time.size
 
+num_trials_stim = ind_center_states_stim.size
+total_states_stim = state_time_stim.size
+
 # Number of successful stress trials
 tot_successful_stress = np.logical_and(trial_success,all_stress_or_not)
 successful_stress_trials = float(np.sum(tot_successful_stress))/np.sum(all_stress_or_not)
+
+tot_successful_stress_stim = np.logical_and(trial_success_stim,all_stress_or_not_stim)
+successful_stress_trials_stim = float(np.sum(tot_successful_stress_stim))/np.sum(all_stress_or_not_stim)
 
 # Number of successful non-stress trials
 tot_successful_reg = np.logical_and(trial_success,np.logical_not(all_stress_or_not))
@@ -75,6 +86,14 @@ ind_successful_stress_reward = np.ravel(np.nonzero(successful_stress_or_not))
 row_ind_successful_stress_reward = ind_check_reward_states[ind_successful_stress_reward]
 row_ind_successful_stress_check_reward = ind_check_reward_states[ind_successful_stress_reward]
 response_time_successful_stress = (state_time[row_ind_successful_stress_reward] - state_time[row_ind_successful_stress])/float(60)		# hdf rows are written at a rate of 60 Hz
+
+ind_successful_stress_stim = np.ravel(np.nonzero(tot_successful_stress_stim))   	# gives trial index, not row index
+row_ind_successful_stress_stim = ind_center_states_stim[ind_successful_stress_stim]		# gives row index
+ind_successful_stress_reward_stim = np.ravel(np.nonzero(successful_stress_or_not_stim))
+row_ind_successful_stress_reward_stim = ind_check_reward_states_stim[ind_successful_stress_reward_stim]
+row_ind_successful_stress_check_reward_stim = ind_check_reward_states_stim[ind_successful_stress_reward_stim]
+response_time_successful_stress_stim = (state_time_stim[row_ind_successful_stress_reward_stim] - state_time_stim[row_ind_successful_stress_stim])/float(60)		# hdf rows are written at a rate of 60 Hz
+
 
 # Response time for all stress trials
 ind_stress = np.ravel(np.nonzero(all_stress_or_not))
@@ -89,6 +108,11 @@ for i in range(0,len(row_ind_successful_stress)):
 	ind = np.where(row_ind_stress == row_ind_successful_stress[i])[0]
 	row_ind_end_stress[ind] = row_ind_successful_stress_reward[i]  # for successful trials, update with real end of trial
 response_time_stress = (state_time[row_ind_end_stress] - state_time[row_ind_stress])/float(60)
+
+for i in range(0,len(row_ind_successful_stress_stim)):
+	ind = np.where(row_ind_stress_stim == row_ind_successful_stress_stim[i])[0]
+	row_ind_end_stress_stim[ind] = row_ind_successful_stress_reward_stim[i]  # for successful trials, update with real end of trial
+response_time_stress_stim = (state_time_stim[row_ind_end_stress_stim] - state_time_stim[row_ind_stress_stim])/float(60)
 
 
 # Response times for successful regular trials
@@ -110,10 +134,12 @@ for i in range(0,len(row_ind_successful_reg)):
 	row_ind_end_reg[ind] = row_ind_successful_reg_reward[i]
 response_time_reg = (state_time[row_ind_end_reg] - state_time[row_ind_reg])/float(60)
 
-if os.path.exists(pf_filename):
+if os.path.exists(pf_filename)&os.path.exists(pf_filename_stim):
 	print "Power features previously computed. Loading now."
 	lfp_features = dict()
 	sp.io.loadmat(pf_filename,lfp_features)
+	lfp_features_stim = dict()
+	sp.io.loadmat(pf_filename_stim,lfp_features_stim)
 else:
 
 	'''
@@ -124,6 +150,13 @@ else:
 	hdf_times = dict()
 	mat_filename = filename+'_b'+str(block_num)+'_syncHDF.mat'
 	sp.io.loadmat('/home/srsummerson/storage/syncHDF/'+mat_filename,hdf_times)
+
+	hdf_times_stim = dict()
+	if filename2 != '':
+		mat_filename_stim = filename2+'_b'+str(block_num)+'_syncHDF.mat'
+	else:
+		mat_filename_stim = filename+'_b'+str(block_num + 1)+'_syncHDF.mat'
+	sp.io.loadmat('/home/srsummerson/storage/syncHDF/'+mat_filename_stim,hdf_times_stim)
 
 	print "Loading TDT data."
 	'''
@@ -162,6 +195,24 @@ else:
 				if (channel % 96) in lfp_channels:
 					channel_name = channel + 96
 					lfp[channel_name] = np.ravel(sig)
+		for sig in bl.segments[block_num_stim-1].analogsignals:
+			if (sig.name == 'PupD 1'):
+				pupil_data_stim = np.ravel(sig)
+				pupil_samprate_stim = sig.sampling_rate.item()
+			if (sig.name == 'HrtR 1'):
+				pulse_data_stim = np.ravel(sig)
+				pulse_samprate_stim = sig.sampling_rate.item()
+			if (sig.name[0:4] == 'LFP1'):
+				channel = sig.channel_index
+				if (channel in lfp_channels)&(channel < 97):
+					lfp_samprate = sig.sampling_rate.item()
+					lfp_stim[channel] = np.ravel(sig)
+			if (sig.name[0:4] == 'LFP2'):
+				channel = sig.channel_index
+				if (channel % 96) in lfp_channels:
+					channel_name = channel + 96
+					lfp_stim[channel_name] = np.ravel(sig)
+
 
 	print "Finished loading TDT data."
 	'''
@@ -173,12 +224,22 @@ else:
 	dio_tdt_sample = np.ravel(hdf_times['tdt_samplenumber'])
 	dio_freq = np.ravel(hdf_times['tdt_dio_samplerate'])
 
+	hdf_rows_stim = np.ravel(hdf_times_stim['row_number'])
+	hdf_rows_stim = [val for val in hdf_rows_stim]	# turn into a list so that the index method can be used later
+	dio_tdt_sample_stim = np.ravel(hdf_times_stim['tdt_samplenumber'])
+	dio_freq_stim = np.ravel(hdf_times_stim['tdt_dio_samplerate'])
+
+
 	# Convert DIO TDT sample numbers to for pupil and pulse data:
 	# if dio sample num is x, then data sample number is R*(x-1) + 1 where
 	# R = data_sample_rate/dio_sample_rate
 	pulse_dio_sample_num = (float(pulse_samprate)/float(dio_freq))*(dio_tdt_sample - 1) + 1
 	pupil_dio_sample_num = (float(pupil_samprate)/float(dio_freq))*(dio_tdt_sample - 1) + 1
 	lfp_dio_sample_num = (float(lfp_samprate)/float(dio_freq))*(dio_tdt_sample - 1) + 1
+
+	pulse_dio_sample_num_stim = (float(pulse_samprate_stim)/float(dio_freq_stim))*(dio_tdt_sample_stim - 1) + 1
+	pupil_dio_sample_num_stim = (float(pupil_samprate_stim)/float(dio_freq_stim))*(dio_tdt_sample_stim - 1) + 1
+	lfp_dio_sample_num_stim = (float(lfp_samprate_stim)/float(dio_freq_stim))*(dio_tdt_sample_stim - 1) + 1
 
 	state_row_ind_successful_stress = state_time[row_ind_successful_stress]
 	state_row_ind_successful_stress_check_reward = state_time[row_ind_successful_stress_check_reward]
@@ -201,6 +262,17 @@ else:
 	pupil_ind_reg = []
 	lfp_ind_reg = np.zeros(row_ind_reg.size)
 
+	state_row_ind_successful_stress_stim = state_time_stim[row_ind_successful_stress_stim]
+	state_row_ind_successful_stress_stim_check_reward = state_time_stim[row_ind_successful_stress_check_reward_stim]
+	pulse_ind_successful_stress_stim = np.zeros(row_ind_successful_stress_stim.size)
+	pupil_ind_successful_stress_stim = np.zeros(row_ind_successful_stress_stim.size)
+	lfp_ind_successful_stress_stim = np.zeros(row_ind_successful_stress_stim.size)
+	lfp_ind_successful_stress_stim_check_reward = np.zeros(row_ind_successful_stress_stim.size)
+	state_row_ind_stress_stim = state_time_stim[row_ind_stress_stim]
+	pulse_ind_stress_stim = np.zeros(row_ind_stress_stim.size)
+	pupil_ind_stress_stim = np.zeros(row_ind_stress_stim.size)
+	lfp_ind_stress_stim = np.zeros(row_ind_stress_stim.size)
+	
 
 	for i in range(0,len(row_ind_successful_stress)):
 		hdf_index = np.argmin(np.abs(hdf_rows - state_row_ind_successful_stress[i]))
@@ -234,6 +306,14 @@ else:
 		#pulse_ind_reg.append(pulse_dio_sample_num[hdf_index])
 		#pupil_ind_reg.append(pupil_dio_sample_num[hdf_index])
 		lfp_ind_reg[i] = lfp_dio_sample_num[hdf_index]
+
+	for i in range(0,len(row_ind_successful_stress_stim)):
+		hdf_index = np.argmin(np.abs(hdf_rows_stim - state_row_ind_successful_stress_stim[i]))
+		#pulse_ind_successful_stress_stim[i] = pulse_dio_sample_num_stim[hdf_index]
+		#pupil_ind_successful_stress_stim[i] = pupil_dio_sample_num_stim[hdf_index]
+		lfp_ind_successful_stress_stim[i] = lfp_dio_sample_num_stim[hdf_index]
+		hdf_index = np.argmin(np.abs(hdf_rows - state_row_ind_successful_stress_stim_check_reward[i]))
+		lfp_ind_successful_stress_stim_check_reward[i] = lfp_dio_sample_num_stim[hdf_index]
 
 
 	'''
@@ -289,6 +369,7 @@ else:
 	lfp_power_stress = []
 	lfp_power_successful_reg = []
 	lfp_power_reg = []
+	lfp_power_successful_stress_stim = []
 	X_successful_stress = []
 	X_stress = []
 	X_successful_reg = []
@@ -305,12 +386,24 @@ else:
 	t_window = [0.5,0.5,0.5]
 	print "Computing LFP features."
 	lfp_features = computePowerFeatures(lfp, lfp_samprate, bands, event_indices, t_window)
-	#pf_filename = filename+'_b'+str(block_num)+'_PowerFeatures.mat'
-	#sp.io.savemat('/home/srsummerson/storage/PowerFeatures/'+pf_filename,lfp_features)
 	sp.io.savemat(pf_filename,lfp_features)
 
+	#### event_indices: N x M array of event indices, where N is the number of trials and M is the number of different events 
+	lfp_center_states_stim = lfp_ind_successful_stress_stim
+	lfp_before_reward_states_stim = lfp_ind_successful_stress_stim_check_reward- int(0.5*lfp_samprate)
+	lfp_after_reward_states_stim = lfp_ind_successful_stress_stim_check_reward
+
+	event_indices_stim = np.vstack([lfp_center_states_stim,lfp_before_reward_states_stim,lfp_after_reward_states_stim]).T
+	t_window = [0.5,0.5,0.5]
+	print "Computing LFP features."
+	lfp_features_stim = computePowerFeatures(lfp_stim, lfp_samprate, bands, event_indices_stim, t_window)
+	sp.io.savemat(pf_filename_stim,lfp_features_stim)
+
 X_successful = []
+X_successful_stim = []
 lfp_features_keys = lfp_features.keys()
+lfp_features_stim_keys = lfp_features_stim.keys()
+
 skip_keys = ['__globals__','__header__','__version__']
 for key in lfp_features_keys:
 	if key not in skip_keys:
@@ -318,15 +411,28 @@ for key in lfp_features_keys:
 		#trial_features = trial_features[:,0:2*len(bands)].flatten()  # take only powers from first event
 		#trial_features = trial_features.flatten()
 		X_successful.append(trial_features)
+for key in lfp_features_stim_keys:
+	if key not in skip_keys:
+		trial_features = lfp_features_stim[key].flatten()
+		#trial_features = trial_features[:,0:2*len(bands)].flatten()  # take only powers from first event
+		#trial_features = trial_features.flatten()
+		X_successful_stim.append(trial_features)
 
 X_successful_mean = np.abs(np.mean(X_successful))
 X_successful_std = np.abs(np.std(X_successful))
 
 X_successful = (X_successful - X_successful_mean)/X_successful_std
 
+X_successful_stim_mean = np.abs(np.mean(X_successful_stim))
+X_successful_stim_std = np.abs(np.std(X_successful_stim))
+
+X_successful_stim = (X_successful_stim - X_successful_stim_mean)/X_successful_stim_std
+
 y_successful_reg = np.zeros(len(ind_successful_reg))
 y_successful_stress = np.ones(len(ind_successful_stress))
 y_successful = np.append(y_successful_reg,y_successful_stress)
+
+y_successful_stim = np.ones(len(ind_successful_stim))
 
 print "LDA using Power Features:"
 clf_all = LinearDiscriminantAnalysis(solver='eigen', shrinkage = 'auto')
@@ -335,15 +441,24 @@ scores = cross_val_score(LinearDiscriminantAnalysis(solver='eigen', shrinkage = 
 print "CV (10-fold) scores:", scores
 print "Avg CV score:", scores.mean()
 
+'''
+Using ANN to predict classes.
+'''
 print "Artificial Neural Network with Power Features:"
 # Create a dummy dataset with pybrain
 
 num_trials, num_features = X_successful.shape
 alldata = SupervisedDataSet(num_features,1) 
 
-# add the features and target locations into the dataset
+stimalldata = SupervisedDataSet(num_features,1)
+
+# add the features and class labels into the dataset
 for xnum in xrange(num_trials): 
     alldata.addSample(X_successful[xnum,:],y_successful[xnum])
+
+# add the features and dummy class labels into the stim dataset
+for xnum in xrange(num_stim_trials):
+	stimalldata.addSample(X_successful_stim[xnum,:],y_successful_stim[xnum])
 
 # split the data into testing and training data
 tstdata_temp, trndata_temp = alldata.splitWithProportion(0.25)
