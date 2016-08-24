@@ -52,6 +52,8 @@ hdf_location_stim = '/storage/rawdata/hdf/'+hdf_filename_stim
 pf_location = '/home/srsummerson/storage/PowerFeatures/'
 pf_filename = pf_location + filename+'_b'+str(block_num)+'_PowerFeatures.mat'
 pf_filename_stim = pf_location + filename+'_b'+str(block_num_stim)+'_PowerFeatures.mat'
+phys_filename = pf_location + filename+'_b'+str(block_num)+'_PhysFeatures.mat'
+phys_filename_stim = pf_location + filename+'_b'+str(block_num_stim)+'_PhysFeatures.mat'
 
 lfp_channels = range(0,160)
 lfp_channels.pop(129)  # delete channel 129
@@ -147,12 +149,25 @@ for i in range(0,len(row_ind_successful_reg)):
 	row_ind_end_reg[ind] = row_ind_successful_reg_reward[i]
 response_time_reg = (state_time[row_ind_end_reg] - state_time[row_ind_reg])/float(60)
 
-if os.path.exists(pf_filename)&os.path.exists(pf_filename_stim):
+if os.path.exists(pf_filename)&os.path.exists(pf_filename_stim)&os.path.exists(phys_filename)&os.path.exists(phys_filename_stim):
 	print "Power features previously computed. Loading now."
 	lfp_features = dict()
 	sp.io.loadmat(pf_filename,lfp_features)
 	lfp_features_stim = dict()
 	sp.io.loadmat(pf_filename_stim,lfp_features_stim)
+
+	phys_features = dict()
+	sp.io.loadmat(phys_filename,phys_features)
+	ibi_reg_mean = phys_features['ibi_reg_mean'] 
+	ibi_stress_mean = phys_features['ibi_stress_mean']
+	pupil_reg_mean = phys_features['pupil_reg_mean']
+	pupil_stress_mean = phys_features['pupil_stress_mean']
+
+	phys_features_stim = dict()
+	sp.io.loadmat(phys_filename_stim,phys_features_stim)
+	ibi_stress_mean_stim = phys_features['ibi_stress_mean_stim']
+	pupil_stress_mean_stim = phys_features['pupil_stress_mean_stim']
+	
 else:
 
 	'''
@@ -401,6 +416,13 @@ else:
 	lfp_features = computePowerFeatures(lfp, lfp_samprate, bands, event_indices, t_window)
 	sp.io.savemat(pf_filename,lfp_features)
 
+	phys_features = dict()
+	phys_features['ibi_reg_mean'] = ibi_reg_mean
+	phys_features['ibi_stress_mean'] = ibi_stress_mean
+	phys_features['pupil_reg_mean'] = pupil_reg_mean
+	phys_features['pupil_stress_mean'] = pupil_stress_mean
+	sp.io.savemat(phys_filename,phys_features)
+
 	#### event_indices: N x M array of event indices, where N is the number of trials and M is the number of different events 
 	lfp_center_states_stim = lfp_ind_successful_stress_stim
 	lfp_before_reward_states_stim = lfp_ind_successful_stress_stim_check_reward- int(0.5*lfp_samprate)
@@ -412,24 +434,38 @@ else:
 	lfp_features_stim = computePowerFeatures(lfp_stim, lfp_samprate, bands, event_indices_stim, t_window)
 	sp.io.savemat(pf_filename_stim,lfp_features_stim)
 
+	phys_features_stim = dict()
+	phys_features['ibi_stress_mean_stim'] = ibi_stress_mean_stim
+	phys_features['pupil_stress_mean_stim'] = pupil_stress_mean_stim
+	sp.io.savemat(phys_filename_stim,phys_features_stim)
+
+ibi_mean = np.append(np.array(ibi_reg_mean), np.array(ibi_stress_mean))
+pupil_mean = np.append(np.array(pupil_reg_mean), np.array(pupil_stress_mean))
+
 X_successful = []
 X_successful_stim = []
 lfp_features_keys = lfp_features.keys()
 lfp_features_stim_keys = lfp_features_stim.keys()
-
 skip_keys = ['__globals__','__header__','__version__']
+#### Check if keys are in order
+
+lfp_features_keys = [int(key) for key in lfp_features_keys if (key not in skip_keys)]
+lfp_features_keys.sort()
+lfp_features_stim_keys = [int(key) for key in lfp_features_stim_keys if (key not in skip_keys)]
+lfp_features_stim_keys.sort()
+
 for key in lfp_features_keys:
-	if key not in skip_keys:
-		trial_features = lfp_features[key].flatten()
-		#trial_features = trial_features[:,0:2*len(bands)].flatten()  # take only powers from first event
-		#trial_features = trial_features.flatten()
-		X_successful.append(trial_features)
+	trial_features = lfp_features[str(key)].flatten()
+	#trial_features = trial_features[:,0:2*len(bands)].flatten()  # take only powers from first event
+	#trial_features = trial_features.flatten()
+	trial_features = np.append(trial_features, [ibi_mean[key], pupil_mean[key]])
+	X_successful.append(trial_features)
 for key in lfp_features_stim_keys:
-	if key not in skip_keys:
-		trial_features = lfp_features_stim[key].flatten()
-		#trial_features = trial_features[:,0:2*len(bands)].flatten()  # take only powers from first event
-		#trial_features = trial_features.flatten()
-		X_successful_stim.append(trial_features)
+	trial_features = lfp_features_stim[str(key)].flatten()
+	#trial_features = trial_features[:,0:2*len(bands)].flatten()  # take only powers from first event
+	#trial_features = trial_features.flatten()
+	trial_features = np.append(trial_features, [ibi_stress_mean_stim[key], pupil_stress_mean_stim[key]])
+	X_successful_stim.append(trial_features)
 
 X_successful_mean = np.abs(np.mean(X_successful))
 X_successful_std = np.abs(np.std(X_successful))
