@@ -369,7 +369,7 @@ print trndata['input'][0], trndata['target'][0], trndata['class'][0]
 
 # build the ANN
 # 50 hidden layers (52 layers total)
-fnn = buildNetwork(trndata.indim, 2, trndata.outdim, outclass=SoftmaxLayer)
+fnn = buildNetwork(trndata.indim,50, trndata.outdim, outclass=SoftmaxLayer)
  # create the trainer
 trainer = BackpropTrainer(fnn, dataset=trndata)
     
