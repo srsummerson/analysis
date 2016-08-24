@@ -435,11 +435,13 @@ X_successful_mean = np.abs(np.mean(X_successful))
 X_successful_std = np.abs(np.std(X_successful))
 
 #X_successful = (X_successful - X_successful_mean)/X_successful_std
+X_successful = np.array(X_successful)
 
 X_successful_stim_mean = np.abs(np.mean(X_successful_stim))
 X_successful_stim_std = np.abs(np.std(X_successful_stim))
 
 #X_successful_stim = (X_successful_stim - X_successful_stim_mean)/X_successful_stim_std
+X_successful_stim = np.array(X_successful_stim)
 
 y_successful_reg = np.zeros(len(ind_successful_reg))
 y_successful_stress = np.ones(len(ind_successful_stress))
