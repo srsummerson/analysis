@@ -37,10 +37,10 @@ mari20160614_03_te2237.hdf, mari20160614_09_te2243.hdf
 '''
 
 
-hdf_filename = 'mari20160614_03_te2237.hdf'
-hdf_filename_stim = 'mari20160614_09_te2243.hdf'
-filename = 'Mario20160614'
-filename2 = 'Mario20160614'
+hdf_filename = 'mari20160712_03_te2333.hdf'
+hdf_filename_stim = 'mari20160712_07_te2337.hdf'
+filename = 'Mario20160712'
+filename2 = 'Mario20160712'
 block_num = 1
 block_num_stim = 2
 print filename
@@ -446,14 +446,14 @@ y_successful_stress = np.ones(len(ind_successful_stress))
 y_successful = np.append(y_successful_reg,y_successful_stress)
 
 y_successful_stim = np.ones(len(ind_successful_stress_stim))
-'''
+
 print "LDA using Power Features:"
 clf_all = LinearDiscriminantAnalysis(solver='eigen', shrinkage = 'auto')
 clf_all.fit(X_successful, y_successful)
 scores = cross_val_score(LinearDiscriminantAnalysis(solver='eigen', shrinkage = 'auto'),X_successful,y_successful,scoring='accuracy',cv=10)
 print "CV (10-fold) scores:", scores
 print "Avg CV score:", scores.mean()
-'''
+
 '''
 Using ANN to predict classes.
 '''
