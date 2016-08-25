@@ -37,10 +37,10 @@ mari20160614_03_te2237.hdf, mari20160614_09_te2243.hdf
 '''
 
 
-hdf_filename = 'mari20160712_03_te2333.hdf'
-hdf_filename_stim = 'mari20160712_07_te2337.hdf'
-filename = 'Mario20160712'
-filename2 = 'Mario20160712'
+hdf_filename = 'mari20160614_03_te2237.hdf'
+hdf_filename_stim = 'mari20160614_09_te2243.hdf'
+filename = 'Mario20160614'
+filename2 = 'Mario20160614'
 block_num = 1
 block_num_stim = 2
 print filename
@@ -158,15 +158,15 @@ if os.path.exists(pf_filename)&os.path.exists(pf_filename_stim)&os.path.exists(p
 
 	phys_features = dict()
 	sp.io.loadmat(phys_filename,phys_features)
-	ibi_reg_mean = phys_features['ibi_reg_mean'] 
-	ibi_stress_mean = phys_features['ibi_stress_mean']
-	pupil_reg_mean = phys_features['pupil_reg_mean']
-	pupil_stress_mean = phys_features['pupil_stress_mean']
+	ibi_reg_mean = np.ravel(phys_features['ibi_reg_mean'] )
+	ibi_stress_mean = np.ravel(phys_features['ibi_stress_mean'])
+	pupil_reg_mean = np.ravel(phys_features['pupil_reg_mean'])
+	pupil_stress_mean = np.ravel(phys_features['pupil_stress_mean'])
 
 	phys_features_stim = dict()
 	sp.io.loadmat(phys_filename_stim,phys_features_stim)
-	ibi_stress_mean_stim = phys_features['ibi_stress_mean_stim']
-	pupil_stress_mean_stim = phys_features['pupil_stress_mean_stim']
+	ibi_stress_mean_stim = np.ravel(phys_features_stim['ibi_stress_mean_stim'])
+	pupil_stress_mean_stim = np.ravel(phys_features_stim['pupil_stress_mean_stim'])
 	
 else:
 
@@ -180,10 +180,7 @@ else:
 	sp.io.loadmat('/home/srsummerson/storage/syncHDF/'+mat_filename,hdf_times)
 
 	hdf_times_stim = dict()
-	if filename2 != '':
-		mat_filename_stim = filename2+'_b'+str(block_num)+'_syncHDF.mat'
-	else:
-		mat_filename_stim = filename+'_b'+str(block_num + 1)+'_syncHDF.mat'
+	mat_filename_stim = filename+'_b'+str(block_num_stim)+'_syncHDF.mat'
 	sp.io.loadmat('/home/srsummerson/storage/syncHDF/'+mat_filename_stim,hdf_times_stim)
 
 	print "Loading TDT data."
@@ -323,8 +320,8 @@ else:
 	ind_start_all_stress = row_ind_stress[0]
 	for i in range(0,len(state_row_ind_successful_reg)):
 		hdf_index = np.argmin(np.abs(hdf_rows - state_row_ind_successful_reg[i]))
-		pulse_ind_successful_reg.append(pulse_dio_sample_num[hdf_index])
-		pupil_ind_successful_reg.append(pupil_dio_sample_num[hdf_index])
+		pulse_ind_successful_reg[i] = pulse_dio_sample_num[hdf_index]
+		pupil_ind_successful_reg[i] = pupil_dio_sample_num[hdf_index]
 		lfp_ind_successful_reg_center[i] = lfp_dio_sample_num[hdf_index]
 		hdf_index = np.argmin(np.abs(hdf_rows - state_row_ind_successful_reg_check_reward[i]))
 		lfp_ind_successful_reg_check_reward[i] = lfp_dio_sample_num[hdf_index]
@@ -435,8 +432,8 @@ else:
 	sp.io.savemat(pf_filename_stim,lfp_features_stim)
 
 	phys_features_stim = dict()
-	phys_features['ibi_stress_mean_stim'] = ibi_stress_mean_stim
-	phys_features['pupil_stress_mean_stim'] = pupil_stress_mean_stim
+	phys_features_stim['ibi_stress_mean_stim'] = ibi_stress_mean_stim
+	phys_features_stim['pupil_stress_mean_stim'] = pupil_stress_mean_stim
 	sp.io.savemat(phys_filename_stim,phys_features_stim)
 
 ibi_mean = np.append(np.array(ibi_reg_mean), np.array(ibi_stress_mean))
@@ -541,7 +538,7 @@ print trndata['input'][0], trndata['target'][0], trndata['class'][0]
 
 # build the ANN
 # 50 hidden layers (52 layers total)
-fnn = buildNetwork(trndata.indim,5, trndata.outdim, outclass=SoftmaxLayer)
+fnn = buildNetwork(trndata.indim,2, trndata.outdim, outclass=SoftmaxLayer)
  # create the trainer
 trainer = BackpropTrainer(fnn, dataset=trndata)
 '''
@@ -575,6 +572,10 @@ orig_std = sys.stdout
 f = file(pf_location + filename + '.txt', 'w')
 sys.stdout = f
 
+print 'LDA Analysis:'
+print "\n CV (10-fold) scores:", scores
+print "\n Avg CV score:", scores.mean()
+print '\n\n ANN Analysis:'
 print "epoch: %4d" % trainer.totalepochs
 print "\n train error: %5.2f%%" % trnresult
 print "\n test error: %5.2f%%" % tstresult
