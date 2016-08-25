@@ -557,11 +557,11 @@ for i in xrange(num_epochs): # given how many features there are, lots of iterat
     # classify the data
     trainer.trainEpochs(50) # can choose how many epochs to train on using trainEpochs()
     trnresult = percentError(trainer.testOnClassData(), trndata['class'])
-	tstresult = percentError(trainer.testOnClassData(dataset = tstdata), tstdata['class'])
-	epoch_error[i] = trnresult
-	print "\n epoch: %4d" % trainer.totalepochs
-	print "\n train error: %5.2f%%" % trnresult
-	print "\n test error: %5.2f%%" % tstresultp
+    tstresult = percentError(trainer.testOnClassData(dataset = tstdata), tstdata['class'])
+    epoch_error[i] = trnresult
+    print "\n epoch: %4d" % trainer.totalepochs
+    print "\n train error: %5.2f%%" % trnresult
+    print "\n test error: %5.2f%%" % tstresultp
 	
 trnresult = percentError(trainer.testOnClassData(), trndata['class'])
 tstresult = percentError(trainer.testOnClassData(dataset = tstdata), tstdata['class'])
