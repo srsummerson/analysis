@@ -34,13 +34,16 @@ Do 6/14 and 7/12
 
 mari20160614_03_te2237.hdf, mari20160614_09_te2243.hdf
 'mari20160712_03_te2333.hdf, mari20160712_07_te2337.hdf
+
+4/18: open loop
+mari20160418_04_te2002.hdf, mari20160418_06_te2004.hdf
 '''
 
 
-hdf_filename = 'mari20160712_03_te2333.hdf'
-hdf_filename_stim = 'mari20160712_07_te2337.hdf'
-filename = 'Mario20160712'
-filename2 = 'Mario20160712'
+hdf_filename = 'mari20160418_04_te2002.hdf'
+hdf_filename_stim = 'mari20160418_06_te2004.hdf'
+filename = 'Mario20160418'
+filename2 = 'Mario20160418'
 block_num = 1
 block_num_stim = 2
 print filename
@@ -561,11 +564,13 @@ for i in xrange(num_epochs): # given how many features there are, lots of iterat
     epoch_error[i] = trnresult
     print "\n epoch: %4d" % trainer.totalepochs
     print "\n train error: %5.2f%%" % trnresult
-    print "\n test error: %5.2f%%" % tstresultp
+    print "\n test error: %5.2f%%" % tstresult
 	
 trnresult = percentError(trainer.testOnClassData(), trndata['class'])
 tstresult = percentError(trainer.testOnClassData(dataset = tstdata), tstdata['class'])
 valresult = percentError(trainer.testOnClassData(dataset = valdata), valdata['class'])
+
+# trndata_data = trndata['input']
 '''
 print 'LDA Analysis:'
 print "\n CV (10-fold) scores:", scores
