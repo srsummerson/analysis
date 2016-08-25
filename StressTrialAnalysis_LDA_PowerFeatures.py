@@ -37,10 +37,10 @@ mari20160614_03_te2237.hdf, mari20160614_09_te2243.hdf
 '''
 
 
-hdf_filename = 'mari20160614_03_te2237.hdf'
-hdf_filename_stim = 'mari20160614_09_te2243.hdf'
-filename = 'Mario20160614'
-filename2 = 'Mario20160614'
+hdf_filename = 'mari20160712_03_te2333.hdf'
+hdf_filename_stim = 'mari20160712_07_te2337.hdf'
+filename = 'Mario20160712'
+filename2 = 'Mario20160712'
 block_num = 1
 block_num_stim = 2
 print filename
@@ -537,8 +537,8 @@ print "First sample (input, target, class):"
 print trndata['input'][0], trndata['target'][0], trndata['class'][0]
 
 # build the ANN
-# 50 hidden layers (52 layers total)
-fnn = buildNetwork(trndata.indim,5,5, trndata.outdim, outclass=SoftmaxLayer)
+# 2 hidden layers (4 layers total)
+fnn = buildNetwork(trndata.indim,np.mean([trndata.indim,trndata.outdim]),np.mean([trndata.indim,trndata.outdim]), trndata.outdim, outclass=SoftmaxLayer)
  # create the trainer
 trainer = BackpropTrainer(fnn, dataset=trndata)
 '''
@@ -551,14 +551,22 @@ for i in xrange(X.size):
     griddata.addSample([X.ravel()[i],Y.ravel()[i]], [0])
 griddata._convertToOneOfMany()  # this is still needed to make the fnn feel comfy
 '''  
-for i in xrange(1000): # given how many features there are, lots of iterations are required
+num_epochs = 2
+epoch_error = np.zeros(num_epochs)
+for i in xrange(num_epochs): # given how many features there are, lots of iterations are required
     # classify the data
-    trainer.train() # can choose how many epochs to train on using trainEpochs()
+    trainer.trainEpochs(50) # can choose how many epochs to train on using trainEpochs()
     
+	trnresult = percentError(trainer.testOnClassData(), trndata['class'])
+	tstresult = percentError(trainer.testOnClassData(dataset = tstdata), tstdata['class'])
+	epoch_error[i] = trnresult
+	print "\n epoch: %4d" % trainer.totalepochs
+	print "\n train error: %5.2f%%" % trnresult
+	print "\n test error: %5.2f%%" % tstresultp
+	
 trnresult = percentError(trainer.testOnClassData(), trndata['class'])
 tstresult = percentError(trainer.testOnClassData(dataset = tstdata), tstdata['class'])
 valresult = percentError(trainer.testOnClassData(dataset = valdata), valdata['class'])
-
 print 'LDA Analysis:'
 print "\n CV (10-fold) scores:", scores
 print "\n Avg CV score:", scores.mean()
