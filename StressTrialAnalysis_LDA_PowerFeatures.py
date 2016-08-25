@@ -481,14 +481,14 @@ y_successful_stress = np.ones(len(ind_successful_stress))
 y_successful = np.append(y_successful_reg,y_successful_stress)
 
 y_successful_stim = np.ones(len(ind_successful_stress_stim))
-
+'''
 print "LDA using Power Features:"
 clf_all = LinearDiscriminantAnalysis(solver='eigen', shrinkage = 'auto')
 clf_all.fit(X_successful, y_successful)
 scores = cross_val_score(LinearDiscriminantAnalysis(solver='eigen', shrinkage = 'auto'),X_successful,y_successful,scoring='accuracy',cv=10)
 print "CV (10-fold) scores:", scores
 print "Avg CV score:", scores.mean()
-
+'''
 '''
 Using ANN to predict classes.
 '''
@@ -538,7 +538,7 @@ print trndata['input'][0], trndata['target'][0], trndata['class'][0]
 
 # build the ANN
 # 50 hidden layers (52 layers total)
-fnn = buildNetwork(trndata.indim,2, trndata.outdim, outclass=SoftmaxLayer)
+fnn = buildNetwork(trndata.indim,5,5, trndata.outdim, outclass=SoftmaxLayer)
  # create the trainer
 trainer = BackpropTrainer(fnn, dataset=trndata)
 '''
