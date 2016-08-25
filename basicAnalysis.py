@@ -201,7 +201,7 @@ def computeSpikeRatesPerChannel(spike_file1,spike_file2,t_start,t_end):
 
 	return spike_rates, spike_sem, unit_labels
 
-		
+
 def plot_point_cov(points, nstd=2, ax=None, **kwargs):
 	"""
 	Plots an `nstd` sigma ellipse based on the mean and covariance of a point
@@ -536,3 +536,29 @@ def plot_raster(event_times_list, color='k'):
     plt.ylim(.5, len(event_times_list) + .5)
     return ax
 
+def computeFisterScore(data, class_ass, nb_classes):
+	'''
+	Input
+		- data: matrix of inputs, size N x M, where N is the number of trials and M is the number of features
+		- class_ass: array of class assignments, size 1 x N, where N is the number of trials
+		- nb_classes: number of classes
+	Output
+		- Fscores: array of scores, size 1 x M, for each of the features
+	'''
+	num_trials, num_features = data.shape
+	within_class_mean = np.zeros([nb_classes,num_features]) 	# mean for each feature within each class
+	within_class_var = np.zeros([nb_classes,num_features]) 		# variance for each feature within each class
+	num_points_within_class = np.zeros([1,nb_classes])  			# number of points within each class 
+	
+	for i in range(nb_classes):
+		in_class = np.nonzero(class_ass == i)
+		class_data = data(in_class,:)  	# extract trails classified as belonging to this class
+		within_class_mean[i,:] = np.mean(class_data, axis=0)  # length of mean vector should be equal to M, the number of features
+		within_class_var[i,:] = np.var(class_data,axis=0)
+
+	between_class_mean = np.asmatrix(np.mean(within_class_mean,axis=0))
+	between_class_mean = np.dot(np.ones([nb_classes,1]), between_class_mean)
+
+	Fscores = np.dot(num_points_within_class,(within_class_mean - between_class_mean)**2)/np.dot(num_points_within_class,within_class_var)
+
+	return Fscores
