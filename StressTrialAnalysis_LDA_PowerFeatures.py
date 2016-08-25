@@ -556,8 +556,7 @@ epoch_error = np.zeros(num_epochs)
 for i in xrange(num_epochs): # given how many features there are, lots of iterations are required
     # classify the data
     trainer.trainEpochs(50) # can choose how many epochs to train on using trainEpochs()
-    
-	trnresult = percentError(trainer.testOnClassData(), trndata['class'])
+    trnresult = percentError(trainer.testOnClassData(), trndata['class'])
 	tstresult = percentError(trainer.testOnClassData(dataset = tstdata), tstdata['class'])
 	epoch_error[i] = trnresult
 	print "\n epoch: %4d" % trainer.totalepochs
@@ -567,9 +566,11 @@ for i in xrange(num_epochs): # given how many features there are, lots of iterat
 trnresult = percentError(trainer.testOnClassData(), trndata['class'])
 tstresult = percentError(trainer.testOnClassData(dataset = tstdata), tstdata['class'])
 valresult = percentError(trainer.testOnClassData(dataset = valdata), valdata['class'])
+'''
 print 'LDA Analysis:'
 print "\n CV (10-fold) scores:", scores
 print "\n Avg CV score:", scores.mean()
+'''
 print '\n\n ANN Analysis:'
 print "\n epoch: %4d" % trainer.totalepochs
 print "\n train error: %5.2f%%" % trnresult
@@ -579,10 +580,11 @@ print "\n stim trial rate of reg classification: %5.2f%%" % valresult
 orig_std = sys.stdout
 f = file(pf_location + filename + '.txt', 'w')
 sys.stdout = f
-
+'''
 print 'LDA Analysis:'
 print "\n CV (10-fold) scores:", scores
 print "\n Avg CV score:", scores.mean()
+'''
 print '\n\n ANN Analysis:'
 print "epoch: %4d" % trainer.totalepochs
 print "\n train error: %5.2f%%" % trnresult
