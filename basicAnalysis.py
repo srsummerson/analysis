@@ -552,7 +552,7 @@ def computeFisterScore(data, class_ass, nb_classes):
 	
 	for i in range(nb_classes):
 		in_class = np.nonzero(class_ass == i)
-		class_data = data(in_class,:)  	# extract trails classified as belonging to this class
+		class_data = data[in_class,:]  	# extract trails classified as belonging to this class
 		within_class_mean[i,:] = np.mean(class_data, axis=0)  # length of mean vector should be equal to M, the number of features
 		within_class_var[i,:] = np.var(class_data,axis=0)
 

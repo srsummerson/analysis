@@ -62,8 +62,8 @@ lfp_channels = range(0,160)
 lfp_channels.pop(129)  # delete channel 129
 lfp_channels.pop(130)  # delete channel 131
 lfp_channels.pop(143)  # delete channel 145
-#bands = [[1,8],[8,12],[12,30],[30,55],[65,100]]
-bands = [[0,20],[20,40],[40,60]]
+bands = [[4,8],[8,12],[12,16],[16,20],[20,24],[24,28]]
+#bands = [[0,20],[20,40],[40,60]]
 
 '''
 Load behavior data
@@ -410,8 +410,10 @@ else:
 	lfp_before_reward_states = np.append(lfp_ind_successful_stress_check_reward - int(0.5*lfp_samprate), lfp_ind_successful_reg_check_reward - int(0.5*lfp_samprate))
 	lfp_after_reward_states = np.append(lfp_ind_successful_stress_check_reward, lfp_ind_successful_reg_check_reward)
 
-	event_indices = np.vstack([lfp_center_states,lfp_before_reward_states,lfp_after_reward_states]).T
-	t_window = [0.5,0.5,0.5]
+	#event_indices = np.vstack([lfp_center_states,lfp_before_reward_states,lfp_after_reward_states]).T
+	#t_window = [0.5,0.5,0.5]
+	event_indices = np.vstack([lfp_center_states,lfp_before_reward_states]).T
+	t_window = [0.5,0.5]
 	print "Computing LFP features."
 	lfp_features = computePowerFeatures(lfp, lfp_samprate, bands, event_indices, t_window)
 	sp.io.savemat(pf_filename,lfp_features)
@@ -428,8 +430,11 @@ else:
 	lfp_before_reward_states_stim = lfp_ind_successful_stress_stim_check_reward- int(0.5*lfp_samprate)
 	lfp_after_reward_states_stim = lfp_ind_successful_stress_stim_check_reward
 
-	event_indices_stim = np.vstack([lfp_center_states_stim,lfp_before_reward_states_stim,lfp_after_reward_states_stim]).T
-	t_window = [0.5,0.5,0.5]
+	#event_indices_stim = np.vstack([lfp_center_states_stim,lfp_before_reward_states_stim,lfp_after_reward_states_stim]).T
+	#t_window = [0.5,0.5,0.5]
+	event_indices_stim = np.vstack([lfp_center_states_stim,lfp_before_reward_states_stim]).T
+	t_window = [0.5,0.5]
+	
 	print "Computing LFP features."
 	lfp_features_stim = computePowerFeatures(lfp_stim, lfp_samprate, bands, event_indices_stim, t_window)
 	sp.io.savemat(pf_filename_stim,lfp_features_stim)
@@ -541,7 +546,7 @@ print trndata['input'][0], trndata['target'][0], trndata['class'][0]
 
 # build the ANN
 # 2 hidden layers (4 layers total)
-fnn = buildNetwork(trndata.indim,np.mean([trndata.indim,trndata.outdim]),np.mean([trndata.indim,trndata.outdim]), trndata.outdim, outclass=SoftmaxLayer)
+fnn = buildNetwork(trndata.indim,trndata.indim,np.mean([trndata.indim,trndata.outdim]), trndata.outdim, outclass=SoftmaxLayer)
  # create the trainer
 trainer = BackpropTrainer(fnn, dataset=trndata)
 '''
@@ -554,17 +559,18 @@ for i in xrange(X.size):
     griddata.addSample([X.ravel()[i],Y.ravel()[i]], [0])
 griddata._convertToOneOfMany()  # this is still needed to make the fnn feel comfy
 '''  
-num_epochs = 2
+num_epochs = 100
 epoch_error = np.zeros(num_epochs)
 for i in xrange(num_epochs): # given how many features there are, lots of iterations are required
     # classify the data
-    trainer.trainEpochs(50) # can choose how many epochs to train on using trainEpochs()
+    #trainer.trainEpochs(50) # can choose how many epochs to train on using trainEpochs()
+    trainer.train()
     trnresult = percentError(trainer.testOnClassData(), trndata['class'])
-    tstresult = percentError(trainer.testOnClassData(dataset = tstdata), tstdata['class'])
+    #tstresult = percentError(trainer.testOnClassData(dataset = tstdata), tstdata['class'])
     epoch_error[i] = trnresult
-    print "\n epoch: %4d" % trainer.totalepochs
-    print "\n train error: %5.2f%%" % trnresult
-    print "\n test error: %5.2f%%" % tstresult
+    #print "\n epoch: %4d" % trainer.totalepochs
+    #print "\n train error: %5.2f%%" % trnresult
+    #print "\n test error: %5.2f%%" % tstresult
 	
 trnresult = percentError(trainer.testOnClassData(), trndata['class'])
 tstresult = percentError(trainer.testOnClassData(dataset = tstdata), tstdata['class'])
