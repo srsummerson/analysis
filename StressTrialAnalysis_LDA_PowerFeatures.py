@@ -26,7 +26,7 @@ from pybrain.datasets import ClassificationDataSet
 from pybrain.utilities import percentError
 from pybrain.tools.shortcuts import buildNetwork
 from pybrain.supervised.trainers import BackpropTrainer
-from pybrain.structure.modules import SoftmaxLayer
+from pybrain.structure.modules import SoftmaxLayer, TanhLayer
 from pybrain.datasets import SupervisedDataSet
 
 '''
@@ -475,28 +475,28 @@ for key in lfp_features_stim_keys:
 X_successful_mean = np.abs(np.mean(X_successful))
 X_successful_std = np.abs(np.std(X_successful))
 
-X_successful = (X_successful - X_successful_mean)/X_successful_std
-#X_successful = np.array(X_successful)
+#X_successful = (X_successful - X_successful_mean)/X_successful_std
+X_successful = np.array(X_successful)
 
 X_successful_stim_mean = np.abs(np.mean(X_successful_stim))
 X_successful_stim_std = np.abs(np.std(X_successful_stim))
 
-X_successful_stim = (X_successful_stim - X_successful_stim_mean)/X_successful_stim_std
-#X_successful_stim = np.array(X_successful_stim)
+#X_successful_stim = (X_successful_stim - X_successful_stim_mean)/X_successful_stim_std
+X_successful_stim = np.array(X_successful_stim)
 
 y_successful_reg = np.zeros(len(ind_successful_reg))
 y_successful_stress = np.ones(len(ind_successful_stress))
 y_successful = np.append(y_successful_reg,y_successful_stress)
 
 y_successful_stim = np.ones(len(ind_successful_stress_stim))
-'''
+
 print "LDA using Power Features:"
 clf_all = LinearDiscriminantAnalysis(solver='eigen', shrinkage = 'auto')
 clf_all.fit(X_successful, y_successful)
 scores = cross_val_score(LinearDiscriminantAnalysis(solver='eigen', shrinkage = 'auto'),X_successful,y_successful,scoring='accuracy',cv=10)
 print "CV (10-fold) scores:", scores
 print "Avg CV score:", scores.mean()
-'''
+
 '''
 Using ANN to predict classes.
 '''
@@ -546,7 +546,7 @@ print trndata['input'][0], trndata['target'][0], trndata['class'][0]
 
 # build the ANN
 # 2 hidden layers (4 layers total)
-fnn = buildNetwork(trndata.indim,trndata.indim,np.mean([trndata.indim,trndata.outdim]), trndata.outdim, outclass=SoftmaxLayer)
+fnn = buildNetwork(trndata.indim,trndata.indim,np.mean([trndata.indim,trndata.outdim]), trndata.outdim, hiddenclass=TanhLayer, outclass=SoftmaxLayer)
  # create the trainer
 trainer = BackpropTrainer(fnn, dataset=trndata)
 '''
@@ -559,7 +559,7 @@ for i in xrange(X.size):
     griddata.addSample([X.ravel()[i],Y.ravel()[i]], [0])
 griddata._convertToOneOfMany()  # this is still needed to make the fnn feel comfy
 '''  
-num_epochs = 100
+num_epochs = 10
 epoch_error = np.zeros(num_epochs)
 for i in xrange(num_epochs): # given how many features there are, lots of iterations are required
     # classify the data
