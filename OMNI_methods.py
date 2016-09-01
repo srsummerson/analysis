@@ -2,7 +2,7 @@ import numpy as np
 import scipy as sp
 from scipy import signal
 import re
-from neo import io
+#from neo import io
 import pandas as pd
 from matplotlib import pyplot as plt
 import matplotlib as mpl

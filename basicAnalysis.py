@@ -536,8 +536,14 @@ def plot_raster(event_times_list, color='k'):
     plt.ylim(.5, len(event_times_list) + .5)
     return ax
 
-def computeFisterScore(data, class_ass, nb_classes):
+
+
+def computeFisherScore(data, class_ass, nb_classes):
 	'''
+	The Fisher Score assigns a rank to each of the features, with the goal of finding the subset of features of the data
+	such that in the data space spanned by the selected features, the distance between data points in different classes are
+	as large as possible and the distance between data points in the same class are as small as possible.
+
 	Input
 		- data: matrix of inputs, size N x M, where N is the number of trials and M is the number of features
 		- class_ass: array of class assignments, size 1 x N, where N is the number of trials
@@ -562,3 +568,50 @@ def computeFisterScore(data, class_ass, nb_classes):
 	Fscores = np.dot(num_points_within_class,(within_class_mean - between_class_mean)**2)/np.dot(num_points_within_class,within_class_var)
 
 	return Fscores
+
+def getConnectionWeightsMLP(net, num_in, num_hidden, num_out):
+	'''
+	This method extracts the connection weights for a multilayer perceptron network (feed forward neural network) with
+	one hidden layer. With N inputs, L hidden units, and M output units, it assembles a matrix with the connection 
+	weights for the input to the hidden layer and a separate matrix with the connection weights for the hidden layer
+	and out units.
+
+	Inputs
+		- net: network object created using PyBrain library
+	Outputs
+		- W: N x L matrix of connection weights between the nth input and the lth unit in the hidden layer
+		- V: L x M matrix of connection weights between the lth unit in the hidden layer and the mth unit 
+		     of the output layer
+	'''
+	for mod in net.modules:
+		for conn in net.connections[mod]:
+			conn_name = str(conn)
+			if (conn_name == "'hidden0' -> 'out'>"):
+				# fill in weights from hidden layer to output layer
+				weights = conn.params 
+				V = np.reshape(weights, (num_hidden, num_out))
+
+			if (conn_name == "'in' -> 'hidden0'>"):
+				# fill in weights from input layer to hidden layer
+				weights = conn.params
+				W = np.reshape(weights, (num_in, num_hidden))
+
+	return W, V
+
+def variableImportanceMLP(input_to_hidden_weights, hidden_to_output_weights):
+	'''
+	This method useing Garson's algorithm to determine the relative importance of inputs to a multilayer perceptron network (feed forward neural 
+	network) with one hidden layer. The relative importance Q values are percentages that should add up to 100%.
+
+	Inputs
+		- input_to_hidden_weights: N x L matrix of weights of the connections between the N input features and the M hidden units 
+		- hidden_to_output_weights: L x M matrix of weights of the connections between the M hidden units and the L output units
+	Output
+		- Qrelimport: N x L matrix contain the relative importance of each of the N inputs features to the L output units
+	'''
+	# Convert to positive values, since magnitude, not sign, is used for determining relative importance
+	input_to_hidden_weights = np.abs(input_to_hidden_weights)
+	hidden_to_output_weights = np.abs(hidden_to_output_weights)
+
+
+	return Qrelimport
