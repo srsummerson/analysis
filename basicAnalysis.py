@@ -583,15 +583,18 @@ def getConnectionWeightsMLP(net, num_in, num_hidden, num_out):
 		- V: L x M matrix of connection weights between the lth unit in the hidden layer and the mth unit 
 		     of the output layer
 	'''
+	W = np.array([])
+	V = np.array([])
 	for mod in net.modules:
 		for conn in net.connections[mod]:
 			conn_name = str(conn)
-			if (conn_name == "'hidden0' -> 'out'>"):
+			print conn_name[-19:]
+			if (conn_name[-19:] == "'hidden0' -> 'out'>"):
 				# fill in weights from hidden layer to output layer
 				weights = conn.params 
 				V = np.reshape(weights, (num_hidden, num_out))
 
-			if (conn_name == "'in' -> 'hidden0'>"):
+			if (conn_name[-18:] == "'in' -> 'hidden0'>"):
 				# fill in weights from input layer to hidden layer
 				weights = conn.params
 				W = np.reshape(weights, (num_in, num_hidden))
