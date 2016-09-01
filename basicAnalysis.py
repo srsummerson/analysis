@@ -592,12 +592,14 @@ def getConnectionWeightsMLP(net, num_in, num_hidden, num_out):
 			if (conn_name[-19:] == "'hidden0' -> 'out'>"):
 				# fill in weights from hidden layer to output layer
 				weights = conn.params 
-				V = np.reshape(weights, (num_hidden, num_out))
+				V = np.reshape(weights, (num_out, num_hidden))
+				V = V.T
 
 			if (conn_name[-18:] == "'in' -> 'hidden0'>"):
 				# fill in weights from input layer to hidden layer
 				weights = conn.params
-				W = np.reshape(weights, (num_in, num_hidden))
+				W = np.reshape(weights, (num_hidden, num_in))
+				W = W.T
 
 	return W, V
 
@@ -612,9 +614,23 @@ def variableImportanceMLP(input_to_hidden_weights, hidden_to_output_weights):
 	Output
 		- Qrelimport: N x L matrix contain the relative importance of each of the N inputs features to the L output units
 	'''
-	# Convert to positive values, since magnitude, not sign, is used for determining relative importance
-	input_to_hidden_weights = np.abs(input_to_hidden_weights)
-	hidden_to_output_weights = np.abs(hidden_to_output_weights)
 
+	N, L = input_to_hidden_weights.shape
+	M = hidden_to_output_weights.shape[1]
+
+	W = np.abs(input_to_hidden_weights)
+	V = np.abs(hidden_to_output_weights)
+
+	sum_over_inputs = np.sum(W,axis=0)  # vector of length L
+	score = np.ndarray(shape = (N, L, M))
+	for i in range(N):
+		for j in range(L):
+			for k in range(M):
+				score[i,j,k] = W[i,j]*V[j,k]/sum_over_inputs[j]
+
+	Q_partial = np.sum(score,axis=1) 	# matrix of size N x M
+	Q_partial_sum_over_inputs = np.sum(Q_partial,axis=0) # matrix of size M
+	Q_partial_sum_over_inputs = np.tile(Q_partial_sum_over_inputs, (N,1)) 	# matrix of size N x M
+	Q_relimport = Q_partial/Q_partial_sum_over_inputs
 
 	return Qrelimport
