@@ -631,6 +631,6 @@ def variableImportanceMLP(input_to_hidden_weights, hidden_to_output_weights):
 	Q_partial = np.sum(score,axis=1) 	# matrix of size N x M
 	Q_partial_sum_over_inputs = np.sum(Q_partial,axis=0) # matrix of size M
 	Q_partial_sum_over_inputs = np.tile(Q_partial_sum_over_inputs, (N,1)) 	# matrix of size N x M
-	Q_relimport = Q_partial/Q_partial_sum_over_inputs
+	Qrelimport = Q_partial/Q_partial_sum_over_inputs
 
 	return Qrelimport
