@@ -490,14 +490,14 @@ y_successful_stress = np.ones(len(ind_successful_stress))
 y_successful = np.append(y_successful_reg,y_successful_stress)
 
 y_successful_stim = np.ones(len(ind_successful_stress_stim))
-
+'''
 print "LDA using Power Features:"
 clf_all = LinearDiscriminantAnalysis(solver='eigen', shrinkage = 'auto')
 clf_all.fit(X_successful, y_successful)
 scores = cross_val_score(LinearDiscriminantAnalysis(solver='eigen', shrinkage = 'auto'),X_successful,y_successful,scoring='accuracy',cv=10)
 print "CV (10-fold) scores:", scores
 print "Avg CV score:", scores.mean()
-
+'''
 '''
 Using ANN to predict classes.
 '''
@@ -518,7 +518,7 @@ for xnum in xrange(len(ind_successful_stress_stim)):
 	stimalldata.addSample(X_successful_stim[xnum,:],y_successful_stim[xnum])
 
 # split the data into testing and training data
-tstdata_temp, trndata_temp = alldata.splitWithProportion(0.5)
+tstdata_temp, trndata_temp = alldata.splitWithProportion(0.15)
 
 # small bug with _convertToOneOfMany function.  This fixes that
 tstdata = ClassificationDataSet(num_features,1,nb_classes=2)
@@ -594,15 +594,15 @@ print "\n epoch: %4d" % trainer.totalepochs
 print "\n train error: %5.2f%%" % trnresult
 print "\n test error: %5.2f%%" % tstresult
 print "\n stim trial rate of reg classification: %5.2f%%" % valresult
-
+'''
 orig_std = sys.stdout
 f = file(pf_location + filename + '.txt', 'w')
 sys.stdout = f
-'''
+
 print 'LDA Analysis:'
 print "\n CV (10-fold) scores:", scores
 print "\n Avg CV score:", scores.mean()
-'''
+
 print '\n\n ANN Analysis:'
 print "epoch: %4d" % trainer.totalepochs
 print "\n train error: %5.2f%%" % trnresult
@@ -611,7 +611,7 @@ print "\n stim trial rate of reg classification: %5.2f%%" % valresult
 
 sys.stdout = orig_std
 f.close()
-
+'''
 plt.figure()
 plt.plot(xrange(num_epochs),epoch_error,'b',label='Training Error')
 plt.plot(xrange(num_epochs),epoch_tst_error,'r',label='Test set Error')
