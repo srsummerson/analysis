@@ -21,6 +21,7 @@ from sklearn import metrics
 from sklearn.metrics import roc_curve, auc
 from sklearn.cross_validation import cross_val_score
 import os.path
+import time
 
 from pybrain.datasets import ClassificationDataSet
 from pybrain.utilities import percentError
@@ -517,7 +518,7 @@ for xnum in xrange(len(ind_successful_stress_stim)):
 	stimalldata.addSample(X_successful_stim[xnum,:],y_successful_stim[xnum])
 
 # split the data into testing and training data
-tstdata_temp, trndata_temp = alldata.splitWithProportion(0.2)
+tstdata_temp, trndata_temp = alldata.splitWithProportion(0.25)
 
 # small bug with _convertToOneOfMany function.  This fixes that
 tstdata = ClassificationDataSet(num_features,1,nb_classes=2)
@@ -546,7 +547,7 @@ print trndata['input'][0], trndata['target'][0], trndata['class'][0]
 
 # build the ANN
 # 2 hidden layers (4 layers total)
-fnn = buildNetwork(trndata.indim,trndata.indim,np.mean([trndata.indim,trndata.outdim]), trndata.outdim, hiddenclass=TanhLayer, outclass=SoftmaxLayer)
+fnn = buildNetwork(trndata.indim, trndata.indim/2, trndata.outdim, hiddenclass=TanhLayer, outclass=SoftmaxLayer)
  # create the trainer
 trainer = BackpropTrainer(fnn, dataset=trndata)
 '''
@@ -559,8 +560,9 @@ for i in xrange(X.size):
     griddata.addSample([X.ravel()[i],Y.ravel()[i]], [0])
 griddata._convertToOneOfMany()  # this is still needed to make the fnn feel comfy
 '''  
-num_epochs = 10
+num_epochs = 400
 epoch_error = np.zeros(num_epochs)
+start_time = time.time()
 for i in xrange(num_epochs): # given how many features there are, lots of iterations are required
     # classify the data
     #trainer.trainEpochs(50) # can choose how many epochs to train on using trainEpochs()
@@ -569,8 +571,11 @@ for i in xrange(num_epochs): # given how many features there are, lots of iterat
     #tstresult = percentError(trainer.testOnClassData(dataset = tstdata), tstdata['class'])
     epoch_error[i] = trnresult
     #print "\n epoch: %4d" % trainer.totalepochs
-    #print "\n train error: %5.2f%%" % trnresult
+    print "Epoch: %i, train error: %5.2f%%" % (i,trnresult)
+    print "Length time: ", (time.time() - start_time)/60.
     #print "\n test error: %5.2f%%" % tstresult
+end_time = time.time()
+print "Training time:", (end_time - start_time)/60.
 	
 trnresult = percentError(trainer.testOnClassData(), trndata['class'])
 tstresult = percentError(trainer.testOnClassData(dataset = tstdata), tstdata['class'])
