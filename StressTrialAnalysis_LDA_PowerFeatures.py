@@ -518,7 +518,7 @@ for xnum in xrange(len(ind_successful_stress_stim)):
 	stimalldata.addSample(X_successful_stim[xnum,:],y_successful_stim[xnum])
 
 # split the data into testing and training data
-tstdata_temp, trndata_temp = alldata.splitWithProportion(0.25)
+tstdata_temp, trndata_temp = alldata.splitWithProportion(0.5)
 
 # small bug with _convertToOneOfMany function.  This fixes that
 tstdata = ClassificationDataSet(num_features,1,nb_classes=2)
