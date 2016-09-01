@@ -560,7 +560,7 @@ for i in xrange(X.size):
     griddata.addSample([X.ravel()[i],Y.ravel()[i]], [0])
 griddata._convertToOneOfMany()  # this is still needed to make the fnn feel comfy
 '''  
-num_epochs = 400
+num_epochs = 4
 epoch_error = np.zeros(num_epochs)
 epoch_tst_error = np.zeros(num_epochs)
 start_time = time.time()
