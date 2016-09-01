@@ -562,14 +562,16 @@ griddata._convertToOneOfMany()  # this is still needed to make the fnn feel comf
 '''  
 num_epochs = 400
 epoch_error = np.zeros(num_epochs)
+epoch_tst_error = np.zeros(num_epochs)
 start_time = time.time()
 for i in xrange(num_epochs): # given how many features there are, lots of iterations are required
     # classify the data
     #trainer.trainEpochs(50) # can choose how many epochs to train on using trainEpochs()
     trainer.train()
     trnresult = percentError(trainer.testOnClassData(), trndata['class'])
-    #tstresult = percentError(trainer.testOnClassData(dataset = tstdata), tstdata['class'])
+    tstresult = percentError(trainer.testOnClassData(dataset = tstdata), tstdata['class'])
     epoch_error[i] = trnresult
+    epoch_tst_error[i] = tstresult
     #print "\n epoch: %4d" % trainer.totalepochs
     print "Epoch: %i, train error: %5.2f%%" % (i,trnresult)
     print "Length time: ", (time.time() - start_time)/60.
@@ -609,6 +611,14 @@ print "\n stim trial rate of reg classification: %5.2f%%" % valresult
 
 sys.stdout = orig_std
 f.close()
+
+plt.figure()
+plt.plot(xrange(num_epochs),epoch_error,'b',label='Training Error')
+plt.plot(xrange(num_epochs),epoch_tst_error,'r',label='Test set Error')
+plt.xlabel('Num Epochs')
+plt.ylabel('Percent Error')
+plt.legend()
+plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_ANNPerformance.svg')
 
 '''
 x_successful = sm.add_constant(X_successful,prepend='False')
