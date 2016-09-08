@@ -1,6 +1,7 @@
 #from neo import io
 from numpy import sin, linspace, pi
 import matplotlib
+import math
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy import fft, arange, signal
@@ -442,4 +443,86 @@ def computePowerFeatures(lfp_data, Fs, power_bands, event_indices, t_window):
 					feat_counter += 1
 		features[str(trial)] = trial_powers
 
+	return features
+
+def computeCoherenceFeatures(lfp_data, channel_pairs, Fs, power_bands, event_indices, t_window):
+	'''
+	Inputs
+		- lfp_data: dictionary of data, with one entry for each channel
+		- channel_pairs: list of channel pairs
+		- Fs: sampling frequency 
+		- power_bands: list of power bands 
+		- event_indices: N x M array of event indices, where N is the number of trials and M is the number of 
+		                 different events 
+		- t_window: length M array of time window (in seconds) to compute features over, one element for each feature 
+	Outputs
+		- features: dictionary with N entries (one per trial), with a C x K matric which C is the number of channel pairs 
+					and K is the number of features (number of power bands times M)
+	'''
+	nperseg = int(Fs*0.25)
+	noverlap = int(Fs*0.125)
+	t_window = [int(Fs*time) for time in t_window]  # changing seconds into samples
+
+	N, M = event_indices.shape
+	times = np.ones([N,M])
+	for t,time in enumerate(t_window):
+		times[:,t] = time*np.ones(N)
+
+	features = dict()
+
+	channels = lfp_data.keys()
+	num_channel_pairs = len(channel_pairs)
+
+	for trial in range(0,N):
+		events = event_indices[trial,:]  # should be array of length M
+		trial_powers = np.zeros([len(channels),M*len(power_bands)])
+		for j, pair in enumerate(channel_pairs):
+			chann1 = pair[0] - 1
+			chann2 = pair[1] - 1
+			chann_data1 = lfp_data[chann1]
+			chann_data2 = lfp_data[chann2]
+			feat_counter = 0
+			for i,ind in enumerate(events):
+				data1 = chann_data1[ind:ind + times[trial,i]]
+				data1 = np.ravel(data1)
+				data2 = chann_data2[ind:ind + times[trial,i]]
+				data2 = np.ravel(data2)
+				f, Cxy = signal.coherence(data1, data2, nperseg = nperseg, Fs=Fs, noverlap=noverlap)
+				Cxy = Cxy/np.sum(Cxy)
+				Cxy = 10*np.log10(Cxy)
+				for k in range(0,len(power_bands)):
+					low_band, high_band = power_bands[k]
+					freqs = np.ravel(np.nonzero(np.greater(f,low_band)&np.less_equal(f,high_band)))
+					tot_power_band = np.sum(Cxy[freqs])
+					trial_powers[j,feat_counter] = tot_power_band
+					#trial_powers[j,i*len(power_bands) + k] = np.sum(tot_power_band)/float(len(tot_power_band))
+					feat_counter += 1
+		features[str(trial)] = trial_powers
+
+	return features
+
+def computeAllCoherenceFeatures(lfp_data, Fs, power_bands, event_indices, t_window):
+	'''
+	Generate the list of all possible channel combinations and uses the computeCoherenceFeatures method
+	to extract all of the coherence features.
+
+	Inputs
+		- lfp_data: dictionary of data, with one entry for each channel
+		- Fs: sampling frequency 
+		- power_bands: list of power bands 
+		- event_indices: N x M array of event indices, where N is the number of trials and M is the number of 
+		                 different events 
+		- t_window: length M array of time window (in seconds) to compute features over, one element for each feature 
+	Outputs
+		- features: dictionary with N entries (one per trial), with a C x K matric which C is the number of channel pairs 
+					and K is the number of features (number of power bands times M)
+	'''
+	channels = [int(item) for item in lfp.keys()]
+	channels.sort()
+	channel_pairs = []
+	for i, chan1 in enumerate(channels[:-1]):
+		for chan2 in channels[i+1:]:
+			channel_pairs.append([chan1, chan2])
+
+	features = computeCoherenceFeatures(lfp_data, channel_pairs, Fs, power_bands, event_indices, t_window)
 	return features
