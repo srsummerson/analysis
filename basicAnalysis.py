@@ -412,6 +412,49 @@ def plot_step_lda(X_lda,y,labels):
 
 	return
 
+def lowpassFilterData(data, Fs, cutoff):
+	'''
+	This method lowpass filters data using a butterworth filter.
+
+	Inputs:
+		- data: array of time-stamped values to be filtered 
+		- Fs: sampling frequency of data 
+		- cutoff: cutoff frequency of the LPF in Hz
+	Outputs:
+		- filtered_data: array contained the lowpass-filtered data
+
+	'''
+	nyq = 0.5*Fs
+	order = 5
+	normal_cutoff = cutoff / nyq
+
+	b, a = signal.butter(order, normal_cutoff, btype= 'low', analog = False)
+	filtered_data = signal.filtfilt(b,a,data)
+
+	return filtered_data
+
+def notchFilterData(data, Fs, notch_freq):
+	'''
+	This method lowpass filters data using a butterworth filter.
+
+	Inputs:
+		- data: array of time-stamped values to be filtered 
+		- Fs: sampling frequency of data 
+		- cutoff: cutoff frequency of the LPF in Hz
+	Outputs:
+		- filtered_data: array contained the lowpass-filtered data
+
+	'''
+	nyq = 0.5*Fs
+	order = 2
+	notch_start = (notch_freq - 1) / nyq
+	notch_stop = (notch_freq + 1) / nyq
+
+	b, a = signal.butter(order, [notch_start, notch_stop], btype= 'bandstop', analog = False)
+	filtered_data = signal.filtfilt(b,a,data)
+
+	return
+
 def LDAforFeatureSelection(X,y,filename,block_num):
 	'''
 	This method performs linear discriminant analysis on the data (X,y) and computes the variances explained by the 
