@@ -1,4 +1,4 @@
-from neo import io
+#from neo import io
 from numpy import sin, linspace, pi
 import matplotlib
 import numpy as np

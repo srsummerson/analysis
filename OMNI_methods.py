@@ -30,7 +30,7 @@ def plotRawLFPTraces(data, **kwargs):
 	if kwargs:
 		channs = kwargs['channs']
 	else:
-		channs = range(1,num_channs,1) 	# recall one column is for timestamps, not channel data
+		channs = range(1,num_channs+1,1) 	# recall one column is for timestamps, not channel data
 
 	channs = [(chann - 1) for chann in channs]  # channel numbers are offset by 1 from index values
 
@@ -315,10 +315,10 @@ def powersWithSpecgram(channel_data,Avg_Fs,channel,event_indices,t_before, t_aft
 		data = channel_data[ind - win_before:ind + win_after,channel]
 		data = np.ravel(data)
 		Sxx, f, t, fig = specgram(data,Fs=Avg_Fs)
-		Sxx = Sxx/np.sum(Sxx)
+		#Sxx = Sxx/np.sum(Sxx)
 		Sxx = 10*np.log10(Sxx)
 		trial_powers[j,:] = np.sum(Sxx[3:5,:],axis=0)/2.
-		#trial_powers[j,:] = Sxx[4,:]
+		#trial_powers[j,:] = Sxx[5,:]
 	return trial_powers, t, f
 	#return trial_powers, data
 
