@@ -4,6 +4,7 @@ import matplotlib
 import math
 import numpy as np
 from matplotlib import pyplot as plt
+from matplotlib.mlab import cohere
 from scipy import fft, arange, signal
 from pylab import specgram
 from scipy import signal
@@ -487,7 +488,7 @@ def computeCoherenceFeatures(lfp_data, channel_pairs, Fs, power_bands, event_ind
 				data1 = np.ravel(data1)
 				data2 = chann_data2[ind:ind + times[trial,i]]
 				data2 = np.ravel(data2)
-				f, Cxy = signal.coherence(data1, data2, nperseg = nperseg, Fs=Fs, noverlap=noverlap)
+				Cxy, f = cohere(data1, data2, NFFT = nperseg, Fs=Fs, noverlap=noverlap)
 				Cxy = Cxy/np.sum(Cxy)
 				Cxy = 10*np.log10(Cxy)
 				for k in range(0,len(power_bands)):
