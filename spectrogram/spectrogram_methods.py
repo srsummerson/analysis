@@ -55,7 +55,7 @@ def complete_chirplet_parameters(g):
 	if 'chirp_rate' in keys:
 		c0=g['chirp_rate']
 
-	% assign or compute duration parameter:
+	# assign or compute duration parameter:
 	if 'duration_parameter' in chirplet_keys:
 	    s0 = g['duration_parameter']
 	elif ('fractional_bandwidth' in chirplet_keys)&(c0==0):
@@ -130,14 +130,11 @@ def make_chirplet(chirplet_structure, sp):
 	signal_time_support_indices = g['signal_time_support_indices']
 	g['time_support'] = time_support[signal_time_support_indices]
 
-	t = time_support[center_index] + sp['time_step_size']*np.arange(-numinds:numinds)
+	t = time_support[center_index] + sp['time_step_size']*np.arange(-numinds,numinds)
 	g['ptime'] = t
 
 	# chirplet in time domain:
-	g['time_domain'] = 2**(1./4)*np.exp(-s0/4.)* 				# normalizer for R (not Z)
-	        np.exp(-np.exp(-s0)*np.pi*(t-t0)**2)*				# amplitude envelope
-	        np.exp(2*np.pi*1j*v0*(t-t0))* 						# frequency modulation
-	        np.exp(np.pi*1j*c0*(t-t0)**2)    					# linear frequency chirp
+	g['time_domain'] = 2**(1./4)*np.exp(-s0/4.)*np.exp(-np.exp(-s0)*np.pi*(t-t0)**2)*np.exp(2*np.pi*1j*v0*(t-t0))*np.exp(np.pi*1j*c0*(t-t0)**2)    					
 	g['time_domain'] = g['time_domain']/linalg.norm(g['time_domain']) 	# need to normalize due to discrete sampling
 
 	v = sp['frequency_support'] # in Hz
@@ -276,15 +273,7 @@ def filter_LFP(signal, freq_band, normalize, Fs):
 
 	numpoints=len(signal)
 	sp = get_signal_parameters(Fs, numpoints)
-	
-	s = dict()
-	s=make_signal_structure(...
-    'raw_signal',signal,...
-    'output_type','analytic',...
-    'signal_parameters',sp);
-	s['raw_signal'] = signal
-	s['output_type'] = 'analytic'
-	s['signal_parameters'] = sp
+	s=make_signal_structure(signal, 'analytic', sp)
 	
 	minimum_frequency=freq_band[0] # Hz
 	maximum_frequency=freq_band[1] # Hz
@@ -345,21 +334,22 @@ def make_spectrogram(lfp, Fs, fmax, trialave, makeplot):
 	powers = np.empty([1,50,len(freq_band)])
 	powers[:] = np.NAN
 	
-    for k in range(len(lfp[:,0])):
-        signal = lfp[k,:]
-        power,cf_list = filter_LFP(signal,freq_band,1,Fs)
-       	powers[k,:,:] = power
+	for k in range(len(lfp[:,0])):
+		signal = lfp[k,:]
+		power,cf_list = filter_LFP(signal,freq_band,1,Fs)
+    	powers[k,:,:] = power
 
-    if trialave==1:
-    	Power = np.squeeze(np.nanmean(powers, axis = 1))
-    else:
-    	Power = powers
-         
-    if makeplot==1:
-    	fig = plt.figure()
+	if trialave == 1:
+		Power = np.squeeze(np.nanmean(powers, axis = 1))
+	else:
+		Power = powers
 
-    	if len(Power) > 2:
-            Power = np.squeeze(np.nanmean(powers, axis = 1))
+	if makeplot==1:
+		
+		fig = plt.figure()
+
+    	if len(Power.shape) > 2:
+    		Power = np.squeeze(np.nanmean(powers, axis = 1))
 		
 		ax = plt.imshow(Power)
 		yticks = np.arange(0, 50, 5)
