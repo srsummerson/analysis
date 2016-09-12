@@ -21,9 +21,6 @@ function [power,cf_list,varargout] = filter_LFP(signal,freq_band,varargin)
 % instantaneus phase for each frequeny as a function of time.
 %
 % The fractional bandwith used for each center frequency is 20% of the center freqency.
-% 
-% Dependencies: get_signal_parameters, make_signal_structure, make_center_frequencies, make_chirplet, 
-%               filter_with_chirplet
 
 if ~isempty(varargin),
     normalize=varargin{1};

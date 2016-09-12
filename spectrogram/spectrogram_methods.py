@@ -1,6 +1,7 @@
 import numpy as np
 from numpy import linalg
 from numpy import fft
+import matplotlib.pyplot as plt
 
 
 def filter_with_chirplet(s, sp, g):
@@ -18,7 +19,7 @@ def filter_with_chirplet(s, sp, g):
 	# Initialize
 	fs = dict()
 	fs_time_domain = np.zeros(len(s['time_domain']))
-	fs_frequency_domain = np.zeros(len(s['frequency_domain']))
+	fs_frequency_domain = np.zeros(len(s['frequency_domain'])) + 0j
 
 	frequency_domain = s['frequency_domain']
 	signal_frequency_support_indices = g['signal_frequency_support_indices']
@@ -27,9 +28,8 @@ def filter_with_chirplet(s, sp, g):
 
 	fs_frequency_domain[signal_frequency_support_indices] = frequency_domain[signal_frequency_support_indices]*g['filter']
 	fs_time_domain=fft.ifft(fs_frequency_domain, number_points_frequency_domain)
-	fs_time_domain=fs_time_domain[:number_points_time_domain]
+	fs['time_domain'] =fs_time_domain[:number_points_time_domain]
 
-	fs['time_domain'] = fs_time_domain
 	fs['frequency_domain'] = fs_frequency_domain
 
 	return fs
@@ -52,7 +52,7 @@ def complete_chirplet_parameters(g):
 		t0=0
 	if 'center_frequency' in chirplet_keys:
 		v0=g['center_frequency']
-	if 'chirp_rate' in keys:
+	if 'chirp_rate' in chirplet_keys:
 		c0=g['chirp_rate']
 
 	# assign or compute duration parameter:
@@ -60,26 +60,26 @@ def complete_chirplet_parameters(g):
 	    s0 = g['duration_parameter']
 	elif ('fractional_bandwidth' in chirplet_keys)&(c0==0):
 	    fbw = g['fractional_bandwidth']
-	    s0 = np.log((2*np.log(2))/(fbw**2*np.pi*v0**2.))
+	    s0 = np.log((2.*np.log(2.))/((fbw**2.)*np.pi*(v0**2.)))
 	elif ('frequency_domain_standard_deviation' in chirplet_keys)&(c0==0):
 	    fstd = g['frequency_domain_standard_deviation']
-	    s0 = -np.log(4*np.pi*fstd^2)
+	    s0 = -np.log(4.*np.pi*(fstd**2.))
 	elif 'time_domain_standard_deviation' in chirplet_keys:
 	    tstd = g['time_domain_standard_deviation']
-	    s0=log(4*pi*tstd^2);
+	    s0=log(4.*np.pi*(tstd**2.))
 
 	g['center_time'] = t0
 	g['center_frequency'] = v0
 	g['duration_parameter'] = s0
 	g['chirp_rate'] = c0
 	# Fixed parameter:
-	g['std_multiple_for_support']=6
+	g['std_multiple_for_support']=6.0
 	# Calculate other quanties as a function of these constants
 	g['time_domain_standard_deviation'] = np.sqrt(np.exp(s0)/(4.*np.pi))
-	g['frequency_domain_standard_deviation'] = np.sqrt((np.exp(-s0)+c0**2*np.exp(s0))/(4*np.pi))
+	g['frequency_domain_standard_deviation'] = np.sqrt((np.exp(-s0)+c0**2.*np.exp(s0))/(4.*np.pi))
 	g['time_frequency_covariance'] = (c0*np.exp(s0))/(4.*np.pi)
-	g['time_frequency_correlation_coefficient'] = g['time_frequency_covariance']*(g['time_domain_standard_deviation']*g['frequency_domain_standard_deviation'])**(-1)
-	g['fractional_bandwidth'] = 2*np.sqrt(2*np.log(2))*g['frequency_domain_standard_deviation']/v0 # fwhm/center_frequency
+	g['time_frequency_correlation_coefficient'] = g['time_frequency_covariance']*(g['time_domain_standard_deviation']*g['frequency_domain_standard_deviation'])**(-1.)
+	g['fractional_bandwidth'] = 2.*np.sqrt(2.*np.log(2.))*g['frequency_domain_standard_deviation']/v0 # fwhm/center_frequency
 
 	return g
 
@@ -96,17 +96,16 @@ def make_chirplet(chirplet_structure, sp):
 		- g: chirplet 
 
 	'''
-	g = chirplet_structure
 
 	# Fill in rest of values used for chirplet
-	g = complete_chirplet_parameters(g)
+	g = complete_chirplet_parameters(chirplet_structure)
 
 	# Use short variable names for equations
 	t0 = g['center_time']
 	v0 = g['center_frequency']
 	s0 = g['duration_parameter']
 	c0 = g['chirp_rate']
-	tstd = g['time_domain_standard_deviation'];
+	tstd = g['time_domain_standard_deviation']
 	vstd = g['frequency_domain_standard_deviation']
 
 	time_support = sp['time_support']
@@ -128,18 +127,20 @@ def make_chirplet(chirplet_structure, sp):
 	g['signal_time_support_indices'] = support_inds
 
 	signal_time_support_indices = g['signal_time_support_indices']
-	g['time_support'] = time_support[signal_time_support_indices]
+	#print signal_time_support_indices[0]
+	#print signal_time_support_indices[-1]
+	#g['time_support'] = time_support[signal_time_support_indices]
 
 	t = time_support[center_index] + sp['time_step_size']*np.arange(-numinds,numinds)
 	g['ptime'] = t
 
 	# chirplet in time domain:
-	g['time_domain'] = 2**(1./4)*np.exp(-s0/4.)*np.exp(-np.exp(-s0)*np.pi*(t-t0)**2)*np.exp(2*np.pi*1j*v0*(t-t0))*np.exp(np.pi*1j*c0*(t-t0)**2)    					
+	g['time_domain'] = 2.**(1./4)*np.exp(-s0/4.)*np.exp(-np.exp(-s0)*np.pi*(t-t0)**2.0)*np.exp(2.*np.pi*1j*v0*(t-t0))*np.exp(np.pi*1j*c0*(t-t0)**2.)    					
 	g['time_domain'] = g['time_domain']/linalg.norm(g['time_domain']) 	# need to normalize due to discrete sampling
 
 	v = sp['frequency_support'] # in Hz
 	freq_nonzero_support_inds = np.ravel(np.nonzero(np.logical_and(np.less_equal(v0-g['std_multiple_for_support']*vstd, v),
-									np.greater_equal(v0+g.std_multiple_for_support*vstd, v))))
+									np.greater_equal(v0+g['std_multiple_for_support']*vstd, v))))
 	g['signal_frequency_support_indices'] = freq_nonzero_support_inds
 	
 	# shorten to include only chirplet support
@@ -148,11 +149,11 @@ def make_chirplet(chirplet_structure, sp):
 	g['pfrequency'] = g['frequency_support']
 
 	# chirplet in frequency domain: 
-	Gk = 2**(1./4)*np.sqrt(-1j*c0+np.exp(-s0))**(-1)*np.exp(-s0/4.+ (np.exp(s0)*np.pi*(v-v0)**2)/(-1+1j*c0*np.exp(s0)))
+	Gk = (2.**(1./4))*np.sqrt(-1j*c0+np.exp(-s0))**(-1.)*np.exp(-s0/4.+ (np.exp(s0)*np.pi*(v-v0)**2.0)/(-1+1j*c0*np.exp(s0)))
 	n1 = np.sqrt(sp['number_points_frequency_domain'])/linalg.norm(Gk)
 	Gk = n1*Gk 		# because of discrete sampling and different time/freq sample numbers
 	g['filter'] = Gk 	# at center time of zero, use this for convolution filtering
-	g['frequency_domain'] = Gk*np.exp(-2*np.pi*1j*v*t0) # translation in time to tk
+	g['frequency_domain'] = Gk*np.exp(-2.*np.pi*1j*v*t0) # translation in time to tk
 
 	return g
 
@@ -172,7 +173,7 @@ def make_center_frequencies(minimum_frequency, maximum_frequency,number_of_frequ
 	'''
 	
 	temp1 = np.arange(0, number_of_frequencies*minimum_frequency_step_size, minimum_frequency_step_size)
-	temp2 = np.logspace(log10(minimum_frequency), log10(maximum_frequency), number_of_frequencies)
+	temp2 = np.logspace(np.log10(minimum_frequency), np.log10(maximum_frequency), number_of_frequencies)
 	temp2 = (temp2 - temp2[0])*((temp2[-1] - temp1[-1])/temp2[-1]) + temp2[0]
 	center_frequencies=temp1+temp2
 
@@ -192,7 +193,7 @@ def make_signal_structure(raw_signal, output_type, sp):
 
 	'''
 	s = dict()
-	frequency_domain = fft.fft(raw_signal, sp['number_points_frequency_domain'])
+	frequency_domain = fft.fft(raw_signal, int(sp['number_points_frequency_domain']))
 
 	if np.sum(np.abs(np.imag(raw_signal))) != 0: 	# signal already complex
 	    s['time_domain'] = raw_signal 					# do not change
@@ -231,22 +232,22 @@ def get_signal_parameters(sampling_rate, number_points_time_domain):
 	sp['sampling_rate'] = sampling_rate
 	sp['number_points_time_domain'] = number_points_time_domain
 
-	maxpower2=2**23 # to avoid out-of-memory issues;
+	maxpower2=2**23 # to avoid out-of-memory issues
 	# check this on your machine, machine-specific threshold
 	if number_points_time_domain < maxpower2:
-	    sp['number_points_frequency_domain'] = 2**np.ceil(np.log2(number_points_time_domain)) # fixed parameter for computational ease
+	    sp['number_points_frequency_domain'] = 2.**np.ceil(np.log2(number_points_time_domain)) # fixed parameter for computational ease
 	else:
 	    sp['number_points_frequency_domain'] = number_points_time_domain
 
 	sp['time_step_size'] = 1./sampling_rate
-	sp['frequency_step_size'] = sampling_rate/float(number_points_frequency_domain )
+	sp['frequency_step_size'] = sampling_rate/float(sp['number_points_frequency_domain'])
 
 	# raw time_support, need to shift if
 	# time_at_first_point or time_at_center_point provided by user
-	time_support = sp['time_step_size']*range(sp.number_points_time_domain)
+	time_support = sp['time_step_size']*np.arange(sp['number_points_time_domain'])
 
-	frequency_support = sp['frequency_step_size']*range(sp['number_points_frequency_domain'])
-	inds = np.ravel(np.nonzero(np.greater(sp['frequency_support'], sampling_rate/2.)))
+	frequency_support = sp['frequency_step_size']*np.arange(sp['number_points_frequency_domain'])
+	inds = np.ravel(np.nonzero(np.greater(frequency_support, sampling_rate/2.)))
 	frequency_support[inds] -= sampling_rate
 
 	sp['time_support'] = np.float32(time_support)
@@ -254,7 +255,7 @@ def get_signal_parameters(sampling_rate, number_points_time_domain):
 
 	return sp
 
-def filter_LFP(signal, freq_band, normalize, Fs):
+def filter_LFP(signal, freq_band, normalize, sampling_rate):
 	'''
 	This method filters the LFP signal using a chirplet transfrom in a designated frequency band.
 	The fractional bandwith used for each center frequency is 20 percent of the center frequency.
@@ -263,7 +264,7 @@ def filter_LFP(signal, freq_band, normalize, Fs):
 		- signal: lfp data
 		- freq_band: array of length 2 with values [minFreq, maxFreq]
 		- normalize: indicator of whether the power is to be normalized by the average power over time 
-		- Fs: sampling rate 
+		- sampling_rate: sampling rate 
 	Ouputs:
 		- power: array of N x T entries with the power at each frequency over time, N is the number of samples in
 				 the frequency domain and T is the number of samples in the time domain
@@ -272,24 +273,25 @@ def filter_LFP(signal, freq_band, normalize, Fs):
 	'''
 
 	numpoints=len(signal)
-	sp = get_signal_parameters(Fs, numpoints)
-	s=make_signal_structure(signal, 'analytic', sp)
+	sp = get_signal_parameters(sampling_rate, numpoints)
+	s = make_signal_structure(signal, 'analytic', sp)
+	#s = make_signal_structure(signal, 'real', sp)
 	
-	minimum_frequency=freq_band[0] # Hz
-	maximum_frequency=freq_band[1] # Hz
+	minimum_frequency=freq_band[0,0] # Hz
+	maximum_frequency=freq_band[1,0] # Hz
 	number_of_frequencies=50
 	minimum_frequency_step_size=0.75
 	
 	center_frequencies = make_center_frequencies(minimum_frequency, maximum_frequency, number_of_frequencies, minimum_frequency_step_size)
 
-	tfmat = np.zeros([number_of_frequencies,sp['number_points_time_domain']])
+	tfmat = np.zeros([number_of_frequencies,sp['number_points_time_domain']]) + 0j  # cast as complex array
 	cf_list = center_frequencies
 
 	for f in range(number_of_frequencies):
 	    chirplet_structure = dict()
 	    chirplet_structure['center_frequency'] = cf_list[f] # in Hz
 	    chirplet_structure['fractional_bandwidth'] = 0.2
-	    chirplet_structure['chirp_rate'] = 0
+	    chirplet_structure['chirp_rate'] = 0.0
 	    
 	    g = make_chirplet(chirplet_structure, sp)
 	  
@@ -298,25 +300,28 @@ def filter_LFP(signal, freq_band, normalize, Fs):
 	    tfmat[f,:] = fs['time_domain']
 	    
 
-	power = np.abs(tfmat)**2
+	power = np.abs(tfmat)**2.
 	if normalize:
 		# divides each frequency by the mean for that frequency
-	    power=power/np.mean(power, axis = 1)
-	
+		num_freq, num_samples = power.shape
+		mean_power = np.mean(power,axis = 1)
+		mean_power = np.tile(mean_power, (num_samples,1)).T 	# make matrix of same size with mean power repeated
+		power = power/mean_power
+
 	# Get phase in radians
 	phase = np.angle(tfmat, deg = 0)  
 
-	return power, cf_list, phase
+	return power, cf_list, phase, g, fs 
 
 
-def make_spectrogram(lfp, Fs, fmax, trialave, makeplot):
+def make_spectrogram(lfp, sampling_rate, fmax, trialave, makeplot):
 	'''
 	This a method for making spectrograms using Ryan Canolty's technique for extracting powers using chirplets.
 	Methods have been adapted by Erin Rich.
 
 	Inputs:
 		- lfp: array of N x T, where N is the number of trials and T is the number of time points. lfp data is broadband.
-		- Fs: sampling frequency
+		- sampling_rate: sampling frequency
 		- fmax: maximum frequency to be used in the spectrogram
 		- trialave: binary input indicating whether to average over trials
 		- makeplot: binary input indicating whether to create a plot at the end. If makeplot == True, it will be
@@ -326,35 +331,33 @@ def make_spectrogram(lfp, Fs, fmax, trialave, makeplot):
 		- cf_list: list of the center frequencies for which power was computed
 
 	'''
+	num_trials, num_samples = lfp.shape
 
-	freq_band=np.zeros([2,len(lfp[0,:])])
-	freq_band[0,:]= np.ones(len(lfp[0,:]))
-	freq_band[1,:]= fmax*np.ones(len(lfp[0,:]))
+	freq_band=np.zeros([2,num_samples])
+	freq_band[0,:]= np.ones(num_samples)
+	freq_band[1,:]= fmax*np.ones(num_samples)
 
-	powers = np.empty([1,50,len(freq_band)])
+	powers = np.empty([num_trials,50,num_samples])
 	powers[:] = np.NAN
 	
-	for k in range(len(lfp[:,0])):
+	for k in range(num_trials):	# iterate over trials
 		signal = lfp[k,:]
-		power,cf_list = filter_LFP(signal,freq_band,1,Fs)
-    	powers[k,:,:] = power
+		power, cf_list, phase, g, fs= filter_LFP(signal,freq_band,1,sampling_rate)
+		powers[k,:,:] = power
 
-	if trialave == 1:
-		Power = np.squeeze(np.nanmean(powers, axis = 1))
+	
+	if bool(trialave):
+		Power = np.nanmean(powers, axis = 0)
 	else:
 		Power = powers
-
-	if makeplot==1:
-		
+	
+	if bool(makeplot):
 		fig = plt.figure()
-
-    	if len(Power.shape) > 2:
-    		Power = np.squeeze(np.nanmean(powers, axis = 1))
-		
-		ax = plt.imshow(Power)
+		trialavePower = np.nanmean(powers, axis = 0)
+		ax = plt.imshow(trialavePower,interpolation = 'bicubic', aspect='auto',extent = [0,num_samples/sampling_rate,num_trials,0])
 		yticks = np.arange(0, 50, 5)
 		plt.yticks(yticks)
 		fig.colorbar(ax)
 		plt.show()
 
-	return Power, cf_list
+	return powers, Power, cf_list, g, fs

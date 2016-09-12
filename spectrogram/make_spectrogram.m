@@ -7,7 +7,7 @@ function [Power,cf_list] = make_spectrogram(lfp,Fs,fmax,trialave,makeplot)
 %makeplot is 0 or 1 to create a plot. If makeplot==1, it will be
 %trial averaged.
 %
-%Has dependencies: filter_LFP
+%Has dependencies.
 %
 %2016 ELR
 
