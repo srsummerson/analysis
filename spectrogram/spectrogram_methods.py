@@ -311,7 +311,7 @@ def filter_LFP(signal, freq_band, normalize, sampling_rate):
 	# Get phase in radians
 	phase = np.angle(tfmat, deg = 0)  
 
-	return power, cf_list, phase, g, fs 
+	return power, cf_list, phase
 
 
 def make_spectrogram(lfp, sampling_rate, fmax, trialave, makeplot):
@@ -327,7 +327,9 @@ def make_spectrogram(lfp, sampling_rate, fmax, trialave, makeplot):
 		- makeplot: binary input indicating whether to create a plot at the end. If makeplot == True, it will be
 					trial-averaged
 	Outputs:
-		- Power: array of M x T, where M is the number of points in the frequency domain and T is the number of time points.
+		- Power: if trialave==0: array of N x M x T, where N is the number of trials, M is the number of frequency domain
+		points, and T is the number of time domain points, if trialave ==1: array of M x T, 
+		where M is the number of points in the frequency domain and T is the number of time points.
 		- cf_list: list of the center frequencies for which power was computed
 
 	'''
@@ -342,8 +344,8 @@ def make_spectrogram(lfp, sampling_rate, fmax, trialave, makeplot):
 	
 	for k in range(num_trials):	# iterate over trials
 		signal = lfp[k,:]
-		power, cf_list, phase, g, fs= filter_LFP(signal,freq_band,1,sampling_rate)
-		powers[k,:,:] = power
+		power, cf_list, phase = filter_LFP(signal,freq_band,1,sampling_rate)
+		powers[k,:,:] = 10*np.log10(power)  # dB scale
 
 	
 	if bool(trialave):
@@ -354,10 +356,16 @@ def make_spectrogram(lfp, sampling_rate, fmax, trialave, makeplot):
 	if bool(makeplot):
 		fig = plt.figure()
 		trialavePower = np.nanmean(powers, axis = 0)
-		ax = plt.imshow(trialavePower,interpolation = 'bicubic', aspect='auto',extent = [0,num_samples/sampling_rate,num_trials,0])
-		yticks = np.arange(0, 50, 5)
-		plt.yticks(yticks)
+		ax = plt.imshow(trialavePower[:,sampling_rate:(int(num_samples/sampling_rate) - 1)*sampling_rate],interpolation = 'bicubic', aspect='auto', origin='lower', 
+			extent = [0,int(num_samples/sampling_rate) - 2,0, len(cf_list)])
+		yticks = np.arange(0, len(cf_list), 5)
+		yticks = np.append(yticks,len(cf_list)-1)
+		yticklabels = ['{0:.2f}'.format(cf_list[i]) for i in yticks]
+		plt.yticks(yticks, yticklabels)
+		plt.ylabel('Frequency (Hz)')
+		plt.xlabel('Time (s)')
+		plt.title('Trial-averaged Spectrogram')
 		fig.colorbar(ax)
 		plt.show()
 
-	return powers, Power, cf_list, g, fs
+	return powers, Power, cf_list
