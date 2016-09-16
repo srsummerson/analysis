@@ -126,8 +126,8 @@ def FreeChoiceTaskPerformance(hdf_file):
 	plt.legend()
 	plt.title('All trials')
 	"""
-	#plt.subplot(122)
-	plt.figure()
+	plt.subplot(211)
+	#plt.figure()
 	plt.plot(range(1,target_freechoice.size+1),prob_choose_high_freechoice,'b',label='High-value target')
 	plt.plot(range(1,target_freechoice.size+1),prob_choose_low_freechoice,'r',label='Low-value target')
 	plt.axis([1,target_freechoice.size,0,1])
@@ -139,11 +139,11 @@ def FreeChoiceTaskPerformance(hdf_file):
 	plt.title('Free-Choice Trials')
 	plt.legend()
 	#plt.savefig('C:/Users/Samantha Summerson/Documents/GitHub/analysis/Papa_Performance_figs/FCPerformance_targets_%s.svg' % hdf_file[:-4])    # save this filetype for AI editing
-	plt.savefig('/home/srsummerson/code/analysis/Luigi_Performance_figs/FCPerformance_targets_%s.png' % hdf_file[:-4])    # save this filetype for easy viewing
+	#plt.savefig('/home/srsummerson/code/analysis/Mario_Performance_figs/FCPerformance_targets_%s.svg' % hdf_file[:-4])    # save this filetype for easy viewing
 	#plt.close()
-	plt.show()
+	#plt.show()
 	
-	plt.figure()
+	#plt.figure()
 	'''
 	plt.subplot(121)
 	plt.plot(range(1,target_all.size+1),prob_reward_high_all,'b',label='High-value target')
@@ -156,6 +156,7 @@ def FreeChoiceTaskPerformance(hdf_file):
 
 	plt.subplot(122)
 	'''
+	plt.subplot(212)
 	plt.plot(range(1,target_freechoice.size+1),prob_reward_high_freechoice,'b',label='High-value target')
 	plt.plot(range(1,target_freechoice.size+1),prob_reward_low_freechoice,'r',label='Low-value target')
 	plt.axis([1,target_freechoice.size, 0, 1])
@@ -165,7 +166,9 @@ def FreeChoiceTaskPerformance(hdf_file):
 	plt.title('Free-Choice Trials')
 
 	#plt.savefig('C:/Users/Samantha Summerson/Documents/GitHub/analysis/Papa_Performance_figs/FCPerformance_rewards_%s.svg' % hdf_file[:-4])    # save this filetype for AI editing
-	plt.savefig('/home/srsummerson/code/analysis/Luigi_Performance_figs/FCPerformance_rewards_%s.png' % hdf_file[:-4])    # save this filetype for easy viewing
+	#plt.savefig('/home/srsummerson/code/analysis/Mario_Performance_figs/FCPerformance_rewards_%s.svg' % hdf_file[:-4])    # save this filetype for easy viewing
+	plt.savefig('/home/srsummerson/code/analysis/Mario_Performance_figs/FCPerformance_%s.svg' % hdf_file[:-4])    # save this filetype for easy viewing
+	
 	#plt.close()
 	plt.show()
 	
