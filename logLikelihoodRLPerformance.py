@@ -26,7 +26,7 @@ def logLikelihoodRLPerformance(parameters, Q_initial, reward_schedule,choice,ins
     prob_choice_low[0] = 0.5
     prob_choice_high[0] = 0.5
     log_prob_total = 0.0
-    counter = 1.0  # start counter at one so that q-values and prob value are index-aligned for trials
+    counter = 1  # start counter at one so that q-values and prob value are index-aligned for trials
     
     for i in range(0,choice.size):
         if instructed_or_freechoice[i]==2:
@@ -64,7 +64,7 @@ def logLikelihoodRLPerformance_random(parameters, Q_initial, reward_schedule,cho
     prob_choice_low[0] = 0.5
     prob_choice_high[0] = 0.5
     log_prob_total = 0.0
-    counter = 1.0  # start counter at one so that q-values and prob value are index-aligned for trials
+    counter = 1  # start counter at one so that q-values and prob value are index-aligned for trials
     
     for i in range(0,choice.size):
         #if i==0:
@@ -104,7 +104,7 @@ def RLPerformance(parameters, Q_initial, reward_schedule,choice, instructed_or_f
     prob_choice_low[0] = 0.5
     prob_choice_high[0] = 0.5
     log_prob_total = 0.0
-    counter = 1.0  # start counter at one so that q-values and prob value are index-aligned for trials
+    counter = 1  # start counter at one so that q-values and prob value are index-aligned for trials
     
     for i in range(0,choice.size):
         if instructed_or_freechoice[i]==2:
@@ -145,7 +145,7 @@ def logLikelihoodRLPerformance_additive_Qstimparameter(parameters, Q_initial, re
     prob_choice_low[0] = 0.5
     prob_choice_high[0] = 0.5
     log_prob_total = 0.0
-    counter = 1.0  # start counter at one so that q-values and prob value are index-aligned for trials
+    counter = 1  # start counter at one so that q-values and prob value are index-aligned for trials
     
     for i in range(0,choice.size):
 
@@ -200,7 +200,7 @@ def RLPerformance_additive_Qstimparameter(parameters, Q_initial, reward_schedule
     prob_choice_low[0] = 0.5
     prob_choice_high[0] = 0.5
     log_prob_total = 0.0
-    counter = 1.0  # start counter at one so that q-values and prob value are index-aligned for trials
+    counter = 1  # start counter at one so that q-values and prob value are index-aligned for trials
     
     for i in range(0,choice.size):
 
@@ -254,7 +254,7 @@ def logLikelihoodRLPerformance_multiplicative_Qstimparameter(parameters, Q_initi
     prob_choice_low[0] = 0.5
     prob_choice_high[0] = 0.5
     log_prob_total = 0.0
-    counter = 1.0  # start counter at one so that q-values and prob value are index-aligned for trials
+    counter = 1  # start counter at one so that q-values and prob value are index-aligned for trials
     
     for i in range(0,choice.size):
 
@@ -326,7 +326,7 @@ def RLPerformance_multiplicative_Qstimparameter(parameters, Q_initial, reward_sc
     prob_choice_low[0] = 0.5
     prob_choice_high[0] = 0.5
     log_prob_total = 0.0
-    counter = 1.0  # start counter at one so that q-values and prob value are index-aligned for trials
+    counter = 1  # start counter at one so that q-values and prob value are index-aligned for trials
     
     for i in range(0,choice.size):
         Q_low_dec = Q_low[i] + gamma*Q_low[i]*(stim_trial[i]==1)
@@ -399,7 +399,7 @@ def RLPerformance_multiplicative_Qstimparameter_withQstimOutput(parameters, Q_in
     prob_choice_low[0] = 0.5
     prob_choice_high[0] = 0.5
     log_prob_total = 0.0
-    counter = 1.0  # start counter at one so that q-values and prob value are index-aligned for trials
+    counter = 1  # start counter at one so that q-values and prob value are index-aligned for trials
     
     for i in range(0,choice.size):
         if i==0:
@@ -457,7 +457,7 @@ def logLikelihoodRLPerformance_additive_Pstimparameter(parameters, Q_initial, re
     prob_choice_low[0] = 0.5
     prob_choice_high[0] = 0.5
     log_prob_total = 0.0
-    counter = 1.0  # start counter at one so that q-values and prob value are index-aligned for trials
+    counter = 1  # start counter at one so that q-values and prob value are index-aligned for trials
     
     for i in range(0,choice.size):
         if instructed_or_freechoice[i]==2:
@@ -511,7 +511,7 @@ def RLPerformance_additive_Pstimparameter(parameters, Q_initial, reward_schedule
     prob_choice_low[0] = 0.5
     prob_choice_high[0] = 0.5
     log_prob_total = 0.0
-    counter = 1.0  # start counter at one so that q-values and prob value are index-aligned for trials
+    counter = 1  # start counter at one so that q-values and prob value are index-aligned for trials
     
     for i in range(0,choice.size):
 
@@ -567,7 +567,7 @@ def logLikelihoodRLPerformance_multiplicative_Pstimparameter(parameters, Q_initi
     prob_choice_low[0] = 0.5
     prob_choice_high[0] = 0.5
     log_prob_total = 0.0
-    counter = 1.0  # start counter at one so that q-values and prob value are index-aligned for trials
+    counter = 1  # start counter at one so that q-values and prob value are index-aligned for trials
     
     for i in range(0,choice.size):
 
@@ -623,7 +623,7 @@ def RLPerformance_multiplicative_Pstimparameter(parameters, Q_initial, reward_sc
     prob_choice_low[0] = 0.5
     prob_choice_high[0] = 0.5
     log_prob_total = 0.0
-    counter = 1.0  # start counter at one so that q-values and prob value are index-aligned for trials
+    counter = 1  # start counter at one so that q-values and prob value are index-aligned for trials
     
     for i in range(0,choice.size):
 
@@ -678,7 +678,7 @@ def logLikelihoodRLPerformance_multiplicative_Qstimparameter_HVTarget(parameters
     prob_choice_low[0] = 0.5
     prob_choice_high[0] = 0.5
     log_prob_total = 0.0
-    counter = 1.0  # start counter at one so that q-values and prob value are index-aligned for trials
+    counter = 1  # start counter at one so that q-values and prob value are index-aligned for trials
     
     for i in range(0,choice.size):
 
@@ -749,7 +749,7 @@ def RLPerformance_multiplicative_Qstimparameter_HVTarget(parameters, Q_initial, 
     prob_choice_low[0] = 0.5
     prob_choice_high[0] = 0.5
     log_prob_total = 0.0
-    counter = 1.0  # start counter at one so that q-values and prob value are index-aligned for trials
+    counter = 1  # start counter at one so that q-values and prob value are index-aligned for trials
     
     for i in range(0,choice.size):
 

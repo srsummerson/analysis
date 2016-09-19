@@ -261,17 +261,17 @@ def probabilisticRewardTaskPerformance_TrialAligned(sham_days,stim_days,control_
 
 	for i in range(0,num_stim_days):
 		name = stim_days[i]
-		hdf_location = 'C:\Users\Samantha Summerson\Dropbox\Carmena Lab'+ animal_id + '\hdf'+name
+		hdf_location = 'C:\Users\Carmena Lab\Dropbox\Carmena Lab'+ animal_id + '\hdf'+name
 		prob_low_aligned_stim[i,:], prob_low_aligned_rewarded_stim[i,:], prob_low_aligned_unrewarded_stim[i,:] = PeriStimulusFreeChoiceBehavior(hdf_location, ntrials)
 
 	for i in range(0,num_sham_days):
 		name = sham_days[i]
-		hdf_location = 'C:\Users\Samantha Summerson\Dropbox\Carmena Lab'+ animal_id + '\hdf'+name
+		hdf_location = 'C:\Users\Carmena Lab\Dropbox\Carmena Lab'+ animal_id + '\hdf'+name
 		prob_low_aligned_sham[i,:], prob_low_aligned_rewarded_sham[i,:], prob_low_aligned_unrewarded_sham[i,:] = PeriStimulusFreeChoiceBehavior(hdf_location, ntrials)
 
 	for i in range(0,num_control_days):
 		name = control_days[i]
-		hdf_location = 'C:\Users\Samantha Summerson\Dropbox\Carmena Lab'+ animal_id + '\hdf'+name
+		hdf_location = 'C:\Users\Carmena Lab\Dropbox\Carmena Lab'+ animal_id + '\hdf'+name
 		prob_low_aligned_control[i,:], prob_low_aligned_rewarded_control[i,:], prob_low_aligned_unrewarded_control[i,:] = PeriStimulusFreeChoiceBehavior(hdf_location, ntrials)
 
 

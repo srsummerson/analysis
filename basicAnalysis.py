@@ -1,4 +1,4 @@
-from neo import io
+#from neo import io
 import numpy as np
 import scipy as sp
 import sys

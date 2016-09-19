@@ -113,14 +113,14 @@ hdf_list_hv = ['\luig20160218_10_te1469.hdf','\luig20160223_11_te1508.hdf', \
 
 
 
-hdf_prefix = 'C:\Users\Samantha Summerson\Dropbox\Carmena Lab\Luigi\hdf'
-stim_hdf_list = hdf_list_stim
-sham_hdf_list = hdf_list_sham
+hdf_prefix = 'C:\Users\Carmena Lab\Dropbox\Carmena Lab\Papa\hdf'
+stim_hdf_list = hdf_list_stim2
+sham_hdf_list = hdf_list_sham_papa
 
 global_max_trial_dist = 0
 Q_initial = [0.5, 0.5]
 alpha_true = 0.2
-beta_true = 0.2
+beta_true = 3
 gamma_true = 0.2
 
 def FirstChoiceAfterStim(target3,trial3,stim_trials):
