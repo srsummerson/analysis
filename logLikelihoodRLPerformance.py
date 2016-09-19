@@ -11,6 +11,8 @@ def logLikelihoodRLPerformance(parameters, Q_initial, reward_schedule,choice,ins
 
      The Q-values here update for all trials, whereas the probability of selecting the low-value and high-value targets only updates for the free-choice
      trials. 
+
+     Q[t] is the value at the beginning of trial t, reward_schedule[t] is the reward at the end of trial t, 
     '''
     num_freechoice = np.sum(instructed_or_freechoice) - instructed_or_freechoice.size
     Q_low = np.zeros(reward_schedule.size+1)
@@ -27,19 +29,17 @@ def logLikelihoodRLPerformance(parameters, Q_initial, reward_schedule,choice,ins
     counter = 1.0  # start counter at one so that q-values and prob value are index-aligned for trials
     
     for i in range(0,choice.size):
-        #if i==0:
-        #    Q_low[i] = Q_low[i] + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i])
-        #    Q_high[i] = Q_high[i] + alpha*(choice[i]==2)*(float(reward_schedule[i]) - Q_high[i])
-        #else:
-        #    Q_low[i] = Q_low[i-1] + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i-1])
-        #    Q_high[i] = Q_high[i-1] + alpha*(choice[i]==2)*(float(reward_schedule[i]) - Q_high[i-1])
-        Q_low[i+1] = Q_low[i] + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i])
-        Q_high[i+1] = Q_high[i] + alpha*(choice[i]==2)*(float(reward_schedule[i]) - Q_high[i])
         if instructed_or_freechoice[i]==2:
             prob_choice_low[counter] = float(1)/(1 + np.exp(beta*(Q_high[i] - Q_low[i])))
             prob_choice_high[counter] = float(1) - prob_choice_low[counter]
             log_prob_total = float(log_prob_total) + np.log(prob_choice_low[counter]*(choice[i]==1) + prob_choice_high[counter]*(choice[i]==2))
             counter += 1
+
+        delta_low = float(reward_schedule[i]) - Q_low[i]
+        delta_high = float(reward_schedule[i]) - Q_high[i]
+        Q_low[i+1] = Q_low[i] + alpha*(choice[i]==1)*(delta_low)
+        Q_high[i+1] = Q_high[i] + alpha*(choice[i]==2)*(delta_high)
+        
     return log_prob_total
 
 def logLikelihoodRLPerformance_random(parameters, Q_initial, reward_schedule,choice,instructed_or_freechoice):
@@ -107,19 +107,16 @@ def RLPerformance(parameters, Q_initial, reward_schedule,choice, instructed_or_f
     counter = 1.0  # start counter at one so that q-values and prob value are index-aligned for trials
     
     for i in range(0,choice.size):
-        #if i==0:
-        #    Q_low[i] = Q_low[i] + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i])
-        #    Q_high[i] = Q_high[i] + alpha*(choice[i]==2)*(float(reward_schedule[i]) - Q_high[i])
-        #else:
-        #    Q_low[i] = Q_low[i-1] + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i-1])
-        #    Q_high[i] = Q_high[i-1] + alpha*(choice[i]==2)*(float(reward_schedule[i]) - Q_high[i-1])
-        Q_low[i+1] = Q_low[i] + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i])
-        Q_high[i+1] = Q_high[i] + alpha*(choice[i]==2)*(float(reward_schedule[i]) - Q_high[i])
         if instructed_or_freechoice[i]==2:
             prob_choice_low[counter] = float(1)/(1 + np.exp(beta*(Q_high[i] - Q_low[i])))
             prob_choice_high[counter] = float(1) - prob_choice_low[counter]
             log_prob_total = float(log_prob_total) + np.log(prob_choice_low[counter]*(choice[i]==1) + prob_choice_high[counter]*(choice[i]==2))
             counter += 1
+
+        delta_low = float(reward_schedule[i]) - Q_low[i]
+        delta_high = float(reward_schedule[i]) - Q_high[i]
+        Q_low[i+1] = Q_low[i] + alpha*(choice[i]==1)*(delta_low)
+        Q_high[i+1] = Q_high[i] + alpha*(choice[i]==2)*(delta_high)
     return Q_low, Q_high, prob_choice_low, log_prob_total
 
 def logLikelihoodRLPerformance_additive_Qstimparameter(parameters, Q_initial, reward_schedule,choice,instructed_or_freechoice,stim_trial):
@@ -151,6 +148,20 @@ def logLikelihoodRLPerformance_additive_Qstimparameter(parameters, Q_initial, re
     counter = 1.0  # start counter at one so that q-values and prob value are index-aligned for trials
     
     for i in range(0,choice.size):
+
+        Q_low[i] = Q_low[i] + gamma*(stim_trial[i]==1)
+        if instructed_or_freechoice[i]==2:
+            prob_choice_low[counter] = float(1)/(1 + np.exp(beta*(Q_high[i] - Q_low[i])))
+            prob_choice_high[counter] = float(1) - prob_choice_low[counter]
+            log_prob_total = float(log_prob_total) + np.log(prob_choice_low[counter]*(choice[i]==1) + prob_choice_high[counter]*(choice[i]==2))
+            counter += 1
+
+        delta_low = float(reward_schedule[i]) - Q_low[i]
+        delta_high = float(reward_schedule[i]) - Q_high[i]
+        Q_low[i+1] = Q_low[i] + alpha*(choice[i]==1)*(delta_low)
+        Q_high[i+1] = Q_high[i] + alpha*(choice[i]==2)*(delta_high)
+
+        '''
         Q_low[i+1] = Q_low[i] + gamma*(stim_trial[i]==1) + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i]) 
         Q_high[i+1] = Q_high[i] + alpha*(choice[i]==2)*(float(reward_schedule[i]) - Q_high[i])
         if instructed_or_freechoice[i]==2:
@@ -159,6 +170,8 @@ def logLikelihoodRLPerformance_additive_Qstimparameter(parameters, Q_initial, re
             prob_choice_high[counter] = float(1) - prob_choice_low[counter]
             log_prob_total = float(log_prob_total) + np.log(prob_choice_low[counter]*(choice[i]==1) + prob_choice_high[counter]*(choice[i]==2))
             counter += 1
+        '''
+        
     return log_prob_total
 
 def RLPerformance_additive_Qstimparameter(parameters, Q_initial, reward_schedule,choice,instructed_or_freechoice,stim_trial):
@@ -190,6 +203,20 @@ def RLPerformance_additive_Qstimparameter(parameters, Q_initial, reward_schedule
     counter = 1.0  # start counter at one so that q-values and prob value are index-aligned for trials
     
     for i in range(0,choice.size):
+
+        Q_low[i] = Q_low[i] + gamma*(stim_trial[i]==1)
+        if instructed_or_freechoice[i]==2:
+            prob_choice_low[counter] = float(1)/(1 + np.exp(beta*(Q_high[i] - Q_low[i])))
+            prob_choice_high[counter] = float(1) - prob_choice_low[counter]
+            log_prob_total = float(log_prob_total) + np.log(prob_choice_low[counter]*(choice[i]==1) + prob_choice_high[counter]*(choice[i]==2))
+            counter += 1
+
+        delta_low = float(reward_schedule[i]) - Q_low[i]
+        delta_high = float(reward_schedule[i]) - Q_high[i]
+        Q_low[i+1] = Q_low[i] + alpha*(choice[i]==1)*(delta_low)
+        Q_high[i+1] = Q_high[i] + alpha*(choice[i]==2)*(delta_high)
+
+        '''
         Q_low[i+1] = Q_low[i] + gamma*(stim_trial[i]==1) + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i]) 
         Q_high[i+1] = Q_high[i] + alpha*(choice[i]==2)*(float(reward_schedule[i]) - Q_high[i])
         if instructed_or_freechoice[i]==2:
@@ -198,6 +225,7 @@ def RLPerformance_additive_Qstimparameter(parameters, Q_initial, reward_schedule
             prob_choice_high[counter] = float(1) - prob_choice_low[counter]
             log_prob_total = float(log_prob_total) + np.log(prob_choice_low[counter]*(choice[i]==1) + prob_choice_high[counter]*(choice[i]==2))
             counter += 1
+        '''
     return Q_low, Q_high, prob_choice_low, log_prob_total
 
 def logLikelihoodRLPerformance_multiplicative_Qstimparameter(parameters, Q_initial, reward_schedule,choice,instructed_or_freechoice,stim_trial):
@@ -229,6 +257,19 @@ def logLikelihoodRLPerformance_multiplicative_Qstimparameter(parameters, Q_initi
     counter = 1.0  # start counter at one so that q-values and prob value are index-aligned for trials
     
     for i in range(0,choice.size):
+
+        Q_low_dec = Q_low[i] + gamma*Q_low[i]*(stim_trial[i]==1)
+        if instructed_or_freechoice[i]==2:
+            prob_choice_low[counter] = float(1)/(1 + np.exp(beta*(Q_high[i] - Q_low[i])))
+            prob_choice_high[counter] = float(1) - prob_choice_low[counter]
+            log_prob_total = float(log_prob_total) + np.log(prob_choice_low[counter]*(choice[i]==1) + prob_choice_high[counter]*(choice[i]==2))
+            counter += 1
+
+        delta_low = float(reward_schedule[i]) - Q_low_dec
+        delta_high = float(reward_schedule[i]) - Q_high[i]
+        Q_low[i+1] = Q_low[i] + alpha*(choice[i]==1)*(delta_low)
+        Q_high[i+1] = Q_high[i] + alpha*(choice[i]==2)*(delta_high)
+        """
         if i==0:
             Q_low[i] = Q_low[i] + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i] - Q_low[i]*gamma*(stim_trial[i]==1))
             #Q_low[i] = Q_low[i] + Q_low[i]*gamma*(stim_trial[i]==1) + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i] - Q_low[i]*gamma*(stim_trial[i]==1))
@@ -256,6 +297,7 @@ def logLikelihoodRLPerformance_multiplicative_Qstimparameter(parameters, Q_initi
             '''
             log_prob_total = float(log_prob_total) + np.log(prob_choice_low[counter]*(choice[i]==1) + prob_choice_high[counter]*(choice[i]==2))
             counter += 1
+        """
     return log_prob_total
 
 def RLPerformance_multiplicative_Qstimparameter(parameters, Q_initial, reward_schedule,choice,instructed_or_freechoice,stim_trial):
@@ -287,6 +329,19 @@ def RLPerformance_multiplicative_Qstimparameter(parameters, Q_initial, reward_sc
     counter = 1.0  # start counter at one so that q-values and prob value are index-aligned for trials
     
     for i in range(0,choice.size):
+        Q_low_dec = Q_low[i] + gamma*Q_low[i]*(stim_trial[i]==1)
+        if instructed_or_freechoice[i]==2:
+            prob_choice_low[counter] = float(1)/(1 + np.exp(beta*(Q_high[i] - Q_low[i])))
+            prob_choice_high[counter] = float(1) - prob_choice_low[counter]
+            log_prob_total = float(log_prob_total) + np.log(prob_choice_low[counter]*(choice[i]==1) + prob_choice_high[counter]*(choice[i]==2))
+            counter += 1
+
+        delta_low = float(reward_schedule[i]) - Q_low_dec
+        delta_high = float(reward_schedule[i]) - Q_high[i]
+        Q_low[i+1] = Q_low[i] + alpha*(choice[i]==1)*(delta_low)
+        Q_high[i+1] = Q_high[i] + alpha*(choice[i]==2)*(delta_high)
+
+        """
         if i==0:
             Q_low[i] = Q_low[i] + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i] - Q_low[i]*gamma*(stim_trial[i]==1))
             #Q_low[i] = Q_low[i] + Q_low[i]*gamma*(stim_trial[i]==1) + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i] - Q_low[i]*gamma*(stim_trial[i]==1))
@@ -314,6 +369,7 @@ def RLPerformance_multiplicative_Qstimparameter(parameters, Q_initial, reward_sc
             '''
             log_prob_total = float(log_prob_total) + np.log(prob_choice_low[counter]*(choice[i]==1) + prob_choice_high[counter]*(choice[i]==2))
             counter += 1
+        """
     return Q_low, Q_high, prob_choice_low, log_prob_total
 
 def RLPerformance_multiplicative_Qstimparameter_withQstimOutput(parameters, Q_initial, reward_schedule,choice,instructed_or_freechoice,stim_trial):
@@ -404,6 +460,17 @@ def logLikelihoodRLPerformance_additive_Pstimparameter(parameters, Q_initial, re
     counter = 1.0  # start counter at one so that q-values and prob value are index-aligned for trials
     
     for i in range(0,choice.size):
+        if instructed_or_freechoice[i]==2:
+            prob_choice_low[counter] = float(1)/(1 + np.exp(beta*(Q_high[i] - Q_low[i])) + gamma*(stim_trial[i]==1))
+            prob_choice_high[counter] = float(1) - prob_choice_low[counter]
+            log_prob_total = float(log_prob_total) + np.log(prob_choice_low[counter]*(choice[i]==1) + prob_choice_high[counter]*(choice[i]==2))
+            counter += 1
+
+        delta_low = float(reward_schedule[i]) - Q_low[i]
+        delta_high = float(reward_schedule[i]) - Q_high[i]
+        Q_low[i+1] = Q_low[i] + alpha*(choice[i]==1)*(delta_low)
+        Q_high[i+1] = Q_high[i] + alpha*(choice[i]==2)*(delta_high)
+        """
         if i==0:
             Q_low[i] = Q_low[i] + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i]) 
             Q_high[i] = Q_high[i] + alpha*(choice[i]==2)*(float(reward_schedule[i]) - Q_high[i])
@@ -415,6 +482,7 @@ def logLikelihoodRLPerformance_additive_Pstimparameter(parameters, Q_initial, re
             prob_choice_high[counter] = float(1) - prob_choice_low[counter]
             log_prob_total = float(log_prob_total) + np.log(prob_choice_low[counter]*(choice[i]==1) + prob_choice_high[counter]*(choice[i]==2))
             counter += 1
+        """
     return log_prob_total
 
 def RLPerformance_additive_Pstimparameter(parameters, Q_initial, reward_schedule,choice,instructed_or_freechoice,stim_trial):
@@ -446,6 +514,19 @@ def RLPerformance_additive_Pstimparameter(parameters, Q_initial, reward_schedule
     counter = 1.0  # start counter at one so that q-values and prob value are index-aligned for trials
     
     for i in range(0,choice.size):
+
+        if instructed_or_freechoice[i]==2:
+            prob_choice_low[counter] = float(1)/(1 + np.exp(beta*(Q_high[i] - Q_low[i])) + gamma*(stim_trial[i]==1))
+            prob_choice_high[counter] = float(1) - prob_choice_low[counter]
+            log_prob_total = float(log_prob_total) + np.log(prob_choice_low[counter]*(choice[i]==1) + prob_choice_high[counter]*(choice[i]==2))
+            counter += 1
+
+        delta_low = float(reward_schedule[i]) - Q_low[i]
+        delta_high = float(reward_schedule[i]) - Q_high[i]
+        Q_low[i+1] = Q_low[i] + alpha*(choice[i]==1)*(delta_low)
+        Q_high[i+1] = Q_high[i] + alpha*(choice[i]==2)*(delta_high)
+
+        """
         if i==0:
             Q_low[i] = Q_low[i] + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i]) 
             Q_high[i] = Q_high[i] + alpha*(choice[i]==2)*(float(reward_schedule[i]) - Q_high[i])
@@ -457,6 +538,7 @@ def RLPerformance_additive_Pstimparameter(parameters, Q_initial, reward_schedule
             prob_choice_high[counter] = float(1) - prob_choice_low[counter]
             log_prob_total = float(log_prob_total) + np.log(prob_choice_low[counter]*(choice[i]==1) + prob_choice_high[counter]*(choice[i]==2))
             counter += 1
+        """
     return Q_low, Q_high, prob_choice_low, log_prob_total
 
 def logLikelihoodRLPerformance_multiplicative_Pstimparameter(parameters, Q_initial, reward_schedule,choice,instructed_or_freechoice,stim_trial):
@@ -488,6 +570,19 @@ def logLikelihoodRLPerformance_multiplicative_Pstimparameter(parameters, Q_initi
     counter = 1.0  # start counter at one so that q-values and prob value are index-aligned for trials
     
     for i in range(0,choice.size):
+
+        if instructed_or_freechoice[i]==2:
+            prob_choice_low[counter] = (stim_trial[i]==0)*1./(1 + np.exp(beta*(Q_high[i] - Q_low[i]))) + gamma*(stim_trial[i]==1)*1./(1 + np.exp(beta*(Q_high[i] - Q_low[i])))
+            prob_choice_high[counter] = float(1) - prob_choice_low[counter]
+            log_prob_total = float(log_prob_total) + np.log(prob_choice_low[counter]*(choice[i]==1) + prob_choice_high[counter]*(choice[i]==2))
+            counter += 1
+
+        delta_low = float(reward_schedule[i]) - Q_low[i]
+        delta_high = float(reward_schedule[i]) - Q_high[i]
+        Q_low[i+1] = Q_low[i] + alpha*(choice[i]==1)*(delta_low)
+        Q_high[i+1] = Q_high[i] + alpha*(choice[i]==2)*(delta_high)
+
+        """
         if i==0:
             Q_low[i] = Q_low[i] + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i]) 
             Q_high[i] = Q_high[i] + alpha*(choice[i]==2)*(float(reward_schedule[i]) - Q_high[i])
@@ -499,6 +594,7 @@ def logLikelihoodRLPerformance_multiplicative_Pstimparameter(parameters, Q_initi
             prob_choice_high[counter] = float(1) - prob_choice_low[counter]
             log_prob_total = float(log_prob_total) + np.log(prob_choice_low[counter]*(choice[i]==1) + prob_choice_high[counter]*(choice[i]==2))
             counter += 1
+        """
     return log_prob_total
 
 def RLPerformance_multiplicative_Pstimparameter(parameters, Q_initial, reward_schedule,choice,instructed_or_freechoice,stim_trial):
@@ -530,6 +626,18 @@ def RLPerformance_multiplicative_Pstimparameter(parameters, Q_initial, reward_sc
     counter = 1.0  # start counter at one so that q-values and prob value are index-aligned for trials
     
     for i in range(0,choice.size):
+
+        if instructed_or_freechoice[i]==2:
+            prob_choice_low[counter] = (stim_trial[i]==0)*1./(1 + np.exp(beta*(Q_high[i] - Q_low[i]))) + gamma*(stim_trial[i]==1)*1./(1 + np.exp(beta*(Q_high[i] - Q_low[i])))
+            prob_choice_high[counter] = float(1) - prob_choice_low[counter]
+            log_prob_total = float(log_prob_total) + np.log(prob_choice_low[counter]*(choice[i]==1) + prob_choice_high[counter]*(choice[i]==2))
+            counter += 1
+
+        delta_low = float(reward_schedule[i]) - Q_low[i]
+        delta_high = float(reward_schedule[i]) - Q_high[i]
+        Q_low[i+1] = Q_low[i] + alpha*(choice[i]==1)*(delta_low)
+        Q_high[i+1] = Q_high[i] + alpha*(choice[i]==2)*(delta_high)
+        """
         if i==0:
             Q_low[i] = Q_low[i] + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i]) 
             Q_high[i] = Q_high[i] + alpha*(choice[i]==2)*(float(reward_schedule[i]) - Q_high[i])
@@ -541,6 +649,7 @@ def RLPerformance_multiplicative_Pstimparameter(parameters, Q_initial, reward_sc
             prob_choice_high[counter] = float(1) - prob_choice_low[counter]
             log_prob_total = float(log_prob_total) + np.log(prob_choice_low[counter]*(choice[i]==1) + prob_choice_high[counter]*(choice[i]==2))
             counter += 1
+        """
     return Q_low, Q_high, prob_choice_low, log_prob_total
 
 def logLikelihoodRLPerformance_multiplicative_Qstimparameter_HVTarget(parameters, Q_initial, reward_schedule,choice,instructed_or_freechoice,stim_trial):
@@ -572,6 +681,21 @@ def logLikelihoodRLPerformance_multiplicative_Qstimparameter_HVTarget(parameters
     counter = 1.0  # start counter at one so that q-values and prob value are index-aligned for trials
     
     for i in range(0,choice.size):
+
+        Q_high_dec = Q_high[i] + gamma*Q_high[i]*(stim_trial[i]==1)
+        if instructed_or_freechoice[i]==2:
+            prob_choice_low[counter] = float(1)/(1 + np.exp(beta*(Q_high[i] - Q_low[i])))
+            prob_choice_high[counter] = float(1) - prob_choice_low[counter]
+            log_prob_total = float(log_prob_total) + np.log(prob_choice_low[counter]*(choice[i]==1) + prob_choice_high[counter]*(choice[i]==2))
+            counter += 1
+
+        delta_low = float(reward_schedule[i]) - Q_low[i]
+        delta_high = float(reward_schedule[i]) - Q_high_dec
+        Q_low[i+1] = Q_low[i] + alpha*(choice[i]==1)*(delta_low)
+        Q_high[i+1] = Q_high[i] + alpha*(choice[i]==2)*(delta_high)
+
+
+        """
         if i==0:
             Q_low[i] = Q_low[i] + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i])
             #Q_low[i] = Q_low[i]*gamma*(stim_trial[i]==1) + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i]*gamma)*(stim_trial[i]==1) + (Q_low[i] + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i]))*(stim_trial[i]==0)
@@ -596,6 +720,7 @@ def logLikelihoodRLPerformance_multiplicative_Qstimparameter_HVTarget(parameters
             '''
             log_prob_total = float(log_prob_total) + np.log(prob_choice_low[counter]*(choice[i]==1) + prob_choice_high[counter]*(choice[i]==2))
             counter += 1
+        """
     return log_prob_total
 
 def RLPerformance_multiplicative_Qstimparameter_HVTarget(parameters, Q_initial, reward_schedule,choice,instructed_or_freechoice,stim_trial):
@@ -627,6 +752,20 @@ def RLPerformance_multiplicative_Qstimparameter_HVTarget(parameters, Q_initial, 
     counter = 1.0  # start counter at one so that q-values and prob value are index-aligned for trials
     
     for i in range(0,choice.size):
+
+        Q_high_dec = Q_high[i] + gamma*Q_high[i]*(stim_trial[i]==1)
+        if instructed_or_freechoice[i]==2:
+            prob_choice_low[counter] = float(1)/(1 + np.exp(beta*(Q_high[i] - Q_low[i])))
+            prob_choice_high[counter] = float(1) - prob_choice_low[counter]
+            log_prob_total = float(log_prob_total) + np.log(prob_choice_low[counter]*(choice[i]==1) + prob_choice_high[counter]*(choice[i]==2))
+            counter += 1
+
+        delta_low = float(reward_schedule[i]) - Q_low[i]
+        delta_high = float(reward_schedule[i]) - Q_high_dec
+        Q_low[i+1] = Q_low[i] + alpha*(choice[i]==1)*(delta_low)
+        Q_high[i+1] = Q_high[i] + alpha*(choice[i]==2)*(delta_high)
+
+        """
         if i==0:
             Q_low[i] = Q_low[i] + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i])
             #Q_low[i] = Q_low[i]*gamma*(stim_trial[i]==1) + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i]*gamma)*(stim_trial[i]==1) + (Q_low[i] + alpha*(choice[i]==1)*(float(reward_schedule[i]) - Q_low[i]))*(stim_trial[i]==0)
@@ -651,4 +790,5 @@ def RLPerformance_multiplicative_Qstimparameter_HVTarget(parameters, Q_initial, 
             '''
             log_prob_total = float(log_prob_total) + np.log(prob_choice_low[counter]*(choice[i]==1) + prob_choice_high[counter]*(choice[i]==2))
             counter += 1
+        """
     return Q_low, Q_high, prob_choice_low, log_prob_total

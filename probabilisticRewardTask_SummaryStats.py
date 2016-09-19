@@ -228,7 +228,12 @@ def probabilisticRewardTaskPerformance_RewardAndTargetSide(days, animal_id):
 		
 	return dta
 
-def probabilisticRewardTaskPerformance_TrialAligned(sham_days,stim_days,control_days, animal_id):
+def probabilisticRewardTaskPerformance_TrialAligned(sham_days,stim_days,control_days, animal_id, ntrials):
+	'''
+	Inputs:
+		- ntrials: number of trials you want to look over following a stimulation trial
+
+	'''
 
 	all_days = stim_days + sham_days + control_days
 	counter_stim = 0
@@ -242,32 +247,32 @@ def probabilisticRewardTaskPerformance_TrialAligned(sham_days,stim_days,control_
 	num_sham_days = len(sham_days)
 	num_control_days = len(control_days)
 
-	prob_low_aligned_stim = np.zeros((num_stim_days,5))
-	prob_low_aligned_rewarded_stim = np.zeros((num_stim_days,5))
-	prob_low_aligned_unrewarded_stim = np.zeros((num_stim_days,5))
+	prob_low_aligned_stim = np.zeros((num_stim_days,ntrials))
+	prob_low_aligned_rewarded_stim = np.zeros((num_stim_days,ntrials))
+	prob_low_aligned_unrewarded_stim = np.zeros((num_stim_days,ntrials))
 
-	prob_low_aligned_sham = np.zeros((num_sham_days,5))
-	prob_low_aligned_rewarded_sham = np.zeros((num_sham_days,5))
-	prob_low_aligned_unrewarded_sham = np.zeros((num_sham_days,5))
+	prob_low_aligned_sham = np.zeros((num_sham_days,ntrials))
+	prob_low_aligned_rewarded_sham = np.zeros((num_sham_days,ntrials))
+	prob_low_aligned_unrewarded_sham = np.zeros((num_sham_days,ntrials))
 
-	prob_low_aligned_control = np.zeros((num_control_days,5))
-	prob_low_aligned_rewarded_control = np.zeros((num_control_days,5))
-	prob_low_aligned_unrewarded_control = np.zeros((num_control_days,5))
+	prob_low_aligned_control = np.zeros((num_control_days,ntrials))
+	prob_low_aligned_rewarded_control = np.zeros((num_control_days,ntrials))
+	prob_low_aligned_unrewarded_control = np.zeros((num_control_days,ntrials))
 
 	for i in range(0,num_stim_days):
 		name = stim_days[i]
 		hdf_location = 'C:\Users\Samantha Summerson\Dropbox\Carmena Lab'+ animal_id + '\hdf'+name
-		prob_low_aligned_stim[i,:], prob_low_aligned_rewarded_stim[i,:], prob_low_aligned_unrewarded_stim[i,:] = PeriStimulusFreeChoiceBehavior(hdf_location)
+		prob_low_aligned_stim[i,:], prob_low_aligned_rewarded_stim[i,:], prob_low_aligned_unrewarded_stim[i,:] = PeriStimulusFreeChoiceBehavior(hdf_location, ntrials)
 
 	for i in range(0,num_sham_days):
 		name = sham_days[i]
 		hdf_location = 'C:\Users\Samantha Summerson\Dropbox\Carmena Lab'+ animal_id + '\hdf'+name
-		prob_low_aligned_sham[i,:], prob_low_aligned_rewarded_sham[i,:], prob_low_aligned_unrewarded_sham[i,:] = PeriStimulusFreeChoiceBehavior(hdf_location)
+		prob_low_aligned_sham[i,:], prob_low_aligned_rewarded_sham[i,:], prob_low_aligned_unrewarded_sham[i,:] = PeriStimulusFreeChoiceBehavior(hdf_location, ntrials)
 
 	for i in range(0,num_control_days):
 		name = control_days[i]
 		hdf_location = 'C:\Users\Samantha Summerson\Dropbox\Carmena Lab'+ animal_id + '\hdf'+name
-		prob_low_aligned_control[i,:], prob_low_aligned_rewarded_control[i,:], prob_low_aligned_unrewarded_control[i,:] = PeriStimulusFreeChoiceBehavior(hdf_location)
+		prob_low_aligned_control[i,:], prob_low_aligned_rewarded_control[i,:], prob_low_aligned_unrewarded_control[i,:] = PeriStimulusFreeChoiceBehavior(hdf_location, ntrials)
 
 
 	avg_prob_low_aligned_stim = np.nanmean(prob_low_aligned_stim,axis=0)
@@ -301,7 +306,7 @@ def probabilisticRewardTaskPerformance_TrialAligned(sham_days,stim_days,control_
 	sem_prob_low_aligned_unrewarded_control = std_prob_low_aligned_unrewarded_control/np.sqrt(num_control_days)
 
 	width = float(0.35)
-	ind = np.arange(0,5)
+	ind = np.arange(0,ntrials)
 	# Get linear fit to total prob
 	m_stim,b_stim = np.polyfit(ind, avg_prob_low_aligned_stim, 1)
 	m_sham,b_sham = np.polyfit(ind, avg_prob_low_aligned_sham, 1)
@@ -320,18 +325,31 @@ def probabilisticRewardTaskPerformance_TrialAligned(sham_days,stim_days,control_
 	plt.plot(ind+width, m_control*ind + b_control,'y--')
 	plt.ylabel('P(Choose LV Target)')
 	plt.title('Target Selection')
-	plt.xticks(ind + width/2, ('1', '2', '3', '4','5'))
+	xticklabels = [str(num + 1) for num in ind]
+	plt.xticks(ind + width/2, xticklabels)
 	plt.xlabel('Trials post-stimulation')
-	plt.ylim([0.0,.35])
-	plt.xlim([-0.1,5.4])
+	plt.ylim([0.0,0.32])
+	plt.xlim([-0.1,ntrials + 0.4])
 	plt.legend()
-	'''
-	plt.subplot(1,2,2)
-	plt.plot(range(0,5), avg_prob_low_aligned_stim,'c')
-	plt.plot(range(5,10), avg_prob_low_aligned_sham, 'm')
-	plt.plot(range(10,15), avg_prob_low_aligned_control, 'y')
-	plt.ylim([0.0,0.3])
-	'''
+	
+	plt.show()
+
+	plt.figure()
+	plt.bar(ind, avg_prob_low_aligned_stim, width/2, color = 'c',  error_kw = dict(ecolor = 'k'), yerr = sem_prob_low_aligned_stim/2, label='Stim')
+	plt.plot(ind,m_stim*ind + b_stim,'c--')
+	plt.bar(ind + width/2, avg_prob_low_aligned_sham, width/2, color = 'm', ecolor = 'k', yerr = sem_prob_low_aligned_sham/2, label='Sham')
+	plt.plot(ind+width/2, m_sham*ind + b_sham,'m--')
+	plt.bar(ind + width, avg_prob_low_aligned_control, width/2, color = 'y', ecolor = 'k', yerr = sem_prob_low_aligned_control/2, label = 'Control')
+	plt.plot(ind+width, m_control*ind + b_control,'y--')
+	plt.ylabel('P(Choose LV Target)')
+	plt.title('Target Selection')
+	xticklabels = [str(num + 1) for num in ind]
+	plt.xticks(ind + width/2, xticklabels)
+	plt.xlabel('Trials post-stimulation')
+	plt.ylim([0.0,0.32])
+	plt.xlim([-0.1,ntrials + 0.4])
+	plt.legend()
+	
 	plt.show()
 	return prob_low_aligned_sham, prob_low_aligned_stim, prob_low_aligned_control
 
@@ -1377,8 +1395,8 @@ def probabilisticRewardTaskPerformance_TrajectoryLengths(stim_days,sham_days,con
 
 	return bin_traj_lv_freechoice3_stim, bin_traj_hv_freechoice3_stim, bin_traj_lv_freechoice3_sham, bin_traj_hv_freechoice3_sham
 
-bin_traj_lv_freechoice3_stim, bin_traj_hv_freechoice3_stim, bin_traj_lv_freechoice3_sham, bin_traj_hv_freechoice3_sham = probabilisticRewardTaskPerformance_TrajectoryLengths(sham_days, stim_days, control_days, '\Papa')
-bin_traj_lv_freechoice3_stim, bin_traj_hv_freechoice3_stim, bin_traj_lv_freechoice3_sham, bin_traj_hv_freechoice3_sham = probabilisticRewardTaskPerformance_TrajectoryLengths(luigi_sham_days, luigi_stim_days, luigi_control_days, '\Luigi')
+#bin_traj_lv_freechoice3_stim, bin_traj_hv_freechoice3_stim, bin_traj_lv_freechoice3_sham, bin_traj_hv_freechoice3_sham = probabilisticRewardTaskPerformance_TrajectoryLengths(sham_days, stim_days, control_days, '\Papa')
+#bin_traj_lv_freechoice3_stim, bin_traj_hv_freechoice3_stim, bin_traj_lv_freechoice3_sham, bin_traj_hv_freechoice3_sham = probabilisticRewardTaskPerformance_TrajectoryLengths(luigi_sham_days, luigi_stim_days, luigi_control_days, '\Luigi')
 
 #papa_sham_prob_lv, papa_stim_prob_lv, papa_control_prob_lv = probabilisticRewardTaskPerformance_LVChoice(sham_days, stim_days, control_days, '\Papa')
 #luigi_sham_prob_lv, luigi_stim_prob_lv, luigi_control_prob_lv = probabilisticRewardTaskPerformance_LVChoice(luigi_sham_days, luigi_stim_days, luigi_control_days, '\Luigi')
@@ -1421,7 +1439,8 @@ probabilisticRewardTaskPerformance_ConditionalProbabilities(sham_days, papa_hdf_
 probabilisticRewardTaskPerformance_ConditionalProbabilities(luigi_sham_days,luigi_hdf_location,2)
 plt.show()
 """
-#probabilisticRewardTaskPerformance_TrialAligned(luigi_sham_days,luigi_stim_days,luigi_control_days)
+papa_sham_prob_trialaligned, papa_stim_prob_trialaligned, papa_control_prob_trialaligned = probabilisticRewardTaskPerformance_TrialAligned(sham_days, stim_days, control_days, '\Papa', 7)
+luigi_sham_prob_trialaligned, luigi_stim_prob_trialaligned, luigi_control_prob_trialaligned = probabilisticRewardTaskPerformance_TrialAligned(luigi_sham_days, luigi_stim_days, luigi_control_days, '\Luigi', 7)
 
 #probabilisticRewardTaskPerformance_ReactionTimes(stim_days,sham_days,control_days, '\Papa')
 #probabilisticRewardTaskPerformance_ReactionTimes(luigi_stim_days,luigi_sham_days,luigi_control_days,'\Luigi')
@@ -1555,8 +1574,6 @@ print "Interaction effect: F = ", F_interaction, "df = ", df_interaction
 print "df error:", df_residual
 
 
-papa_sham_prob_trialaligned, papa_stim_prob_trialaligned, papa_control_prob_trialaligned = probabilisticRewardTaskPerformance_TrialAligned(sham_days, stim_days, control_days, '\Papa')
-luigi_sham_prob_trialaligned, luigi_stim_prob_trialaligned, luigi_control_prob_trialaligned = probabilisticRewardTaskPerformance_TrialAligned(luigi_sham_days, luigi_stim_days, luigi_control_days, '\Luigi')
 
 dta_trialaligned = []
 total = 0
