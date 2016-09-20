@@ -120,7 +120,7 @@ sham_hdf_list = hdf_list_sham_papa
 global_max_trial_dist = 0
 Q_initial = [0.5, 0.5]
 alpha_true = 0.2
-beta_true = 3
+beta_true = 0.2
 gamma_true = 0.2
 
 def FirstChoiceAfterStim(target3,trial3,stim_trials):
@@ -1025,16 +1025,21 @@ stim_alpha_block1 = np.zeros(stim_num_days)
 stim_beta_block1 = np.zeros(stim_num_days)
 stim_alpha_block3 = np.zeros(stim_num_days)
 stim_beta_block3 = np.zeros(stim_num_days)
+stim_max_loglikelihood3 = np.zeros(stim_num_days)
 stim_alpha_block3_Qadditive = np.zeros(stim_num_days)
 stim_alpha_block3_Padditive = np.zeros(stim_num_days)
 stim_beta_block3_Qadditive = np.zeros(stim_num_days)
 stim_beta_block3_Padditive = np.zeros(stim_num_days)
 stim_gamma_block3_Qadditive = np.zeros(stim_num_days)
 stim_gamma_block3_Padditive = np.zeros(stim_num_days)
+stim_max_loglikelihood3_Qadditive = np.zeros(stim_num_days)
+stim_max_loglikelihood3_Padditive = np.zeros(stim_num_days)
 stim_alpha_block3_Qmultiplicative = np.zeros(stim_num_days)
 stim_alpha_block3_Pmultiplicative = np.zeros(stim_num_days)
 stim_beta_block3_Qmultiplicative = np.zeros(stim_num_days)
 stim_beta_block3_Pmultiplicative = np.zeros(stim_num_days)
+stim_max_loglikelihood3_Qmultiplicative = np.zeros(stim_num_days)
+stim_max_loglikelihood3_Pmultiplicative = np.zeros(stim_num_days)
 stim_gamma_block3_Qmultiplicative = np.zeros(stim_num_days)
 stim_gamma_block3_Pmultiplicative = np.zeros(stim_num_days)
 stim_BIC_block3 = np.zeros(stim_num_days)
@@ -1086,7 +1091,7 @@ sham_RLaccuracy_block3_Pmultiplicative = np.zeros(sham_num_days)
 
 sham_RLaccuracy_block3 = np.zeros(sham_num_days)
 sham_RLaccuracy_block1 = np.zeros(sham_num_days)
-sham_RL_max_loglikelihood3 = np.zeros(sham_num_days)
+sham_max_loglikelihood3 = np.zeros(sham_num_days)
 sham_RL_rsquared1 = np.zeros(sham_num_days)
 sham_RL_rsquared3 = np.zeros(sham_num_days)
 sham_RLpearsonr1 = np.zeros(sham_num_days)
@@ -1222,6 +1227,7 @@ for name in stim_hdf_list:
     stim_AIC_block3[stim_counter] = AIC3
     stim_RLaccuracy_block3[stim_counter] = accuracy3
     stim_learning_ratio[stim_counter] = float(alpha_ml_block3)/alpha_ml_block1
+    stim_max_loglikelihood3[stim_counter] = max_loglikelihood3
     
 
     '''
@@ -1247,6 +1253,7 @@ for name in stim_hdf_list:
     stim_AIC_block3_Qadditive[stim_counter] = AIC3_Qadditive
     stim_RLaccuracy_block3_Qadditive[stim_counter] = accuracy3_Qadditive
     stim_learning_ratio_Qadditive[stim_counter] = float(alpha_ml_block3_Qadditive)/alpha_ml_block1
+    stim_max_loglikelihood3_Qadditive[stim_counter] = max_loglikelihood3
 
     '''
     Get fit with Multiplicative stimulation parameter in Q-value update equation
@@ -1272,7 +1279,8 @@ for name in stim_hdf_list:
     stim_AIC_block3_Qmultiplicative[stim_counter] = AIC3_Qmultiplicative
     stim_RLaccuracy_block3_Qmultiplicative[stim_counter] = accuracy3_Qmultiplicative
     stim_learning_ratio_Qmultiplicative[stim_counter] = float(alpha_ml_block3_Qmultiplicative)/alpha_ml_block1
-    
+    stim_max_loglikelihood3_Qmultiplicative[stim_counter] = max_loglikelihood3
+
     '''
     Get fit with additive stimulation parameter in P-value update equation
     '''
@@ -1296,6 +1304,8 @@ for name in stim_hdf_list:
     stim_AIC_block3_Padditive[stim_counter] = AIC3_Padditive
     stim_RLaccuracy_block3_Padditive[stim_counter] = accuracy3_Padditive
     stim_learning_ratio_Padditive[stim_counter] = float(alpha_ml_block3_Padditive)/alpha_ml_block1
+    stim_max_loglikelihood3_Padditive[stim_counter] = max_loglikelihood3
+
 
     '''
     Get fit with Multiplicative stimulation parameter in P-value update equation
@@ -1320,6 +1330,8 @@ for name in stim_hdf_list:
     stim_AIC_block3_Pmultiplicative[stim_counter] = AIC3_Pmultiplicative
     stim_RLaccuracy_block3_Pmultiplicative[stim_counter] = accuracy3_Pmultiplicative
     stim_learning_ratio_Pmultiplicative[stim_counter] = float(alpha_ml_block3_Pmultiplicative)/alpha_ml_block1
+    stim_max_loglikelihood3_Pmultiplicative[stim_counter] = max_loglikelihood3
+
     '''
     print b3_prob_choose_low[0]
     plt.figure()
@@ -1457,7 +1469,7 @@ for name in sham_hdf_list:
     sham_RL_rsquared3[sham_counter] = sham_rsquared
     sham_RLaccuracy_block1[sham_counter] = accuracy1
     sham_RLaccuracy_block3[sham_counter] = accuracy3
-    sham_RL_max_loglikelihood3[sham_counter] = max_loglikelihood3
+    sham_max_loglikelihood3[sham_counter] = max_loglikelihood3
 
     sham_alpha_block1[sham_counter] = alpha_ml_block1
     sham_beta_block1[sham_counter] = beta_ml_block1
