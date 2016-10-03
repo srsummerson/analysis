@@ -461,7 +461,7 @@ def logLikelihoodRLPerformance_additive_Pstimparameter(parameters, Q_initial, re
     
     for i in range(0,choice.size):
         if instructed_or_freechoice[i]==2:
-            prob_choice_low[counter] = float(1)/(1 + np.exp(beta*(Q_high[i] - Q_low[i])) + gamma*(stim_trial[i]==1))
+            prob_choice_low[counter] = float(1)/(1 + np.exp(beta*(Q_high[i] - Q_low[i]))) + gamma*(stim_trial[i]==1)
             prob_choice_high[counter] = float(1) - prob_choice_low[counter]
             log_prob_total = float(log_prob_total) + np.log(prob_choice_low[counter]*(choice[i]==1) + prob_choice_high[counter]*(choice[i]==2))
             counter += 1
@@ -516,7 +516,7 @@ def RLPerformance_additive_Pstimparameter(parameters, Q_initial, reward_schedule
     for i in range(0,choice.size):
 
         if instructed_or_freechoice[i]==2:
-            prob_choice_low[counter] = float(1)/(1 + np.exp(beta*(Q_high[i] - Q_low[i])) + gamma*(stim_trial[i]==1))
+            prob_choice_low[counter] = float(1)/(1 + np.exp(beta*(Q_high[i] - Q_low[i]))) + gamma*(stim_trial[i]==1)
             prob_choice_high[counter] = float(1) - prob_choice_low[counter]
             log_prob_total = float(log_prob_total) + np.log(prob_choice_low[counter]*(choice[i]==1) + prob_choice_high[counter]*(choice[i]==2))
             counter += 1

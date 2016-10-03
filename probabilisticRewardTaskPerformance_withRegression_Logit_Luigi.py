@@ -22,52 +22,74 @@ from probabilisticRewardTask_SummaryStats import OneWayMANOVA
 from basicAnalysis import ComputeRSquared
 
 
-hdf_list_sham_papa = ['\papa20150213_10.hdf','\papa20150217_05.hdf','\papa20150225_02.hdf','\papa20150305_02.hdf',
+# constant voltage and constant current stimulation: constant current starts at 20150508
+# 12 sessions contant voltage, 19 sessions constant current, 15 sessions sham
+"""
+hdf_list_stim = ['\papa20150203_10.hdf','\papa20150210_13.hdf','\papa20150211_11.hdf','\papa20150214_18.hdf','\papa20150216_05.hdf',
+    '\papa20150218_04.hdf','\papa20150219_09.hdf','\papa20150223_02.hdf','\papa20150224_02.hdf','\papa20150303_03.hdf',
+    '\papa20150306_07.hdf','\papa20150309_04.hdf','\papa20150508_12.hdf','\papa20150508_13.hdf','\papa20150518_03.hdf',
+    '\papa20150518_05.hdf','\papa20150518_06.hdf','\papa20150522_05.hdf','\papa20150522_06.hdf','\papa20150524_02.hdf',
+    '\papa20150524_03.hdf','\papa20150524_04.hdf','\papa20150525_01.hdf','\papa20150525_02.hdf','\papa20150527_02.hdf',
+    '\papa20150530_01.hdf','\papa20150530_02.hdf','\papa20150601_01.hdf','\papa20150601_02.hdf','\papa20150602_03.hdf',
+    '\papa20150602_04.hdf']
+
+# 14 good sham sessions
+hdf_list_sham = ['\papa20150213_10.hdf','\papa20150217_05.hdf','\papa20150225_02.hdf',
     '\papa20150307_02.hdf','\papa20150308_06.hdf','\papa20150310_02.hdf','\papa20150506_09.hdf','\papa20150506_10.hdf',
     '\papa20150519_02.hdf','\papa20150519_03.hdf','\papa20150519_04.hdf','\papa20150527_01.hdf','\papa20150528_02.hdf']
 """
 hdf_list_sham = ['\papa20150217_05.hdf','\papa20150305_02.hdf',
     '\papa20150310_02.hdf',
     '\papa20150519_02.hdf','\papa20150519_04.hdf','\papa20150528_02.hdf']
-"""
+
 # sessions with good RL fit only
 # 9 sessions contant voltage, 10 sessions constant current, 12 sessions sham
 # 
-"""
-hdf_list_stim = ['\papa20150203_10.hdf','\papa20150211_11.hdf','\papa20150214_18.hdf','\papa20150216_05.hdf',
-    '\papa20150218_04.hdf','\papa20150219_09.hdf','\papa20150223_02.hdf','\papa20150224_02.hdf','\papa20150303_03.hdf',
-    '\papa20150522_05.hdf','\papa20150522_06.hdf','\papa20150524_02.hdf',
-    '\papa20150525_01.hdf','\papa20150525_02.hdf',
-    '\papa20150530_01.hdf','\papa20150530_02.hdf','\papa20150601_01.hdf','\papa20150601_02.hdf','\papa20150602_03.hdf']
 
-hdf_list_sham = ['\papa20150213_10.hdf','\papa20150217_05.hdf','\papa20150225_02.hdf',
+hdf_list_stim_papa = ['\papa20150203_10.hdf','\papa20150211_11.hdf','\papa20150214_18.hdf','\papa20150216_05.hdf',
+    '\papa20150218_04.hdf','\papa20150219_09.hdf','\papa20150223_02.hdf','\papa20150224_02.hdf','\papa20150303_03.hdf']
+
+hdf_list_sham_papa = ['\papa20150213_10.hdf','\papa20150217_05.hdf','\papa20150225_02.hdf',
     '\papa20150307_02.hdf','\papa20150308_06.hdf','\papa20150310_02.hdf','\papa20150506_09.hdf','\papa20150506_10.hdf',
     '\papa20150519_03.hdf','\papa20150519_04.hdf','\papa20150527_01.hdf','\papa20150528_02.hdf']
-"""
 
 # constant voltage: 11 good stim sessions
-hdf_list_control_papa = ['\papa20150211_11.hdf','\papa20150214_18.hdf','\papa20150216_05.hdf',
-    '\papa20150218_04.hdf','\papa20150219_09.hdf','\papa20150223_02.hdf','\papa20150224_02.hdf','\papa20150303_03.hdf',
-    '\papa20150306_07.hdf','\papa20150309_04.hdf']
+# hdf_list_stim = [\papa20150211_11.hdf','\papa20150214_18.hdf','\papa20150216_05.hdf',
+#    '\papa20150218_04.hdf','\papa20150219_09.hdf','\papa20150223_02.hdf','\papa20150224_02.hdf','\papa20150303_03.hdf',
+#    '\papa20150306_07.hdf','\papa20150309_04.hdf']
 """
 hdf_list_stim = ['\papa20150211_11.hdf',
     '\papa20150218_04.hdf','\papa20150219_09.hdf','\papa20150223_02.hdf','\papa20150224_02.hdf','\papa20150303_03.hdf',
     '\papa20150306_07.hdf','\papa20150309_04.hdf']
-# constant current: 18 good stim sessions
-# hdf_list_stim2 = ['\papa20150508_12.hdf','\papa20150508_13.hdf','\papa20150518_03.hdf',
-#    '\papa20150518_05.hdf','\papa20150518_06.hdf','\papa20150522_05.hdf','\papa20150522_06.hdf','\papa20150524_02.hdf',
-#    '\papa20150524_03.hdf','\papa20150524_04.hdf','\papa20150525_01.hdf','\papa20150525_02.hdf',
-#    '\papa20150530_01.hdf','\papa20150530_02.hdf','\papa20150601_01.hdf','\papa20150601_02.hdf','\papa20150602_03.hdf',
-#    '\papa20150602_04.hdf']
 """
+# constant current: 18 good stim sessions
+hdf_list_stim2 = ['\papa20150508_12.hdf','\papa20150508_13.hdf','\papa20150518_03.hdf',
+    '\papa20150518_05.hdf','\papa20150518_06.hdf','\papa20150522_05.hdf','\papa20150522_06.hdf','\papa20150524_02.hdf',
+    '\papa20150524_03.hdf','\papa20150524_04.hdf','\papa20150525_01.hdf','\papa20150525_02.hdf',
+    '\papa20150530_01.hdf','\papa20150530_02.hdf','\papa20150601_01.hdf','\papa20150601_02.hdf','\papa20150602_03.hdf',
+    '\papa20150602_04.hdf']
 hdf_list_stim2 = ['\papa20150508_12.hdf','\papa20150508_13.hdf','\papa20150518_03.hdf',
     '\papa20150518_05.hdf','\papa20150518_06.hdf','\papa20150522_05.hdf','\papa20150522_06.hdf','\papa20150524_02.hdf',
     '\papa20150524_04.hdf','\papa20150525_01.hdf','\papa20150525_02.hdf',
     '\papa20150530_01.hdf','\papa20150530_02.hdf','\papa20150601_02.hdf','\papa20150602_03.hdf',
     '\papa20150602_04.hdf']
 
+#hdf_list = np.sum([hdf_list_stim,hdf_list_stim2])
 
+'''
 
+#hdf_list = np.sum([hdf_list_stim,hdf_list_sham])
+# Exceptions: 5/25 - 2, 5/30 - 1, 2/18 - 4, 6/2 - 3, 2/19 - 9 (if doing first 100 trials), 3/3 - 3 (if doing first 100 trials)
+'''
+"""
+hdf_list = ['\papa20150211_11.hdf',
+    '\papa20150223_02.hdf','\papa20150224_02.hdf',
+    '\papa20150306_07.hdf','\papa20150309_04.hdf','\papa20150508_12.hdf','\papa20150508_13.hdf','\papa20150518_03.hdf',
+    '\papa20150518_05.hdf','\papa20150518_06.hdf',
+    '\papa20150524_04.hdf',
+    '\papa20150602_04.hdf']
+
+"""
 hdf_list_stim = ['\luig20160204_15_te1382.hdf','\luig20160208_07_te1401.hdf','\luig20160212_08_te1429.hdf','\luig20160217_06_te1451.hdf',
                 '\luig20160229_11_te1565.hdf','\luig20160301_07_te1572.hdf','\luig20160301_09_te1574.hdf', '\luig20160311_08_te1709.hdf',
                 '\luig20160313_07_te1722.hdf', '\luig20160315_14_te1739.hdf']
@@ -76,16 +98,14 @@ hdf_list_sham = ['\luig20160213_05_te1434.hdf','\luig20160219_04_te1473.hdf','\l
                  '\luig20160320_07_te1809.hdf', '\luig20160322_08_te1826.hdf']
 hdf_list_hv = ['\luig20160218_10_te1469.hdf','\luig20160223_11_te1508.hdf','\luig20160224_15_te1523.hdf', \
                 '\luig20160303_11_te1591.hdf', '\luig20160308_06_te1647.hdf','\luig20160309_25_te1672.hdf']
-hdf_list_hv = ['\luig20160218_10_te1469.hdf','\luig20160223_11_te1508.hdf', \
-                '\luig20160224_15_te1523.hdf', '\luig20160303_11_te1591.hdf',  \
-                '\luig20160308_06_te1647.hdf','\luig20160309_25_te1672.hdf', '\luig20160323_04_te1830.hdf', '\luig20160323_09_te1835.hdf',
-                '\luig20160324_10_te1845.hdf', '\luig20160324_12_te1847.hdf','\luig20160324_14_te1849.hdf']
+#hdf_list_hv = ['\luig20160218_10_te1469.hdf','\luig20160223_11_te1508.hdf', \
+#                '\luig20160224_15_te1523.hdf', '\luig20160303_11_te1591.hdf',  \
+#                '\luig20160308_06_te1647.hdf','\luig20160309_25_te1672.hdf', '\luig20160323_04_te1830.hdf', '\luig20160323_09_te1835.hdf',
+#                '\luig20160324_10_te1845.hdf', '\luig20160324_12_te1847.hdf','\luig20160324_14_te1849.hdf']
+
 
 
 hdf_prefix = 'C:\Users\Carmena Lab\Dropbox\Carmena Lab\Luigi\hdf'
-stim_hdf_list = hdf_list_stim2
-sham_hdf_list = hdf_list_sham_papa
-hv_hdf_list = hdf_list_control_papa
 
 stim_hdf_list = hdf_list_stim
 sham_hdf_list = hdf_list_sham
@@ -1130,11 +1150,11 @@ for name in stim_hdf_list:
     Get soft-max decision fit
     '''
     nll = lambda *args: -logLikelihoodRLPerformance(*args)
-    result1 = op.minimize(nll, [alpha_true, beta_true], args=(Q_initial, reward_block1, target_block1, trial_block1), bounds=[(0,1),(0,None)])
+    result1 = op.minimize(nll, [alpha_true, beta_true], args=(Q_initial, reward_block1, target_block1, trial_block1), bounds=[(0.01,1),(0,None)])
     alpha_ml_block1, beta_ml_block1 = result1["x"]
     Qlow_block1, Qhigh_block1, prob_low_block1, max_loglikelihood1 = RLPerformance([alpha_ml_block1,beta_ml_block1],Q_initial,reward_block1,target_block1, trial_block1)
     
-    result3 = op.minimize(nll, [alpha_true, beta_true], args=(Q_initial, reward_block3, target_block3, trial_block3), bounds=[(0,1),(0,None)])
+    result3 = op.minimize(nll, [alpha_true, beta_true], args=(Q_initial, reward_block3, target_block3, trial_block3), bounds=[(0.01,1),(0,None)])
     alpha_ml_block3, beta_ml_block3 = result3["x"]
     Qlow_block3, Qhigh_block3, prob_low_block3, max_loglikelihood3 = RLPerformance([alpha_ml_block3,beta_ml_block3],[Qlow_block1[-1],Qhigh_block1[-1]],reward_block3,target_block3, trial_block3)
 
@@ -1148,7 +1168,7 @@ for name in stim_hdf_list:
     Get fit with Multiplicative stimulation parameter in Q-value update equation
     '''
     nll_Qmultiplicative = lambda *args: -logLikelihoodRLPerformance_multiplicative_Qstimparameter(*args)
-    result3_Qmultiplicative = op.minimize(nll_Qmultiplicative, [alpha_true, beta_true, gamma_true], args=([Qlow_block1[-1],Qhigh_block1[-1]], reward_block3, target_block3, trial_block3, stim_trials_block), bounds=[(0,1),(0,None),(0,None)])
+    result3_Qmultiplicative = op.minimize(nll_Qmultiplicative, [alpha_true, beta_true, gamma_true], args=([Qlow_block1[-1],Qhigh_block1[-1]], reward_block3, target_block3, trial_block3, stim_trials_block), bounds=[(0.5,1),(0,None),(0,None)])
     alpha_ml_block3_Qmultiplicative, beta_ml_block3_Qmultiplicative, gamma_ml_block3_Qmultiplicative = result3_Qmultiplicative["x"]
     Qlow_block3, Qhigh_block3, prob_low_block3_Qmultiplicative, max_loglikelihood3 = RLPerformance_multiplicative_Qstimparameter([alpha_ml_block3_Qmultiplicative,beta_ml_block3_Qmultiplicative,gamma_ml_block3_Qmultiplicative],[Qlow_block1[-1],Qhigh_block1[-1]],reward_block3,target_block3, trial_block3, stim_trials_block)
     
@@ -1234,11 +1254,11 @@ for name in sham_hdf_list:
     Get soft-max decision fit
     '''
     nll = lambda *args: -logLikelihoodRLPerformance(*args)
-    result1 = op.minimize(nll, [alpha_true, beta_true], args=(Q_initial, reward_block1, target_block1, trial_block1), bounds=[(0,1),(0,None)])
+    result1 = op.minimize(nll, [alpha_true, beta_true], args=(Q_initial, reward_block1, target_block1, trial_block1), bounds=[(0.01,1),(0,None)])
     alpha_ml_block1, beta_ml_block1 = result1["x"]
     Qlow_block1, Qhigh_block1, prob_low_block1, max_loglikelihood1 = RLPerformance([alpha_ml_block1,beta_ml_block1],Q_initial,reward_block1,target_block1, trial_block1)
     
-    result3 = op.minimize(nll, [alpha_true, beta_true], args=(Q_initial, reward_block3, target_block3, trial_block3), bounds=[(0,1),(0,None)])
+    result3 = op.minimize(nll, [alpha_true, beta_true], args=(Q_initial, reward_block3, target_block3, trial_block3), bounds=[(0.01,1),(0,None)])
     alpha_ml_block3, beta_ml_block3 = result3["x"]
     Qlow_block3, Qhigh_block3, prob_low_block3, max_loglikelihood3 = RLPerformance([alpha_ml_block3,beta_ml_block3],[Qlow_block1[-1],Qhigh_block1[-1]],reward_block3,target_block3, trial_block3)
     
@@ -1302,11 +1322,11 @@ for name in hv_hdf_list:
     Get soft-max decision fit
     '''
     nll = lambda *args: -logLikelihoodRLPerformance(*args)
-    result1 = op.minimize(nll, [alpha_true, beta_true], args=(Q_initial, reward_block1, target_block1, trial_block1), bounds=[(0,1),(0,None)])
+    result1 = op.minimize(nll, [alpha_true, beta_true], args=(Q_initial, reward_block1, target_block1, trial_block1), bounds=[(0.01,1),(0,None)])
     alpha_ml_block1, beta_ml_block1 = result1["x"]
     Qlow_block1, Qhigh_block1, prob_low_block1, max_loglikelihood1 = RLPerformance([alpha_ml_block1,beta_ml_block1],Q_initial,reward_block1,target_block1, trial_block1)
     
-    result3 = op.minimize(nll, [alpha_true, beta_true], args=(Q_initial, reward_block3, target_block3, trial_block3), bounds=[(0,1),(0,None)])
+    result3 = op.minimize(nll, [alpha_true, beta_true], args=(Q_initial, reward_block3, target_block3, trial_block3), bounds=[(0.01,1),(0,None)])
     alpha_ml_block3, beta_ml_block3 = result3["x"]
     Qlow_block3, Qhigh_block3, prob_low_block3, max_loglikelihood3 = RLPerformance([alpha_ml_block3,beta_ml_block3],[Qlow_block1[-1],Qhigh_block1[-1]],reward_block3,target_block3, trial_block3)
     
@@ -1314,7 +1334,7 @@ for name in hv_hdf_list:
     Get fit with Multiplicative stimulation parameter in Q-value update equation
     '''
     nll_Qmultiplicative = lambda *args: -logLikelihoodRLPerformance_multiplicative_Qstimparameter_HVTarget(*args)
-    result3_Qmultiplicative = op.minimize(nll_Qmultiplicative, [alpha_true, beta_true, gamma_true], args=([Qlow_block1[-1],Qhigh_block1[-1]], reward_block3, target_block3, trial_block3, stim_trials_block), bounds=[(0,1),(0, None),(1,None)])
+    result3_Qmultiplicative = op.minimize(nll_Qmultiplicative, [alpha_true, beta_true, gamma_true], args=([Qlow_block1[-1],Qhigh_block1[-1]], reward_block3, target_block3, trial_block3, stim_trials_block), bounds=[(0.01,1),(0,None),(0,None)])
     alpha_ml_block3_Qmultiplicative, beta_ml_block3_Qmultiplicative, gamma_ml_block3_Qmultiplicative = result3_Qmultiplicative["x"]
     Qlow_block3, Qhigh_block3, prob_low_block3_Qmultiplicative, max_loglikelihood3 = RLPerformance_multiplicative_Qstimparameter_HVTarget([alpha_ml_block3_Qmultiplicative,beta_ml_block3_Qmultiplicative,gamma_ml_block3_Qmultiplicative],[Qlow_block1[-1],Qhigh_block1[-1]],reward_block3,target_block3, trial_block3, stim_trials_block)
     
@@ -1540,19 +1560,19 @@ plt.subplot(1,3,1)
 plt.errorbar(np.arange(3), alpha_means,yerr=alpha_sem/2.,color='b',ecolor='b')
 plt.xticks(np.arange(3), ('Sham', 'Stim - Q Mult', 'Control - Q Mult'))
 plt.xlim((-0.1,2.1))
-plt.ylim((0,0.25))
+plt.ylim((0,0.6))
 plt.title('Alpha')
 plt.subplot(1,3,2)
 plt.errorbar(np.arange(3), beta_means,yerr=beta_sem/2.,color='r',ecolor='r')
 plt.xticks(np.arange(3), ('Sham', 'Stim - Q Mult', 'Control - Q Mult'))
 plt.xlim((-0.1,2.1))
-plt.ylim((0,10))
+plt.ylim((0,8))
 plt.title('Beta')
 plt.subplot(1,3,3)
 plt.errorbar(np.arange(2), gamma_means,yerr=gamma_sem/2.,color='g',ecolor='g')
 plt.xticks(np.arange(2), ('Stim - Q Mult', 'Control - Q Mult'))
 plt.xlim((-0.1,1.1))
-plt.ylim((0,6.5))
+plt.ylim((0,2))
 plt.title('Gamma')
 plt.show()
 
