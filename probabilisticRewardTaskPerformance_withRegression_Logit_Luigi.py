@@ -1168,7 +1168,7 @@ for name in stim_hdf_list:
     Get fit with Multiplicative stimulation parameter in Q-value update equation
     '''
     nll_Qmultiplicative = lambda *args: -logLikelihoodRLPerformance_multiplicative_Qstimparameter(*args)
-    result3_Qmultiplicative = op.minimize(nll_Qmultiplicative, [alpha_true, beta_true, gamma_true], args=([Qlow_block1[-1],Qhigh_block1[-1]], reward_block3, target_block3, trial_block3, stim_trials_block), bounds=[(0.5,1),(0,None),(0,None)])
+    result3_Qmultiplicative = op.minimize(nll_Qmultiplicative, [alpha_true, beta_true, gamma_true], args=([Qlow_block1[-1],Qhigh_block1[-1]], reward_block3, target_block3, trial_block3, stim_trials_block), bounds=[(0.01,1),(0,None),(0,None)])
     alpha_ml_block3_Qmultiplicative, beta_ml_block3_Qmultiplicative, gamma_ml_block3_Qmultiplicative = result3_Qmultiplicative["x"]
     Qlow_block3, Qhigh_block3, prob_low_block3_Qmultiplicative, max_loglikelihood3 = RLPerformance_multiplicative_Qstimparameter([alpha_ml_block3_Qmultiplicative,beta_ml_block3_Qmultiplicative,gamma_ml_block3_Qmultiplicative],[Qlow_block1[-1],Qhigh_block1[-1]],reward_block3,target_block3, trial_block3, stim_trials_block)
     

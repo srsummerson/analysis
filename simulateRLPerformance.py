@@ -341,10 +341,10 @@ def simulate_RLPerformance_shamVstim(sham_parameters, stim_parameters):
     m_sham,b_sham = np.polyfit(trial_ind, sham_prob_low_aligned_avg, 1)
 
     plt.figure()
-    plt.bar(trial_ind, stim_prob_low_aligned_avg - 0.26, width/2, color = 'c', yerr = stim_prob_low_aligned_sem/2)
-    plt.plot(trial_ind,(m_stim*trial_ind + b_stim) - 0.26,'c--')
-    plt.bar(trial_ind + width/2, sham_prob_low_aligned_avg -0.2, width/2, color = 'm', yerr = sham_prob_low_aligned_sem/2)
-    plt.plot(trial_ind+width/2, (m_sham*trial_ind + b_sham) - 0.2,'m--')
+    plt.bar(trial_ind, stim_prob_low_aligned_avg, width/2, color = 'c', yerr = stim_prob_low_aligned_sem/2)
+    plt.plot(trial_ind,(m_stim*trial_ind + b_stim),'c--')
+    plt.bar(trial_ind + width/2, sham_prob_low_aligned_avg, width/2, color = 'm', yerr = sham_prob_low_aligned_sem/2)
+    plt.plot(trial_ind+width/2, (m_sham*trial_ind + b_sham),'m--')
     plt.ylabel('P(Choose LV Target)')
     plt.title('Target Selection')
     xticklabels = [str(num + 1) for num in trial_ind]
@@ -362,6 +362,7 @@ def simulate_RLPerformance_shamVstim(sham_parameters, stim_parameters):
 def simulate_RLPerformance_shamVstimHV(sham_parameters, stim_parameters):
     num_sims = 1000
     num_trials_per_sim = 100
+    num_trials = 7
     
     sham_alpha = sham_parameters[0]
     sham_beta = sham_parameters[1]
@@ -376,11 +377,14 @@ def simulate_RLPerformance_shamVstimHV(sham_parameters, stim_parameters):
     stim_prob_low_std = np.zeros(len(stim_gamma))
     stim_prob_high_std = np.zeros(len(stim_gamma))
     #prob_next_low_std = np.zeros(len(stim_gamma))
+    stim_prob_choose_low_aligned = np.zeros([len(stim_gamma),num_trials])
 
     sham_prob_low = np.zeros(len(sham_alpha))
     sham_prob_high = np.zeros(len(sham_alpha))
     sham_prob_low_std = np.zeros(len(sham_alpha))
     sham_prob_high_std = np.zeros(len(sham_alpha))
+    sham_prob_choose_low_aligned = np.zeros([len(sham_alpha),num_trials])
+
 
     Q_initial = [0.5,0.5]
     reward_probabilities = [0.4,0.8]
@@ -392,6 +396,7 @@ def simulate_RLPerformance_shamVstimHV(sham_parameters, stim_parameters):
         prob_choose_high = np.zeros(num_sims)
         prob_choose_next_low = np.zeros(num_sims)
         prob_choose_next_high = np.zeros(num_sims)
+        prob_choose_low_aligned = np.zeros([num_sims,num_trials])
 
         for sim in range(num_sims):
             stim_trial_inds, choice, Q_low, Q_high, reward_low, reward_high = simulateRLPerformance_multiplicative_Qstimparameter_HV(parameters, Q_initial, reward_probabilities, stim_trial_probability, num_trials_per_sim)
@@ -405,10 +410,14 @@ def simulate_RLPerformance_shamVstimHV(sham_parameters, stim_parameters):
             prob_choose_next_low[sim] = np.sum(choice[stim_next_inds]==1)/float(len(stim_next_inds))
             prob_choose_next_high[sim] = np.sum(choice[stim_next_inds]==2)/float(len(stim_next_inds))
 
+            prob_choose_low_aligned[sim,:] = PeriStimulusFreeChoiceBehavior(stim_trial_inds, choice, num_trials)
+
         stim_prob_low[ind] = np.nanmean(prob_choose_low)
         stim_prob_high[ind] = np.nanmean(prob_choose_high)
         stim_prob_low_std[ind] = np.nanstd(prob_choose_low)/np.sqrt(num_sims - 1)
         stim_prob_high_std[ind] = np.nanstd(prob_choose_high)/np.sqrt(num_sims - 1)
+        stim_prob_choose_low_aligned[ind,:] = np.nanmean(prob_choose_low_aligned,axis = 0)
+
 
     for ind in range(len(sham_alpha)):
         parameters = [sham_alpha[ind], sham_beta[ind]]
@@ -416,6 +425,7 @@ def simulate_RLPerformance_shamVstimHV(sham_parameters, stim_parameters):
         prob_choose_high = np.zeros(num_sims)
         prob_choose_next_low = np.zeros(num_sims)
         prob_choose_next_high = np.zeros(num_sims)
+        prob_choose_low_aligned = np.zeros([num_sims,num_trials])
 
         for sim in range(num_sims):
             stim_trial_inds, choice, Q_low, Q_high, reward_low, reward_high = simulateRLPerformance_regular(parameters, Q_initial, reward_probabilities, stim_trial_probability, num_trials_per_sim)
@@ -429,24 +439,54 @@ def simulate_RLPerformance_shamVstimHV(sham_parameters, stim_parameters):
             prob_choose_next_low[sim] = np.sum(choice[stim_next_inds]==1)/float(len(stim_next_inds))
             prob_choose_next_high[sim] = np.sum(choice[stim_next_inds]==2)/float(len(stim_next_inds))
 
+            prob_choose_low_aligned[sim,:] = PeriStimulusFreeChoiceBehavior(stim_trial_inds, choice, num_trials)
+
 
         sham_prob_low[ind] = np.nanmean(prob_choose_low)
         sham_prob_high[ind] = np.nanmean(prob_choose_high)
         sham_prob_low_std[ind] = np.nanstd(prob_choose_low)/np.sqrt(num_sims - 1)
         sham_prob_high_std[ind] = np.nanstd(prob_choose_high)/np.sqrt(num_sims - 1)
+        sham_prob_choose_low_aligned[ind,:] = np.nanmean(prob_choose_low_aligned,axis = 0)
 
     stim_prob_low_avg = np.nanmean(stim_prob_low)
     stim_prob_low_sem = np.nanstd(stim_prob_low)/np.sqrt(len(stim_prob_low) - 1)
     sham_prob_low_avg = np.nanmean(sham_prob_low)
     sham_prob_low_sem = np.nanstd(sham_prob_low)/np.sqrt(len(sham_prob_low) - 1)
 
+    stim_prob_low_aligned_avg = np.nanmean(stim_prob_choose_low_aligned, axis = 0)
+    stim_prob_low_aligned_sem = np.nanstd(stim_prob_choose_low_aligned, axis = 0)/np.sqrt(len(stim_gamma)-1)
+
+    sham_prob_low_aligned_avg = np.nanmean(sham_prob_choose_low_aligned, axis = 0)
+    sham_prob_low_aligned_sem = np.nanstd(sham_prob_choose_low_aligned, axis = 0)/np.sqrt(len(sham_alpha)-1)
+
     width = float(0.35)
     days = np.arange(2)
     plt.figure()
-    plt.bar(days[0], stim_prob_low_avg, width, color='g', yerr=stim_prob_low_sem/2., ecolor='k', label='HV stim')
+    plt.bar(days[0], stim_prob_low_avg, width, color='y', yerr=stim_prob_low_sem/2., ecolor='k', label='HV stim')
     plt.bar(days[1], sham_prob_low_avg, width, color='c', yerr=sham_prob_low_sem/2., ecolor='k', label='sham')
     plt.ylim((0,0.2))
     plt.ylabel('Prob LV Choice')
+    plt.show()
+
+    trial_ind = np.arange(0,num_trials)
+    # Get linear fit to total prob
+    m_stim,b_stim = np.polyfit(trial_ind, stim_prob_low_aligned_avg, 1)
+    m_sham,b_sham = np.polyfit(trial_ind, sham_prob_low_aligned_avg, 1)
+
+    plt.figure()
+    plt.bar(trial_ind, stim_prob_low_aligned_avg, width/2, color = 'y', yerr = stim_prob_low_aligned_sem/2)
+    plt.plot(trial_ind,(m_stim*trial_ind + b_stim),'y--')
+    plt.bar(trial_ind + width/2, sham_prob_low_aligned_avg, width/2, color = 'm', yerr = sham_prob_low_aligned_sem/2)
+    plt.plot(trial_ind+width/2, (m_sham*trial_ind + b_sham),'m--')
+    plt.ylabel('P(Choose LV Target)')
+    plt.title('Target Selection')
+    xticklabels = [str(num + 1) for num in trial_ind]
+    plt.xticks(trial_ind + width/2, xticklabels)
+    plt.xlabel('Trials post-stimulation')
+    #plt.ylim([0.0,0.32])
+    plt.xlim([-0.1,num_trials + 0.4])
+    plt.legend()
+    
     plt.show()
 
     return stim_prob_low, sham_prob_low

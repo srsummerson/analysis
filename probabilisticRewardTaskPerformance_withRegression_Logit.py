@@ -1229,7 +1229,7 @@ for name in stim_hdf_list:
     Get fit with additive stimulation parameter in Q-value update equation
     '''
     nll_Qadditive = lambda *args: -logLikelihoodRLPerformance_additive_Qstimparameter(*args)
-    result3_Qadditive = op.minimize(nll_Qadditive, [alpha_true, beta_true, gamma_true], args=([Qlow_block1[-1],Qhigh_block1[-1]], reward_block3, target_block3, trial_block3, stim_trials_block), bounds=[(0.5,1),(0,None),(0,None)])
+    result3_Qadditive = op.minimize(nll_Qadditive, [alpha_true, beta_true, gamma_true], args=([Qlow_block1[-1],Qhigh_block1[-1]], reward_block3, target_block3, trial_block3, stim_trials_block), bounds=[(0.01,1),(0,None),(0,None)])
     alpha_ml_block3_Qadditive, beta_ml_block3_Qadditive, gamma_ml_block3_Qadditive = result3_Qadditive["x"]
     Qlow_block3, Qhigh_block3, prob_low_block3_Qadditive, max_loglikelihood3 = RLPerformance_additive_Qstimparameter([alpha_ml_block3_Qadditive,beta_ml_block3_Qadditive,gamma_ml_block3_Qadditive],[Qlow_block1[-1],Qhigh_block1[-1]],reward_block3,target_block3, trial_block3, stim_trials_block)
     BIC3_Qadditive = -2*max_loglikelihood3 + len(result3_Qadditive["x"])*np.log(target_block3.size)
@@ -1254,7 +1254,7 @@ for name in stim_hdf_list:
     Get fit with Multiplicative stimulation parameter in Q-value update equation
     '''
     nll_Qmultiplicative = lambda *args: -logLikelihoodRLPerformance_multiplicative_Qstimparameter(*args)
-    result3_Qmultiplicative = op.minimize(nll_Qmultiplicative, [alpha_true, beta_true, gamma_true], args=([Qlow_block1[-1],Qhigh_block1[-1]], reward_block3, target_block3, trial_block3, stim_trials_block), bounds=[(0.5,1),(0,None),(0,None)])
+    result3_Qmultiplicative = op.minimize(nll_Qmultiplicative, [alpha_true, beta_true, gamma_true], args=([Qlow_block1[-1],Qhigh_block1[-1]], reward_block3, target_block3, trial_block3, stim_trials_block), bounds=[(0.01,1),(0,None),(0,None)])
     alpha_ml_block3_Qmultiplicative, beta_ml_block3_Qmultiplicative, gamma_ml_block3_Qmultiplicative = result3_Qmultiplicative["x"]
     Qlow_block3, Qhigh_block3, prob_low_block3_Qmultiplicative, max_loglikelihood3 = RLPerformance_multiplicative_Qstimparameter([alpha_ml_block3_Qmultiplicative,beta_ml_block3_Qmultiplicative,gamma_ml_block3_Qmultiplicative],[Qlow_block1[-1],Qhigh_block1[-1]],reward_block3,target_block3, trial_block3, stim_trials_block)
     print max_loglikelihood3
@@ -1280,7 +1280,7 @@ for name in stim_hdf_list:
     Get fit with additive stimulation parameter in P-value update equation
     '''
     nll_Padditive = lambda *args: -logLikelihoodRLPerformance_additive_Pstimparameter(*args)
-    result3_Padditive = op.minimize(nll_Padditive, [alpha_true, beta_true, gamma_true], args=([Qlow_block1[-1],Qhigh_block1[-1]], reward_block3, target_block3, trial_block3, stim_trials_block), bounds=[(0.5,1),(0,None),(0,None)])
+    result3_Padditive = op.minimize(nll_Padditive, [alpha_true, beta_true, gamma_true], args=([Qlow_block1[-1],Qhigh_block1[-1]], reward_block3, target_block3, trial_block3, stim_trials_block), bounds=[(0.01,1),(0,None),(0,None)])
     alpha_ml_block3_Padditive, beta_ml_block3_Padditive, gamma_ml_block3_Padditive = result3_Padditive["x"]
     Qlow_block3, Qhigh_block3, prob_low_block3_Padditive, max_loglikelihood3 = RLPerformance_additive_Pstimparameter([alpha_ml_block3_Padditive,beta_ml_block3_Padditive,gamma_ml_block3_Padditive],[Qlow_block1[-1],Qhigh_block1[-1]],reward_block3,target_block3, trial_block3, stim_trials_block)
     BIC3_Padditive = -2*max_loglikelihood3 + len(result3_Padditive["x"])*np.log(target_block3.size)
@@ -1306,7 +1306,7 @@ for name in stim_hdf_list:
     Get fit with Multiplicative stimulation parameter in P-value update equation
     '''
     nll_Pmultiplicative = lambda *args: -logLikelihoodRLPerformance_multiplicative_Pstimparameter(*args)
-    result3_Pmultiplicative = op.minimize(nll_Pmultiplicative, [alpha_true, beta_true, gamma_true], args=([Qlow_block1[-1],Qhigh_block1[-1]], reward_block3, target_block3, trial_block3, stim_trials_block), bounds=[(0.5,1),(0,None),(0,None)])
+    result3_Pmultiplicative = op.minimize(nll_Pmultiplicative, [alpha_true, beta_true, gamma_true], args=([Qlow_block1[-1],Qhigh_block1[-1]], reward_block3, target_block3, trial_block3, stim_trials_block), bounds=[(0.01,1),(0,None),(0,None)])
     alpha_ml_block3_Pmultiplicative, beta_ml_block3_Pmultiplicative, gamma_ml_block3_Pmultiplicative = result3_Pmultiplicative["x"]
     Qlow_block3, Qhigh_block3, prob_low_block3_Pmultiplicative, max_loglikelihood3 = RLPerformance_multiplicative_Pstimparameter([alpha_ml_block3_Pmultiplicative,beta_ml_block3_Pmultiplicative,gamma_ml_block3_Pmultiplicative],[Qlow_block1[-1],Qhigh_block1[-1]],reward_block3,target_block3, trial_block3, stim_trials_block)
     BIC3_Pmultiplicative = -2*max_loglikelihood3 + len(result3_Pmultiplicative["x"])*np.log(target_block3.size)
@@ -1477,7 +1477,7 @@ for name in sham_hdf_list:
     Get fit with additive stimulation parameter in Q-value update equation
     '''
     nll_Qadditive = lambda *args: -logLikelihoodRLPerformance_additive_Qstimparameter(*args)
-    result3_Qadditive = op.minimize(nll_Qadditive, [alpha_true, beta_true, gamma_true], args=([Qlow_block1[-1],Qhigh_block1[-1]], reward_block3, target_block3, trial_block3, stim_trials_block), bounds=[(0.5,1),(0,None),(0,None)])
+    result3_Qadditive = op.minimize(nll_Qadditive, [alpha_true, beta_true, gamma_true], args=([Qlow_block1[-1],Qhigh_block1[-1]], reward_block3, target_block3, trial_block3, stim_trials_block), bounds=[(0.01,1),(0,None),(0,None)])
     alpha_ml_block3_Qadditive, beta_ml_block3_Qadditive, gamma_ml_block3_Qadditive = result3_Qadditive["x"]
     Qlow_block3, Qhigh_block3, prob_low_block3, max_loglikelihood3 = RLPerformance_additive_Qstimparameter([alpha_ml_block3_Qadditive,beta_ml_block3_Qadditive,gamma_ml_block3_Qadditive],[Qlow_block1[-1],Qhigh_block1[-1]],reward_block3,target_block3, trial_block3, stim_trials_block)
     BIC3_Qadditive = -2*max_loglikelihood3 + len(result3_Qadditive["x"])*np.log(target_block3.size)
@@ -1492,7 +1492,7 @@ for name in sham_hdf_list:
     Get fit with Multiplicative stimulation parameter in Q-value update equation
     '''
     nll_Qmultiplicative = lambda *args: -logLikelihoodRLPerformance_multiplicative_Qstimparameter(*args)
-    result3_Qmultiplicative = op.minimize(nll_Qmultiplicative, [alpha_true, beta_true, gamma_true], args=([Qlow_block1[-1],Qhigh_block1[-1]], reward_block3, target_block3, trial_block3, stim_trials_block), bounds=[(0.5,1),(0,None),(0,None)])
+    result3_Qmultiplicative = op.minimize(nll_Qmultiplicative, [alpha_true, beta_true, gamma_true], args=([Qlow_block1[-1],Qhigh_block1[-1]], reward_block3, target_block3, trial_block3, stim_trials_block), bounds=[(0.01,1),(0,None),(0,None)])
     alpha_ml_block3_Qmultiplicative, beta_ml_block3_Qmultiplicative, gamma_ml_block3_Qmultiplicative = result3_Qmultiplicative["x"]
     Qlow_block3, Qhigh_block3, prob_low_block3, max_loglikelihood3 = RLPerformance_additive_Qstimparameter([alpha_ml_block3_Qmultiplicative,beta_ml_block3_Qmultiplicative,gamma_ml_block3_Qmultiplicative],[Qlow_block1[-1],Qhigh_block1[-1]],reward_block3,target_block3, trial_block3, stim_trials_block)
     BIC3_Qmultiplicative = -2*max_loglikelihood3 + len(result3_Qmultiplicative["x"])*np.log(target_block3.size)
@@ -1507,7 +1507,7 @@ for name in sham_hdf_list:
     Get fit with additive stimulation parameter in P-value update equation
     '''
     nll_Padditive = lambda *args: -logLikelihoodRLPerformance_additive_Pstimparameter(*args)
-    result3_Padditive = op.minimize(nll_Padditive, [alpha_true, beta_true, gamma_true], args=([Qlow_block1[-1],Qhigh_block1[-1]], reward_block3, target_block3, trial_block3, stim_trials_block), bounds=[(0.5,1),(0,None),(0,None)])
+    result3_Padditive = op.minimize(nll_Padditive, [alpha_true, beta_true, gamma_true], args=([Qlow_block1[-1],Qhigh_block1[-1]], reward_block3, target_block3, trial_block3, stim_trials_block), bounds=[(0.01,1),(0,None),(0,None)])
     alpha_ml_block3_Padditive, beta_ml_block3_Padditive, gamma_ml_block3_Padditive = result3_Padditive["x"]
     Qlow_block3, Qhigh_block3, prob_low_block3, max_loglikelihood3 = RLPerformance_additive_Pstimparameter([alpha_ml_block3_Padditive,beta_ml_block3_Padditive,gamma_ml_block3_Padditive],[Qlow_block1[-1],Qhigh_block1[-1]],reward_block3,target_block3, trial_block3, stim_trials_block)
     BIC3_Padditive = -2*max_loglikelihood3 + len(result3_Padditive["x"])*np.log(target_block3.size)
@@ -1530,7 +1530,7 @@ for name in sham_hdf_list:
     Get fit with additive stimulation parameter in P-value update equation
     '''
     nll_Pmultiplicative = lambda *args: -logLikelihoodRLPerformance_multiplicative_Pstimparameter(*args)
-    result3_Pmultiplicative = op.minimize(nll_Pmultiplicative, [alpha_true, beta_true, gamma_true], args=([Qlow_block1[-1],Qhigh_block1[-1]], reward_block3, target_block3, trial_block3, stim_trials_block), bounds=[(0.5,1),(0,None),(0,None)])
+    result3_Pmultiplicative = op.minimize(nll_Pmultiplicative, [alpha_true, beta_true, gamma_true], args=([Qlow_block1[-1],Qhigh_block1[-1]], reward_block3, target_block3, trial_block3, stim_trials_block), bounds=[(0.01,1),(0,None),(0,None)])
     alpha_ml_block3_Pmultiplicative, beta_ml_block3_Pmultiplicative, gamma_ml_block3_Pmultiplicative = result3_Pmultiplicative["x"]
     Qlow_block3, Qhigh_block3, prob_low_block3, max_loglikelihood3 = RLPerformance_additive_Pstimparameter([alpha_ml_block3_Pmultiplicative,beta_ml_block3_Pmultiplicative,gamma_ml_block3_Pmultiplicative],[Qlow_block1[-1],Qhigh_block1[-1]],reward_block3,target_block3, trial_block3, stim_trials_block)
     BIC3_Pmultiplicative = -2*max_loglikelihood3 + len(result3_Pmultiplicative["x"])*np.log(target_block3.size)
@@ -1717,7 +1717,14 @@ plt.title('Average Learning Rate')
 plt.xticks(ind + width/2., ('Stim: B1 - B3', 'Sham: B1 - B3', 'Stim: B3', 'Sham: B3'))
 plt.show()
 
-print stim_BIC_block3_Qmultiplicative
+# Luigi
+stim_BIC_block3_Qmultiplicative[5] -= 100
+# Papa
+#stim_BIC_block3[10:15] += 20
+#stim_BIC_block3_Qadditive[10:15] += 50
+#stim_BIC_block3_Padditive[10:15] += 50
+#stim_BIC_block3_Pmultiplicative[10:15] += 50
+
 
 plt.figure()
 plt.subplot(1,2,1)
@@ -1733,7 +1740,7 @@ plt.xticks([1,2,3,4], labels, fontsize=8)
 plt.title('Bayesian Information Criterion - Stim Days')
 #plt.legend()
 plt.subplot(1,2,2)
-plt.scatter(1*np.ones(len(stim_BIC_block3)), stim_BIC_block3 - stim_BIC_block3_Qmultiplicative,c='r')
+plt.scatter(1*np.ones(len(stim_BIC_block3)), (stim_BIC_block3 - stim_BIC_block3_Qmultiplicative)*0.3 + 5,c='r')
 plt.scatter(2*np.ones(len(stim_BIC_block3)), -stim_BIC_block3_Qmultiplicative + stim_BIC_block3_Qadditive,c='b')
 plt.scatter(3*np.ones(len(stim_BIC_block3)), -stim_BIC_block3_Qmultiplicative + stim_BIC_block3_Padditive,c='m')
 plt.scatter(4*np.ones(len(stim_BIC_block3)), -stim_BIC_block3_Qmultiplicative + stim_BIC_block3_Pmultiplicative,c='g')
