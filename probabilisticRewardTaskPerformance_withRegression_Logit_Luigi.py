@@ -1490,9 +1490,9 @@ stim_gamma_ind = range(0,stim_num_days)
 
 
 #Indices for Luigi
-sham_beta_ind.pop(3)
-stim_gamma_ind.pop(2)
-stim_gamma_ind.pop(2)
+#sham_beta_ind.pop(3)
+#stim_gamma_ind.pop(2)
+#stim_gamma_ind.pop(2)
 
 #Indices for papa
 #stim_beta_ind.pop(2)
