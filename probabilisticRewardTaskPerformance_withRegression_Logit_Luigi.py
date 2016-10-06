@@ -98,10 +98,10 @@ hdf_list_sham = ['\luig20160213_05_te1434.hdf','\luig20160219_04_te1473.hdf','\l
                  '\luig20160320_07_te1809.hdf', '\luig20160322_08_te1826.hdf']
 hdf_list_hv = ['\luig20160218_10_te1469.hdf','\luig20160223_11_te1508.hdf','\luig20160224_15_te1523.hdf', \
                 '\luig20160303_11_te1591.hdf', '\luig20160308_06_te1647.hdf','\luig20160309_25_te1672.hdf']
-#hdf_list_hv = ['\luig20160218_10_te1469.hdf','\luig20160223_11_te1508.hdf', \
-#                '\luig20160224_15_te1523.hdf', '\luig20160303_11_te1591.hdf',  \
-#                '\luig20160308_06_te1647.hdf','\luig20160309_25_te1672.hdf', '\luig20160323_04_te1830.hdf', '\luig20160323_09_te1835.hdf',
-#                '\luig20160324_10_te1845.hdf', '\luig20160324_12_te1847.hdf','\luig20160324_14_te1849.hdf']
+hdf_list_hv = ['\luig20160218_10_te1469.hdf','\luig20160223_11_te1508.hdf', \
+                '\luig20160224_15_te1523.hdf', '\luig20160303_11_te1591.hdf',  \
+                '\luig20160308_06_te1647.hdf','\luig20160309_25_te1672.hdf', '\luig20160323_04_te1830.hdf', '\luig20160323_09_te1835.hdf',
+                '\luig20160324_10_te1845.hdf', '\luig20160324_12_te1847.hdf','\luig20160324_14_te1849.hdf']
 
 
 
@@ -1490,16 +1490,16 @@ stim_gamma_ind = range(0,stim_num_days)
 
 
 #Indices for Luigi
-#sham_beta_ind.pop(3)
-#stim_gamma_ind.pop(2)
-#stim_gamma_ind.pop(2)
+stim_gamma_ind.pop(3)
+stim_gamma_ind.pop(0)
+stim_gamma_ind.pop(7)
 
 #Indices for papa
-#stim_beta_ind.pop(2)
-#stim_beta_ind.pop(3)
-#sham_beta_ind.pop(12)
-#sham_beta_ind.pop(12)
-#sham_beta_ind.pop(8)
+#sham_beta_ind.pop(11)
+#sham_beta_ind.pop(10)
+#sham_beta_ind.pop(7)
+#sham_beta_ind.pop(4)
+#sham_beta_ind.pop(0)
 
 
 print sham_beta_block3[sham_beta_ind]
@@ -1572,7 +1572,7 @@ plt.subplot(1,3,3)
 plt.errorbar(np.arange(2), gamma_means,yerr=gamma_sem/2.,color='g',ecolor='g')
 plt.xticks(np.arange(2), ('Stim - Q Mult', 'Control - Q Mult'))
 plt.xlim((-0.1,1.1))
-plt.ylim((0,2))
+plt.ylim((0,4))
 plt.title('Gamma')
 plt.show()
 
@@ -1581,19 +1581,19 @@ plt.subplot(1,3,1)
 plt.errorbar(np.arange(2), alpha_means[0:2],yerr=alpha_sem[0:2]/2.,color='b',ecolor='b')
 plt.xticks(np.arange(3), ('Sham', 'Stim - Q Mult', 'Control - Q Mult'))
 plt.xlim((-0.1,2.1))
-#plt.ylim((0,0.25))
+plt.ylim((0,0.6))
 plt.title('Alpha')
 plt.subplot(1,3,2)
 plt.errorbar(np.arange(2), beta_means[0:2],yerr=beta_sem[0:2]/2.,color='r',ecolor='r')
 plt.xticks(np.arange(3), ('Sham', 'Stim - Q Mult', 'Control - Q Mult'))
 plt.xlim((-0.1,2.1))
-plt.ylim((0,10))
+plt.ylim((0,8))
 plt.title('Beta')
 plt.subplot(1,3,3)
 plt.errorbar(np.arange(1), gamma_means[0],yerr=gamma_sem[0]/2.,color='g',ecolor='g')
 plt.xticks(np.arange(2), ('Stim - Q Mult', 'Control - Q Mult'))
 plt.xlim((-0.1,1.1))
-plt.ylim((0,6.5))
+plt.ylim((0,4))
 plt.title('Gamma')
 plt.show()
 

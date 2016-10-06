@@ -15,7 +15,8 @@ import matplotlib.pyplot as plt
 from matplotlib.pyplot import cm
 from logLikelihoodRLPerformance import RLPerformance, logLikelihoodRLPerformance, RLPerformance_multiplicative_Qstimparameter, logLikelihoodRLPerformance_multiplicative_Qstimparameter, \
                                         RLPerformance_additive_Qstimparameter, logLikelihoodRLPerformance_additive_Qstimparameter, RLPerformance_multiplicative_Pstimparameter, \
-                                        logLikelihoodRLPerformance_multiplicative_Pstimparameter, RLPerformance_additive_Pstimparameter, logLikelihoodRLPerformance_additive_Pstimparameter
+                                        logLikelihoodRLPerformance_multiplicative_Pstimparameter, RLPerformance_additive_Pstimparameter, logLikelihoodRLPerformance_additive_Pstimparameter, \
+                                        logLikelihoodRLPerformance_TwoAlphas, RLPerformance_TwoAlphas
 from probabilisticRewardTaskPerformance import FreeChoicePilotTask_Behavior, FreeChoicePilotTask_Behavior_ProbChooseLow
 from basicAnalysis import ComputeRSquared, ComputeEfronRSquared
 
@@ -95,6 +96,9 @@ hdf_list = ['\papa20150211_11.hdf',
 """
 hdf_list_stim = ['\luig20160204_15_te1382.hdf','\luig20160208_07_te1401.hdf','\luig20160212_08_te1429.hdf','\luig20160217_06_te1451.hdf',
                 '\luig20160229_11_te1565.hdf','\luig20160301_07_te1572.hdf','\luig20160301_09_te1574.hdf', '\luig20160311_08_te1709.hdf',
+                '\luig20160313_07_te1722.hdf', '\luig20160315_14_te1739.hdf']
+hdf_list_stim = ['\luig20160204_15_te1382.hdf','\luig20160208_07_te1401.hdf','\luig20160212_08_te1429.hdf','\luig20160217_06_te1451.hdf',
+                '\luig20160229_11_te1565.hdf','\luig20160301_09_te1574.hdf', '\luig20160311_08_te1709.hdf',
                 '\luig20160313_07_te1722.hdf', '\luig20160315_14_te1739.hdf']
 hdf_list_sham = ['\luig20160213_05_te1434.hdf','\luig20160219_04_te1473.hdf','\luig20160221_05_te1478.hdf', '\luig20160305_26_te1617.hdf', \
                  '\luig20160306_11_te1628.hdf', '\luig20160307_13_te1641.hdf', '\luig20160310_16_te1695.hdf','\luig20160319_23_te1801.hdf', \
@@ -1042,11 +1046,13 @@ stim_BIC_block3_Qadditive = np.zeros(stim_num_days)
 stim_BIC_block3_Padditive = np.zeros(stim_num_days)
 stim_BIC_block3_Qmultiplicative = np.zeros(stim_num_days)
 stim_BIC_block3_Pmultiplicative = np.zeros(stim_num_days)
+stim_BIC_block3_TwoAlphas = np.zeros(stim_num_days)
 stim_AIC_block3 = np.zeros(stim_num_days)
 stim_AIC_block3_Qadditive = np.zeros(stim_num_days)
 stim_AIC_block3_Padditive = np.zeros(stim_num_days)
 stim_AIC_block3_Qmultiplicative = np.zeros(stim_num_days)
 stim_AIC_block3_Pmultiplicative = np.zeros(stim_num_days)
+stim_AIC_block3_TwoAlphas = np.zeros(stim_num_days)
 sham_alpha_block1 = np.zeros(sham_num_days)
 sham_beta_block1 = np.zeros(sham_num_days)
 sham_alpha_block3 = np.zeros(sham_num_days)
@@ -1224,6 +1230,30 @@ for name in stim_hdf_list:
     stim_learning_ratio[stim_counter] = float(alpha_ml_block3)/alpha_ml_block1
     stim_max_loglikelihood3[stim_counter] = max_loglikelihood3
     
+    '''
+    Get fit with model using Two Alphas (one with stim, one without)
+    '''
+    nll_TwoAlphas = lambda *args: -logLikelihoodRLPerformance_TwoAlphas(*args)
+    result3_TwoAlphas = op.minimize(nll_TwoAlphas, [alpha_true, alpha_true,beta_true], args=([Qlow_block1[-1],Qhigh_block1[-1]], reward_block3, target_block3, trial_block3, stim_trials_block), bounds=[(0.01,1),(0,None),(0,None)])
+    alpha_ml_block3_nostim,alpha_ml_block3_stim, beta_ml_block3_TwoAlphas = result3_TwoAlphas["x"]
+    Qlow_block3, Qhigh_block3, prob_low_block3_TwoAlphas, max_loglikelihood3 = RLPerformance_TwoAlphas([alpha_ml_block3_nostim,alpha_ml_block3_stim,beta_ml_block3_TwoAlphas],[Qlow_block1[-1],Qhigh_block1[-1]],reward_block3,target_block3, trial_block3, stim_trials_block)
+    BIC3_TwoAlphas = -2*max_loglikelihood3 + len(result3_TwoAlphas["x"])*np.log(target_block3.size)
+    AIC3_TwoAlphas = -2*max_loglikelihood3 + 2*len(result3_TwoAlphas["x"])
+
+     # Accuracy of fit
+    model3 = 0.33*(prob_low_block3_TwoAlphas > 0.5) + 0.66*(np.less_equal(prob_low_block3_TwoAlphas, 0.5))  # scaling by 0.33 and 0.66 just for plotting purposes
+    target_freechoice_block3 = np.array(target_freechoice_block3)
+    fit3 = np.equal(model3[1:],(0.33*target_freechoice_block3))
+    accuracy3_TwoAlphas = float(np.sum(fit3))/fit3.size
+    
+    #stim_alpha_block3_Qadditive[stim_counter] = alpha_ml_block3_Qadditive
+    #stim_beta_block3_Qadditive[stim_counter] = beta_ml_block3_Qadditive
+    #stim_gamma_block3_Qadditive[stim_counter] = gamma_ml_block3_Qadditive
+    stim_BIC_block3_TwoAlphas[stim_counter] = BIC3_TwoAlphas
+    stim_AIC_block3_TwoAlphas[stim_counter] = AIC3_TwoAlphas
+    #stim_RLaccuracy_block3_Qadditive[stim_counter] = accuracy3_Qadditive
+    #stim_learning_ratio_Qadditive[stim_counter] = float(alpha_ml_block3_Qadditive)/alpha_ml_block1
+    #stim_max_loglikelihood3_Qadditive[stim_counter] = max_loglikelihood3
 
     '''
     Get fit with additive stimulation parameter in Q-value update equation
@@ -1718,7 +1748,7 @@ plt.xticks(ind + width/2., ('Stim: B1 - B3', 'Sham: B1 - B3', 'Stim: B3', 'Sham:
 plt.show()
 
 # Luigi
-stim_BIC_block3_Qmultiplicative[5] -= 100
+#stim_BIC_block3_Qmultiplicative[5] -= 100
 # Papa
 #stim_BIC_block3[10:15] += 20
 #stim_BIC_block3_Qadditive[10:15] += 50
@@ -1781,14 +1811,14 @@ BIC_indices.pop(5)
 BIC_indices = range(len(stim_BIC_block3))
 
 
-avg_model_BIC = [np.nanmean(stim_BIC_block3[BIC_indices]), np.nanmean(stim_BIC_block3_Qadditive[BIC_indices]), np.nanmean(stim_BIC_block3_Qmultiplicative[BIC_indices]), np.nanmean(stim_BIC_block3_Padditive[BIC_indices]), np.nanmean(stim_BIC_block3_Pmultiplicative[BIC_indices])]
-sem_model_BIC = [np.nanstd(stim_BIC_block3[BIC_indices])/len(stim_BIC_block3), np.nanstd(stim_BIC_block3_Qadditive[BIC_indices])/len(stim_BIC_block3), np.nanstd(stim_BIC_block3_Qmultiplicative[BIC_indices])/len(stim_BIC_block3), np.nanstd(stim_BIC_block3_Padditive[BIC_indices])/len(stim_BIC_block3), np.nanstd(stim_BIC_block3_Pmultiplicative[BIC_indices])/len(stim_BIC_block3)]
+avg_model_BIC = [np.nanmean(stim_BIC_block3[BIC_indices]), np.nanmean(stim_BIC_block3_TwoAlphas[BIC_indices]),np.nanmean(stim_BIC_block3_Qadditive[BIC_indices]), np.nanmean(stim_BIC_block3_Qmultiplicative[BIC_indices]), np.nanmean(stim_BIC_block3_Padditive[BIC_indices]), np.nanmean(stim_BIC_block3_Pmultiplicative[BIC_indices])]
+sem_model_BIC = [np.nanstd(stim_BIC_block3[BIC_indices])/len(stim_BIC_block3), np.nanstd(stim_BIC_block3_TwoAlphas[BIC_indices])/len(stim_BIC_block3),np.nanstd(stim_BIC_block3_Qadditive[BIC_indices])/len(stim_BIC_block3), np.nanstd(stim_BIC_block3_Qmultiplicative[BIC_indices])/len(stim_BIC_block3), np.nanstd(stim_BIC_block3_Padditive[BIC_indices])/len(stim_BIC_block3), np.nanstd(stim_BIC_block3_Pmultiplicative[BIC_indices])/len(stim_BIC_block3)]
 sem_model_BIC = np.array(sem_model_BIC)/2
 plt.figure()
 plt.errorbar(range(len(avg_model_BIC)), avg_model_BIC, yerr=sem_model_BIC,marker='o',color='c')
-labels = ["Regular","Q Additive","Q Multiplicative","P Additive", "P Multiplicative"]
-plt.xticks([0,1,2,3,4], labels, fontsize=8)
-plt.xlim((-0.1,4.1))
+labels = ["Regular","Two Alphas","Q Additive","Q Multiplicative","P Additive", "P Multiplicative"]
+plt.xticks([0,1,2,3,4,5], labels, fontsize=8)
+plt.xlim((-0.1,5.1))
 plt.title('Bayesian Information Criterion')
 plt.show()
 
