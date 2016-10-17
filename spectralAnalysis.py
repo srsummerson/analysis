@@ -8,6 +8,7 @@ from matplotlib.mlab import cohere
 from scipy import fft, arange, signal
 from pylab import specgram
 from scipy import signal
+from spectrogram.spectrogram_methods import make_spectrogram
 
 def LFPSpectrumSingleChannel(tankname,channel):
 	"""
@@ -435,6 +436,59 @@ def computePowerFeatures(lfp_data, Fs, power_bands, event_indices, t_window):
 				Sxx, f, t, fig = specgram(data, NFFT=NFFT, Fs=Fs, noverlap=noverlap)
 				Sxx = Sxx/np.sum(Sxx)
 				Sxx = 10*np.log10(Sxx)
+				for k in range(0,len(power_bands)):
+					low_band, high_band = power_bands[k]
+					freqs = np.ravel(np.nonzero(np.greater(f,low_band)&np.less_equal(f,high_band)))
+					tot_power_band = np.sum(Sxx[freqs,:],axis=0)
+					trial_powers[j,feat_counter] = np.sum(tot_power_band)/float(len(tot_power_band))
+					#trial_powers[j,i*len(power_bands) + k] = np.sum(tot_power_band)/float(len(tot_power_band))
+					feat_counter += 1
+		features[str(trial)] = trial_powers
+
+	return features
+
+def computePowerFeatures_Chirplets(lfp_data, Fs, power_bands, event_indices, t_window):
+	'''
+	Inputs
+		- data: dictionary of data, with one entry for each channel 
+		- Fs: sampling frequency 
+		- power_bands: list of power bands 
+		- event_indices: N x M array of event indices, where N is the number of trials and M is the number of 
+		                 different events, e.g. go cue, reward
+		- t_window: length M array of time window (in seconds) to compute features over starting at the time of the event index, one element for each feature 
+	Outputs
+		- features: dictionary with N entries (one per trial), with a C x K matric which C is the number of channels 
+					and K is the number of features (number of power bands times M)
+
+	 Note that this method computes powers using Chirplet methods. powers (returned from make_spectrogram method) is an array of N x M x T, where N is the number of trials, M is the number of frequency domain points, and T is the number of time domain points
+			powers, Power, cf_list = make_spectrogram(data, Fs, fmax=100, trialave=False, makeplot=False)
+
+	'''
+	t_window = [int(Fs*time) for time in t_window]  # changing seconds into samples
+
+	N, M = event_indices.shape
+	times = np.ones([N,M])
+	for t,time in enumerate(t_window):
+		times[:,t] = time*np.ones(N)
+
+	features = dict()
+
+	channels = lfp_data.keys()
+
+	for trial in range(0,N):
+		events = event_indices[trial,:]  # should be array of length M
+		trial_powers = np.zeros([len(channels),M*len(power_bands)])
+		for j, chann in enumerate(channels):
+			chann_data = lfp_data[chann]
+			feat_counter = 0
+			for i,ind in enumerate(events):
+				data = chann_data[ind - int(Fs):ind + times[trial,i] + int(Fs)]  # pad time samples with additional 1 s at beginning and end to help deal with edge effects
+				data = np.ravel(data)
+				data = np.expand_dims(data, axis=0)
+				Sxx, Power, f = make_spectrogram(data, Fs, fmax=100, trialave=False, makeplot=False)
+				Sxx = np.squeeze(Sxx)
+				Sxx_trunc = Sxx[:,Fs:-Fs] 					# get rid of padded data in time domain
+				Sxx_trunc = Sxx_trunc/np.sum(Sxx_trunc)		# normalize by total power
 				for k in range(0,len(power_bands)):
 					low_band, high_band = power_bands[k]
 					freqs = np.ravel(np.nonzero(np.greater(f,low_band)&np.less_equal(f,high_band)))

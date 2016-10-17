@@ -327,6 +327,8 @@ def make_spectrogram(lfp, sampling_rate, fmax, trialave, makeplot):
 		- makeplot: binary input indicating whether to create a plot at the end. If makeplot == True, it will be
 					trial-averaged
 	Outputs:
+		- powers: array of N x M x T, where N is the number of trials, M is the number of frequency domain
+		points, and T is the number of time domain points
 		- Power: if trialave==0: array of N x M x T, where N is the number of trials, M is the number of frequency domain
 		points, and T is the number of time domain points, if trialave ==1: array of M x T, 
 		where M is the number of points in the frequency domain and T is the number of time points.
