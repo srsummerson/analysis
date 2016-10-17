@@ -41,10 +41,10 @@ mari20160418_04_te2002.hdf, mari20160418_06_te2004.hdf
 '''
 
 
-hdf_filename = 'mari20160418_04_te2002.hdf'
-hdf_filename_stim = 'mari20160418_06_te2004.hdf'
-filename = 'Mario20160418'
-filename2 = 'Mario20160418'
+hdf_filename = 'mari20161012_03_te2591.hdf'
+hdf_filename_stim = 'mari20161012_07_te2595.hdf'
+filename = 'Mario20161012'
+filename2 = 'Mario20161012'
 block_num = 1
 block_num_stim = 2
 print filename
@@ -65,7 +65,7 @@ lfp_channels.pop(130)  # delete channel 131
 lfp_channels.pop(143)  # delete channel 145
 bands = [[4,8],[8,12],[12,16],[16,20],[20,24],[24,28]]
 #bands = [[0,20],[20,40],[40,60]]
-bands = [[0, 4], [4, 8], [8, 12], [12, 25], [35, 45], [70, 90]]
+bands = [[8, 12], [12, 30], [30, 55], [65, 100]]
 
 '''
 Load behavior data
