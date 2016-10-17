@@ -24,10 +24,10 @@ from sklearn.cross_validation import cross_val_score
 
 
 
-hdf_filename = 'mari20160716_03_te2361.hdf'
-filename = 'Mario20160716'
-hdf_filename_stim = 'mari20160716_04_te2362.hdf'
-filename2 = 'Mario20160716'
+hdf_filename = 'mari20161013_03_te2598.hdf'
+filename = 'Mario20161013'
+hdf_filename_stim = 'mari20161013_05_te2600.hdf'
+filename2 = 'Mario20161013'
 block_num = 1
 block_num_stim = 2
 print filename
@@ -447,7 +447,7 @@ trial_stim_state = []
 for ind in stim_state_ind_successful_stress_stim:
 	trial_success_stim_state.append(stim_state[ind])
 
-for ind in stim_state_ind_stress_stim:
+for ind in stim_state_ind_stress_stim[:-1]:
 	trial_stim_state.append(stim_state[ind])
 
 for i, ind in enumerate(lfp_ind_successful_stress_stim):
@@ -656,7 +656,7 @@ sm_stim = plt.cm.ScalarMappable(cmap=cmap_stim, norm=plt.Normalize(vmin=0, vmax=
 sm_stim._A = []
 cbar = plt.colorbar(sm_stim,ticks=[0,1], orientation='vertical')
 cbar.ax.set_xticklabels(['Early', 'Late'])  # horizontal colorbar
-#plt.ylim((-0.05,1.05))
+#plt.ylim((1.2,2.2))
 #plt.xlim((-0.05,1.05))
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_IBIPupilCovariance.svg')
 
