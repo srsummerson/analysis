@@ -53,8 +53,8 @@ plt.plot(range(C*K), feat_reg_avg, 'b')
 plt.plot(range(C*K), feat_reg_avg - feat_reg_std, 'b--')
 plt.plot(range(C*K), feat_reg_avg + feat_reg_std, 'b--')
 plt.plot(range(C*K), feat_stress_avg, 'r')
-plt.plot(range(C*K), feat_stress_avg - feat_stress_std, 'r--')
-plt.plot(range(C*K), feat_stress_avg + feat_stress_std, 'r--')
+plt.plot(range(C*K), feat_stress_avg - feat_stress_std, 'm--')
+plt.plot(range(C*K), feat_stress_avg + feat_stress_std, 'y--')
 plt.show()
 
 
@@ -84,7 +84,7 @@ Compute correlation between features
 R_reg = np.corrcoef(features_reg.T)
 R_stress = np.corrcoef(features_stress.T)
 delta_R = R_stress - R_reg
-plt.figure()
+fig = plt.figure()
 plt.subplot(131)
 plt.title('Regular')
 ax = plt.imshow(R_reg, aspect='auto', origin='lower', 
