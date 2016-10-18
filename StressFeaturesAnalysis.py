@@ -82,7 +82,7 @@ for i, name in enumerate(filename):
 	plt.plot(bins[:-1], Fscores_hist, 'b')
 	plt.xlabel('F-score')
 	plt.ylabel('Frequency')
-	plt.show()
+	#plt.show()
 
 	plt.figure()
 	plt.subplot(211)
@@ -94,7 +94,7 @@ for i, name in enumerate(filename):
 	plt.subplot(212)
 	Fscores_sorted = sorted(Fscores, reverse = True)  # sort largest to smallest
 	plt.plot(range(C*K), Fscores_sorted, 'b')
-	plt.show()
+	#plt.show()
 
 
 	'''
@@ -133,7 +133,7 @@ for i, name in enumerate(filename):
 	plt.yticks(yticks, yticklabels)
 	fig.colorbar(ax)
 	"""
-	plt.show()
+	#plt.show()
 
 
 max_top_score = int(np.max(Ftop_scores))
@@ -211,8 +211,14 @@ for i, name in enumerate(filename):
 	features_stress_avg = np.nanmean(features_stress[:,common_features], axis = 0)
 	features_stim_avg = np.nanmean(features_stim[:,common_features], axis = 0)
 
+	sorted_ind = np.argsort(features_reg_avg)
 	plt.figure()
+	plt.subplot(211)
 	plt.plot(features_reg_avg, 'b')
 	plt.plot(features_stress_avg, 'r')
 	plt.plot(features_stim_avg, 'k')
+	plt.subplot(212)
+	plt.plot(features_reg_avg[sorted_ind], 'b')
+	plt.plot(features_stress_avg[sorted_ind], 'r')
+	plt.plot(features_stim_avg[sorted_ind], 'k')
 	plt.show()
