@@ -126,7 +126,7 @@ for i, name in enumerate(filename):
 
 
 max_top_score = np.max(Ftop_scores)
-Count_top_scores = np.zeros([len(filename), max_top_score])
+Count_top_scores = np.zeros([len(filename), max_top_score + 1])
 for j in range(len(filename)):
 	scores = [int(score) for score in Ftop_scores[j,:]]
 	Count_top_scores[j,scores] = 1
