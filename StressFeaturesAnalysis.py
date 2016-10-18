@@ -24,7 +24,7 @@ for i, name in enumerate(filename):
 	'''
 	power_feat = dict()
 	sp.io.loadmat(pf_filename, power_feat)
-
+	print "Loaded data."
 	power_feat_keys = power_feat.keys()
 	num_trials = len(power_feat_keys) - 3
 	C, K = power_feat['0'].shape
@@ -67,6 +67,7 @@ for i, name in enumerate(filename):
 	'''
 	Compute Fisher scores
 	'''
+	print "Compute Fisher score."
 	class_ass = np.zeros(num_trials)
 	class_ass[100:] = 1
 	nb_classes = 2
@@ -89,6 +90,7 @@ for i, name in enumerate(filename):
 	Compute correlation between features 
 	# Change imshow so that range is always [-1, 1]
 	'''
+	print "Compting correlation"
 	R_reg = np.corrcoef(features_reg.T)
 	R_stress = np.corrcoef(features_stress.T)
 	delta_R = R_stress - R_reg
