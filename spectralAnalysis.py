@@ -480,6 +480,7 @@ def computePowerFeatures_Chirplets(lfp_data, Fs, power_bands, event_indices, t_w
 	for j, chann in enumerate(channels): 
 		print chann
 		chann_data = lfp_data[chann]
+		data = np.zeros([tot_features, times[0,0] + 2*int(Fs)])
 		for i in range(tot_features):
 			trial = i/M
 			event_ind = i % M
