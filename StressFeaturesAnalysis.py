@@ -71,10 +71,45 @@ top_scores = np.argsort(Fscores)[-50:]
 plt.figure()
 plt.subplot(211)
 plt.plot(range(C*K), Fscores,'b')
-plt.plot(top_scores, Fscores[top_scores],'m*', linestyle=None)
+plt.plot(top_scores, Fscores[top_scores], linewidth=0, marker = '*', color = 'm')
 plt.subplot(212)
-plt.plot(range(C*K), Fscores.sort())
+Fscores_sorted = sorted(Fscores, reverse = True)  # sort largest to smallest
+plt.plot(range(C*K), Fscores_sorted, 'b')
 plt.show()
 
 
+'''
+Compute correlation between features 
+'''
+R_reg = np.corrcoef(features_reg.T)
+R_stress = np.corrcoef(features_stress.T)
+delta_R = R_stress - R_reg
+plt.figure()
+plt.subplot(131)
+plt.title('Regular')
+ax = plt.imshow(R_reg, aspect='auto', origin='lower', 
+			extent = [0,C*K,0, C*K])
+yticks = np.arange(0, C*K, 100)
+yticklabels = ['{0:.2f}'.format(range(C*K)[i]) for i in yticks]
+plt.yticks(yticks, yticklabels)
+fig.colorbar(ax)
+
+plt.subplot(132)
+plt.title('Stress')
+ax = plt.imshow(R_stress, aspect='auto', origin='lower', 
+			extent = [0,C*K,0, C*K])
+yticks = np.arange(0, C*K, 100)
+yticklabels = ['{0:.2f}'.format(range(C*K)[i]) for i in yticks]
+plt.yticks(yticks, yticklabels)
+fig.colorbar(ax)
+
+plt.subplot(133)
+plt.title('Difference (Stress - Regular')
+ax = plt.imshow(delta_R, aspect='auto', origin='lower', 
+			extent = [0,C*K,0, C*K])
+yticks = np.arange(0, C*K, 100)
+yticklabels = ['{0:.2f}'.format(range(C*K)[i]) for i in yticks]
+plt.yticks(yticks, yticklabels)
+fig.colorbar(ax)
+plt.show()
 
