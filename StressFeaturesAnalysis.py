@@ -1,5 +1,5 @@
 import scipy as sp
-import numpy as 
+import numpy as np
 from scipy import io
 import matplotlib.pyplot as plt
 from basicAnalysis import computeFisherScore
