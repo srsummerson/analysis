@@ -225,6 +225,7 @@ for i, name in enumerate(filename):
 	plt.subplot(211)
 	plt.plot(diff_reg_v_stim, 'k')
 	plt.plot(diff_reg_v_stress, 'r')
+	plt.plot(range(len(diff_reg_v_stress)), np.zeros(len(diff_reg_v_stress)),'b--')
 	plt.subplot(212)
 	plt.plot(np.abs(diff_reg_v_stim), 'k')
 	plt.plot(np.abs(diff_reg_v_stress), 'r')
