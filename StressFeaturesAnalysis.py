@@ -4,8 +4,8 @@ from scipy import io
 import matplotlib.pyplot as plt
 from basicAnalysis import computeFisherScore
 
-filename = ['Mario20161013']
-block_num = [1]
+filename = ['Mario20161012', 'Mario20161013']
+block_num = [1, 1]
 
 num_top_scores = 50
 
