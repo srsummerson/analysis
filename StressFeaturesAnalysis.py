@@ -4,6 +4,16 @@ from scipy import io
 import matplotlib.pyplot as plt
 from basicAnalysis import computeFisherScore
 
+
+'''
+Features are organized as 8 features per channel, so that the first 8 features are for channel 1, the next 8 features are for channel 2, etc.
+For the 8 features, the first 4 features are for the center state and the next 4 features are for the reward state.
+For each 4 state features, they are the power in the first power band, second power band, third power band, and fourth power band. 
+
+For example, the features are organized as [Ch1-Center-B1, Ch1-Center-B2, Ch1-Center-B3, Ch-Center-B4, Ch1-Reward-B1, Ch1-Reward-B2, etc.]
+
+'''
+
 filename = [['Mario20160613', 1], 
 			['Mario20160614', 1], 
 			#['Mario20160707', 1], 
@@ -175,8 +185,15 @@ plt.figure()
 plt.plot(np.arange(max_top_score+1), counts_top_scores)
 plt.show()
 
-# features that were top scoring F-scores for at least 3 days
-common_features = np.ravel(np.nonzero(np.greater(counts_top_scores, 2.5)))
+# features that were top scoring F-scores for at least 4 days
+common_features = np.ravel(np.nonzero(np.greater(counts_top_scores, 3.5)))
+
+
+# create feature list
+chan = np.arange(160) + 1
+feat = []
+for ch in chan:
+	feat.append['CH'+str(ch)+'_Center_B1', 'CH'+str(ch)+'_Center_B2', 'CH'+str(ch)+'_Center_B3', 'CH'+str(ch)+'_Center_B4', 'CH'+str(ch)+'_Reward_B1', 'CH'+str(ch)+'_Reward_B2', 'CH'+str(ch)+'_Reward_B3', 'CH'+str(ch)+'_Reward_B4']
 
 diff_reg_v_stress_mat = np.zeros([len(filename), num_top_scores])
 diff_reg_v_stim_mat = np.zeros([len(filename), num_top_scores])
