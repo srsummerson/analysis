@@ -202,72 +202,14 @@ for ch in chan:
 	feat_labels.append('CH'+str(ch)+'_Reward_B3')
 	feat_labels.append('CH'+str(ch)+'_Reward_B4')
 
-diff_reg_v_stress_mat = np.zeros([len(filename), num_top_scores])
-diff_reg_v_stim_mat = np.zeros([len(filename), num_top_scores])
+best_features = [feat_labels[f] for f in common_features]
+print best_features
 
-for i, name in enumerate(filename):
-	print name[0]
-	#TDT_tank = '/backup/subnetsrig/storage/PowerFeatures/'+filename
-	TDT_tank = '/home/srsummerson/storage/PowerFeatures/'
-	pf_filename = TDT_tank + name[0] +'_b'+str(name[1])+'_PowerFeatures.mat'
+orig_stdout = sys.stdout
+f = file('/home/srsummerson/code/analysis/StressPlots/best_features.txt', 'w')
+sys.stdout = f
 
-	'''
-	Load data.
-	Note that power feat is a dictionary with one entry per trial. Each entry is a matrix
-	of C x K entries, where C is the number of channels and K is the number of features.
-	'''
-	power_feat = dict()
-	sp.io.loadmat(pf_filename, power_feat)
-	print "Loaded data."
-	power_feat_keys = power_feat.keys()
-	num_trials = len(power_feat_keys) - 3
-	C, K = power_feat['0'].shape
+print best_features
 
-	'''
-	Arrange data into feature matrix. 
-	Matrix will be of size N x C*K, where N is the number of trials and C*K is the
-	total number of features. Features are organized such that the first K features are
-	from channel one, the next K features are from channel two, and so on.
-	'''
-	features_reg = np.zeros([100, C*K])
-	features_stress = np.zeros([num_trials - 100, C*K])
-	
-	for trial in range(num_trials):
-		if trial < 100:
-			features_reg[trial,:] = power_feat[str(trial)].flatten()
-		else:
-			features_stress[trial - 100,:] = power_feat[str(trial)].flatten()
-
-	pf_filename = TDT_tank + name[0] +'_b'+str(name[1]+1)+'_PowerFeatures.mat'
-
-	'''
-	Load stim data.
-	Note that power feat is a dictionary with one entry per trial. Each entry is a matrix
-	of C x K entries, where C is the number of channels and K is the number of features.
-	'''
-	power_feat = dict()
-	sp.io.loadmat(pf_filename, power_feat)
-	print "Loaded stim data."
-	power_feat_keys = power_feat.keys()
-	num_trials = len(power_feat_keys) - 3
-	C, K = power_feat['0'].shape
-
-	features_stim = np.zeros([num_trials, C*K])
-
-	for trial in range(num_trials):
-		features_stim[trial, :] = power_feat[str(trial)].flatten()
-
-	'''
-	Compute basic statistics for common features
-	'''
-	common_features = [int(score) for score in Ftop_scores[i,:]]
-	features_reg_avg = np.nanmean(features_reg[:,common_features], axis = 0)
-	features_stress_avg = np.nanmean(features_stress[:,common_features], axis = 0)
-	features_stim_avg = np.nanmean(features_stim[:,common_features], axis = 0)
-
-	diff_reg_v_stress = -features_stress_avg + features_reg_avg
-	diff_reg_v_stim = -features_stim_avg + features_reg_avg
-
-	diff_reg_v_stress_mat[i,:] = diff_reg_v_stress
-	diff_reg_v_stim_mat[i,:] = diff_reg_v_stim
-
+sys.stdout = orig_stdout
+f.close()
