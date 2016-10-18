@@ -149,8 +149,8 @@ plt.figure()
 plt.plot(np.arange(max_top_score+1), counts_top_scores)
 plt.show()
 
-# features that were top scoring F-scores for at least 4 days
-common_features = np.ravel(np.nonzero(np.greater(counts_top_scores, 3.5)))
+# features that were top scoring F-scores for at least 3 days
+common_features = np.ravel(np.nonzero(np.greater(counts_top_scores, 2.5)))
 
 diff_reg_v_stress_mat = np.zeros([len(filename), len(common_features)])
 diff_reg_v_stim_mat = np.zeros([len(filename), len(common_features)])
