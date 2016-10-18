@@ -101,7 +101,7 @@ for i, name in enumerate(filename):
 	Compute correlation between features 
 	# Change imshow so that range is always [-1, 1]
 	'''
-	print "Compting correlation"
+	print "Computing correlation"
 	R_reg = np.corrcoef(features_reg.T)
 	R_stress = np.corrcoef(features_stress.T)
 	delta_R = R_stress - R_reg
@@ -135,7 +135,7 @@ for i, name in enumerate(filename):
 	"""
 	#plt.show()
 
-
+plt.close('all')
 max_top_score = int(np.max(Ftop_scores))
 Count_top_scores = np.zeros([len(filename), max_top_score + 1])
 for j in range(len(filename)):
@@ -143,6 +143,7 @@ for j in range(len(filename)):
 	Count_top_scores[j,scores] = 1
 
 counts_top_scores = np.sum(Count_top_scores, axis = 0)
+
 
 plt.figure()
 plt.plot(np.arange(max_top_score+1), counts_top_scores)
@@ -211,7 +212,7 @@ for i, name in enumerate(filename):
 	features_stress_avg = np.nanmean(features_stress[:,common_features], axis = 0)
 	features_stim_avg = np.nanmean(features_stim[:,common_features], axis = 0)
 
-	sorted_ind = np.argsort(features_reg_avg)
+	sorted_ind = np.argsort(np.abs(features_reg_avg - features_stress_avg))
 	plt.figure()
 	plt.subplot(211)
 	plt.plot(features_reg_avg, 'b')
