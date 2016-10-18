@@ -41,10 +41,10 @@ mari20160418_04_te2002.hdf, mari20160418_06_te2004.hdf
 '''
 
 
-hdf_filename = 'mari20161012_03_te2591.hdf'
-hdf_filename_stim = 'mari20161012_07_te2595.hdf'
-filename = 'Mario20161012'
-filename2 = 'Mario20161012'
+hdf_filename = 'mari20160517_07_te2097.hdf'
+hdf_filename_stim = 'mari20160517_09_te2099.hdf'
+filename = 'Mario20160517'
+filename2 = 'Mario20160517'
 block_num = 1
 block_num_stim = 2
 print filename
