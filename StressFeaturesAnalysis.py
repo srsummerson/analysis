@@ -191,9 +191,9 @@ common_features = np.ravel(np.nonzero(np.greater(counts_top_scores, 3.5)))
 
 # create feature list
 chan = np.arange(160) + 1
-feat = []
+feat_labels = []
 for ch in chan:
-	feat.append['CH'+str(ch)+'_Center_B1', 'CH'+str(ch)+'_Center_B2', 'CH'+str(ch)+'_Center_B3', 'CH'+str(ch)+'_Center_B4', 'CH'+str(ch)+'_Reward_B1', 'CH'+str(ch)+'_Reward_B2', 'CH'+str(ch)+'_Reward_B3', 'CH'+str(ch)+'_Reward_B4']
+	feat_labels.append(['CH'+str(ch)+'_Center_B1', 'CH'+str(ch)+'_Center_B2', 'CH'+str(ch)+'_Center_B3', 'CH'+str(ch)+'_Center_B4', 'CH'+str(ch)+'_Reward_B1', 'CH'+str(ch)+'_Reward_B2', 'CH'+str(ch)+'_Reward_B3', 'CH'+str(ch)+'_Reward_B4'])
 
 diff_reg_v_stress_mat = np.zeros([len(filename), num_top_scores])
 diff_reg_v_stim_mat = np.zeros([len(filename), num_top_scores])
