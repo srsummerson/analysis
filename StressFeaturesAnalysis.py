@@ -65,12 +65,14 @@ class_ass = np.zeros(num_trials)
 class_ass[100:] = 1
 nb_classes = 2
 Fscores = computeFisherScore(features_all, class_ass, nb_classes)
+Fscores = np.ravel(Fscores)
 top_scores = np.argsort(Fscores)[-50:]
 
 plt.figure()
-plt.subplot(121)
-plt.plot(range(C*K), Fscores)
-plt.subplot(122)
+plt.subplot(211)
+plt.plot(range(C*K), Fscores,'b')
+plt.plot(top_scores, Fscores[top_scores],'m*', linestyle=None)
+plt.subplot(212)
 plt.plot(range(C*K), Fscores.sort())
 plt.show()
 
