@@ -74,7 +74,6 @@ for i, name in enumerate(filename):
 	Fscores = computeFisherScore(features_all, class_ass, nb_classes)
 	Fscores = np.ravel(Fscores)
 	top_scores = np.argsort(Fscores)[-num_top_scores:]
-	top_scores = np.array([int(score) for score in top_scores])
 	Ftop_scores[i,:] = top_scores
 
 	plt.figure()
@@ -129,7 +128,8 @@ for i, name in enumerate(filename):
 max_top_score = np.max(Ftop_scores)
 Count_top_scores = np.zeros([len(filename), max_top_score])
 for j in range(len(filename)):
-	Count_top_scores[j,Ftop_scores[j,:]] = 1
+	scores = [int(score) for score in Ftop_scores[j,:]]
+	Count_top_scores[j,scores] = 1
 
 counts_top_scores = np.sum(Count_top_scores, axis = 0)
 """
