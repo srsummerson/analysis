@@ -17,7 +17,7 @@ filename = [['Mario20160613', 1],
 			['Mario20161012', 1],  
 			['Mario20161013', 1]]
 
-num_top_scores = 50
+num_top_scores = 100
 
 Ftop_scores = np.zeros([len(filename), num_top_scores])
 
