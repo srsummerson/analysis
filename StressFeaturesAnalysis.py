@@ -4,18 +4,28 @@ from scipy import io
 import matplotlib.pyplot as plt
 from basicAnalysis import computeFisherScore
 
-filename = ['Mario20161012', 'Mario20161013']
-block_num = [1, 1]
+filename = [['Mario20160613', 1], 
+			['Mario20160614', 1], 
+			['Mario20160707', 1], 
+			['Mario20160709', 1],
+			['Mario20160712', 1], 
+			['Mario20160714', 1], 
+			['Mario20160715', 1], 
+			['Mario20160716', 1], 
+			['Mario20161006', 1],
+			['Mario20161010', 1],
+			['Mario20161012', 1],  
+			['Mario20161013', 1]]
 
 num_top_scores = 50
 
 Ftop_scores = np.zeros([len(filename), num_top_scores])
 
 for i, name in enumerate(filename):
-	print filename
+	print name[0]
 	#TDT_tank = '/backup/subnetsrig/storage/PowerFeatures/'+filename
 	TDT_tank = '/home/srsummerson/storage/PowerFeatures/'
-	pf_filename = TDT_tank + name +'_b'+str(block_num[i])+'_PowerFeatures.mat'
+	pf_filename = TDT_tank + name[0] +'_b'+str(name[1])+'_PowerFeatures.mat'
 
 	'''
 	Load data.
