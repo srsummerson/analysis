@@ -147,3 +147,72 @@ counts_top_scores = np.sum(Count_top_scores, axis = 0)
 plt.figure()
 plt.plot(np.arange(max_top_score+1), counts_top_scores)
 plt.show()
+
+# features that were top scoring F-scores for at least 4 days
+common_features = np.ravel(np.nonzero(np.greater(counts_top_scores, 3.5)))
+
+for i, name in enumerate(filename):
+	print name[0]
+	#TDT_tank = '/backup/subnetsrig/storage/PowerFeatures/'+filename
+	TDT_tank = '/home/srsummerson/storage/PowerFeatures/'
+	pf_filename = TDT_tank + name[0] +'_b'+str(name[1])+'_PowerFeatures.mat'
+
+	'''
+	Load data.
+	Note that power feat is a dictionary with one entry per trial. Each entry is a matrix
+	of C x K entries, where C is the number of channels and K is the number of features.
+	'''
+	power_feat = dict()
+	sp.io.loadmat(pf_filename, power_feat)
+	print "Loaded data."
+	power_feat_keys = power_feat.keys()
+	num_trials = len(power_feat_keys) - 3
+	C, K = power_feat['0'].shape
+
+	'''
+	Arrange data into feature matrix. 
+	Matrix will be of size N x C*K, where N is the number of trials and C*K is the
+	total number of features. Features are organized such that the first K features are
+	from channel one, the next K features are from channel two, and so on.
+	'''
+	features_reg = np.zeros([100, C*K])
+	features_stress = np.zeros([num_trials - 100, C*K])
+	
+	for trial in range(num_trials):
+		if trial < 100:
+			features_reg[trial,:] = power_feat[str(trial)].flatten()
+		else:
+			features_stress[trial - 100,:] = power_feat[str(trial)].flatten()
+
+	pf_filename = TDT_tank + name[0] +'_b'+str(name[1]+1)+'_PowerFeatures.mat'
+
+	'''
+	Load stim data.
+	Note that power feat is a dictionary with one entry per trial. Each entry is a matrix
+	of C x K entries, where C is the number of channels and K is the number of features.
+	'''
+	power_feat = dict()
+	sp.io.loadmat(pf_filename, power_feat)
+	print "Loaded stim data."
+	power_feat_keys = power_feat.keys()
+	num_trials = len(power_feat_keys) - 3
+	C, K = power_feat['0'].shape
+
+	features_stim = np.zeros([num_trials, C*K])
+
+	for trial in range(num_trials):
+		features_stim[trial, :] = power_feat[str(trial)].flatten()
+
+	'''
+	Compute basic statistics for common features
+	'''
+
+	features_reg_avg = np.nanmean(features_reg[:,common_features], axis = 0)
+	features_stress_avg = np.nanmean(features_stress[:,common_features], axis = 0)
+	features_stim_avg = np.nanmean(features_stim[:,common_features], axis = 0)
+
+	plt.figure()
+	plt.plot(features_reg_avg, 'b')
+	plt.plot(features_stress_avg, 'r')
+	plt.plot(features_stim_avg, 'k')
+	plt.show()
