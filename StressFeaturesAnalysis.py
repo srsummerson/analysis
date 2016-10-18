@@ -56,6 +56,22 @@ for i, name in enumerate(filename):
 			features_stress[trial - 100,:] = power_feat[str(trial)].flatten()
 		features_all[trial, :] = power_feat[str(trial)].flatten()
 
+	'''
+	Load stim data.
+	Note that power feat is a dictionary with one entry per trial. Each entry is a matrix
+	of C x K entries, where C is the number of channels and K is the number of features.
+	'''
+	power_feat = dict()
+	sp.io.loadmat(pf_filename, power_feat)
+	print "Loaded stim data."
+	power_feat_keys = power_feat.keys()
+	num_trials = len(power_feat_keys) - 3
+	C, K = power_feat['0'].shape
+
+	features_stim = np.zeros([num_trials, C*K])
+
+	for trial in range(num_trials):
+		features_stim[trial, :] = power_feat[str(trial)].flatten()
 
 	'''
 	Compute Fisher scores
@@ -104,9 +120,10 @@ for i, name in enumerate(filename):
 	print "Computing correlation"
 	R_reg = np.corrcoef(features_reg.T)
 	R_stress = np.corrcoef(features_stress.T)
+	R_stim = np.corrcoef(features_stim.T)
 	delta_R = R_stress - R_reg
 	fig = plt.figure()
-	plt.subplot(121)
+	plt.subplot(131)
 	plt.title('Regular')
 	ax = plt.imshow(R_reg, aspect='auto', vmin = -1.0, vmax = 1.0, 
 				extent = [0,C*K,C*K,0])
@@ -115,9 +132,18 @@ for i, name in enumerate(filename):
 	plt.yticks(yticks, yticklabels)
 	fig.colorbar(ax)
 
-	plt.subplot(122)
+	plt.subplot(132)
 	plt.title('Stress')
 	ax = plt.imshow(R_stress, aspect='auto', vmin = -1.0, vmax = 1.0, 
+				extent = [0,C*K,C*K,0])
+	yticks = np.arange(0, C*K, 100)
+	yticklabels = ['{0:.2f}'.format(range(C*K)[i]) for i in yticks]
+	plt.yticks(yticks, yticklabels)
+	fig.colorbar(ax)
+
+	plt.subplot(133)
+	plt.title('Stim')
+	ax = plt.imshow(R_stim, aspect='auto', vmin = -1.0, vmax = 1.0, 
 				extent = [0,C*K,C*K,0])
 	yticks = np.arange(0, C*K, 100)
 	yticklabels = ['{0:.2f}'.format(range(C*K)[i]) for i in yticks]
@@ -133,7 +159,7 @@ for i, name in enumerate(filename):
 	plt.yticks(yticks, yticklabels)
 	fig.colorbar(ax)
 	"""
-	#plt.show()
+	plt.show()
 
 plt.close('all')
 max_top_score = int(np.max(Ftop_scores))
@@ -221,26 +247,3 @@ for i, name in enumerate(filename):
 	diff_reg_v_stress_mat[i,:] = diff_reg_v_stress
 	diff_reg_v_stim_mat[i,:] = diff_reg_v_stim
 
-	plt.figure()
-	plt.subplot(211)
-	plt.plot(diff_reg_v_stim, 'k')
-	plt.plot(diff_reg_v_stress, 'r')
-	plt.plot(range(len(diff_reg_v_stress)), np.zeros(len(diff_reg_v_stress)),'b--')
-	plt.subplot(212)
-	plt.plot(np.abs(diff_reg_v_stim), 'k')
-	plt.plot(np.abs(diff_reg_v_stress), 'r')
-	plt.show()
-
-avg_diff_reg_v_stress = np.nanmean(diff_reg_v_stress_mat, axis = 0)
-avg_diff_reg_v_stim = np.nanmean(diff_reg_v_stim_mat, axis = 0)
-std_diff_reg_v_stress = np.nanstd(diff_reg_v_stress_mat, axis = 0)
-std_diff_reg_v_stim = np.nanstd(diff_reg_v_stim_mat, axis = 0)
-
-plt.figure()
-plt.plot(avg_diff_reg_v_stress, 'r')
-#plt.plot(avg_diff_reg_v_stress + std_diff_reg_v_stress, 'r--')
-#plt.plot(avg_diff_reg_v_stress - std_diff_reg_v_stress, 'r--')
-plt.plot(avg_diff_reg_v_stim, 'k')
-#plt.plot(avg_diff_reg_v_stim + std_diff_reg_v_stim, 'k--')
-#plt.plot(avg_diff_reg_v_stim - std_diff_reg_v_stim, 'k--')
-plt.show()
