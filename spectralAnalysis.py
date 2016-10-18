@@ -467,6 +467,7 @@ def computePowerFeatures_Chirplets(lfp_data, Fs, power_bands, event_indices, t_w
 	t_window = [int(Fs*time) for time in t_window]  # changing seconds into samples
 
 	N, M = event_indices.shape
+	tot_features = N*M
 	times = np.ones([N,M])
 	for t,time in enumerate(t_window):
 		times[:,t] = time*np.ones(N)
@@ -474,29 +475,35 @@ def computePowerFeatures_Chirplets(lfp_data, Fs, power_bands, event_indices, t_w
 	features = dict()
 
 	channels = lfp_data.keys()
+	chan_powers = np.zeros([len(channels),len(tot_features),len(power_bands)])
 
-	for trial in range(0,N):
-		events = event_indices[trial,:]  # should be array of length M
+	for j, chann in enumerate(channels): 
+		chann_data = lfp_data[chann]
+		for i in range(tot_features):
+			trial = i/M
+			event_ind = i % M
+			ind = event_indices[trial,event_ind]
+			data[i,:] = chann_data[ind - int(Fs):ind + times[trial,event_ind] + int(Fs)]  # pad time samples with additional 1 s at beginning and end to help deal with edge effects
+		# data matrix is events x time
+		Sxx, Power, f = make_spectrogram(data, Fs, fmax=100, trialave=False, makeplot=False)  # Sxx is events x freq x time
+		Sxx_trunc = Sxx[:,:,Fs:-Fs] 					# get rid of padded data in time domain
+		Sxx_trunc = Sxx_trunc/np.sum(Sxx_trunc)		# normalize by total power
+			
+		for k in range(0,len(power_bands)):
+			low_band, high_band = power_bands[k]
+			freqs = np.ravel(np.nonzero(np.greater(f,low_band)&np.less_equal(f,high_band)))
+			tot_power_band = np.sum(Sxx_trunc[:,freqs,:],axis=2) # sum over time
+			tot_power_band = np.sum(tot_power_band[:,:], axis=1) # sum over freq
+			chan_powers[j,:,k] = tot_power_band
+			#trial_powers[j,i*len(power_bands) + k] = np.sum(tot_power_band)/float(len(tot_power_band))
+		
+	feat_counter = 0
+	for q in range(N): # loop over trials
 		trial_powers = np.zeros([len(channels),M*len(power_bands)])
-		print trial
-		for j, chann in enumerate(channels):
-			chann_data = lfp_data[chann]
-			feat_counter = 0
-			for i,ind in enumerate(events):
-				data = chann_data[ind - int(Fs):ind + times[trial,i] + int(Fs)]  # pad time samples with additional 1 s at beginning and end to help deal with edge effects
-				data = np.ravel(data)
-				data = np.expand_dims(data, axis=0)
-				Sxx, Power, f = make_spectrogram(data, Fs, fmax=100, trialave=False, makeplot=False)
-				Sxx = np.squeeze(Sxx)
-				Sxx_trunc = Sxx[:,Fs:-Fs] 					# get rid of padded data in time domain
-				Sxx_trunc = Sxx_trunc/np.sum(Sxx_trunc)		# normalize by total power
-				for k in range(0,len(power_bands)):
-					low_band, high_band = power_bands[k]
-					freqs = np.ravel(np.nonzero(np.greater(f,low_band)&np.less_equal(f,high_band)))
-					tot_power_band = np.sum(Sxx[freqs,:],axis=0)
-					trial_powers[j,feat_counter] = np.sum(tot_power_band)/float(len(tot_power_band))
-					#trial_powers[j,i*len(power_bands) + k] = np.sum(tot_power_band)/float(len(tot_power_band))
-					feat_counter += 1
+		trial_inds = np.arange(q*M,q*M + M)
+		trial_data = chan_powers[:,trial_inds,:]
+		for j in len(channels):
+			trial_powers[j,:] = trial_data[j,:,:].flatten()
 		features[str(trial)] = trial_powers
 
 	return features
