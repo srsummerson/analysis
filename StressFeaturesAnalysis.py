@@ -152,6 +152,9 @@ plt.show()
 # features that were top scoring F-scores for at least 4 days
 common_features = np.ravel(np.nonzero(np.greater(counts_top_scores, 3.5)))
 
+diff_reg_v_stress_mat = np.zeros([len(filename), len(common_features)])
+diff_reg_v_stim_mat = np.zeros([len(filename), len(common_features)])
+
 for i, name in enumerate(filename):
 	print name[0]
 	#TDT_tank = '/backup/subnetsrig/storage/PowerFeatures/'+filename
@@ -215,6 +218,9 @@ for i, name in enumerate(filename):
 	diff_reg_v_stress = features_stress_avg - features_reg_avg
 	diff_reg_v_stim = features_stim_avg -features_reg_avg
 
+	diff_reg_v_stress_mat[i,:] = diff_reg_v_stress
+	diff_reg_v_stim_mat[i,:] = diff_reg_v_stim
+
 	plt.figure()
 	plt.subplot(211)
 	plt.plot(diff_reg_v_stim, 'k')
@@ -223,3 +229,17 @@ for i, name in enumerate(filename):
 	plt.plot(np.abs(diff_reg_v_stim), 'k')
 	plt.plot(np.abs(diff_reg_v_stress), 'r')
 	plt.show()
+
+avg_diff_reg_v_stress = np.nanmean(diff_reg_v_stress_mat, axis = 0)
+avg_diff_reg_v_stim = np.nanmean(diff_reg_v_stim_mat, axis = 0)
+std_diff_reg_v_stress = np.nanstd(diff_reg_v_stress_mat, axis = 0)
+std_diff_reg_v_stim = np.nanstd(diff_reg_v_stim_mat, axis = 0)
+
+plt.figure()
+plt.plot(avg_diff_reg_v_stress, 'r')
+plt.plot(avg_diff_reg_v_stress + std_diff_reg_v_stress, 'r--')
+plt.plot(avg_diff_reg_v_stress - std_diff_reg_v_stress, 'r--')
+plt.plot(avg_diff_reg_v_stim, 'k')
+plt.plot(avg_diff_reg_v_stim + std_diff_reg_v_stim, 'k--')
+plt.plot(avg_diff_reg_v_stim - std_diff_reg_v_stim, 'k--')
+plt.show()
