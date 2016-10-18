@@ -6,8 +6,8 @@ from basicAnalysis import computeFisherScore
 
 filename = [['Mario20160613', 1], 
 			['Mario20160614', 1], 
-			['Mario20160707', 1], 
-			['Mario20160709', 1],
+			#['Mario20160707', 1], 
+			#['Mario20160709', 1],
 			['Mario20160712', 1], 
 			['Mario20160714', 1], 
 			['Mario20160715', 2], 
