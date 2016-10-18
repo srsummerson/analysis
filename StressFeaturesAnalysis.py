@@ -212,8 +212,8 @@ for i, name in enumerate(filename):
 	features_stress_avg = np.nanmean(features_stress[:,common_features], axis = 0)
 	features_stim_avg = np.nanmean(features_stim[:,common_features], axis = 0)
 
-	diff_reg_v_stress = features_stress_avg - features_reg_avg
-	diff_reg_v_stim = -features_reg_avg + features_stim_avg
+	diff_reg_v_stress = np.abs(features_stress_avg - features_reg_avg)
+	diff_reg_v_stim = np.abs(features_stim_avg -features_reg_avg)
 
 	plt.figure()
 	plt.plot(diff_reg_v_stim, 'r')
