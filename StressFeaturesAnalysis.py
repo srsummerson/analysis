@@ -64,15 +64,6 @@ for i, name in enumerate(filename):
 	feat_stress_avg = np.nanmean(features_stress, axis = 0)
 	feat_stress_std = np.nanstd(features_stress, axis = 0)
 
-	plt.figure()
-	plt.plot(range(C*K), feat_reg_avg, 'b')
-	plt.plot(range(C*K), feat_reg_avg - feat_reg_std, 'b--')
-	plt.plot(range(C*K), feat_reg_avg + feat_reg_std, 'b--')
-	plt.plot(range(C*K), feat_stress_avg, 'r')
-	plt.plot(range(C*K), feat_stress_avg - feat_stress_std, 'r--')
-	plt.plot(range(C*K), feat_stress_avg + feat_stress_std, 'r--')
-	#plt.show()
-
 
 	'''
 	Compute Fisher scores
@@ -91,9 +82,17 @@ for i, name in enumerate(filename):
 	plt.plot(range(C*K), Fscores,'b')
 	plt.plot(top_scores, Fscores[top_scores], linewidth=0, marker = '*', color = 'm')
 	plt.subplot(212)
+	plt.plot(range(C*K), feat_stress_avg - feat_reg_avg, 'b')
+	plt.show()
+
+	plt.figure()
+	plt.subplot(211)
+	plt.plot(range(C*K), Fscores,'b')
+	plt.plot(top_scores, Fscores[top_scores], linewidth=0, marker = '*', color = 'm')
+	plt.subplot(212)
 	Fscores_sorted = sorted(Fscores, reverse = True)  # sort largest to smallest
 	plt.plot(range(C*K), Fscores_sorted, 'b')
-	#plt.show()
+	plt.show()
 
 
 	'''
@@ -132,7 +131,7 @@ for i, name in enumerate(filename):
 	plt.yticks(yticks, yticklabels)
 	fig.colorbar(ax)
 	"""
-	#plt.show()
+	plt.show()
 
 
 max_top_score = np.max(Ftop_scores)
@@ -142,8 +141,7 @@ for j in range(len(filename)):
 	Count_top_scores[j,scores] = 1
 
 counts_top_scores = np.sum(Count_top_scores, axis = 0)
-"""
+
 plt.figure()
 plt.plot(range(max_top_score), counts_top_scores)
 plt.show()
-"""
