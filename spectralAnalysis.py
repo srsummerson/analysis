@@ -475,7 +475,7 @@ def computePowerFeatures_Chirplets(lfp_data, Fs, power_bands, event_indices, t_w
 	features = dict()
 
 	channels = lfp_data.keys()
-	chan_powers = np.zeros([len(channels),len(tot_features),len(power_bands)])
+	chan_powers = np.zeros([len(channels),tot_features,len(power_bands)])
 
 	for j, chann in enumerate(channels): 
 		print chan
