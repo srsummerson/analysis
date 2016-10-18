@@ -56,14 +56,6 @@ for i, name in enumerate(filename):
 			features_stress[trial - 100,:] = power_feat[str(trial)].flatten()
 		features_all[trial, :] = power_feat[str(trial)].flatten()
 
-	'''
-	Compute basic statistics
-	'''
-	feat_reg_avg = np.nanmean(features_reg, axis = 0)
-	feat_reg_std = np.nanstd(features_reg, axis = 0)
-	feat_stress_avg = np.nanmean(features_stress, axis = 0)
-	feat_stress_std = np.nanstd(features_stress, axis = 0)
-
 
 	'''
 	Compute Fisher scores
@@ -77,12 +69,14 @@ for i, name in enumerate(filename):
 	top_scores = np.argsort(Fscores)[-num_top_scores:]
 	Ftop_scores[i,:] = top_scores
 
+	Fscores_hist, bins = np.histogram(Fscores, 25)
+
 	plt.figure()
 	plt.subplot(211)
 	plt.plot(range(C*K), Fscores,'b')
 	plt.plot(top_scores, Fscores[top_scores], linewidth=0, marker = '*', color = 'm')
 	plt.subplot(212)
-	plt.plot(range(C*K), feat_stress_avg - feat_reg_avg, 'b')
+	plt.plot(bins[:-1], Fscores_hist, 'b')
 	plt.show()
 
 	plt.figure()
@@ -107,7 +101,7 @@ for i, name in enumerate(filename):
 	plt.subplot(121)
 	plt.title('Regular')
 	ax = plt.imshow(R_reg, aspect='auto', vmin = -1.0, vmax = 1.0, 
-				extent = [0,C*K,0, C*K])
+				extent = [0,C*K,C*K,0])
 	yticks = np.arange(0, C*K, 100)
 	yticklabels = ['{0:.2f}'.format(range(C*K)[i]) for i in yticks]
 	plt.yticks(yticks, yticklabels)
@@ -116,7 +110,7 @@ for i, name in enumerate(filename):
 	plt.subplot(122)
 	plt.title('Stress')
 	ax = plt.imshow(R_stress, aspect='auto', vmin = -1.0, vmax = 1.0, 
-				extent = [0,C*K,0, C*K])
+				extent = [0,C*K,C*K,0])
 	yticks = np.arange(0, C*K, 100)
 	yticklabels = ['{0:.2f}'.format(range(C*K)[i]) for i in yticks]
 	plt.yticks(yticks, yticklabels)
@@ -134,7 +128,7 @@ for i, name in enumerate(filename):
 	plt.show()
 
 
-max_top_score = np.max(Ftop_scores)
+max_top_score = int(np.max(Ftop_scores))
 Count_top_scores = np.zeros([len(filename), max_top_score + 1])
 for j in range(len(filename)):
 	scores = [int(score) for score in Ftop_scores[j,:]]
