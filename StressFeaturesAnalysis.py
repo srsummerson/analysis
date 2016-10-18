@@ -74,6 +74,7 @@ for i, name in enumerate(filename):
 	Fscores = computeFisherScore(features_all, class_ass, nb_classes)
 	Fscores = np.ravel(Fscores)
 	top_scores = np.argsort(Fscores)[-num_top_scores:]
+	top_scores = np.array([int(score) for score in top_scores])
 	Ftop_scores[i,:] = top_scores
 
 	plt.figure()
