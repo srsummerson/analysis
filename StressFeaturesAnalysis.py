@@ -17,7 +17,7 @@ filename = [['Mario20160613', 1],
 			['Mario20161012', 1],  
 			['Mario20161013', 1]]
 
-num_top_scores = 100
+num_top_scores = 200
 
 Ftop_scores = np.zeros([len(filename), num_top_scores])
 
@@ -75,14 +75,22 @@ for i, name in enumerate(filename):
 	plt.subplot(211)
 	plt.plot(range(C*K), Fscores,'b')
 	plt.plot(top_scores, Fscores[top_scores], linewidth=0, marker = '*', color = 'm')
+	plt.xlim((0,C*K))
+	plt.ylabel('F-score')
+	plt.xlabel('Feature Number')
 	plt.subplot(212)
 	plt.plot(bins[:-1], Fscores_hist, 'b')
+	plt.xlabel('F-score')
+	plt.ylabel('Frequency')
 	plt.show()
 
 	plt.figure()
 	plt.subplot(211)
 	plt.plot(range(C*K), Fscores,'b')
 	plt.plot(top_scores, Fscores[top_scores], linewidth=0, marker = '*', color = 'm')
+	plt.xlim((0,C*K))
+	plt.ylabel('F-score')
+	plt.xlabel('Feature Number')
 	plt.subplot(212)
 	Fscores_sorted = sorted(Fscores, reverse = True)  # sort largest to smallest
 	plt.plot(range(C*K), Fscores_sorted, 'b')
@@ -137,5 +145,5 @@ for j in range(len(filename)):
 counts_top_scores = np.sum(Count_top_scores, axis = 0)
 
 plt.figure()
-plt.plot(range(max_top_score), counts_top_scores)
+plt.plot(np.arange(max_top_score+1), counts_top_scores)
 plt.show()
