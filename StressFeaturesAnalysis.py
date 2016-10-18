@@ -210,7 +210,7 @@ for i, name in enumerate(filename):
 	'''
 	Compute basic statistics for common features
 	'''
-	common_features = Ftop_scores[i,:]
+	common_features = [int(score) for score in Ftop_scores[i,:]]
 	features_reg_avg = np.nanmean(features_reg[:,common_features], axis = 0)
 	features_stress_avg = np.nanmean(features_stress[:,common_features], axis = 0)
 	features_stim_avg = np.nanmean(features_stim[:,common_features], axis = 0)
