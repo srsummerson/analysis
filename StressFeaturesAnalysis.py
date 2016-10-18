@@ -215,7 +215,8 @@ for i, name in enumerate(filename):
 	diff_reg_v_stress = np.abs(features_stress_avg - features_reg_avg)
 	diff_reg_v_stim = np.abs(features_stim_avg -features_reg_avg)
 
+	sorted_ind = np.argsort(diff_reg_v_stress)[::-1]
 	plt.figure()
-	plt.plot(diff_reg_v_stim, 'r')
-	plt.plot(diff_reg_v_stress, 'k')
+	plt.plot(diff_reg_v_stim[sorted_ind], 'r')
+	plt.plot(diff_reg_v_stress[sorted_ind], 'k')
 	plt.show()
