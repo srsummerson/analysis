@@ -600,15 +600,16 @@ def computeFisherScore(data, class_ass, nb_classes):
 	num_points_within_class = np.zeros([1,nb_classes])  			# number of points within each class 
 	
 	for i in range(nb_classes):
-		in_class = np.nonzero(class_ass == i)
+		in_class = np.ravel(np.nonzero(class_ass == i))
+		num_points_within_class[0,i] = len(in_class)
 		class_data = data[in_class,:]  	# extract trails classified as belonging to this class
-		within_class_mean[i,:] = np.mean(class_data, axis=0)  # length of mean vector should be equal to M, the number of features
-		within_class_var[i,:] = np.var(class_data,axis=0)
+		within_class_mean[i,:] = np.nanmean(class_data, axis=0)  # length of mean vector should be equal to M, the number of features
+		within_class_var[i,:] = np.nanvar(class_data,axis=0)
 
 	between_class_mean = np.asmatrix(np.mean(within_class_mean,axis=0))
 	between_class_mean = np.dot(np.ones([nb_classes,1]), between_class_mean)
 
-	Fscores = np.dot(num_points_within_class,(within_class_mean - between_class_mean)**2)/np.dot(num_points_within_class,within_class_var)
+	Fscores = np.dot(num_points_within_class,np.square(within_class_mean - between_class_mean))/np.dot(num_points_within_class,within_class_var)
 
 	return Fscores
 

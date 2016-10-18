@@ -38,6 +38,7 @@ for trial in range(num_trials):
 		features_reg[trial,:] = power_feat[str(trial)].flatten()
 	else:
 		features_stress[trial - 100,:] = power_feat[str(trial)].flatten()
+	features_all[trial, :] = power_feat[str(trial)].flatten()
 
 '''
 Compute basic statistics
