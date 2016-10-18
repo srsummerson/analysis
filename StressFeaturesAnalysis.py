@@ -152,8 +152,8 @@ plt.show()
 # features that were top scoring F-scores for at least 3 days
 common_features = np.ravel(np.nonzero(np.greater(counts_top_scores, 2.5)))
 
-diff_reg_v_stress_mat = np.zeros([len(filename), len(common_features)])
-diff_reg_v_stim_mat = np.zeros([len(filename), len(common_features)])
+diff_reg_v_stress_mat = np.zeros([len(filename), num_top_scores])
+diff_reg_v_stim_mat = np.zeros([len(filename), num_top_scores])
 
 for i, name in enumerate(filename):
 	print name[0]
