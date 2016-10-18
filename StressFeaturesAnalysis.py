@@ -46,15 +46,15 @@ Compute basic statistics
 feat_reg_avg = np.nanmean(features_reg, axis = 0)
 feat_reg_std = np.nanstd(features_reg, axis = 0)
 feat_stress_avg = np.nanmean(features_stress, axis = 0)
-feat_stress_std = np.nanmean(features_stress, axis = 0)
+feat_stress_std = np.nanstd(features_stress, axis = 0)
 
 plt.figure()
 plt.plot(range(C*K), feat_reg_avg, 'b')
 plt.plot(range(C*K), feat_reg_avg - feat_reg_std, 'b--')
 plt.plot(range(C*K), feat_reg_avg + feat_reg_std, 'b--')
 plt.plot(range(C*K), feat_stress_avg, 'r')
-plt.plot(range(C*K), feat_stress_avg - feat_stress_std, 'm--')
-plt.plot(range(C*K), feat_stress_avg + feat_stress_std, 'y--')
+plt.plot(range(C*K), feat_stress_avg - feat_stress_std, 'r--')
+plt.plot(range(C*K), feat_stress_avg + feat_stress_std, 'r--')
 plt.show()
 
 
@@ -85,24 +85,24 @@ R_reg = np.corrcoef(features_reg.T)
 R_stress = np.corrcoef(features_stress.T)
 delta_R = R_stress - R_reg
 fig = plt.figure()
-plt.subplot(131)
+plt.subplot(121)
 plt.title('Regular')
-ax = plt.imshow(R_reg, aspect='auto', origin='lower', 
+ax = plt.imshow(R_reg, aspect='auto',
 			extent = [0,C*K,0, C*K])
 yticks = np.arange(0, C*K, 100)
 yticklabels = ['{0:.2f}'.format(range(C*K)[i]) for i in yticks]
 plt.yticks(yticks, yticklabels)
 fig.colorbar(ax)
 
-plt.subplot(132)
+plt.subplot(122)
 plt.title('Stress')
-ax = plt.imshow(R_stress, aspect='auto', origin='lower', 
+ax = plt.imshow(R_stress, aspect='auto', 
 			extent = [0,C*K,0, C*K])
 yticks = np.arange(0, C*K, 100)
 yticklabels = ['{0:.2f}'.format(range(C*K)[i]) for i in yticks]
 plt.yticks(yticks, yticklabels)
 fig.colorbar(ax)
-
+"""
 plt.subplot(133)
 plt.title('Difference (Stress - Regular')
 ax = plt.imshow(delta_R, aspect='auto', origin='lower', 
@@ -111,5 +111,6 @@ yticks = np.arange(0, C*K, 100)
 yticklabels = ['{0:.2f}'.format(range(C*K)[i]) for i in yticks]
 plt.yticks(yticks, yticklabels)
 fig.colorbar(ax)
+"""
 plt.show()
 
