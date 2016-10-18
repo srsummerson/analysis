@@ -15,7 +15,7 @@ for i, name in enumerate(filename):
 	print filename
 	#TDT_tank = '/backup/subnetsrig/storage/PowerFeatures/'+filename
 	TDT_tank = '/home/srsummerson/storage/PowerFeatures/'
-	pf_filename = TDT_tank + nam e+'_b'+str(block_num[i])+'_PowerFeatures.mat'
+	pf_filename = TDT_tank + name +'_b'+str(block_num[i])+'_PowerFeatures.mat'
 
 	'''
 	Load data.
