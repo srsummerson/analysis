@@ -28,6 +28,10 @@ filename = [['Mario20160613', 1],
 			['Mario20161012', 1],  
 			['Mario20161013', 1]]
 
+OFC_indices = np.array([20, 4, 18, 2, 28, 12, 26, 10, 27, 11, 25, 9]) - 1
+vmPFC_indices = np.array([30, 14, 15, 29, 13, 6, 22]) - 1
+preSMA_indices = np.array([60, 44, 58, 61, 45, 59, 7, 21, 5, 24, 8, 22, 32, 16, 30, 31]) - 1
+
 num_top_scores = 200
 
 Ftop_scores = np.zeros([len(filename), num_top_scores])
@@ -57,12 +61,14 @@ for i, name in enumerate(filename):
 	from channel one, the next K features are from channel two, and so on.
 	'''
 	features_reg = np.zeros([100, C*K])
+	features_reg_OFC = np.zeros([100,len(OFC_indices)*K])
 	features_stress = np.zeros([num_trials - 100, C*K])
 	features_all = np.zeros([num_trials, C*K])
 
 	for trial in range(num_trials):
 		if trial < 100:
 			features_reg[trial,:] = power_feat[str(trial)].flatten()
+			features_reg_OFC[trial,:] = power_feat[str(trial)][OFC_indices,:].flatten()
 		else:
 			features_stress[trial - 100,:] = power_feat[str(trial)].flatten()
 		features_all[trial, :] = power_feat[str(trial)].flatten()
@@ -171,6 +177,8 @@ for i, name in enumerate(filename):
 	fig.colorbar(ax)
 	"""
 	plt.show()
+
+
 
 plt.close('all')
 max_top_score = int(np.max(Ftop_scores))
