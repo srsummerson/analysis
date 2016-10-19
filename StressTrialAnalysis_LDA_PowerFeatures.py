@@ -415,6 +415,7 @@ else:
 	#event_indices = np.vstack([lfp_center_states,lfp_before_reward_states,lfp_after_reward_states]).T
 	#t_window = [0.5,0.5,0.5]
 	event_indices = np.vstack([lfp_center_states,lfp_before_reward_states]).T
+	event_indices.shape
 	t_window = [0.5,0.5]
 	print "Computing LFP features."
 	lfp_features = computePowerFeatures(lfp, lfp_samprate, bands, event_indices, t_window)
