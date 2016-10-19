@@ -3,6 +3,7 @@ import numpy as np
 from scipy import io
 import matplotlib.pyplot as plt
 from basicAnalysis import computeFisherScore
+import sys
 
 
 '''
