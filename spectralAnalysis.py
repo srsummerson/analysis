@@ -405,7 +405,7 @@ def computePowerFeatures(lfp_data, Fs, power_bands, event_indices, t_window):
 		- Fs: sampling frequency 
 		- power_bands: list of power bands 
 		- event_indices: N x M array of event indices, where N is the number of trials and M is the number of 
-		                 different events 
+		                 different events, N = 200, M = 2
 		- t_window: length M array of time window (in seconds) to compute features over, one element for each feature 
 	Outputs
 		- features: dictionary with N entries (one per trial), with a C x K matric which C is the number of channels 
