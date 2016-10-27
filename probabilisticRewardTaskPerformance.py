@@ -777,7 +777,7 @@ def FreeChoiceBehavior_withStressTrials(hdf_file):
 	reward_scheduleL = hdf.root.task[:]['reward_scheduleL']
 	  
 	ind_wait_states = np.ravel(np.nonzero(state == 'wait'))   # total number of unique trials
-	ind_center_states = np.ravel(np.nonzero(state == 'center'))   # total number of totals (includes repeats if trial was incomplete)
+	ind_center_states = np.ravel(np.nonzero(state == 'hold_center'))   # total number of trials (includes repeats if trial was incomplete)
 	ind_target_states = np.ravel(np.nonzero(state == 'target'))
 	ind_check_reward_states = np.ravel(np.nonzero(state == 'check_reward'))
 	instructed_or_freechoice = trial_type[state_time[ind_check_reward_states]]	# free choice trial = 2, instructed = 1
@@ -796,7 +796,7 @@ def FreeChoiceBehavior_withStressTrials(hdf_file):
 	counter = 0 	# counter increments for all successful trials
 
 	for i in range(0,num_trials):
-		if (state[np.minimum(ind_center_states[i]+5,total_states-1)] == 'check_reward'):	 
+		if (state[np.minimum(ind_center_states[i]+4,total_states-1)] == 'check_reward'):	 
 			trial_success[i] = 1
 			target_state = state[ind_center_states[i] + 3]
 			if (target_state == 'hold_targetL'):

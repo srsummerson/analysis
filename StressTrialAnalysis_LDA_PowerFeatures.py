@@ -68,7 +68,8 @@ bands = [[4,8],[8,12],[12,16],[16,20],[20,24],[24,28]]
 bands = [[8, 12], [12, 30], [30, 55], [65, 100]]
 
 '''
-Load behavior data
+Load behavior data:
+Note that FreeChoiceBehavior_withStressTrials has been updated so that the array ind_center_states contains the indices corresponding to when the center hold state begins.
 '''
 state_time, ind_center_states, ind_check_reward_states, all_instructed_or_freechoice, all_stress_or_not, successful_stress_or_not,trial_success, target, reward = FreeChoiceBehavior_withStressTrials(hdf_location)
 state_time_stim, ind_center_states_stim, ind_check_reward_states_stim, all_instructed_or_freechoice_stim, all_stress_or_not_stim, successful_stress_or_not_stim,trial_success_stim, target_stim, reward_stim = FreeChoiceBehavior_withStressTrials(hdf_location_stim)

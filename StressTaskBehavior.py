@@ -497,6 +497,10 @@ class TDTNeuralData():
 		return ibi_mean, hrv, all_ibi, pupil_mean, all_pupil
 
 	def relate_RT_IBI_PD_stress_task(self, hdf_file): 
+		'''
+		This method extracts the regular and stress trials from the hdf_file and computes the average values for each trial of the IBI, HRV, and pupil diameter.
+		Subsequently it computes whether each metric is significantly different across the blocks and if they're correlated with each other. 
+		'''
 
 		stress_data = StressBehavior(hdf_file)
 		# find which trials are stress trials
@@ -522,6 +526,12 @@ class TDTNeuralData():
 		ibi_mean_reg, hrv_reg, all_ibi_reg, pupil_mean_reg, all_pupil_reg = getIBIandPuilDilation(self, pulse_ind_reg, trial_length_reg, pupil_ind_reg,int(0.1*self.pupil_samprate))
 		ibi_mean_stress, hrv_stress, all_ibi_stress, pupil_mean_stress, all_pupil_stress = getIBIandPuilDilation(self, pulse_ind_stress, trial_length_stress, pupil_ind_stress,int(0.1*self.pupil_samprate))
 
+		# compute if metrics are significantly different between the two blocks:
+
+		t_ibi, p_ibi = stats.ttest_ind(ibi_mean_reg, ibi_mean_stress)
+		t_hrv, p_hrv = stats.ttest_ind(hrv_reg, hrv_stress)
+		t_pupil, p_pupil = stats.ttest_ind(pupil_mean_reg, pupil_mean_stress)
+
 		ibi_pupil_reg = stats.pearsonr(ibi_mean_reg, pupil_mean_reg)
 		ibi_pupil_stress = stats.pearsonr(ibi_mean_stress, pupil_mean_stress)
 		ibi_rt_reg = stats.pearsonr(ibi_mean_reg, rt_reg)
@@ -529,4 +539,7 @@ class TDTNeuralData():
 		pupil_rt_reg = stats.pearsonr(pupil_mean_reg, rt_reg)
 		pupil_rt_stress = stats.pearsonr(pupil_mean_stress, rt_stress)
 
-		return ibi_pupil_reg, ibi_pupil_stress, ibi_rt_reg, ibi_rt_stress, pupil_rt_reg, pupil_rt_stress
+		metrics_sig_diff = [[t_ibi, p_ibi], [t_hrv, p_hrv], [t_pupil, p_pupil]]
+		metrics_corr = [ibi_pupil_reg, ibi_pupil_stress, ibi_rt_reg, ibi_rt_stress, pupil_rt_reg, pupil_rt_stress]		
+
+		return metrics_sig_diff, metrics_corr
