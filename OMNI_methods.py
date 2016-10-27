@@ -249,11 +249,13 @@ def convert_OMNI_from_hdf(hdf_filename, **kwargs):
 	data = np.array(data)
 	time_samps, num_col = data.shape
 	crc_flag = np.array(data[:,0])
-	ind_crc_pass = [ind for ind in range(0,len(crc_flag)) if crc_flag[ind]==170]
+	ind_crc_pass = [ind for ind in range(0,len(crc_flag)) if crc_flag[ind]==0]
 
 	channel_data = np.zeros([len(ind_crc_pass),num_col-2])  # 2 fewer columns since one is crv flag and one is ramp
 
-	
+	'''
+	check what columns of 'out' entry are, stopped here
+	'''
 	for col in range(0,num_col-2):
 		channel_data[:,col] = data[ind_crc_pass,col+1]
 
