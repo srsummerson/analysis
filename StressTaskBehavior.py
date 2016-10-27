@@ -359,7 +359,7 @@ class TDTNeuralData():
 
 	def __init__(self, TDT_directory, block_num):
 		# load syncing data: hdf timestamps matching with TDT sample numbers
-		tank_name = TDT_directory[-14:-1]   # assumes TDT directory has format ".../MarioYYYYMMDD/"
+		tank_name = TDT_directory[-14:]   # assumes TDT directory has format ".../MarioYYYYMMDD/"
 		mat_filename = TDT_directory + tank_name+ '_b'+str(block_num)+'_syncHDF.mat'
 		self.hdf_times = dict()
 		sp.io.loadmat(mat_filename,self.hdf_times)
@@ -378,7 +378,7 @@ class TDTNeuralData():
 		print "File read."
 		self.lfp = dict()
 		# Get Pulse and Pupil Data
-		for sig in bl.segments[block_num-2].analogsignals:
+		for sig in bl.segments[block_num-1].analogsignals:
 			if (sig.name == 'PupD 1'):
 				self.pupil_data = np.ravel(sig)
 				self.pupil_samprate = sig.sampling_rate.item()
