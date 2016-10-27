@@ -1,9 +1,13 @@
 import numpy as np 
 import scipy as sp
+from scipy import io
+from scipy import stats
 import matplotlib as mpl
 import tables
 from matplotlib import pyplot as plt
 from rt_calc import get_rt_change_deriv
+from neo import io
+from PulseMonitorData import findIBIs
 
 
 
@@ -51,8 +55,8 @@ class StressBehavior():
 		'''
 		This method computes the sliding average over num_trials_slide bins of the total number of trials successfully completed in each block.
 		'''
-		trial_times = self.state_time[self.ind_check_reward_states]/(60.**2)
-		trials = np.ravel(self.stress_type[self.state_time[self.ind_check_reward_states]])
+		trial_times = self.state_time[self.ind_check_reward_states]/(60.**2)							# compute the times of the check reward states
+		trials = np.ravel(self.stress_type[self.state_time[self.ind_check_reward_states]])				# check what trial type is for these successful trials
 		transition_trials = np.ravel(np.nonzero(trials[1:] - trials[:-1])) 								# these trial numbers mark the ends of a block
 		transition_trials = np.append(transition_trials, len(trials))									# add end of final block
 		num_blocks = len(transition_trials)
@@ -344,3 +348,185 @@ class StressBehavior():
 		plt.show()
 
 		return 
+
+
+class TDTNeuralData():
+	'''
+	This class gives a structure for neural data, pupil data (if any), and pulse data (if any) recording during a recording using the TDT neurophysiology system.
+	It also loads the synchronizing data from the _syncHDF.mat file so that the data may easily be analyzed in conjuction with behavioral data. 
+
+	'''
+
+	def __init__(self, TDT_directory, block_num):
+		# load syncing data: hdf timestamps matching with TDT sample numbers
+		tank_name = TDT_directory[-14:-1]   # assumes TDT directory has format ".../MarioYYYYMMDD/"
+		mat_filename = TDT_directory + tank_name+ '_b'+str(block_num)+'_syncHDF.mat'
+		self.hdf_times = dict()
+		sp.io.loadmat(mat_filename,self.hdf_times)
+
+		'''
+		Convert DIO TDT samples for pupil and pulse data for regular and stress trials
+		'''
+		# divide up analysis for regular trials before stress trials, stress trials, and regular trials after stress trials are introduced
+		hdf_rows = np.ravel(hdf_times['row_number'])
+		self.hdf_rows = [val for val in hdf_rows]	# turn into a list so that the index method can be used later
+		dio_tdt_sample = np.ravel(self.hdf_times['tdt_samplenumber'])
+		dio_freq = np.ravel(self.hdf_times['tdt_dio_samplerate'])
+
+		r = io.TdtIO(TDT_directory)
+		bl = r.read_block(lazy=False,cascade=True)
+		print "File read."
+		self.lfp = dict()
+		# Get Pulse and Pupil Data
+		for sig in bl.segments[block_num-2].analogsignals:
+			if (sig.name == 'PupD 1'):
+				self.pupil_data = np.ravel(sig)
+				self.pupil_samprate = sig.sampling_rate.item()
+				# Convert DIO TDT sample numbers to for pupil and pulse data:
+				# if dio sample num is x, then data sample number is R*(x-1) + 1 where
+				# R = data_sample_rate/dio_sample_rate
+				self.pupil_dio_sample_num = (float(self.pupil_samprate)/float(dio_freq))*(dio_tdt_sample - 1) + 1
+			if (sig.name == 'HrtR 1'):
+				self.pulse_data = np.ravel(sig)
+				self.pulse_samprate = sig.sampling_rate.item()
+				# Convert DIO TDT sample numbers to for pupil and pulse data:
+				# if dio sample num is x, then data sample number is R*(x-1) + 1 where
+				# R = data_sample_rate/dio_sample_rate
+				self.pulse_dio_sample_num = (float(self.pulse_samprate)/float(dio_freq))*(dio_tdt_sample - 1) + 1
+			if (sig.name[0:4] == 'LFP1'):
+				channel = sig.channel_index
+				lfp_samprate = sig.sampling_rate.item()
+				self.lfp[channel] = np.ravel(sig)
+			if (sig.name[0:4] == 'LFP2'):
+				channel = sig.channel_index + 96
+				self.lfp[channel] = np.ravel(sig)
+				self.lfp_samprate = sig.sampling_rate.item()
+
+		# Convert DIO TDT sample numbers for LFP data:
+		# if dio sample num is x, then data sample number is R*(x-1) + 1 where
+		# R = data_sample_rate/dio_sample_rate
+		lfp_dio_sample_num = (float(lfp_samprate)/float(dio_freq))*(dio_tdt_sample - 1) + 1
+
+	def get_indices_for_behavior_events(self, hdf_row_ind):
+		'''
+		Input:
+			- hdf_row_ind: row indices sampled at rate 60 Hz corresponding to behavioral events of interest (e.g. center hold), these should come from the self.state_time array.
+		Output
+			- pusle_ind: corresponding indices for pulse signal
+			- pupil_ind: corresponding indices for pupil signal
+			- lfp_ind: corresponding indices for lfp signals
+		'''
+
+		for i, ind in enumerate(hdf_row_ind):
+			hdf_index = np.argmin(np.abs(self.hdf_rows - ind))
+			pulse_ind[i] = self.pulse_dio_sample_num[hdf_index]
+			pupil_ind[i] = self.pupil_dio_sample_num[hdf_index]
+			lfp_ind[i] = self.lfp_dio_sample_num[hdf_index]
+
+		return pulse_ind, pupil_ind, lfp_ind
+
+	def getIBIandPuilDilation(self, pulse_ind, samples_pulse, pupil_ind,samples_pupil):
+		'''
+		This method computes statistics on the IBI and pupil diameter per trial, as well as aggregating data
+		from all the trials indicated by the row_ind input to compute histograms of the data. Additionally it 
+		computes the heart rate variability (HRV, standard deviation of the IBIs) per trial.
+
+		Inputs:
+			- pulse_ind: N x 1 array containing indices of the pulse signal that correspond to particular events, e.g. center hold, where there are N events of interest
+			- samples_pulse: N x 1 array containing the number of samples to compute the data from the pulse signal for the event of interest
+			- pupil_ind: N x 1 array containing indices of the pupil signal that correspond to particular events, e.g. center hold, where there are N events of interest
+			- samples_pupil: N x 1 array containing the number of samples to compute the data from the pupil signal for the event of interest. Note: the pulse data is often
+							computed over the duration of the trial but pupil data in some cases may be restricted to short epochs within the trial.
+		Outputs:
+			- ibi_mean: list of length N containing the average IBI for each event
+			- hrv: list of length N containing the standard deviation of the IBIs (HRV) for each event 
+			- all_ibi: list of variable length containing all IBI values measured across all events
+			- pupil_mean: list of length N containing the average pupil diameter for each event
+			- all_pupil: list of variable length containing all pupil diameter values (measured while eyes are detected to be open) across all events
+
+		'''
+		ibi_mean = []
+		hrv = []
+		pupil_mean = []
+		all_ibi = []
+		all_pupil = []
+
+		for i in range(0,len(pulse_ind)):
+			pulse_snippet = self.pulse_data[pulse_ind[i]:pulse_ind[i]+samples_pulse[i]]
+			ibi_snippet = findIBIs(pulse_snippet,self.pulse_samprate)
+			all_ibi += ibi_snippet.tolist()
+			if np.isnan(np.nanmean(ibi_snippet)):
+				ibi_mean.append(ibi_mean[-1])   # repeat last measurement
+				hrv.append(hrv[-1])
+			else:
+				ibi_mean.append(np.nanmean(ibi_snippet))
+				hrv.append(np.nanstd(ibi_snippet))
+			ibi_std.append(np.nanstd(ibi_snippet))
+			
+			pupil_snippet = self.pupil_data[pupil_ind[i]:pupil_ind[i]+samples_pupil[i]]
+			pupil_snippet_range = range(0,len(pupil_snippet))
+			eyes_closed = np.nonzero(np.less(pupil_snippet,-3.3))
+			eyes_closed = np.ravel(eyes_closed)
+			if len(eyes_closed) > 1:
+				find_blinks = eyes_closed[1:] - eyes_closed[:-1]
+				blink_inds = np.ravel(np.nonzero(np.not_equal(find_blinks,1)))
+				eyes_closed_ind = [eyes_closed[0]]
+				eyes_closed_ind += eyes_closed[blink_inds].tolist()
+				eyes_closed_ind += eyes_closed[blink_inds+1].tolist()
+				eyes_closed_ind += [eyes_closed[-1]]
+				eyes_closed_ind.sort()
+				
+				for i in np.arange(1,len(eyes_closed_ind),2):
+					rm_range = range(np.nanmax(eyes_closed_ind[i-1]-20,0),np.minimum(eyes_closed_ind[i] + 20,len(pupil_snippet)-1))
+					rm_indices = [pupil_snippet_range.index(rm_range[ind]) for ind in range(0,len(rm_range)) if (rm_range[ind] in pupil_snippet_range)]
+					pupil_snippet_range = np.delete(pupil_snippet_range,rm_indices)
+					pupil_snippet_range = pupil_snippet_range.tolist()
+			pupil_snippet = pupil_snippet[pupil_snippet_range]
+			pupil_snippet_mean = np.nanmean(pupil_snippet)
+			pupil_snippet_std = np.nanstd(pupil_snippet)
+			window = np.floor(pupil_samprate/10) # sample window equal to ~100 ms
+			#pupil_snippet = (pupil_snippet[0:window]- pupil_snippet_mean)/float(pupil_snippet_std)
+			pupil_snippet = pupil_snippet[0:window]
+			all_pupil += pupil_snippet.tolist()
+			if np.isnan(np.nanmean(pupil_snippet)):
+				pupil_mean.append(pupil_mean[-1])
+			else:
+				pupil_mean.append(np.nanmean(pupil_snippet))
+			pupil_std.append(np.nanstd(pupil_snippet))
+
+		return ibi_mean, hrv, all_ibi, pupil_mean, all_pupil
+
+	def relate_RT_IBI_PD_stress_task(self, hdf_file): 
+
+		stress_data = StressBehavior(hdf_file)
+		# find which trials are stress trials
+		trial_type = np.ravel(stress_data.stress_type[stress_data.state_time[stress_data.ind_check_reward_states]])
+		reg_trial_inds = np.array([ind for ind in range(len(trial_type)) if trial_type[ind] == 0])
+		stress_trial_inds = np.array([ind for ind in range(len(trial_type)) if trial_type[ind] == 1])
+
+		rt_reg, total_vel = stress_data.compute_rt_per_trial_FreeChoiceTask(reg_trial_inds)
+		rt_stress, total_vel = stress_data.compute_rt_per_trial_FreeChoiceTask(stress_trial_inds)
+
+		hdf_row_reg_trials = stress_data.state_time[stress_data.ind_check_reward_states[reg_trial_inds] - 4]  # times of hold center state
+		hdf_row_stress_trials = stress_data.state_time[stress_data.ind_check_reward_states[stress_trial_inds] - 4]  # times of hold center state
+
+		pulse_ind_reg, pupil_ind_reg, lfp_ind_reg = get_indices_for_behavior_events(self, hdf_row_reg_trials)
+		pulse_ind_stress, pupil_ind_stress, lfp_ind_stress = get_indices_for_behavior_events(self, hdf_row_stress_trials)
+
+		trial_length_reg = (stress_data.state_time[stress_data.ind_check_reward_states[reg_trial_inds]] - stress_data.state_time[stress_data.ind_check_reward_states[reg_trial_inds] - 4])/60.  # gives length in seconds
+		trial_length_reg = np.array([int(length*self.pulse_samprate) for length in trial_length_reg])  # gives length in terms of number of pulse signal samples
+		trial_length_stress = (stress_data.state_time[stress_data.ind_check_reward_states[stress_trial_inds]] - stress_data.state_time[stress_data.ind_check_reward_states[stress_trial_inds] - 4])/60.  # gives length in seconds
+		trial_length_stress = np.array([int(length*self.pulse_samprate) for length in trial_length_stress])  # gives length in terms of number of pulse signal samples
+		
+		# compute IBI and HRV over lengths of trials, compute PD over the first 100 ms of the hold period
+		ibi_mean_reg, hrv_reg, all_ibi_reg, pupil_mean_reg, all_pupil_reg = getIBIandPuilDilation(self, pulse_ind_reg, trial_length_reg, pupil_ind_reg,int(0.1*self.pupil_samprate))
+		ibi_mean_stress, hrv_stress, all_ibi_stress, pupil_mean_stress, all_pupil_stress = getIBIandPuilDilation(self, pulse_ind_stress, trial_length_stress, pupil_ind_stress,int(0.1*self.pupil_samprate))
+
+		ibi_pupil_reg = stats.pearsonr(ibi_mean_reg, pupil_mean_reg)
+		ibi_pupil_stress = stats.pearsonr(ibi_mean_stress, pupil_mean_stress)
+		ibi_rt_reg = stats.pearsonr(ibi_mean_reg, rt_reg)
+		ibi_rt_stress = stats.pearsonr(ibi_mean_stress, rt_stress)
+		pupil_rt_reg = stats.pearsonr(pupil_mean_reg, rt_reg)
+		pupil_rt_stress = stats.pearsonr(pupil_mean_stress, rt_stress)
+
+		return ibi_pupil_reg, ibi_pupil_stress, ibi_rt_reg, ibi_rt_stress, pupil_rt_reg, pupil_rt_stress

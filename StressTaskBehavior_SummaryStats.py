@@ -9,9 +9,9 @@ from StressTaskBehavior import StressBehavior
 
 
 # list of hdf files for data containing blocks of stress and regular trials
-stress_hdf_files = []
-hdf_prefix = '/storage/rawdata/hdf/'
-
+stress_hdf_files = ['mari20161013_03_te2598.hdf', 'mari20161026_04_te2634.hdf']
+#hdf_prefix = '/storage/rawdata/hdf/'
+hdf_prefix = 'C:/Users/Samantha Summerson/Dropbox/Carmena Lab/Mario/hdf/'
 
 
 def CompareRT_RegularVStress(stress_hdf_files, hdf_prefix): 
@@ -45,8 +45,15 @@ def CompareRT_RegularVStress(stress_hdf_files, hdf_prefix):
 
 	t, p = stats.ttest_ind(avg_reg_rt, avg_stress_rt)
 
-	plt.plot(range(2), [np.nanmean(avg_reg_rt), np.nanmean(avg_stress_rt)], yerr = [np.nanstd(avg_reg_rt)/np.sqrt(len(avg_reg_rt) - 1.), np.nanstd(avg_stress_rt)/np.sqrt(len(avg_stress_rt) - 1.)])
+	width = 0.5
+	plt.bar(0, [np.nanmean(avg_reg_rt)], width, color = 'b', ecolor = 'k', yerr = [np.nanstd(avg_reg_rt)/np.sqrt(len(avg_reg_rt) - 1.)])
+	plt.bar(1, [np.nanmean(avg_stress_rt)], width, color = 'r', ecolor = 'k', yerr = [ np.nanstd(avg_stress_rt)/np.sqrt(len(avg_stress_rt) - 1.)])
+	plt.ylabel('Reaction Time (s)')
+	plt.xticks(np.arange(2)+width/2., ('Regular', 'Stress'))
+	plt.title('Avg. RTs over %i Sessions: (t,p) = (%f,%f)' % (len(stress_hdf_files), t, p))
+	plt.xlim((-0.1, 1 + width + 0.1))
 	plt.show()
 
 	return
 
+CompareRT_RegularVStress(stress_hdf_files, hdf_prefix)
