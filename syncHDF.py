@@ -4,9 +4,9 @@ from neo import io
 
 
 
-filename = 'Mario20160517'
-TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
-#TDT_tank = '/home/srsummerson/storage/tdt/'+filename
+filename = 'Mario20161027'
+#TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
+TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 #block_num = 1
 
 # Load TDT files.
