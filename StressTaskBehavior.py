@@ -368,7 +368,7 @@ class TDTNeuralData():
 		Convert DIO TDT samples for pupil and pulse data for regular and stress trials
 		'''
 		# divide up analysis for regular trials before stress trials, stress trials, and regular trials after stress trials are introduced
-		hdf_rows = np.ravel(hdf_times['row_number'])
+		hdf_rows = np.ravel(self.hdf_times['row_number'])
 		self.hdf_rows = [val for val in hdf_rows]	# turn into a list so that the index method can be used later
 		dio_tdt_sample = np.ravel(self.hdf_times['tdt_samplenumber'])
 		dio_freq = np.ravel(self.hdf_times['tdt_dio_samplerate'])
