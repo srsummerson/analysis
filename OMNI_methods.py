@@ -243,32 +243,34 @@ def convert_OMNI_from_hdf(hdf_filename, **kwargs):
 				contains the timestamps 
 
 	'''
-	table = tables.openFile(hdf_filename)
+	hdf = tables.openFile(hdf_filename)
+	print "Loading data."
 	data = hdf.root.dataGroup.dataTable[:]['out']
-	time_stamps = hdf.root.dataGroup.dataTable[:]['time']
-	data = np.array(data)
+	#time_stamps = hdf.root.dataGroup.dataTable[:]['time']
+	print "Loaded data."
 	time_samps, num_col = data.shape
 	crc_flag = np.array(data[:,0])
 	ind_crc_pass = [ind for ind in range(0,len(crc_flag)) if crc_flag[ind]==0]
-
-	channel_data = np.zeros([len(ind_crc_pass),num_col-2])  # 2 fewer columns since one is crv flag and one is ramp
+	print "Found which inds pass CRC"
+	#channel_data = np.zeros([len(ind_crc_pass),num_col-2])  # 2 fewer columns since one is crv flag and one is ramp
 
 	'''
 	check what columns of 'out' entry are, stopped here
 	'''
-	for col in range(0,num_col-2):
-		channel_data[:,col] = data[ind_crc_pass,col+1]
+	#for col in range(0,num_col-2):
+	#	channel_data[:,col] = data[ind_crc_pass,col+1]
+	channel_data = data[ind_crc_pass,1:-1]
 
-
-	timestamps = time_stamps[ind_crc_pass]
+	#timestamps = time_stamps[ind_crc_pass]
 	counter_ramp = data[ind_crc_pass,-1]
 
 	corrected_counter = [counter_ramp[0]]
 	num_cycle = 0
-
+	print "Finding missed samples in ramp."
 	# Counter is 16 bit and resets at 2**16. This loop unwraps this cycling so that values are monotonically increasing.
 	for i in range(1,len(counter_ramp)):
 	#for i in range(1,17000):
+		print float(i)/len(counter_ramp)
 		diff = counter_ramp[i] - counter_ramp[i-1]
 		diff = int(diff)
 		
@@ -285,8 +287,8 @@ def convert_OMNI_from_hdf(hdf_filename, **kwargs):
 	corrected_channel_data = channel_data[0:miss_samp_index[0]+1,:]
 	diff = corrected_counter[miss_samp_index[0]+1] - corrected_counter[miss_samp_index[0]]
 	diff = int(diff)
-	inter_mat = np.zeros([diff,num_col-3])
-	for j in range(0,num_col-3):
+	inter_mat = np.zeros([diff,num_col-2])
+	for j in range(0,num_col-2):
 		y = np.interp(range(1,diff),[0, diff], [channel_data[miss_samp_index[0],j], channel_data[miss_samp_index[0]+1,j]])
 		y = np.append(y,channel_data[miss_samp_index[0]+1,j])
 		inter_mat[:,j] = y
@@ -301,9 +303,9 @@ def convert_OMNI_from_hdf(hdf_filename, **kwargs):
 		# check number of samples that were skipped and need to be regenerated
 		diff = corrected_counter[miss_samp_index[i]+1] - corrected_counter[miss_samp_index[i]]
 		diff = int(diff)
-		inter_mat = np.zeros([diff,num_col-3])
+		inter_mat = np.zeros([diff,num_col-2])
 		# interpolate values to regenerate missing data
-		for j in range(0,num_col-3):
+		for j in range(0,num_col-2):
 			y = np.interp(range(1,diff),[0, diff], [channel_data[miss_samp_index[i],j], channel_data[miss_samp_index[i]+1,j]])
 			y = np.append(y,channel_data[miss_samp_index[i]+1,j])
 			inter_mat[:,j] = y
@@ -313,8 +315,8 @@ def convert_OMNI_from_hdf(hdf_filename, **kwargs):
 		print "adding last zeros"
 		corrected_channel_data = np.vstack([corrected_channel_data, channel_data[miss_samp_index[-1] + 2:,:]])
 		
-
-	return corrected_counter, corrected_channel_data, channel_data, miss_samp_index
+	hdf.close()
+	return corrected_counter, corrected_channel_data
 
 
 def computePowersWithChirplets(channel_data,Avg_Fs,channel,event_indices,t_before, t_after, center_freq):

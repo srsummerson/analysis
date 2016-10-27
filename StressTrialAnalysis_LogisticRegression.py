@@ -24,8 +24,8 @@ from sklearn.cross_validation import cross_val_score
 
 
 
-hdf_filename = 'mari20161013_03_te2598.hdf'
-filename = 'Mario20161013'
+hdf_filename = 'mari20161026_04_te2634.hdf'
+filename = 'Mario20161026'
 block_num = 1
 print filename
 #TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
