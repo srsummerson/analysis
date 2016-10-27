@@ -228,6 +228,92 @@ def convert_OMNI(data, **kwargs):
 
 	return corrected_counter, corrected_channel_data, channel_data, miss_samp_index
 
+def convert_OMNI_from_hdf(hdf_filename, **kwargs):
+	'''
+	This method converts csv files saved using the OMNI device to a pandas DataFrame for easy
+	analysis in Python.
+
+	Input:
+		- filename: string containing the file path for a csv file saved with the OMNI device
+	
+		
+	Output:
+		- data: pandas DataFrame, M rows x N columns, M = number of data points, N = number of channels + 1, 
+				first N -1 columns corresponds to data from the differnt channels while the Nth column 
+				contains the timestamps 
+
+	'''
+	table = tables.openFile(hdf_filename)
+	data = hdf.root.dataGroup.dataTable[:]['out']
+	time_stamps = hdf.root.dataGroup.dataTable[:]['time']
+	data = np.array(data)
+	time_samps, num_col = data.shape
+	crc_flag = np.array(data[:,0])
+	ind_crc_pass = [ind for ind in range(0,len(crc_flag)) if crc_flag[ind]==170]
+
+	channel_data = np.zeros([len(ind_crc_pass),num_col-2])  # 2 fewer columns since one is crv flag and one is ramp
+
+	
+	for col in range(0,num_col-2):
+		channel_data[:,col] = data[ind_crc_pass,col+1]
+
+
+	timestamps = time_stamps[ind_crc_pass]
+	counter_ramp = data[ind_crc_pass,-1]
+
+	corrected_counter = [counter_ramp[0]]
+	num_cycle = 0
+
+	# Counter is 16 bit and resets at 2**16. This loop unwraps this cycling so that values are monotonically increasing.
+	for i in range(1,len(counter_ramp)):
+	#for i in range(1,17000):
+		diff = counter_ramp[i] - counter_ramp[i-1]
+		diff = int(diff)
+		
+		if (diff == -2**16 +1):
+			num_cycle += 1
+			corrected_counter.append(counter_ramp[i] + num_cycle*(2**16))
+		else:
+			corrected_counter.append(counter_ramp[i] + num_cycle*(2**16))
+	
+	corrected_counter = np.array(corrected_counter)
+	diff_corrected_counter = corrected_counter[1:] - corrected_counter[:-1]
+	miss_samp_index = np.ravel(np.nonzero(np.greater(diff_corrected_counter,1)))
+
+	corrected_channel_data = channel_data[0:miss_samp_index[0]+1,:]
+	diff = corrected_counter[miss_samp_index[0]+1] - corrected_counter[miss_samp_index[0]]
+	diff = int(diff)
+	inter_mat = np.zeros([diff,num_col-3])
+	for j in range(0,num_col-3):
+		y = np.interp(range(1,diff),[0, diff], [channel_data[miss_samp_index[0],j], channel_data[miss_samp_index[0]+1,j]])
+		y = np.append(y,channel_data[miss_samp_index[0]+1,j])
+		inter_mat[:,j] = y
+	corrected_channel_data = np.vstack([corrected_channel_data, inter_mat])
+	
+	print "There are %i instances of missed samples." % len(miss_samp_index)
+	print "Beginning looping through regeneration of data"
+	for i in range(1,len(miss_samp_index)):
+		print i
+		# pad with good data first
+		corrected_channel_data = np.vstack([corrected_channel_data, channel_data[miss_samp_index[i-1] + 2:miss_samp_index[i]+1,:]])
+		# check number of samples that were skipped and need to be regenerated
+		diff = corrected_counter[miss_samp_index[i]+1] - corrected_counter[miss_samp_index[i]]
+		diff = int(diff)
+		inter_mat = np.zeros([diff,num_col-3])
+		# interpolate values to regenerate missing data
+		for j in range(0,num_col-3):
+			y = np.interp(range(1,diff),[0, diff], [channel_data[miss_samp_index[i],j], channel_data[miss_samp_index[i]+1,j]])
+			y = np.append(y,channel_data[miss_samp_index[i]+1,j])
+			inter_mat[:,j] = y
+		corrected_channel_data = np.vstack([corrected_channel_data,inter_mat])
+
+	if (miss_samp_index[-1]+1 != len(ind_crc_pass)-1):
+		print "adding last zeros"
+		corrected_channel_data = np.vstack([corrected_channel_data, channel_data[miss_samp_index[-1] + 2:,:]])
+		
+
+	return corrected_counter, corrected_channel_data, channel_data, miss_samp_index
+
 
 def computePowersWithChirplets(channel_data,Avg_Fs,channel,event_indices,t_before, t_after, center_freq):
 	'''
@@ -334,9 +420,4 @@ corrected_counter, corrected_channel_data, channel_data, miss_samp_index = conve
 '''
 
 
-'''
--generate .mat arrays of OMNI sample numbers for the go cue and reward events, sample numbers should be regenerated data coordinates
--calculate true sampling rate
-
-'''
 
