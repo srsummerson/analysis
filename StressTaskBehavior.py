@@ -360,7 +360,7 @@ class TDTNeuralData():
 	def __init__(self, TDT_directory, block_num):
 		# load syncing data: hdf timestamps matching with TDT sample numbers
 		tank_name = TDT_directory[-14:]   # assumes TDT directory has format ".../MarioYYYYMMDD/"
-		mat_filename = TDT_directory + tank_name+ '_b'+str(block_num)+'_syncHDF.mat'
+		mat_filename = TDT_directory[:-17] + 'syncHDF/' + tank_name+ '_b'+str(block_num)+'_syncHDF.mat'
 		self.hdf_times = dict()
 		sp.io.loadmat(mat_filename,self.hdf_times)
 
