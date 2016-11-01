@@ -115,7 +115,8 @@ for i, name in enumerate(filename):
 	plt.plot(bins[:-1], Fscores_hist, 'b')
 	plt.xlabel('F-score')
 	plt.ylabel('Frequency')
-	plt.show()
+	#plt.show()
+	plt.close()
 
 	plt.figure()
 	plt.subplot(211)
@@ -140,7 +141,7 @@ for i, name in enumerate(filename):
 	R_stim = np.corrcoef(features_stim.T)
 	delta_R = R_stress - R_reg
 	fig = plt.figure()
-	plt.subplot(131)
+	plt.subplot(121)
 	plt.title('Regular')
 	ax = plt.imshow(R_reg, aspect='auto', vmin = -1.0, vmax = 1.0, 
 				extent = [0,C*K,C*K,0])
@@ -149,7 +150,7 @@ for i, name in enumerate(filename):
 	plt.yticks(yticks, yticklabels)
 	fig.colorbar(ax)
 
-	plt.subplot(132)
+	plt.subplot(122)
 	plt.title('Stress')
 	ax = plt.imshow(R_stress, aspect='auto', vmin = -1.0, vmax = 1.0, 
 				extent = [0,C*K,C*K,0])
@@ -157,7 +158,8 @@ for i, name in enumerate(filename):
 	yticklabels = ['{0:.2f}'.format(range(C*K)[i]) for i in yticks]
 	plt.yticks(yticks, yticklabels)
 	fig.colorbar(ax)
-
+	plt.show()
+	"""
 	plt.subplot(133)
 	plt.title('Stim')
 	ax = plt.imshow(R_stim, aspect='auto', vmin = -1.0, vmax = 1.0, 
@@ -167,7 +169,7 @@ for i, name in enumerate(filename):
 	plt.yticks(yticks, yticklabels)
 	fig.colorbar(ax)
 	"""
-	plt.subplot(133)
+	plt.figure()
 	plt.title('Difference (Stress - Regular')
 	ax = plt.imshow(delta_R, aspect='auto', origin='lower', 
 				extent = [0,C*K,0, C*K])
@@ -175,7 +177,7 @@ for i, name in enumerate(filename):
 	yticklabels = ['{0:.2f}'.format(range(C*K)[i]) for i in yticks]
 	plt.yticks(yticks, yticklabels)
 	fig.colorbar(ax)
-	"""
+	
 	plt.show()
 
 
@@ -215,10 +217,10 @@ best_features = [feat_labels[f] for f in common_features]
 print best_features
 
 orig_stdout = sys.stdout
-f = file('/home/srsummerson/code/analysis/StressPlots/best_features.txt', 'w')
+f = file('/home/srsummerson/code/analysis/StressPlots/label_features.txt', 'w')
 sys.stdout = f
 
-print best_features
+print feat_labels
 
 sys.stdout = orig_stdout
 f.close()

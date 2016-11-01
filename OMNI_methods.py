@@ -318,7 +318,7 @@ def convert_OMNI_from_hdf(hdf_filename, **kwargs):
 	hdf.close()
 	return corrected_counter, corrected_channel_data
 
-def convert_OMNI_from_hdf_singlechannel(mat_file, channel_num):
+def convert_OMNI_from_hdf_singlechannel(data, crc, ramp):
 	'''
 	This method converts mat files with CRC, data from a single channel, timestamps, and ramps signal. 
 
@@ -334,17 +334,22 @@ def convert_OMNI_from_hdf_singlechannel(mat_file, channel_num):
 	'''
 	omni = dict()
 	print "Loading data."
-	sp.io.loadmat(mat_file,omni)
+	#sp.io.loadmat(mat_file,omni)
 	#time_stamps = hdf.root.dataGroup.dataTable[:]['time']
 	print "Loaded data."
-	channel_data = [omni['data'], omni['timestamps']]
-	time_samps, num_col = data.shape
-	crc_flag = np.array(omni['crc'])
-	ind_crc_pass = [ind for ind in range(0,len(crc_flag)) if crc_flag[ind]==0]
+	#channel_data = [omni['data'], omni['timestamps']]
+	channel_data = data
+	time_samps = len(data)
+	num_col = 1
+	#crc_flag = np.array(omni['crc'])
+	crc_flag = crc
+	print "Finding which "
+	ind_crc_pass = np.ravel(np.nonzero(crc_flag==0))
 	print "Found which inds pass CRC"
 	#channel_data = np.zeros([len(ind_crc_pass),num_col-2])  # 2 fewer columns since one is crv flag and one is ramp
 
-	counter_ramp = omni['ramp']
+	#counter_ramp = omni['ramp'][ind_crc_pass]
+	counter_ramp = ramp
 
 	corrected_counter = [counter_ramp[0]]
 	num_cycle = 0
@@ -366,38 +371,37 @@ def convert_OMNI_from_hdf_singlechannel(mat_file, channel_num):
 	diff_corrected_counter = corrected_counter[1:] - corrected_counter[:-1]
 	miss_samp_index = np.ravel(np.nonzero(np.greater(diff_corrected_counter,1)))
 
-	corrected_channel_data = channel_data[0:miss_samp_index[0]+1,:]
+	corrected_channel_data = channel_data[0:miss_samp_index[0]+1]
 	diff = corrected_counter[miss_samp_index[0]+1] - corrected_counter[miss_samp_index[0]]
 	diff = int(diff)
-	inter_mat = np.zeros([diff,num_col])
-	for j in range(0,num_col):
-		y = np.interp(range(1,diff),[0, diff], [channel_data[miss_samp_index[0],j], channel_data[miss_samp_index[0]+1,j]])
-		y = np.append(y,channel_data[miss_samp_index[0]+1,j])
-		inter_mat[:,j] = y
-	corrected_channel_data = np.vstack([corrected_channel_data, inter_mat])
+	inter_mat = np.zeros(diff)
+	
+	y = np.interp(range(1,diff),[0, diff], [channel_data[miss_samp_index[0]], channel_data[miss_samp_index[0]+1]])
+	y = np.append(y,channel_data[miss_samp_index[0]+1])
+	inter_mat = y
+	corrected_channel_data = np.append(corrected_channel_data, inter_mat)
 	
 	print "There are %i instances of missed samples." % len(miss_samp_index)
 	print "Beginning looping through regeneration of data"
 	for i in range(1,len(miss_samp_index)):
-		print i
+		print float(i)/(len(miss_samp_index)-1)
 		# pad with good data first
-		corrected_channel_data = np.vstack([corrected_channel_data, channel_data[miss_samp_index[i-1] + 2:miss_samp_index[i]+1,:]])
+		corrected_channel_data = np.append(corrected_channel_data, channel_data[miss_samp_index[i-1] + 2:miss_samp_index[i]+1])
 		# check number of samples that were skipped and need to be regenerated
 		diff = corrected_counter[miss_samp_index[i]+1] - corrected_counter[miss_samp_index[i]]
 		diff = int(diff)
-		inter_mat = np.zeros([diff,num_col])
+		inter_mat = np.zeros(diff)
 		# interpolate values to regenerate missing data
 		for j in range(0,num_col):
-			y = np.interp(range(1,diff),[0, diff], [channel_data[miss_samp_index[i],j], channel_data[miss_samp_index[i]+1,j]])
-			y = np.append(y,channel_data[miss_samp_index[i]+1,j])
-			inter_mat[:,j] = y
-		corrected_channel_data = np.vstack([corrected_channel_data,inter_mat])
+			y = np.interp(range(1,diff),[0, diff], [channel_data[miss_samp_index[i]], channel_data[miss_samp_index[i]+1]])
+			y = np.append(y,channel_data[miss_samp_index[i]+1])
+			inter_mat = y
+		corrected_channel_data = np.append(corrected_channel_data,inter_mat)
 
 	if (miss_samp_index[-1]+1 != len(ind_crc_pass)-1):
 		print "adding last zeros"
-		corrected_channel_data = np.vstack([corrected_channel_data, channel_data[miss_samp_index[-1] + 2:,:]])
+		corrected_channel_data = np.append(corrected_channel_data, channel_data[miss_samp_index[-1] + 2])
 		
-	hdf.close()
 	return corrected_counter, corrected_channel_data
 
 def computePowersWithChirplets(channel_data,Avg_Fs,channel,event_indices,t_before, t_after, center_freq):
