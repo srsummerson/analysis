@@ -1,5 +1,6 @@
 import numpy as np 
 import scipy as sp
+import pandas
 from scipy import stats
 import matplotlib as mpl
 import tables
@@ -9,10 +10,15 @@ from StressTaskBehavior import StressBehavior
 
 
 # list of hdf files for data containing blocks of stress and regular trials
-stress_hdf_files = ['mari20161013_03_te2598.hdf', 'mari20161026_04_te2634.hdf']
+stress_excel_spreadsheet = 'C:/Users/Samantha Summerson/Dropbox/Carmena Lab/Mario/Mood Bias Task/Stress Task AB Blocks Log.xlsx'
+df = pandas.read_excel(stress_excel_spreadsheet)  			# read excel spreadsheet with task infor
+files = df['Data file'].values 								# load column containing names of all files
+stress_hdf_files = [name for name in files if name[-3:]=='hdf']	# extract only names of hdf files
+#stress_hdf_files = ['mari20161013_03_te2598.hdf', 'mari20161026_04_te2634.hdf']
 #hdf_prefix = '/storage/rawdata/hdf/'
 hdf_prefix = 'C:/Users/Samantha Summerson/Dropbox/Carmena Lab/Mario/hdf/'
 
+print 'Loaded all file names.'
 
 def CompareRT_RegularVStress(stress_hdf_files, hdf_prefix): 
 
@@ -23,7 +29,7 @@ def CompareRT_RegularVStress(stress_hdf_files, hdf_prefix):
 	avg_stress_rt = np.zeros(len(stress_hdf_files))
 
 	for i, name in enumerate(stress_hdf_files):
-
+		print 'File %i of %i' % (i, len(stress_hdf_files))
 		# load stress data into class object StressBehavior
 		hdf_location = hdf_prefix +name
 		stress_data = StressBehavior(hdf_location)
