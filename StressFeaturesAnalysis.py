@@ -115,7 +115,7 @@ for i, name in enumerate(filename):
 	plt.plot(bins[:-1], Fscores_hist, 'b')
 	plt.xlabel('F-score')
 	plt.ylabel('Frequency')
-	#plt.show()
+	plt.show()
 
 	plt.figure()
 	plt.subplot(211)
@@ -127,7 +127,7 @@ for i, name in enumerate(filename):
 	plt.subplot(212)
 	Fscores_sorted = sorted(Fscores, reverse = True)  # sort largest to smallest
 	plt.plot(range(C*K), Fscores_sorted, 'b')
-	#plt.show()
+	plt.show()
 
 
 	'''
