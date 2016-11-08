@@ -237,7 +237,7 @@ def make_center_frequencies(minimum_frequency, maximum_frequency,number_of_frequ
 
 def make_spectrogram(lfp, sampling_rate, fmax, trialave, makeplot, num_begin_pad, num_end_pad):
 	'''
-	This a method for making spectrograms using Ryan Canolty's technique for extracting powers using chirplets.
+	This a method for making trial-averaged spectrograms using Ryan Canolty's technique for extracting powers using chirplets.
 	Methods have been adapted by Erin Rich.
 
 	Inputs:
@@ -298,3 +298,54 @@ def make_spectrogram(lfp, sampling_rate, fmax, trialave, makeplot, num_begin_pad
 		plt.show()
 
 	return powers, Power, cf_list
+
+def make_single_spectrogram(lfp, sampling_rate, fmax, makeplot, num_begin_pad, num_end_pad):
+	'''
+	This a method for making spectrograms of data from a single trial using Ryan Canolty's technique for extracting powers using chirplets.
+	Methods have been adapted by Erin Rich.
+
+	Inputs:
+		- lfp: array of length T, T is the number of time points. lfp data is broadband.
+		- sampling_rate: sampling frequency
+		- fmax: maximum frequency to be used in the spectrogram
+		- makeplot: binary input indicating whether to create a plot at the end. If makeplot == True, it will be
+					trial-averaged
+		- num_begin_pad: number of time domain samples padded at the beginning of the lfp data in order to deal with edge effects, these samples will not be plotted in final figure
+		- num_end_pad: number of time domain samples padded the end of the lfp data in order to deal with edge effects, these samples will not be plotted in final figure
+	Outputs:
+		- powers: array of M x T, where M is the number of points in the frequency domain and T is the number of time points.
+		- cf_list: list of the center frequencies for which power was computed
+
+	'''
+	
+	# Define variables
+	num_samples = len(lfp)
+
+	freq_band=np.zeros(2)
+	freq_band[0]= 1.
+	freq_band[1]= fmax
+
+	powers = np.empty([50,num_samples])
+	powers[:] = np.NAN
+	
+	signal = LFPSignal(lfp, sampling_rate, num_samples, 'analytic')
+	power, cf_list, phase = signal.filter_LFP(freq_band,1,sampling_rate)
+	powers = 10*np.log10(power)  # dB scale
+
+	
+	# Plot results. Power is only shown for the time domain sample points past the begin pad points (num_begin_pad) and before the end pad points (num_end_pad).
+	if bool(makeplot):
+		fig = plt.figure()
+		ax = plt.imshow(powers[:,num_begin_pad:-num_end_pad],interpolation = 'bicubic', aspect='auto', origin='lower', 
+			extent = [0,int((num_samples - num_begin_pad - num_end_pad)/sampling_rate),0, len(cf_list)])
+		yticks = np.arange(0, len(cf_list), 5)
+		yticks = np.append(yticks,len(cf_list)-1)
+		yticklabels = ['{0:.2f}'.format(cf_list[i]) for i in yticks]
+		plt.yticks(yticks, yticklabels)
+		plt.ylabel('Frequency (Hz)')
+		plt.xlabel('Time (s)')
+		plt.title('Spectrogram')
+		fig.colorbar(ax)
+		plt.show()
+
+	return powers, cf_list

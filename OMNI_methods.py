@@ -299,7 +299,7 @@ def convert_OMNI_from_hdf(hdf_filename):
 	print "There are %i instances of missed samples." % len(miss_samp_index)
 	print "Beginning looping through regeneration of data"
 	t = time.time()
-	for i in range(len(miss_samp_index)/3,2*len(miss_samp_index)/3):
+	for i in range(2*len(miss_samp_index)/3,len(miss_samp_index)):
 		if (i % 3000 == 0):
 			print i/float(len(miss_samp_index)), time.time() - t
 		# pad with good data first
@@ -327,7 +327,7 @@ def convert_OMNI_from_hdf(hdf_filename):
 
 	# split data into 5 files
 	for i in range(5):
-		filename = 'Mario20161026-OMNI_b' + str(i+5) + '.mat'
+		filename = 'Mario20161026-OMNI_b' + str(i+10) + '.mat'
 		omni = dict()
 		omni['corrected_data'] = corrected_channel_data[i*num_samples/5:(i+1)*num_samples/5]
 		sp.io.savemat(filename,omni)

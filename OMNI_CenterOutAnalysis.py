@@ -118,7 +118,7 @@ x = np.linspace(-1,3,len(trial_avg_low_beta))
 #high_gamma_smooth = spline(x,trial_avg_high_gamma,xnew)
 
 # Gaussian smoothing
-b = signal.gaussian(39,10)
+b = signal.gaussian(39,3)
 low_beta_smooth = filters.convolve1d(trial_avg_low_beta, b/b.sum())
 high_beta_smooth = filters.convolve1d(trial_avg_high_beta, b/b.sum())
 high_gamma_smooth = filters.convolve1d(trial_avg_high_gamma, b/b.sum())
