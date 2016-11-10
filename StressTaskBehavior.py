@@ -63,8 +63,11 @@ class StressBehavior():
 
 		block_length = np.zeros(num_blocks)  															# holder for length of blocks in minutes
 
+		trial_times_percentage_session = np.array([])
+		num_times_per_session = np.array([])
+
 		cmap = mpl.cm.hsv
-		plt.figure()
+		
 
 		for i, trial_end in enumerate(transition_trials):
 			if i==0:
@@ -85,6 +88,7 @@ class StressBehavior():
 			# compute average mins/trial
 			sliding_avg_trial_rate = trial_sliding_avg(block_trials_per_min, num_trials_slide)   	# gives the average num of trials/min
 			
+			'''
 			plt.figure(1)
 			plt.subplot(211)
 			plt.plot(block_trial_times + end_prev_block, sliding_avg_trial_rate,label='Block %i - Stress type: %i' % (i+1, trials[trial_end-1]), color=cmap(i/float(num_blocks)))
@@ -95,8 +99,12 @@ class StressBehavior():
 			plt.subplot(212)
 			plt.plot(block_trial_times/block_trial_times[-1] + i, sliding_avg_trial_rate,label='Block %i - Stress type: %i' % (i+1, trials[trial_end-1]), color=cmap(i/float(num_blocks)))
 			plt.plot(block_trial_times/block_trial_times[-1] + i,np.ones(len(block_trial_times)),'|', color=cmap(i/float(num_blocks)))
+			'''
+			trial_times_percentage_session = np.append(trial_times_percentage_session, block_trial_times + end_prev_block)
+			num_times_per_session = np.append(num_times_per_session, len(block_trial_times))
 
 		# Figure showing the average rate of trials/min as a function of minutes in the task
+		'''
 		plt.figure(1)
 		ax1 = plt.subplot(211)
 		plt.xlabel('Time (min)')
@@ -117,9 +125,10 @@ class StressBehavior():
 		ax2.get_xaxis().tick_bottom()
 		ax2.get_yaxis().tick_left()
 		plt.legend()
-		plt.show()
-
-		return 
+		#plt.show()
+		plt.close()
+		'''
+		return trial_times_percentage_session, num_times_per_session
 
 
 	def PlotTrialChoices(self, num_trials_slide):

@@ -453,7 +453,7 @@ def notchFilterData(data, Fs, notch_freq):
 	b, a = signal.butter(order, [notch_start, notch_stop], btype= 'bandstop', analog = False)
 	filtered_data = signal.filtfilt(b,a,data)
 
-	return
+	return filtered_data
 
 def LDAforFeatureSelection(X,y,filename,block_num):
 	'''
