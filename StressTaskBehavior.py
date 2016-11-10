@@ -38,6 +38,7 @@ class StressBehavior():
 	  
 		self.ind_wait_states = np.ravel(np.nonzero(self.state == 'wait'))   # total number of unique trials
 		self.ind_center_states = np.ravel(np.nonzero(self.state == 'center'))   # total number of totals (includes repeats if trial was incomplete)
+		self.ind_hold_center_states = np.ravel(np.nonzero(self.state == 'hold_center'))
 		self.ind_target_states = np.ravel(np.nonzero(self.state == 'target'))
 		self.ind_check_reward_states = np.ravel(np.nonzero(self.state == 'check_reward'))
 		#self.trial_type = np.ravel(trial_type[state_time[ind_center_states]])
@@ -46,10 +47,39 @@ class StressBehavior():
 		self.num_trials = self.ind_center_states.size
 		self.num_successful_trials = self.ind_check_reward_states.size
 
+	
+	def get_state_TDT_LFPvalues(self,ind_state,syncHDF_file):
+		'''
+		This method finds the TDT sample numbers that correspond to indicated task state using the syncHDF.mat file.
+
+		Inputs:
+			- ind_state: array with state numbers corresponding to which state we're interested in finding TDT sample numbers for, e.g. self.ind_hold_center_states
+			- syncHDF_file: syncHDF.mat file path, e.g. '/home/srsummerson/storage/syncHDF/Mario20161104_b1_syncHDF.mat'
+		Output:
+			- lfp_state_row_ind: array of tdt sample numbers that correspond the the task state events in ind_state array
+		'''
+		# Load syncing data
+		hdf_times = dict()
+		sp.io.loadmat(syncHDF_file, hdf_times)
+		hdf_rows = np.ravel(hdf_times['row_number'])
+		hdf_rows = [val for val in hdf_rows]
+		dio_tdt_sample = np.ravel(hdf_times['tdt_samplenumber'])
+		dio_freq = np.ravel(hdf_times['tdt_dio_samplerate'])
+
+		lfp_dio_sample_num = dio_tdt_sample  # assumes DIOx and LFPx are saved using the same sampling rate
+
+		state_row_ind = self.state_time[ind_state]		# gives the hdf row number sampled at 60 Hz
+		lfp_state_row_ind = np.zeros(state_row_ind.size)
+
+		for i in range(len(state_row_ind)):
+			hdf_index = np.argmin(np.abs(hdf_rows - state_row_ind))
+			lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
+
+		return lfp_state_row_ind
+
 	'''
 	Sliding average of number of successful trials/min, sliding average of probability of selecting better option, raster plots showing each of these (do for all blocks of task)
 	'''
-
 
 	def PlotTrialsCompleted(self, num_trials_slide):
 		'''
