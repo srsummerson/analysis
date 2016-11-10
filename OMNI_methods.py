@@ -253,7 +253,7 @@ def convert_OMNI_from_hdf(hdf_filename):
 	#time_stamps = hdf.root.dataGroup.dataTable[:]['time']
 	elapsed = time.time() -t
 	print "Loaded data: took %f secs." % (elapsed)
-	time_samps, num_col = data.shape
+	#time_samps, num_col = data.shape
 	crc_flag = np.array(data[:,0])
 	
 	t = time.time()
@@ -261,7 +261,8 @@ def convert_OMNI_from_hdf(hdf_filename):
 	elapsed = time.time() -t
 	print "Found which inds pass CRC: took %f secs." % (elapsed)
 	
-	channel_data = data[ind_crc_pass,1:-1]
+	channel_data = data[ind_crc_pass,1:-2]
+	print channel_data.shape
 
 	#timestamps = time_stamps[ind_crc_pass]
 	counter_ramp = np.array(data[ind_crc_pass,-1], dtype = float) 		# note: if dtype is int16 we can't represent differences in adjacent values of -2**16
@@ -290,16 +291,17 @@ def convert_OMNI_from_hdf(hdf_filename):
 	diff = corrected_counter[miss_samp_index[0]+1] - corrected_counter[miss_samp_index[0]]
 	diff = int(diff)
 	inter_mat = np.zeros([diff,96])
-	for j in range(0,num_col-2):
+	for j in range(0,96):
 		y = np.interp(range(1,diff),[0, diff], [channel_data[miss_samp_index[0],j], channel_data[miss_samp_index[0]+1,j]])
 		y = np.append(y,channel_data[miss_samp_index[0]+1,j])
 		inter_mat[:,j] = y
+		#print y.shape
 	corrected_channel_data = np.vstack([corrected_channel_data, inter_mat])
 	
 	print "There are %i instances of missed samples." % len(miss_samp_index)
 	print "Beginning looping through regeneration of data"
 	t = time.time()
-	for i in range(2*len(miss_samp_index)/3,len(miss_samp_index)):
+	for i in range(4*len(miss_samp_index)/5, 5*len(miss_samp_index)/5):
 		if (i % 3000 == 0):
 			print i/float(len(miss_samp_index)), time.time() - t
 		# pad with good data first
@@ -307,9 +309,9 @@ def convert_OMNI_from_hdf(hdf_filename):
 		# check number of samples that were skipped and need to be regenerated
 		diff = corrected_counter[miss_samp_index[i]+1] - corrected_counter[miss_samp_index[i]]
 		diff = int(diff)
-		inter_mat = np.zeros([diff,num_col-2])
+		inter_mat = np.zeros([diff,96])
 		# interpolate values to regenerate missing data
-		for j in range(0,num_col-2):
+		for j in range(0,96):
 			y = np.interp(range(1,diff),[0, diff], [channel_data[miss_samp_index[i],j], channel_data[miss_samp_index[i]+1,j]])
 			y = np.append(y,channel_data[miss_samp_index[i]+1,j])
 			inter_mat[:,j] = y
@@ -326,13 +328,84 @@ def convert_OMNI_from_hdf(hdf_filename):
 	print "Saving data files."
 
 	# split data into 5 files
-	for i in range(5):
-		filename = 'Mario20161026-OMNI_b' + str(i+10) + '.mat'
+	for i in range(1):
+		filename = 'Mario20161028-OMNI_b' + str(i+4) + '.mat'
 		omni = dict()
 		omni['corrected_data'] = corrected_channel_data[i*num_samples/5:(i+1)*num_samples/5]
 		sp.io.savemat(filename,omni)
 	print "Data saved - took %f secs" % (time.time() - t)
 	return corrected_channel_data
+
+def convert_OMNI_basic_stats(hdf_filename):
+	'''
+	This method converts csv files saved using the OMNI device to a pandas DataFrame for easy
+	analysis in Python.
+
+	Input:
+		- filename: string containing the file path for a csv file saved with the OMNI device
+	
+		
+	Output:
+		- data: pandas DataFrame, M rows x N columns, M = number of data points, N = number of channels + 1, 
+				first N -1 columns corresponds to data from the differnt channels while the Nth column 
+				contains the timestamps 
+
+	'''
+	hdf = tables.openFile(hdf_filename)
+	print "Loading data."
+	t = time.time()
+	data = hdf.root.dataGroup.dataTable[:]['out']
+	#data = data[:num_input_samples,:]
+	timestamps = hdf.root.dataGroup.dataTable[:]['time']
+	dur = timestamps[-1] - timestamps[0]
+	expected_samples = int(dur*1000)
+
+	elapsed = time.time() -t
+	print "Loaded data: took %f secs." % (elapsed)
+	time_samps, num_col = data.shape
+	crc_flag = np.array(data[:,0])
+	
+	t = time.time()
+	ind_crc_pass = np.ravel(np.nonzero(crc_flag==0))
+	elapsed = time.time() -t
+	per = 1 - len(ind_crc_pass)/float(expected_samples)
+	print "Found which inds pass CRC: took %f secs." % (elapsed)
+	
+	channel_data = data[ind_crc_pass,1:-1]
+
+	#timestamps = time_stamps[ind_crc_pass]
+	counter_ramp = np.array(data[ind_crc_pass,-1], dtype = float) 		# note: if dtype is int16 we can't represent differences in adjacent values of -2**16
+
+	corrected_counter = [counter_ramp[0]]
+	num_cycle = 0
+	print "Finding missed samples in ramp."
+	# Counter is 16 bit and resets at 2**16. This loop unwraps this cycling so that values are monotonically increasing.
+	t = time.time()
+	for i in range(1,len(counter_ramp)):
+		#print float(i)/len(counter_ramp)
+		diff = counter_ramp[i] - counter_ramp[i-1]
+		diff = int(diff)
+		
+		if (diff == -2**16 +1):
+			num_cycle += 1
+			corrected_counter.append(counter_ramp[i] + num_cycle*(2**16))
+		else:
+			corrected_counter.append(counter_ramp[i] + num_cycle*(2**16))
+	print "Corrected counter: took %f secs" % (time.time() - t)
+	corrected_counter = np.array(corrected_counter)
+	diff_corrected_counter = corrected_counter[1:] - corrected_counter[:-1]
+	miss_samp_index = np.ravel(np.nonzero(np.greater(diff_corrected_counter,1)))
+
+	# check samples that were skipped and need to be regenerated
+	diff = corrected_counter[miss_samp_index + 1] - corrected_counter[miss_samp_index]
+	total_samps_to_correct = np.sum(diff)
+	adjusted_per = total_samps_to_correct/float(expected_samples)
+	
+	print "PER (pass CRC): %f" % (per)
+	print "Adjusted PER: %f" % (adjusted_per)
+	print "Duration of recording: %f mins" % (dur/60.)  
+
+	return
 
 def convert_OMNI_from_hdf_singlechannel(data, crc, ramp):
 	'''
@@ -523,6 +596,4 @@ print "Data read."
 #test_corrected_counter, test_corrected_channel_data, counter = test_convert_OMNI(data)
 corrected_counter, corrected_channel_data, channel_data, miss_samp_index = convert_OMNI(data)
 '''
-
-
 

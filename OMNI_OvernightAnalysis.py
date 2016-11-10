@@ -91,8 +91,10 @@ fig = plt.figure()
 plt.subplot(211)
 ax = plt.imshow(powers[1:f_end*2,:],interpolation = 'bicubic', aspect='auto', origin='lower', 
 	extent = [0,dur,0, len(cf_list[1:f_end*2])])
-yticks = np.arange(0, len(cf_list[:f_end*2]), 10)
-yticklabels = ['{0:.2f}'.format(cf_list[i]) for i in yticks]
+#yticks = np.arange(0, len(cf_list[:f_end*2]), 10)
+#yticklabels = ['{0:.2f}'.format(cf_list[i]) for i in yticks]
+yticks = np.arange(0, 110, 10)
+yticklabels = ['{0:.2f}'.format(i) for i in yticks]
 #xticks = np.arange(0, num_time_points/fs, fs*60*10)  # ticks every 10 minutes
 #xticklabels = ['{0:.2f}'.format(x[i]) for i in xticks]
 plt.yticks(yticks, yticklabels)
