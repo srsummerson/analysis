@@ -105,7 +105,7 @@ else:
 	print "Loading syncing data."
 
 	hdf_times = dict()
-	mat_filename = filename+'_b'+str(block_num)+'_syncHDF.mat'
+	mat_filename = '/home/srsummerson/storage/syncHDF/' + filename+'_b'+str(block_num)+'_syncHDF.mat'
 	#sp.io.loadmat('/home/srsummerson/storage/syncHDF/'+mat_filename,hdf_times)
 	lfp_ind_hold_center_states_reg_trials = BlockAB_behavior.get_state_TDT_LFPvalues(BlockAB_behavior.ind_check_reward_states[BlockAB_reg_trial_inds] - 4,mat_filename)
 	lfp_ind_hold_center_states_stress_trials = BlockAB_behavior.get_state_TDT_LFPvalues(BlockAB_behavior.ind_check_reward_states[BlockAB_stress_trial_inds] - 4,mat_filename)
@@ -122,7 +122,7 @@ else:
 	hdf_times_stim = dict()
 	mat_filename_stim = filename+'_b'+str(block_num_stim)+'_syncHDF.mat'
 	#sp.io.loadmat('/home/srsummerson/storage/syncHDF/'+mat_filename_stim,hdf_times_stim)
-	lfp_ind_hold_center_states_stim_trials = BlockBC_behavior.get_state_TDT_LFPvalues(BlockBC_behavior.ind_check_reward_states[BlockBC_stress_trial_inds] - 4,mat_filename)
+	lfp_ind_hold_center_states_stim_trials = BlockCB_behavior.get_state_TDT_LFPvalues(BlockCB_behavior.ind_check_reward_states[BlockCB_stress_trial_inds] - 4,mat_filename)
 
 	print "Loading TDT data."
 	'''
@@ -187,6 +187,7 @@ else:
 	'''
 	
 	# Find IBIs and pupil data for all successful stress trials. 
+	# STOP: NEED TO CHANGE INT STATEMENTS BELOW B/C INT CANT OPERATE ON ARRAYS
 	samples_pulse_successful_stress = int(((BlockAB_behavior.state_time[BlockAB_behavior.ind_check_reward_states[BlockAB_stress_trial_inds]] - BlockAB_behavior.state_time[BlockAB_behavior.ind_check_reward_states[BlockAB_stress_trial_inds]-4])/60.)*pulse_samprate) 	#number of samples in trial interval for pulse signal
 	samples_pupil_successful_stress = int(0.1*pupil_samprate)*np.ones(len(BlockAB_stress_trial_inds))  # look at first 100 ms
 	
@@ -199,8 +200,8 @@ else:
 	ibi_reg_mean, ibi_reg_std, pupil_reg_mean, pupil_reg_std, nbins_ibi_reg, ibi_reg_hist, nbins_pupil_reg, pupil_reg_hist = getIBIandPuilDilation(pulse_data, lfp_ind_hold_center_states_reg_trials,samples_pulse_successful_reg, pulse_samprate,pupil_data, lfp_ind_hold_center_states_reg_trials,samples_pupil_successful_reg,pupil_samprate)
 
 	# Find IBIs and pupil data for all successful stress trials with stimulation. 
-	samples_pulse_successful_stress_stim = int(((BlockBC_behavior.state_time[BlockBC_behavior.ind_check_reward_states[BlockBC_stress_trial_inds]] - BlockBC_behavior.state_time[BlockBC_behavior.ind_check_reward_states[BlockBC_stress_trial_inds]-4])/60.)*pulse_samprate) 	#number of samples in trial interval for pulse signal
-	samples_pupil_successful_stress_stim = int(0.1*pupil_samprate)*np.ones(len(BlockBC_stress_trial_inds))  # look at first 100 ms
+	samples_pulse_successful_stress_stim = int(((BlockCB_behavior.state_time[BlockCB_behavior.ind_check_reward_states[BlockCB_stress_trial_inds]] - BlockCB_behavior.state_time[BlockCB_behavior.ind_check_reward_states[BlockCB_stress_trial_inds]-4])/60.)*pulse_samprate) 	#number of samples in trial interval for pulse signal
+	samples_pupil_successful_stress_stim = int(0.1*pupil_samprate)*np.ones(len(BlockCB_stress_trial_inds))  # look at first 100 ms
 	
 	ibi_stress_mean_stim, ibi_stress_std_stim, pupil_stress_mean_stim, pupil_stress_std_stim, nbins_ibi_stress_stim, ibi_stress_hist_stim, nbins_pupil_stress_stim, pupil_stress_hist_stim = getIBIandPuilDilation(pulse_data, lfp_ind_hold_center_states_stim_trials,samples_pulse_successful_stress_stim, pulse_samprate,pupil_data, lfp_ind_hold_center_states_stim_trials,samples_pupil_successful_stress_stim,pupil_samprate)
 
