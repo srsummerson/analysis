@@ -412,8 +412,10 @@ def computePowerFeatures(lfp_data, Fs, power_bands, event_indices, t_window):
 					and K is the number of features (number of power bands times M)
 	'''
 	NFFT = int(Fs*0.25)
-	noverlap = int(Fs*0.125)
+	noverlap = int(Fs*0.1875)
 	t_window = [int(Fs*time) for time in t_window]  # changing seconds into samples
+
+	padding = int(Fs*0.5)  # pad data on both ends for purpose of computation
 
 	N, M = event_indices.shape
 	times = np.ones([N,M])
@@ -433,15 +435,13 @@ def computePowerFeatures(lfp_data, Fs, power_bands, event_indices, t_window):
 			for i,ind in enumerate(events):
 				data = chann_data[ind:ind + times[trial,i]]
 				data = np.ravel(data)
-				Sxx, f, t, fig = specgram(data, NFFT=NFFT, Fs=Fs, noverlap=noverlap)
-				Sxx = Sxx/np.sum(Sxx)
-				Sxx = 10*np.log10(Sxx)
+				f, t, Sxx = signal.spectrogram(data, fs = Fs, nperseg = NFFT, noverlap)  # units are V**2/Hz
+				Sxx = np.sqrt(Sxx)		# units are V/sqrt(Hz)
 				for k in range(0,len(power_bands)):
 					low_band, high_band = power_bands[k]
 					freqs = np.ravel(np.nonzero(np.greater(f,low_band)&np.less_equal(f,high_band)))
 					tot_power_band = np.sum(Sxx[freqs,:],axis=0)
 					trial_powers[j,feat_counter] = np.sum(tot_power_band)/float(len(tot_power_band))
-					#trial_powers[j,i*len(power_bands) + k] = np.sum(tot_power_band)/float(len(tot_power_band))
 					feat_counter += 1
 		features[str(trial)] = trial_powers
 
