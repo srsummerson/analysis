@@ -55,8 +55,8 @@ lfp_channels = np.arange(1,161,dtype = int)					# channels 1 - 160
 lfp_channels = np.delete(lfp_channels, [129, 131, 145])		# channels 129, 131, and 145 are open
 lfp_channels = lfp_channels - 1								# correct for indexing to start at 0 instead of 1
 
-bands = [[8,18],[14,21],[101,298]]
-
+bands = [[8,13],[13,30],[40,70],[70,200]]
+# bands = [[8,18], [14-21],[101,298]]
 '''
 Load behavior data:
 Note that FreeChoiceBehavior_withStressTrials has been updated so that the array ind_center_states contains the indices corresponding to when the center hold state begins.
