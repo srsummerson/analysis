@@ -295,11 +295,11 @@ X_successful_stim_std = np.abs(np.std(X_successful_stim))
 #X_successful_stim = (X_successful_stim - X_successful_stim_mean)/X_successful_stim_std
 X_successful_stim = np.array(X_successful_stim)
 
-y_successful_reg = np.zeros(len(ind_successful_reg))
-y_successful_stress = np.ones(len(ind_successful_stress))
+y_successful_reg = np.zeros(X_successful_reg.shape[0])
+y_successful_stress = np.ones(X_successful_stress.shape[0])
 y_successful = np.append(y_successful_reg,y_successful_stress)
 
-y_successful_stim = np.ones(len(ind_successful_stress_stim))
+y_successful_stim = np.ones(X_successful_stim.shape[0])
 '''
 print "LDA using Power Features:"
 clf_all = LinearDiscriminantAnalysis(solver='eigen', shrinkage = 'auto')
