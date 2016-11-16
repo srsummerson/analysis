@@ -324,7 +324,7 @@ for xnum in xrange(num_trials):
     alldata.addSample(X_successful[xnum,:],y_successful[xnum])
 
 # add the features and dummy class labels into the stim dataset
-for xnum in xrange(len(ind_successful_stress_stim)):
+for xnum in xrange(len(y_successful_stim)):
 	stimalldata.addSample(X_successful_stim[xnum,:],y_successful_stim[xnum])
 
 # split the data into testing and training data
