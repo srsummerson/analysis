@@ -287,7 +287,7 @@ def convert_OMNI_from_hdf(hdf_filename, chunk_num, total_chunks):
 	corrected_counter = np.array(corrected_counter)
 	diff_corrected_counter = corrected_counter[1:] - corrected_counter[:-1]
 	miss_samp_index = np.ravel(np.nonzero(np.greater(diff_corrected_counter,1)))
-
+	'''
 	if chunk_num == 1:
 		corrected_channel_data = channel_data[0:miss_samp_index[0]+1,:]
 		diff = corrected_counter[miss_samp_index[0]+1] - corrected_counter[miss_samp_index[0]]
@@ -301,7 +301,7 @@ def convert_OMNI_from_hdf(hdf_filename, chunk_num, total_chunks):
 		corrected_channel_data = np.vstack([corrected_channel_data, inter_mat])
 	else:
 		corrected_channel_data = []
-
+	'''
 	
 	print "There are %i instances of missed samples." % len(miss_samp_index)
 	print "Beginning looping through regeneration of data"
@@ -310,8 +310,11 @@ def convert_OMNI_from_hdf(hdf_filename, chunk_num, total_chunks):
 		if (i % 3000 == 0):
 			print i/float(len(miss_samp_index)), time.time() - t
 		# pad with good data first
-		corrected_channel_data = np.vstack([corrected_channel_data, channel_data[miss_samp_index[i-1] + 2:miss_samp_index[i]+1,:]])
-		# check number of samples that were skipped and need to be regenerated
+		if chunk_num == 1:
+			corrected_channel_data = channel_data[0:miss_samp_index[0]+1,:]
+		else:
+			corrected_channel_data = channel_data[miss_samp_index[i-1] + 2:miss_samp_index[i]+1,:]
+		# check numbers of samples that were skipped and need to be regenerated
 		diff = corrected_counter[miss_samp_index[i]+1] - corrected_counter[miss_samp_index[i]]
 		diff = int(diff)
 		inter_mat = np.zeros([diff,96])
@@ -322,8 +325,8 @@ def convert_OMNI_from_hdf(hdf_filename, chunk_num, total_chunks):
 			inter_mat[:,j] = y
 		corrected_channel_data = np.vstack([corrected_channel_data,inter_mat])
 	print "Regeneration done - took % f secs" % (time.time() - t)
-	if (miss_samp_index[-1]+1 != len(ind_crc_pass)-1):
-		print "Adding last zeros"
+	if (miss_samp_index[-1]+1 != len(ind_crc_pass)-1)&(chunk_num==total_chunks):
+		print "Adding last data"
 		corrected_channel_data = np.vstack([corrected_channel_data, channel_data[miss_samp_index[-1] + 2:,:]])
 	hdf.close()
 

@@ -123,6 +123,7 @@ else:
 	mat_filename_stim = filename+'_b'+str(block_num_stim)+'_syncHDF.mat'
 	#sp.io.loadmat('/home/srsummerson/storage/syncHDF/'+mat_filename_stim,hdf_times_stim)
 	lfp_ind_hold_center_states_stim_trials = BlockCB_behavior.get_state_TDT_LFPvalues(BlockCB_behavior.ind_check_reward_states[BlockCB_stress_trial_inds] - 4,mat_filename)
+	lfp_ind_check_reward_states_stim_trials = BlockCB_behavior.get_state_TDT_LFPvalues(BlockCB_behavior.ind_check_reward_states[BlockCB_stress_trial_inds],mat_filename)
 
 	print "Loading TDT data."
 	'''
@@ -175,7 +176,7 @@ else:
 					lfp_stim[channel] = np.ravel(sig)
 			if (sig.name[0:4] == 'LFP2'):
 				channel = sig.channel_index
-				if (channel % 96) in lfp_channels:
+				if (channel + 96) in lfp_channels:
 					channel_name = channel + 96
 					lfp_stim[channel_name] = np.ravel(sig)
 
@@ -242,9 +243,9 @@ else:
 	sp.io.savemat(phys_filename,phys_features)
 
 	#### event_indices: N x M array of event indices, where N is the number of trials and M is the number of different events 
-	lfp_center_states_stim = lfp_ind_hold_center_states_stress_trials - int(0.4*lfp_samprate)
-	lfp_before_reward_states_stim = lfp_ind_check_reward_states_stress_trials - int(0.5*lfp_samprate)
-	lfp_after_reward_states_stim = lfp_ind_check_reward_states_stress_trials
+	lfp_center_states_stim = lfp_ind_hold_center_states_stim_trials - int(0.4*lfp_samprate)
+	lfp_before_reward_states_stim = lfp_ind_check_reward_states_stim_trials - int(0.5*lfp_samprate)
+	lfp_after_reward_states_stim = lfp_ind_check_reward_states_stim_trials
 
 	event_indices_stim = np.vstack([lfp_center_states_stim,lfp_before_reward_states_stim,lfp_after_reward_states_stim]).T
 	t_window = [0.4,0.5,0.5]
