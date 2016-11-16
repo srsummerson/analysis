@@ -230,14 +230,15 @@ def convert_OMNI(data, **kwargs):
 
 	return corrected_counter, corrected_channel_data, channel_data, miss_samp_index
 
-def convert_OMNI_from_hdf(hdf_filename):
+def convert_OMNI_from_hdf(hdf_filename, chunk_num, total_chunks):
 	'''
 	This method converts csv files saved using the OMNI device to a pandas DataFrame for easy
 	analysis in Python.
 
 	Input:
-		- filename: string containing the file path for a csv file saved with the OMNI device
-	
+		- hdf_filename: string containing the file path for a csv file saved with the OMNI device
+		- chunk_num: number of chunk that data is divided into, should be less than the total chunks
+		- total_chunks: the number of chunks that data will be divided into
 		
 	Output:
 		- data: pandas DataFrame, M rows x N columns, M = number of data points, N = number of channels + 1, 
@@ -287,21 +288,25 @@ def convert_OMNI_from_hdf(hdf_filename):
 	diff_corrected_counter = corrected_counter[1:] - corrected_counter[:-1]
 	miss_samp_index = np.ravel(np.nonzero(np.greater(diff_corrected_counter,1)))
 
-	corrected_channel_data = channel_data[0:miss_samp_index[0]+1,:]
-	diff = corrected_counter[miss_samp_index[0]+1] - corrected_counter[miss_samp_index[0]]
-	diff = int(diff)
-	inter_mat = np.zeros([diff,96])
-	for j in range(0,96):
-		y = np.interp(range(1,diff),[0, diff], [channel_data[miss_samp_index[0],j], channel_data[miss_samp_index[0]+1,j]])
-		y = np.append(y,channel_data[miss_samp_index[0]+1,j])
-		inter_mat[:,j] = y
-		#print y.shape
-	corrected_channel_data = np.vstack([corrected_channel_data, inter_mat])
+	if chunk_num == 1:
+		corrected_channel_data = channel_data[0:miss_samp_index[0]+1,:]
+		diff = corrected_counter[miss_samp_index[0]+1] - corrected_counter[miss_samp_index[0]]
+		diff = int(diff)
+		inter_mat = np.zeros([diff,96])
+		for j in range(0,96):
+			y = np.interp(range(1,diff),[0, diff], [channel_data[miss_samp_index[0],j], channel_data[miss_samp_index[0]+1,j]])
+			y = np.append(y,channel_data[miss_samp_index[0]+1,j])
+			inter_mat[:,j] = y
+			#print y.shape
+		corrected_channel_data = np.vstack([corrected_channel_data, inter_mat])
+	else:
+		corrected_channel_data = []
+
 	
 	print "There are %i instances of missed samples." % len(miss_samp_index)
 	print "Beginning looping through regeneration of data"
 	t = time.time()
-	for i in range(4*len(miss_samp_index)/5, 5*len(miss_samp_index)/5):
+	for i in range((chunk_num-1)*len(miss_samp_index)/total_chunks, chunk_num*len(miss_samp_index)/total_chunks):
 		if (i % 3000 == 0):
 			print i/float(len(miss_samp_index)), time.time() - t
 		# pad with good data first
@@ -329,9 +334,9 @@ def convert_OMNI_from_hdf(hdf_filename):
 
 	# split data into 5 files
 	for i in range(1):
-		filename = 'Mario20161028-OMNI_b' + str(i+4) + '.mat'
+		filename = 'Mario20161028-OMNI_b' + str(chunk_num) + '.mat'
 		omni = dict()
-		omni['corrected_data'] = corrected_channel_data[i*num_samples/5:(i+1)*num_samples/5]
+		omni['corrected_data'] = corrected_channel_data
 		sp.io.savemat(filename,omni)
 	print "Data saved - took %f secs" % (time.time() - t)
 	return corrected_channel_data

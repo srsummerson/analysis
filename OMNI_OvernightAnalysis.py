@@ -54,7 +54,8 @@ t = time.time()
 data_window = total_data[fs*60*25:fs*60*35, channel]
 cf_list, time_points, powers = signal.spectrogram(data_window, fs = fs, nperseg = 1024, noverlap = 512)
 check_powers = powers
-powers = 10*np.log10(powers)
+#powers = 10*np.log10(powers)
+powers = np.sqrt(powers)  # powers in V/sqrt(Hz)
 dur = len(data_window)/(fs*60)  # duration in minutes
 
 

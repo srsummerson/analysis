@@ -187,22 +187,28 @@ else:
 	'''
 	
 	# Find IBIs and pupil data for all successful stress trials. 
-	# STOP: NEED TO CHANGE INT STATEMENTS BELOW B/C INT CANT OPERATE ON ARRAYS
-	samples_pulse_successful_stress = int(((BlockAB_behavior.state_time[BlockAB_behavior.ind_check_reward_states[BlockAB_stress_trial_inds]] - BlockAB_behavior.state_time[BlockAB_behavior.ind_check_reward_states[BlockAB_stress_trial_inds]-4])/60.)*pulse_samprate) 	#number of samples in trial interval for pulse signal
-	samples_pupil_successful_stress = int(0.1*pupil_samprate)*np.ones(len(BlockAB_stress_trial_inds))  # look at first 100 ms
-	
+	samples_pulse_successful_stress = ((BlockAB_behavior.state_time[BlockAB_behavior.ind_check_reward_states[BlockAB_stress_trial_inds]] - BlockAB_behavior.state_time[BlockAB_behavior.ind_check_reward_states[BlockAB_stress_trial_inds]-4])/60.)*pulse_samprate 	#number of samples in trial interval for pulse signal
+	samples_pulse_successful_stress = np.array([int(val) for val in samples_pulse_successful_stress])
+	samples_pupil_successful_stress = 0.1*pupil_samprate*np.ones(len(BlockAB_stress_trial_inds))  # look at first 100 ms
+	samples_pupil_successful_stress = np.array([int(val) for val in samples_pulse_successful_stress])
+
 	ibi_stress_mean, ibi_stress_std, pupil_stress_mean, pupil_stress_std, nbins_ibi_stress, ibi_stress_hist, nbins_pupil_stress, pupil_stress_hist = getIBIandPuilDilation(pulse_data, lfp_ind_hold_center_states_stress_trials,samples_pulse_successful_stress, pulse_samprate,pupil_data, lfp_ind_hold_center_states_stress_trials,samples_pupil_successful_stress,pupil_samprate)
 
 	# Find IBIs and pupil data for all successful regular trials.
-	samples_pulse_successful_reg = int(((BlockAB_behavior.state_time[BlockAB_behavior.ind_check_reward_states[BlockAB_reg_trial_inds]] - BlockAB_behavior.state_time[BlockAB_behavior.ind_check_reward_states[BlockAB_reg_trial_inds]-4])/60.)*pulse_samprate) 	#number of samples in trial interval for pulse signal
-	samples_pupil_successful_reg = int(0.1*pupil_samprate)*np.ones(len(BlockAB_reg_trial_inds))  # look at first 100 ms
-	
+	samples_pulse_successful_reg = ((BlockAB_behavior.state_time[BlockAB_behavior.ind_check_reward_states[BlockAB_reg_trial_inds]] - BlockAB_behavior.state_time[BlockAB_behavior.ind_check_reward_states[BlockAB_reg_trial_inds]-4])/60.)*pulse_samprate 	#number of samples in trial interval for pulse signal
+	samples_pulse_successful_reg = np.array([int(val) for val in samples_pulse_successful_reg])
+	samples_pupil_successful_reg = 0.1*pupil_samprate*np.ones(len(BlockAB_reg_trial_inds))  # look at first 100 ms
+	samples_pupil_successful_reg = np.array([int(val) for val in samples_pupil_successful_reg])
+
+
 	ibi_reg_mean, ibi_reg_std, pupil_reg_mean, pupil_reg_std, nbins_ibi_reg, ibi_reg_hist, nbins_pupil_reg, pupil_reg_hist = getIBIandPuilDilation(pulse_data, lfp_ind_hold_center_states_reg_trials,samples_pulse_successful_reg, pulse_samprate,pupil_data, lfp_ind_hold_center_states_reg_trials,samples_pupil_successful_reg,pupil_samprate)
 
 	# Find IBIs and pupil data for all successful stress trials with stimulation. 
-	samples_pulse_successful_stress_stim = int(((BlockCB_behavior.state_time[BlockCB_behavior.ind_check_reward_states[BlockCB_stress_trial_inds]] - BlockCB_behavior.state_time[BlockCB_behavior.ind_check_reward_states[BlockCB_stress_trial_inds]-4])/60.)*pulse_samprate) 	#number of samples in trial interval for pulse signal
-	samples_pupil_successful_stress_stim = int(0.1*pupil_samprate)*np.ones(len(BlockCB_stress_trial_inds))  # look at first 100 ms
-	
+	samples_pulse_successful_stress_stim = ((BlockCB_behavior.state_time[BlockCB_behavior.ind_check_reward_states[BlockCB_stress_trial_inds]] - BlockCB_behavior.state_time[BlockCB_behavior.ind_check_reward_states[BlockCB_stress_trial_inds]-4])/60.)*pulse_samprate 	#number of samples in trial interval for pulse signal
+	samples_pulse_successful_stress_stim = np.array([int(val) for val in samples_pulse_successful_stress_stim])
+	samples_pupil_successful_stress_stim = 0.1*pupil_samprate*np.ones(len(BlockCB_stress_trial_inds))  # look at first 100 ms
+	samples_pupil_successful_stress_stim = np.array([int(val) for val in samples_pupil_successful_stress_stim])
+
 	ibi_stress_mean_stim, ibi_stress_std_stim, pupil_stress_mean_stim, pupil_stress_std_stim, nbins_ibi_stress_stim, ibi_stress_hist_stim, nbins_pupil_stress_stim, pupil_stress_hist_stim = getIBIandPuilDilation(pulse_data, lfp_ind_hold_center_states_stim_trials,samples_pulse_successful_stress_stim, pulse_samprate,pupil_data, lfp_ind_hold_center_states_stim_trials,samples_pupil_successful_stress_stim,pupil_samprate)
 
 	'''
