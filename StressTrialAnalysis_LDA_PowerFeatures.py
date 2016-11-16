@@ -243,7 +243,7 @@ else:
 
 	#### event_indices: N x M array of event indices, where N is the number of trials and M is the number of different events 
 	lfp_center_states_stim = lfp_ind_hold_center_states_stress_trials - int(0.4*lfp_samprate)
-	lfp_before_reward_states_stim = lfp_ind_hold_center_states_stim_trials
+	lfp_before_reward_states_stim = lfp_ind_check_reward_states_stress_trials - int(0.5*lfp_samprate)
 	lfp_after_reward_states_stim = lfp_ind_check_reward_states_stress_trials
 
 	event_indices_stim = np.vstack([lfp_center_states_stim,lfp_before_reward_states_stim,lfp_after_reward_states_stim]).T
