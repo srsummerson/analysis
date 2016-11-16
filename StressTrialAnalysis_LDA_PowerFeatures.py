@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 from basicAnalysis import plot_cov_ellipse, LDAforFeatureSelection
 from csv_processing import get_csv_data_singlechannel
 from probabilisticRewardTaskPerformance import FreeChoiceBehavior_withStressTrials
-from spectralAnalysis import TrialAveragedPSD, computePowerFeatures, computePowerFeatures_Chirplets
+from spectralAnalysis import TrialAveragedPSD, computePowerFeatures, computeAllCoherenceFeatures
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.linear_model import LogisticRegression
 from sklearn.cross_validation import train_test_split
@@ -233,6 +233,7 @@ else:
 	
 	print "Computing LFP features."
 	lfp_features = computePowerFeatures(lfp, lfp_samprate, bands, event_indices, t_window)
+	lfp_coherence_features = computeAllCoherenceFeatures(lfp, lfp_samprate, bands, event_indices, t_window)
 	sp.io.savemat(pf_filename,lfp_features)
 
 	phys_features = dict()
@@ -252,6 +253,8 @@ else:
 	
 	print "Computing stim LFP features."
 	lfp_features_stim = computePowerFeatures(lfp_stim, lfp_samprate, bands, event_indices_stim, t_window)
+	lfp_coherence_features_stim = computeAllCoherenceFeatures(lfp_stim, lfp_samprate, bands, event_indices_stim, t_window)
+	
 	sp.io.savemat(pf_filename_stim,lfp_features_stim)
 
 	phys_features_stim = dict()

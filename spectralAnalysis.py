@@ -525,7 +525,7 @@ def computeCoherenceFeatures(lfp_data, channel_pairs, Fs, power_bands, event_ind
 					and K is the number of features (number of power bands times M)
 	'''
 	nperseg = int(Fs*0.25)
-	noverlap = int(Fs*0.125)
+	noverlap = int(Fs*0.1875)
 	t_window = [int(Fs*time) for time in t_window]  # changing seconds into samples
 
 	N, M = event_indices.shape
@@ -552,7 +552,7 @@ def computeCoherenceFeatures(lfp_data, channel_pairs, Fs, power_bands, event_ind
 				data1 = np.ravel(data1)
 				data2 = chann_data2[ind:ind + times[trial,i]]
 				data2 = np.ravel(data2)
-				Cxy, f = cohere(data1, data2, NFFT = nperseg, Fs=Fs, noverlap=noverlap)
+				f, Cxy = signal.coherence(data1, data2, nperseg = nperseg, fs=Fs, noverlap=noverlap)
 				Cxy = Cxy/np.sum(Cxy)
 				Cxy = 10*np.log10(Cxy)
 				for k in range(0,len(power_bands)):
