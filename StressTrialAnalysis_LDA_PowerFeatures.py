@@ -159,7 +159,7 @@ else:
 					lfp[channel] = np.ravel(sig)
 			if (sig.name[0:4] == 'LFP2'):
 				channel = sig.channel_index
-				if (channel % 96) in lfp_channels:
+				if (channel + 96) in lfp_channels:
 					channel_name = channel + 96
 					lfp[channel_name] = np.ravel(sig)
 		for sig in bl.segments[block_num_stim-1].analogsignals:
@@ -248,7 +248,7 @@ else:
 	lfp_after_reward_states_stim = lfp_ind_check_reward_states_stim_trials
 
 	event_indices_stim = np.vstack([lfp_center_states_stim,lfp_before_reward_states_stim,lfp_after_reward_states_stim]).T
-	t_window = [0.4,0.5,0.5]
+	t_window = [0.4,0.5,0.4]
 	
 	print "Computing stim LFP features."
 	lfp_features_stim = computePowerFeatures(lfp_stim, lfp_samprate, bands, event_indices_stim, t_window)
