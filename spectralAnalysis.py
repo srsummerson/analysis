@@ -582,7 +582,7 @@ def computeAllCoherenceFeatures(lfp_data, Fs, power_bands, event_indices, t_wind
 		- features: dictionary with N entries (one per trial), with a C x K matric which C is the number of channel pairs 
 					and K is the number of features (number of power bands times M)
 	'''
-	channels = [int(item) for item in lfp.keys()]
+	channels = [int(item) for item in lfp_data.keys()]
 	channels.sort()
 	channel_pairs = []
 	for i, chan1 in enumerate(channels[:-1]):
