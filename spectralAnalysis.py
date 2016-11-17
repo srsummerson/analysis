@@ -540,7 +540,7 @@ def computeCoherenceFeatures(lfp_data, channel_pairs, Fs, power_bands, event_ind
 
 	for trial in range(0,N):
 		events = event_indices[trial,:]  # should be array of length M
-		trial_powers = np.zeros([len(channels),M*len(power_bands)])
+		trial_powers = np.zeros([num_channel_pairs,M*len(power_bands)])
 		for j, pair in enumerate(channel_pairs):
 			chann1 = pair[0]
 			chann2 = pair[1]
