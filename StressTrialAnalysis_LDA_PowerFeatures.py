@@ -47,7 +47,9 @@ hdf_location_stim = '/storage/rawdata/hdf/'+hdf_filename_stim
 #hdf_location = hdffilename
 pf_location = '/home/srsummerson/storage/PowerFeatures/'
 pf_filename = pf_location + filename+'_b'+str(block_num)+'_PowerFeatures.mat'
+pf_filename_coherence = pf_location + filename+'_b'+str(block_num)+'_CoherenceFeatures.mat'
 pf_filename_stim = pf_location + filename+'_b'+str(block_num_stim)+'_PowerFeatures.mat'
+pf_filename_stim_coherence = pf_location + filename+'_b'+str(block_num_stim)+'_CoherenceFeatures.mat'
 phys_filename = pf_location + filename+'_b'+str(block_num)+'_PhysFeatures.mat'
 phys_filename_stim = pf_location + filename+'_b'+str(block_num_stim)+'_PhysFeatures.mat'
 
@@ -231,10 +233,18 @@ else:
 	t_window = [0.4,0.5,0.4]
 	event_indices.shape
 	
-	print "Computing LFP features."
+	print "Computing LFP power features."
+	t = time.time()
 	lfp_features = computePowerFeatures(lfp, lfp_samprate, bands, event_indices, t_window)
+	elapsed = (time.time() - t)/60.
+	print "Finished LFP power features: took %f minutes." % (elapsed)
+	print "Computing LFP coherence features."
+	t = time.time()
 	lfp_coherence_features = computeAllCoherenceFeatures(lfp, lfp_samprate, bands, event_indices, t_window)
+	elapsed = (time.time() - t)/60.
+	print "Finished LFP coherence features: took %f minutes." % (elapsed)
 	sp.io.savemat(pf_filename,lfp_features)
+	sp.io.savemat(pf_filename_coherence,lfp_coherence_features)
 
 	phys_features = dict()
 	phys_features['ibi_reg_mean'] = ibi_reg_mean
@@ -251,11 +261,18 @@ else:
 	event_indices_stim = np.vstack([lfp_center_states_stim,lfp_before_reward_states_stim,lfp_after_reward_states_stim]).T
 	t_window = [0.4,0.5,0.4]
 	
-	print "Computing stim LFP features."
+	print "Computing stim LFP power features."
+	t = time.time()
 	lfp_features_stim = computePowerFeatures(lfp_stim, lfp_samprate, bands, event_indices_stim, t_window)
+	elapsed = (time.time() - t)/60.
+	print "Finished stim LFP power features: took %f minutes." % (elapsed)
+	print "Computing stim LFP coherence features."
+	t = time.time()
 	lfp_coherence_features_stim = computeAllCoherenceFeatures(lfp_stim, lfp_samprate, bands, event_indices_stim, t_window)
-	
+	elapsed = (time.time() - t)/60.
+	print "Finished stim LFP coherence features: took %f minutes." % (elapsed)
 	sp.io.savemat(pf_filename_stim,lfp_features_stim)
+	sp.io.savemat(pf_filename_stim_coherence,lfp_coherence_features_stim)
 
 	phys_features_stim = dict()
 	phys_features_stim['ibi_stress_mean_stim'] = ibi_stress_mean_stim

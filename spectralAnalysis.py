@@ -589,5 +589,6 @@ def computeAllCoherenceFeatures(lfp_data, Fs, power_bands, event_indices, t_wind
 		for chan2 in channels[i+1:]:
 			channel_pairs.append([chan1, chan2])
 
+	print "There are %i channel pairs" % (len(channel_pairs))
 	features = computeCoherenceFeatures(lfp_data, channel_pairs, Fs, power_bands, event_indices, t_window)
 	return features
