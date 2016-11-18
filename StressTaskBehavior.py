@@ -80,7 +80,7 @@ class StressBehavior():
 				m = (lfp_dio_sample_num[hdf_index]-lfp_dio_sample_num[hdf_index - 1])/hdf_row_diff
 				b = lfp_dio_sample_num[hdf_index-1] - m*hdf_rows[hdf_index-1]
 				lfp_state_row_ind[i] = int(m*state_row_ind[i] + b)
-			elif hdf_rows[hdf_index] < state_row_ind[i]:
+			elif (hdf_rows[hdf_index] < state_row_ind[i])&(hdf_index + 1 < len(hdf_rows)):
 				hdf_row_diff = hdf_rows[hdf_index + 1] - hdf_rows[hdf_index]
 				if (hdf_row_diff > 0):
 					m = (lfp_dio_sample_num[hdf_index + 1] - lfp_dio_sample_num[hdf_index])/hdf_row_diff
@@ -88,6 +88,8 @@ class StressBehavior():
 					lfp_state_row_ind[i] = int(m*state_row_ind[i] + b)
 				else:
 					lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
+			else:
+				lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
 
 		return lfp_state_row_ind
 
