@@ -85,6 +85,7 @@ class StressBehavior():
 					hdf_row_diff = hdf_rows[hdf_index + 1] - hdf_rows[hdf_index]
 					m = (lfp_dio_sample_num[hdf_index + 1] - lfp_dio_sample_num[hdf_index])/hdf_row_diff
 					b = lfp_dio_sample_num[hdf_index] - m*hdf_rows[hdf_index]
+					print m, b, state_row_ind[i]
 					lfp_state_row_ind[i] = int(m*state_row_ind[i] + b)
 				else:
 					lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
