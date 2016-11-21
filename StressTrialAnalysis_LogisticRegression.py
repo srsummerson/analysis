@@ -24,7 +24,7 @@ from sklearn.cross_validation import cross_val_score
 
 
 
-hdf_filename = 'mari2016118_03_te2682.hdf'
+hdf_filename = 'mari20161118_03_te2682.hdf'
 filename = 'Mario20161118'
 block_num = 1
 print filename
