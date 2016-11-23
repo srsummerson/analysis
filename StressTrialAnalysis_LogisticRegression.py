@@ -24,8 +24,8 @@ from sklearn.cross_validation import cross_val_score
 
 
 
-hdf_filename = 'mari20161118_03_te2682.hdf'
-filename = 'Mario20161118'
+hdf_filename = 'mari20161122_03_te2693.hdf'
+filename = 'Mario20161122'
 block_num = 1
 print filename
 #TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
@@ -216,6 +216,7 @@ Process pupil and pulse data
 # Find IBIs and pupil data for all successful stress trials. 
 samples_pulse_successful_stress = np.floor(response_time_successful_stress*pulse_samprate) 	#number of samples in trial interval for pulse signal
 samples_pupil_successful_stress = np.floor(response_time_successful_stress*pupil_samprate)
+samples_pupil_successful_stress = np.floor(0.1*np.ones(len(response_time_successful_stress))*pupil_samprate)
 samples_lfp_successful_stress = np.floor(response_time_successful_stress*lfp_samprate)
 
 ibi_stress_mean, ibi_stress_std, pupil_stress_mean, pupil_stress_std, nbins_ibi_stress, ibi_stress_hist, nbins_pupil_stress, pupil_stress_hist = getIBIandPuilDilation(pulse_data, pulse_ind_successful_stress,samples_pulse_successful_stress, pulse_samprate,pupil_data, pupil_ind_successful_stress,samples_pupil_successful_stress,pupil_samprate)
@@ -231,6 +232,7 @@ ibi_all_stress_mean, ibi_all_stress_std, pupil_all_stress_mean, pupil_all_stress
 # Find IBIs and pupil data for successful and all regular trials. 
 samples_pulse_successful_reg = np.floor(response_time_successful_reg*pulse_samprate)
 samples_pupil_successful_reg = np.floor(response_time_successful_reg*pupil_samprate)
+samples_pupil_successful_reg = np.floor(0.1*np.ones(len(response_time_successful_reg))*pupil_samprate)
 samples_lfp_successful_reg = np.floor(response_time_successful_reg*lfp_samprate)
 
 ibi_reg_mean, ibi_reg_std, pupil_reg_mean, pupil_reg_std, nbins_ibi_reg, ibi_reg_hist, nbins_pupil_reg, pupil_reg_hist = getIBIandPuilDilation(pulse_data, pulse_ind_successful_reg,samples_pulse_successful_reg, pulse_samprate,pupil_data, pupil_ind_successful_reg,samples_pupil_successful_reg,pupil_samprate)
