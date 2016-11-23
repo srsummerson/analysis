@@ -33,10 +33,10 @@ from pybrain.structure.modules import SoftmaxLayer, TanhLayer
 from pybrain.datasets import SupervisedDataSet
 
 
-hdf_filename = 'mari20161117_04_te2679.hdf'
-hdf_filename_stim = ''
-filename = 'Mario20161117'
-filename2 = 'Mario20161117'
+hdf_filename = 'mari20160712_03_te2333.hdf'
+hdf_filename_stim = 'mari20160712_07_te2337.hdf'
+filename = 'Mario20160712'
+filename2 = 'Mario20160712'
 block_num = 1
 block_num_stim = 2
 print filename
@@ -55,7 +55,6 @@ phys_filename_stim = pf_location + filename+'_b'+str(block_num_stim)+'_PhysFeatu
 
 lfp_channels = np.arange(1,161,dtype = int)					# channels 1 - 160
 lfp_channels = np.delete(lfp_channels, [129, 131, 145])		# channels 129, 131, and 145 are open
-lfp_channels = lfp_channels - 1								# correct for indexing to start at 0 instead of 1
 
 bands = [[8,13],[13,30],[40,70],[70,200]]
 # bands = [[8,18], [14-21],[101,298]]

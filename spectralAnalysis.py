@@ -553,8 +553,9 @@ def computeCoherenceFeatures(lfp_data, channel_pairs, Fs, power_bands, event_ind
 				data2 = chann_data2[ind:ind + times[trial,i]]
 				data2 = np.ravel(data2)
 				f, Cxy = signal.coherence(data1, data2, nperseg = nperseg, fs=Fs, noverlap=noverlap)
-				Cxy = Cxy/np.sum(Cxy)
-				Cxy = 10*np.log10(Cxy)
+				#Cxy = Cxy/np.sum(Cxy)
+				#Cxy = 10*np.log10(Cxy)
+				Cxy = np.sqrt(Cxy)
 				for k in range(0,len(power_bands)):
 					low_band, high_band = power_bands[k]
 					freqs = np.ravel(np.nonzero(np.greater(f,low_band)&np.less_equal(f,high_band)))
