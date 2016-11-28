@@ -33,10 +33,10 @@ from pybrain.structure.modules import SoftmaxLayer, TanhLayer
 from pybrain.datasets import SupervisedDataSet
 
 
-hdf_filename = 'mari20160712_03_te2333.hdf'
-hdf_filename_stim = 'mari20160712_07_te2337.hdf'
-filename = 'Mario20160712'
-filename2 = 'Mario20160712'
+hdf_filename = 'mari20161005_03_te2542.hdf'
+hdf_filename_stim = ''
+filename = 'Mario20161005'
+filename2 = 'Mario20161005'
 block_num = 1
 block_num_stim = 2
 print filename
