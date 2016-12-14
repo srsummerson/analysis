@@ -177,7 +177,7 @@ class StressBehavior():
 		return trial_times_percentage_session, num_times_per_session
 
 
-	def PlotTrialChoices(self, num_trials_slide):
+	def PlotTrialChoices(self, num_trials_slide, plot_results = False):
 		'''
 		This method computes the sliding average over num_trials_slide trials of the number of choices for the HV target.
 		'''
@@ -189,10 +189,11 @@ class StressBehavior():
 
 		target_choices = self.state[self.ind_check_reward_states - 2]
 
-		block_length = np.zeros(num_blocks)  															# holder for length of blocks in minutes
+		block_length = np.zeros(num_blocks)											# holder for length of blocks in minutes
+		avg_trials_per_min = np.zeros(num_blocks)
+		end_block_avg_hv_choices = np.zeros(num_blocks)
 
 		cmap = mpl.cm.hsv
-		plt.figure()
 
 		for i, trial_end in enumerate(transition_trials):
 			if i==0:
@@ -205,48 +206,59 @@ class StressBehavior():
 				end_prev_block = trial_times[transition_trials[i-1]]
 
 			block_trial_times = block_trial_times - end_prev_block
+			block_length[i] = block_trial_times[-1]
+
+			block_min_per_trial = np.zeros(len(block_trial_times))
+			block_min_per_trial[0] = block_trial_times[0]
+			block_min_per_trial[1:] = block_trial_times[1:] - block_trial_times[:-1]  					# gives the number of mins/trial
+			block_trials_per_min = 1./block_min_per_trial
+			avg_trials_per_min[i] = np.nanmean(block_trials_per_min)
+
 			hv_choices = np.zeros(len(block_trial_times))
 			hv_choices[choices=='hold_targetH'] = 1
 
 			sliding_avg_hv_choices = trial_sliding_avg(hv_choices, num_trials_slide)   	# gives the average num of mins/trial
-			
+			end_block_avg_hv_choices[i]= sliding_avg_hv_choices[-1]
+
+			if plot_results:
+				plt.figure(1)
+				plt.subplot(211)
+				plt.plot(block_trial_times + end_prev_block, sliding_avg_hv_choices,label='Block %i - Stress type: %i' % (i+1, trials[trial_end-1]), color=cmap(i/float(num_blocks)))
+				plt.plot(block_trial_times + end_prev_block,0.1*hv_choices - 0.2,'|', color=cmap(i/float(num_blocks)))
+	    		
+
+				plt.figure(1)
+				plt.subplot(212)
+				plt.plot(block_trial_times/block_trial_times[-1] + i, sliding_avg_hv_choices,label='Block %i - Stress type: %i' % (i+1, trials[trial_end-1]), color=cmap(i/float(num_blocks)))
+				plt.plot(block_trial_times/block_trial_times[-1] + i,0.1*hv_choices - 0.2,'|', color=cmap(i/float(num_blocks)))
+
+		if plot_results:
+			# Figure showing the average rate of trials/min as a function of minutes in the task
 			plt.figure(1)
-			plt.subplot(211)
-			plt.plot(block_trial_times + end_prev_block, sliding_avg_hv_choices,label='Block %i - Stress type: %i' % (i+1, trials[trial_end-1]), color=cmap(i/float(num_blocks)))
-			plt.plot(block_trial_times + end_prev_block,0.1*hv_choices - 0.2,'|', color=cmap(i/float(num_blocks)))
-    		
+			ax1 = plt.subplot(211)
+			plt.xlabel('Time (min)')
+			plt.ylabel('Probability Best Choice')
+			ax1.get_yaxis().set_tick_params(direction='out')
+			ax1.get_xaxis().set_tick_params(direction='out')
+			ax1.get_xaxis().tick_bottom()
+			ax1.get_yaxis().tick_left()
+			plt.ylim((-0.25,1))
+			plt.legend()
 
+			# Figure showing the average rate of trials/min as a function of minutes in the task
 			plt.figure(1)
-			plt.subplot(212)
-			plt.plot(block_trial_times/block_trial_times[-1] + i, sliding_avg_hv_choices,label='Block %i - Stress type: %i' % (i+1, trials[trial_end-1]), color=cmap(i/float(num_blocks)))
-			plt.plot(block_trial_times/block_trial_times[-1] + i,0.1*hv_choices - 0.2,'|', color=cmap(i/float(num_blocks)))
+			ax2 = plt.subplot(212)
+			plt.xlabel('Block (%)')
+			plt.ylabel('Probability Best Choice')
+			ax2.get_yaxis().set_tick_params(direction='out')
+			ax2.get_xaxis().set_tick_params(direction='out')
+			ax2.get_xaxis().tick_bottom()
+			ax2.get_yaxis().tick_left()
+			plt.ylim((-0.25,1))
+			plt.legend()
+			plt.show()
 
-		# Figure showing the average rate of trials/min as a function of minutes in the task
-		plt.figure(1)
-		ax1 = plt.subplot(211)
-		plt.xlabel('Time (min)')
-		plt.ylabel('Probability Best Choice')
-		ax1.get_yaxis().set_tick_params(direction='out')
-		ax1.get_xaxis().set_tick_params(direction='out')
-		ax1.get_xaxis().tick_bottom()
-		ax1.get_yaxis().tick_left()
-		plt.ylim((-0.25,1))
-		plt.legend()
-
-		# Figure showing the average rate of trials/min as a function of minutes in the task
-		plt.figure(1)
-		ax2 = plt.subplot(212)
-		plt.xlabel('Block (%)')
-		plt.ylabel('Probability Best Choice')
-		ax2.get_yaxis().set_tick_params(direction='out')
-		ax2.get_xaxis().set_tick_params(direction='out')
-		ax2.get_xaxis().tick_bottom()
-		ax2.get_yaxis().tick_left()
-		plt.ylim((-0.25,1))
-		plt.legend()
-		plt.show()
-
-		return
+		return avg_trials_per_min, end_block_avg_hv_choices
 
 	def get_cursor_velocity(self, go_cue_ix, before_cue_time, after_cue_time, fs=60., use_filt_vel=True):
 	    '''
@@ -415,7 +427,10 @@ class TDTNeuralData():
 	def __init__(self, TDT_directory, block_num):
 		# load syncing data: hdf timestamps matching with TDT sample numbers
 		tank_name = TDT_directory[-14:]   # assumes TDT directory has format ".../MarioYYYYMMDD/"
-		mat_filename = TDT_directory[:-17] + 'syncHDF/' + tank_name+ '_b'+str(block_num)+'_syncHDF.mat'
+		print tank_name
+		#mat_filename = TDT_directory[:-17] + 'syncHDF/' + tank_name+ '_b'+str(block_num)+'_syncHDF.mat'
+		mat_filename = TDT_directory[:-13] + '/' + tank_name+ '_b'+str(block_num)+'_syncHDF.mat'
+		print TDT_directory[:-13]
 		self.hdf_times = dict()
 		sp.io.loadmat(mat_filename,self.hdf_times)
 
@@ -460,7 +475,7 @@ class TDTNeuralData():
 		# Convert DIO TDT sample numbers for LFP data:
 		# if dio sample num is x, then data sample number is R*(x-1) + 1 where
 		# R = data_sample_rate/dio_sample_rate
-		lfp_dio_sample_num = (float(lfp_samprate)/float(dio_freq))*(dio_tdt_sample - 1) + 1
+		self.lfp_dio_sample_num = (float(lfp_samprate)/float(dio_freq))*(dio_tdt_sample - 1) + 1
 
 	def get_indices_for_behavior_events(self, hdf_row_ind):
 		'''
@@ -471,7 +486,9 @@ class TDTNeuralData():
 			- pupil_ind: corresponding indices for pupil signal
 			- lfp_ind: corresponding indices for lfp signals
 		'''
-
+		pulse_ind = np.zeros(len(hdf_row_ind))
+		pupil_ind = np.zeros(len(hdf_row_ind))
+		lfp_ind = np.zeros(len(hdf_row_ind))
 		for i, ind in enumerate(hdf_row_ind):
 			hdf_index = np.argmin(np.abs(self.hdf_rows - ind))
 			pulse_ind[i] = self.pulse_dio_sample_num[hdf_index]
