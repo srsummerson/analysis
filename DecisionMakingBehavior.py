@@ -102,10 +102,10 @@ class ChoiceBehavior_ThreeTargets():
 		'''
 		freechoice_trial = np.ravel(self.trial_type[self.state_time[self.ind_check_reward_states]]) - 1
 		target_choices = self.state[self.ind_check_reward_states - 2]
-		targets_on = self.targets_on[self.state_time[self.ind_check_reward_states]]
+		targets_on = self.targets_on[self.state_time[self.ind_check_reward_states]]  # array of three boolean values: LHM
 
 		num_trials = len(target_choices)
-		all_choices = np.zeros(len(target_choices))
+		all_choices = np.zeros(np.sum(freechoice_trial))
 		LM_choices = []
 		LH_choices = []
 		MH_choices = []
@@ -117,7 +117,7 @@ class ChoiceBehavior_ThreeTargets():
 			if freechoice_trial[i]==1:
 				targ_presented = targets_on[i]
 				# L-M targets presented
-				if (targ_presented[0]==1)&(targ_presented[1]==1):
+				if (targ_presented[0]==1)&(targ_presented[2]==1):
 					if choice=='hold_targetM':
 						all_choices[i] = 1		# optimal choice was made
 						LM_choices = np.append(LM_choices, 1)
@@ -125,7 +125,7 @@ class ChoiceBehavior_ThreeTargets():
 						LM_choices = np.append(LM_choices, 0)
 
 				# L-H targets presented
-				if (targ_presented[0]==1)&(targ_presented[2]==1):
+				if (targ_presented[0]==1)&(targ_presented[1]==1):
 					if choice=='hold_targetH':
 						all_choices[i] = 1
 						LH_choices = np.append(LH_choices, 1)
