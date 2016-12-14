@@ -101,6 +101,7 @@ class ChoiceBehavior_ThreeTargets():
 		shown.
 		'''
 		freechoice_trial = np.ravel(self.trial_type[self.state_time[self.ind_check_reward_states]]) - 1
+		freechoice_trial_ind = np.ravel(np.nonzero(freechoice_trial))
 		target_choices = self.state[self.ind_check_reward_states - 2]
 		targets_on = self.targets_on[self.state_time[self.ind_check_reward_states]]  # array of three boolean values: LHM
 
@@ -109,36 +110,37 @@ class ChoiceBehavior_ThreeTargets():
 		LM_choices = []
 		LH_choices = []
 		MH_choices = []
+		
 
 		cmap = mpl.cm.hsv
 
-		for i, choice in enumerate(target_choices):
+		for i, choice in enumerate(target_choices[freechoice_trial_ind]):
 			# only look at freechoice trials
-			if freechoice_trial[i]==1:
-				targ_presented = targets_on[i]
-				# L-M targets presented
-				if (targ_presented[0]==1)&(targ_presented[2]==1):
-					if choice=='hold_targetM':
-						all_choices[i] = 1		# optimal choice was made
-						LM_choices = np.append(LM_choices, 1)
-					else:
-						LM_choices = np.append(LM_choices, 0)
+			targ_presented = targets_on[freechoice_trial_ind[i]]
+			# L-M targets presented
+			if (targ_presented[0]==1)&(targ_presented[2]==1):
+				if choice=='hold_targetM':
+					all_choices[i] = 1		# optimal choice was made
+					LM_choices = np.append(LM_choices, 1)
+				else:
+					LM_choices = np.append(LM_choices, 0)
 
-				# L-H targets presented
-				if (targ_presented[0]==1)&(targ_presented[1]==1):
-					if choice=='hold_targetH':
-						all_choices[i] = 1
-						LH_choices = np.append(LH_choices, 1)
-					else:
-						LH_choices = np.append(LH_choices, 0)
+			# L-H targets presented
+			if (targ_presented[0]==1)&(targ_presented[1]==1):
+				if choice=='hold_targetH':
+					all_choices[i] = 1
+					LH_choices = np.append(LH_choices, 1)
+				else:
+					LH_choices = np.append(LH_choices, 0)
 
-				# M-H targets presented
-				if (targ_presented[1]==1)&(targ_presented[2]==1):
-					if choice=='hold_targetH':
-						all_choices[i] = 1
-						MH_choices = np.append(MH_choices, 1)
-					else:
-						MH_choices = np.append(MH_choices, 0)
+			# M-H targets presented
+			if (targ_presented[1]==1)&(targ_presented[2]==1):
+				if choice=='hold_targetH':
+					all_choices[i] = 1
+					MH_choices = np.append(MH_choices, 1)
+				else:
+					MH_choices = np.append(MH_choices, 0)
+
 
 		sliding_avg_all_choices = trial_sliding_avg(all_choices, num_trials_slide)
 		sliding_avg_LM_choices = trial_sliding_avg(LM_choices, num_trials_slide)
