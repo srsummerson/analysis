@@ -27,7 +27,7 @@ def trial_sliding_avg(trial_array, num_trials_slide):
 
 class ChoiceBehavior_ThreeTargets():
 
-	def __init__(self, hdf_file, num_targets):
+	def __init__(self, hdf_file):
 		self.filename =  hdf_file
 		self.table = tables.openFile(self.filename)
 
@@ -152,10 +152,10 @@ class ChoiceBehavior_ThreeTargets():
 			plt.xlabel('Trials')
 			plt.ylabel('Probability Best Choice')
 			plt.title('Low vs. Mid')
-			ax1.get_yaxis().set_tick_params(direction='out')
-			ax1.get_xaxis().set_tick_params(direction='out')
-			ax1.get_xaxis().tick_bottom()
-			ax1.get_yaxis().tick_left()
+			ax11.get_yaxis().set_tick_params(direction='out')
+			ax11.get_xaxis().set_tick_params(direction='out')
+			ax11.get_xaxis().tick_bottom()
+			ax11.get_yaxis().tick_left()
 			plt.legend()
 
 			ax12 = plt.subplot(222)
@@ -163,10 +163,10 @@ class ChoiceBehavior_ThreeTargets():
 			plt.xlabel('Trials')
 			plt.ylabel('Probability Best Choice')
 			plt.title('Low vs. High')
-			ax1.get_yaxis().set_tick_params(direction='out')
-			ax1.get_xaxis().set_tick_params(direction='out')
-			ax1.get_xaxis().tick_bottom()
-			ax1.get_yaxis().tick_left()
+			ax12.get_yaxis().set_tick_params(direction='out')
+			ax12.get_xaxis().set_tick_params(direction='out')
+			ax12.get_xaxis().tick_bottom()
+			ax12.get_yaxis().tick_left()
 			plt.legend()
 
 			ax21 = plt.subplot(223)
@@ -174,21 +174,21 @@ class ChoiceBehavior_ThreeTargets():
 			plt.xlabel('Trials')
 			plt.ylabel('Probability Best Choice')
 			plt.title('Mid vs. High')
-			ax1.get_yaxis().set_tick_params(direction='out')
-			ax1.get_xaxis().set_tick_params(direction='out')
-			ax1.get_xaxis().tick_bottom()
-			ax1.get_yaxis().tick_left()
+			ax21.get_yaxis().set_tick_params(direction='out')
+			ax21.get_xaxis().set_tick_params(direction='out')
+			ax21.get_xaxis().tick_bottom()
+			ax21.get_yaxis().tick_left()
 			plt.legend()
 
-			ax12 = plt.subplot(224)
+			ax22 = plt.subplot(224)
 			plt.plot(sliding_avg_all_choices, c = 'b', label = 'Mid/High')
 			plt.xlabel('Trials')
 			plt.ylabel('Probability Best Choice')
 			plt.title('All Choices')
-			ax1.get_yaxis().set_tick_params(direction='out')
-			ax1.get_xaxis().set_tick_params(direction='out')
-			ax1.get_xaxis().tick_bottom()
-			ax1.get_yaxis().tick_left()
+			ax22.get_yaxis().set_tick_params(direction='out')
+			ax22.get_xaxis().set_tick_params(direction='out')
+			ax22.get_xaxis().tick_bottom()
+			ax22.get_yaxis().tick_left()
 			plt.legend()
 
 
