@@ -24,16 +24,16 @@ from sklearn.cross_validation import cross_val_score
 
 
 
-hdf_filename = 'mari20161103_03_te2660.hdf'
-filename = 'Mario20161103'
-hdf_filename_stim = 'mari20161103_07_te2664.hdf'
-filename2 = 'Mario20161103'
+hdf_filename = 'mari20160712_03_te2333.hdf'
+filename = 'Mario20160712'
+hdf_filename_stim = 'mari20160712_07_te2337.hdf'
+filename2 = 'Mario20160712'
 block_num = 1
 block_num_stim = 2
 print filename
-#TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
-TDT_tank = '/home/srsummerson/storage/tdt/'+filename
-TDT_tank_stim = '/home/srsummerson/storage/tdt/' + filename2
+TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
+#TDT_tank = '/home/srsummerson/storage/tdt/'+filename
+TDT_tank_stim = '/backup/subnetsrig/storage/tdt/' + filename2
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
 hdf_location_stim = '/storage/rawdata/hdf/'+hdf_filename_stim
 #hdf_location = hdffilename
@@ -679,18 +679,18 @@ plot_cov_ellipse(cov_reg,mean_vec_reg,fc='b',ec='None',a=0.2)
 plot_cov_ellipse(cov_stim,mean_vec_stim,fc='k',ec='None',a=0.2)
 
 for ind in blockb_reg:
-    plt.plot(norm_ibi_stress_mean[ind],norm_pupil_stress_mean[ind],color='b',marker='^')
-plt.plot(norm_ibi_stress_mean[ind],norm_pupil_stress_mean[ind],color='b',marker='^',label='Block B - reg')
-for ind in blockb_stress:
     plt.plot(norm_ibi_stress_mean[ind],norm_pupil_stress_mean[ind],color='r',marker='^')
+#plt.plot(norm_ibi_stress_mean[ind],norm_pupil_stress_mean[ind],color='r',marker='^',label='Block B - reg')
+for ind in blockb_stress:
+    plt.plot(norm_ibi_stress_mean[ind],norm_pupil_stress_mean[ind],color='r',marker='s')
 for ind in blocka_reg:
-	plt.plot(norm_ibi_reg_mean[ind],norm_pupil_reg_mean[ind],color='b',marker='o')
+	plt.plot(norm_ibi_reg_mean[ind],norm_pupil_reg_mean[ind],color='b',marker='^')
 for ind in blocka_stress:
-	plt.plot(norm_ibi_reg_mean[ind],norm_pupil_reg_mean[ind],color='r',marker='o')
+	plt.plot(norm_ibi_reg_mean[ind],norm_pupil_reg_mean[ind],color='b',marker='s')
 for ind in blockc_reg:
-	plt.plot(norm_ibi_stim_mean[ind],norm_pupil_stim_mean[ind],color='b',marker='s')
-for ind in blockc_reg:
-	plt.plot(norm_ibi_stim_mean[ind],norm_pupil_stim_mean[ind],color='r',marker='s')
+	plt.plot(norm_ibi_stim_mean[ind],norm_pupil_stim_mean[ind],color='gray',marker='^')
+for ind in blockc_stress:
+	plt.plot(norm_ibi_stim_mean[ind],norm_pupil_stim_mean[ind],color='gray',marker='s')
 plt.legend()
 plt.xlabel('Mean Trial IBI (s)')
 plt.ylabel('Mean Trial PD (AU)')
@@ -715,7 +715,7 @@ for ind in blocka_stress:
 	plt.plot(norm_ibi_reg_mean[ind],norm_pupil_reg_mean[ind],color='r',marker='o')
 for ind in blockc_reg:
 	plt.plot(norm_ibi_stim_mean[ind],norm_pupil_stim_mean[ind],color='gray',marker='o')
-for ind in blockc_reg:
+for ind in blockc_stress:
 	plt.plot(norm_ibi_stim_mean[ind],norm_pupil_stim_mean[ind],color='gray',marker='o')
 plt.legend()
 plt.xlabel('Mean Trial IBI (s)')
