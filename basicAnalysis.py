@@ -680,7 +680,7 @@ def variableImportanceMLP(input_to_hidden_weights, hidden_to_output_weights):
 	return Qrelimport
 
 
-def get_HSFstate_TDT_LFPsamples(ind_state,state_time,syncHDF_file):
+def get_HDFstate_TDT_LFPsamples(ind_state,state_time,syncHDF_file):
 		'''
 		This method finds the TDT sample numbers that correspond to indicated task state using the syncHDF.mat file.
 
@@ -701,7 +701,7 @@ def get_HSFstate_TDT_LFPsamples(ind_state,state_time,syncHDF_file):
 
 		lfp_dio_sample_num = dio_tdt_sample  # assumes DIOx and LFPx are saved using the same sampling rate
 
-		state_row_ind = self.state_time[ind_state]		# gives the hdf row number sampled at 60 Hz
+		state_row_ind = state_time[ind_state]		# gives the hdf row number sampled at 60 Hz
 		lfp_state_row_ind = np.zeros(state_row_ind.size)
 
 		for i in range(len(state_row_ind)):
