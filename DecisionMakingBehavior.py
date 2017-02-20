@@ -1,5 +1,6 @@
 import numpy as np 
 import scipy as sp
+import pandas as pd
 from scipy import io
 from scipy import stats
 import matplotlib as mpl
@@ -8,6 +9,7 @@ from matplotlib import pyplot as plt
 from rt_calc import get_rt_change_deriv
 from neo import io
 from PulseMonitorData import findIBIs
+from offlineSortedSpikeAnalysis import OfflineSorted_CSVFile
 
 
 
@@ -47,6 +49,8 @@ class ChoiceBehavior_ThreeTargets():
 		self.num_trials = self.ind_center_states.size
 		self.num_successful_trials = self.ind_check_reward_states.size
 
+		self.table.close()
+
 
 	def get_state_TDT_LFPvalues(self,ind_state,syncHDF_file):
 		'''
@@ -79,13 +83,13 @@ class ChoiceBehavior_ThreeTargets():
 				hdf_row_diff = hdf_rows[hdf_index] - hdf_rows[hdf_index -1]  # distance of the interval of the two closest hdf_row_numbers
 				m = (lfp_dio_sample_num[hdf_index]-lfp_dio_sample_num[hdf_index - 1])/hdf_row_diff
 				b = lfp_dio_sample_num[hdf_index-1] - m*hdf_rows[hdf_index-1]
-				lfp_state_row_ind[i] = int(m*state_row_ind[i] + b)
+				lfp_state_row_ind[i] = np.rint(m*state_row_ind[i] + b)
 			elif (hdf_rows[hdf_index] < state_row_ind[i])&(hdf_index + 1 < len(hdf_rows)):
 				hdf_row_diff = hdf_rows[hdf_index + 1] - hdf_rows[hdf_index]
 				if (hdf_row_diff > 0):
 					m = (lfp_dio_sample_num[hdf_index + 1] - lfp_dio_sample_num[hdf_index])/hdf_row_diff
 					b = lfp_dio_sample_num[hdf_index] - m*hdf_rows[hdf_index]
-					lfp_state_row_ind[i] = int(m*state_row_ind[i] + b)
+					lfp_state_row_ind[i] = np.rint(m*state_row_ind[i] + b)
 				else:
 					lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
 			else:
@@ -154,7 +158,6 @@ class ChoiceBehavior_ThreeTargets():
 			plt.xlabel('Trials')
 			plt.ylabel('Probability Best Choice')
 			plt.title('Low vs. Mid')
-			plt.ylim((-0.05,1.05))
 			ax11.get_yaxis().set_tick_params(direction='out')
 			ax11.get_xaxis().set_tick_params(direction='out')
 			ax11.get_xaxis().tick_bottom()
@@ -166,7 +169,6 @@ class ChoiceBehavior_ThreeTargets():
 			plt.xlabel('Trials')
 			plt.ylabel('Probability Best Choice')
 			plt.title('Low vs. High')
-			plt.ylim((-0.05,1.05))
 			ax12.get_yaxis().set_tick_params(direction='out')
 			ax12.get_xaxis().set_tick_params(direction='out')
 			ax12.get_xaxis().tick_bottom()
@@ -178,7 +180,6 @@ class ChoiceBehavior_ThreeTargets():
 			plt.xlabel('Trials')
 			plt.ylabel('Probability Best Choice')
 			plt.title('Mid vs. High')
-			plt.ylim((-0.05,1.05))
 			ax21.get_yaxis().set_tick_params(direction='out')
 			ax21.get_xaxis().set_tick_params(direction='out')
 			ax21.get_xaxis().tick_bottom()
@@ -190,7 +191,6 @@ class ChoiceBehavior_ThreeTargets():
 			plt.xlabel('Trials')
 			plt.ylabel('Probability Best Choice')
 			plt.title('All Choices')
-			plt.ylim((-0.05,1.05))
 			ax22.get_yaxis().set_tick_params(direction='out')
 			ax22.get_xaxis().set_tick_params(direction='out')
 			ax22.get_xaxis().tick_bottom()
@@ -200,23 +200,65 @@ class ChoiceBehavior_ThreeTargets():
 
 		return all_choices, LM_choices, LH_choices, MH_choices
 
+	def TrialOptionsAndChoice(self):
+		'''
+		This method extracts for each trial which targets were on options and what the ultimate target
+		choice was. It also gives whether or not that choice was rewarded.
+
+		Output:
+		- target_options: N x 3 array, where N is the number of trials (instructed + freechoice), which contains 0 or 1s
+							to indicate on a given trial which of the 3 targets was shown. The order is Low - High - Middle.
+							For example, if on the ith trial the Low and High value targets are shown, then 
+							target_options[i,:] = [1, 1, 0].
+		- target_chosen: N x 3 array, which contains 0 or 1s to indicate on a given trial which of the 3 targets was chosen.
+							The order is Low - High - Middle. Note that only one entry per row may be non-zero (1). For 
+							example, if on the ith trial the High value target was selected, then 
+							target_chosen[i,:] = [0, 1, 0].
+		- reward_chosen: length N array, which contains 0 or 1s to indicate whether a reward was received at the end
+							of the ith trial. 
+		'''
+		target_choices = self.state[self.ind_check_reward_states - 2]
+		target_options = self.targets_on[self.state_time[self.ind_check_reward_states]]  # array of three boolean values: LHM
+		target_chosen = np.zeros((len(target_choices), 3)) 								 # placeholder for array with boolen values indicating choice: LHM
+		rewarded_choice = np.array(self.state[self.ind_check_reward_states + 1] == 'reward', dtype = float)
+		num_trials = len(target_choices)
+
+		for i, choice in enumerate(target_choices):
+			if choice == 'hold_targetM':
+				target_chosen[i,2] = 1
+			if choice == 'hold_targetL':
+				target_chosen[i,0] = 1
+			if choice == 'hold_targetH':
+				target_chosen[i,1] = 1
+
+		return target_options, target_chosen, rewarded_choice
+
 
 class ChoiceBehavior_ThreeTargets_Stimulation():
 	'''
 	Class for behavior taken from ABA' task, where there are three targets of different probabilities of reward
 	and stimulation is paired with the middle-value target during the hold-period of instructed trials during
-	blocks B and A'. 
+	blocks B and A'. Can pass in a list of hdf files when initially instantiated in the case that behavioral data
+	is split across multiple hdf files. In this case, the files should be listed in the order in which they were saved.
 	'''
 
-	def __init__(self, hdf_file, num_trials_A, num_trials_B):
-		self.filename =  hdf_file
-		self.table = tables.openFile(self.filename)
-
-		self.state = self.table.root.task_msgs[:]['msg']
-		self.state_time = self.table.root.task_msgs[:]['time']
-		self.trial_type = self.table.root.task[:]['target_index']
-		self.targets_on = self.table.root.task[:]['LHM_target_on']
-	  
+	def __init__(self, hdf_files, num_trials_A, num_trials_B):
+		for i, hdf_file in enumerate(hdf_files): 
+			filename =  hdf_file
+			table = tables.openFile(filename)
+			if i == 0:
+				self.state = table.root.task_msgs[:]['msg']
+				self.state_time = table.root.task_msgs[:]['time']
+				self.trial_type = table.root.task[:]['target_index']
+				self.targets_on = table.root.task[:]['LHM_target_on']
+			else:
+				self.state = np.append(self.state, table.root.task_msgs[:]['msg'])
+				self.state_time = np.append(self.state_time, self.state_time[-1] + table.root.task_msgs[:]['time'])
+				self.trial_type = np.append(self.trial_type, table.root.task[:]['target_index'])
+				self.targets_on = np.append(self.targets_on, table.root.task[:]['LHM_target_on'])
+		
+		if len(hdf_files) > 1:
+			self.targets_on = np.reshape(self.targets_on, (len(self.targets_on)/3,3))  				# this should contain triples indicating targets
 		self.ind_wait_states = np.ravel(np.nonzero(self.state == 'wait'))   # total number of unique trials
 		self.ind_center_states = np.ravel(np.nonzero(self.state == 'center'))   # total number of totals (includes repeats if trial was incomplete)
 		self.ind_hold_center_states = np.ravel(np.nonzero(self.state == 'hold_center'))
@@ -272,7 +314,7 @@ class ChoiceBehavior_ThreeTargets_Stimulation():
 			else:
 				lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
 
-		return lfp_state_row_ind
+		return lfp_state_row_ind, dio_freq
 
 
 	def TrialChoices(self, num_trials_slide, plot_results = False):
@@ -379,7 +421,6 @@ class ChoiceBehavior_ThreeTargets_Stimulation():
 			plt.xlabel('Trials')
 			plt.ylabel('Probability Best Choice')
 			plt.title('Low vs. Mid')
-			plt.ylim((-0.05,1.05))
 			ax11.get_yaxis().set_tick_params(direction='out')
 			ax11.get_xaxis().set_tick_params(direction='out')
 			ax11.get_xaxis().tick_bottom()
@@ -392,7 +433,6 @@ class ChoiceBehavior_ThreeTargets_Stimulation():
 			plt.xlabel('Trials')
 			plt.ylabel('Probability Best Choice')
 			plt.title('Low vs. High')
-			plt.ylim((-0.05,1.05))
 			ax12.get_yaxis().set_tick_params(direction='out')
 			ax12.get_xaxis().set_tick_params(direction='out')
 			ax12.get_xaxis().tick_bottom()
@@ -405,7 +445,6 @@ class ChoiceBehavior_ThreeTargets_Stimulation():
 			plt.xlabel('Trials')
 			plt.ylabel('Probability Best Choice')
 			plt.title('Mid vs. High')
-			plt.ylim((-0.05,1.05))
 			ax21.get_yaxis().set_tick_params(direction='out')
 			ax21.get_xaxis().set_tick_params(direction='out')
 			ax21.get_xaxis().tick_bottom()
@@ -418,7 +457,6 @@ class ChoiceBehavior_ThreeTargets_Stimulation():
 			plt.xlabel('Trials')
 			plt.ylabel('Probability Best Choice')
 			plt.title('All Choices')
-			plt.ylim((-0.05,1.05))
 			ax22.get_yaxis().set_tick_params(direction='out')
 			ax22.get_xaxis().set_tick_params(direction='out')
 			ax22.get_xaxis().tick_bottom()
@@ -426,3 +464,104 @@ class ChoiceBehavior_ThreeTargets_Stimulation():
 			plt.legend()
 
 		return all_choices_A, LM_choices_A, LH_choices_A, MH_choices_A, all_choices_Aprime, LM_choices_Aprime, LH_choices_Aprime, MH_choices_Aprime
+
+
+def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_file, spike_files, num_trials_A, num_trials_B):
+	'''
+	Note: needs to handle data split across multiple files. As written assumes everything occurs within one
+	block of recording.
+	'''
+	num_files = len(hdf_files)
+	trials_per_file = np.zeros(num_files)
+	'''
+	Get data for each set of files
+	'''
+	for i in range(num_files):
+		# Load behavior data
+		cb = ChoiceBehavior_ThreeTargets(hdf_file[i])
+		num_successful_trials[i] = len(cb.ind_check_reward_states)
+		target_options, target_chosen, rewarded_choice = TrialOptionsAndChoice()
+
+		# Find times corresponding to center holds of successful trials
+		ind_hold_center = cb.ind_check_reward_states - 4
+		# Find lfp sample numbers corresponding to these times and the sampling frequency of the lfp data
+		lfp_state_row_ind, lfp_freq = cb.get_state_TDT_LFPvalues(ind_hold_center, syncHDF_file[i])
+		# Convert lfp sample numbers to times in seconds
+		times_row_ind = lfp_state_row_ind/float(lfp_freq)
+
+		# Load spike data: 
+		spike1 = OfflineSorted_CSVFile(spike_files[i][0])
+		spike2 = OfflineSorted_CSVFile(spike_files[i][1])
+		# Find all sort codes associated with good channels
+		all_units1, total_units1 = spike1.find_unit_sc(spike1.good_channels)
+		all_units2, total_units2 = spike2.find_unit_sc(spike2.good_channels)
+
+		print "Total number of units: ", total_units1 + total_units2
+
+		# Plot average rate for all neurons divided in six cases of targets on option
+		plt.figure()
+		t_before = 1			# 1 s
+		t_after = 3				# 3 s
+		t_resolution = 0.1 		# 100 ms time bins
+
+		# 1. LH presented
+		LH_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [1,1,0]) for j in range(num_successful_trials[i])]))
+		avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1.good_channels, times_row_ind[LH_ind],t_before,t_after,t_resolution)
+		avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2.good_channels, times_row_ind[LH_ind],t_before,t_after,t_resolution)
+
+		plt.subplot(3,2,1)
+		plt.title('Low-High Presented')
+		plt.plot(avg_psth1.T)
+		plt.plot(avg_psth2.T)
+
+		# 2. LM presented
+		LM_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [1,0,1]) for j in range(num_successful_trials[i])]))
+		avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1.good_channels, times_row_ind[LM_ind],t_before,t_after,t_resolution)
+		avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2.good_channels, times_row_ind[LM_ind],t_before,t_after,t_resolution)
+
+		plt.subplot(3,2,2)
+		plt.title('Low-Middle Presented')
+		plt.plot(avg_psth1.T)
+		plt.plot(avg_psth2.T)
+
+		# 3. MH presented
+		MH_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [0,1,1]) for j in range(num_successful_trials[i])]))
+		avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1.good_channels, times_row_ind[MH_ind],t_before,t_after,t_resolution)
+		avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2.good_channels, times_row_ind[MH_ind],t_before,t_after,t_resolution)
+
+		plt.subplot(3,2,3)
+		plt.title('Middle-High Presented')
+		plt.plot(avg_psth1.T)
+		plt.plot(avg_psth2.T)
+
+		# 4. L presented
+		L_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [1,0,0]) for j in range(num_successful_trials[i])]))
+		avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1.good_channels, times_row_ind[L_ind],t_before,t_after,t_resolution)
+		avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2.good_channels, times_row_ind[L_ind],t_before,t_after,t_resolution)
+
+		plt.subplot(3,2,4)
+		plt.title('Low Presented')
+		plt.plot(avg_psth1.T)
+		plt.plot(avg_psth2.T)
+
+		# 5. H presented
+		H_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [0,1,0]) for j in range(num_successful_trials[i])]))
+		avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1.good_channels, times_row_ind[H_ind],t_before,t_after,t_resolution)
+		avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2.good_channels, times_row_ind[H_ind],t_before,t_after,t_resolution)
+
+		plt.subplot(3,2,4)
+		plt.title('High Presented')
+		plt.plot(avg_psth1.T)
+		plt.plot(avg_psth2.T)
+
+		# 6. M presented
+		M_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [0,0,1]) for j in range(num_successful_trials[i])]))
+		avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1.good_channels, times_row_ind[M_ind],t_before,t_after,t_resolution)
+		avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2.good_channels, times_row_ind[M_ind],t_before,t_after,t_resolution)
+
+		plt.subplot(3,2,1)
+		plt.title('Middle Presented')
+		plt.plot(avg_psth1.T)
+		plt.plot(avg_psth2.T)
+
+	return
