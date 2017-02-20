@@ -678,3 +678,50 @@ def variableImportanceMLP(input_to_hidden_weights, hidden_to_output_weights):
 	Qrelimport = Q_partial/Q_partial_sum_over_inputs
 
 	return Qrelimport
+
+
+def get_HSFstate_TDT_LFPsamples(ind_state,state_time,syncHDF_file):
+		'''
+		This method finds the TDT sample numbers that correspond to indicated task state using the syncHDF.mat file.
+
+		Inputs:
+			- ind_state: array with state numbers corresponding to which state we're interested in finding TDT sample numbers for, e.g. self.ind_hold_center_states
+			- state_time: array of state times taken from corresponding hdf file
+			- syncHDF_file: syncHDF.mat file path, e.g. '/home/srsummerson/storage/syncHDF/Mario20161104_b1_syncHDF.mat'
+		Output:
+			- lfp_state_row_ind: array of tdt sample numbers that correspond the the task state events in ind_state array
+		'''
+		# Load syncing data
+		hdf_times = dict()
+		sp.io.loadmat(syncHDF_file, hdf_times)
+		hdf_rows = np.ravel(hdf_times['row_number'])
+		hdf_rows = [val for val in hdf_rows]
+		dio_tdt_sample = np.ravel(hdf_times['tdt_samplenumber'])
+		dio_freq = np.ravel(hdf_times['tdt_dio_samplerate'])
+
+		lfp_dio_sample_num = dio_tdt_sample  # assumes DIOx and LFPx are saved using the same sampling rate
+
+		state_row_ind = self.state_time[ind_state]		# gives the hdf row number sampled at 60 Hz
+		lfp_state_row_ind = np.zeros(state_row_ind.size)
+
+		for i in range(len(state_row_ind)):
+			hdf_index = np.argmin(np.abs(hdf_rows - state_row_ind[i]))
+			if np.abs(hdf_rows[hdf_index] - state_row_ind[i])==0:
+				lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
+			elif hdf_rows[hdf_index] > state_row_ind[i]:
+				hdf_row_diff = hdf_rows[hdf_index] - hdf_rows[hdf_index -1]  # distance of the interval of the two closest hdf_row_numbers
+				m = (lfp_dio_sample_num[hdf_index]-lfp_dio_sample_num[hdf_index - 1])/hdf_row_diff
+				b = lfp_dio_sample_num[hdf_index-1] - m*hdf_rows[hdf_index-1]
+				lfp_state_row_ind[i] = int(m*state_row_ind[i] + b)
+			elif (hdf_rows[hdf_index] < state_row_ind[i])&(hdf_index + 1 < len(hdf_rows)):
+				hdf_row_diff = hdf_rows[hdf_index + 1] - hdf_rows[hdf_index]
+				if (hdf_row_diff > 0):
+					m = (lfp_dio_sample_num[hdf_index + 1] - lfp_dio_sample_num[hdf_index])/hdf_row_diff
+					b = lfp_dio_sample_num[hdf_index] - m*hdf_rows[hdf_index]
+					lfp_state_row_ind[i] = int(m*state_row_ind[i] + b)
+				else:
+					lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
+			else:
+				lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
+
+		return lfp_state_row_ind
