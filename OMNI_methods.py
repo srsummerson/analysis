@@ -605,3 +605,70 @@ print "Data read."
 corrected_counter, corrected_channel_data, channel_data, miss_samp_index = convert_OMNI(data)
 '''
 
+def get_OMNI_inds_hold_center(hdf_filename, syncHDF_file, tdt_timepoint, omni_timepoint, omni_freq):
+	'''
+	Method to get the indices in OMNI recordings of beginning of center hold. 
+
+	Input: 
+	- hdf_filename: location of hdf file for the behavior
+	- sync_filename: location of sync file
+	- tdt_timepoint: a timepoint in tdt recording that can be matched with a timepoint in the omni
+					recording, e.g. time of first stimulation pulse
+	- omni_timepoint: a timepoint in the OMNI recording that can be matched with a timepoint in the 
+					tdt recording
+	- omni_freq: sampling frequency of OMNI data, e.g. 1000 = 1 kHz sample rate
+
+	Output:
+	- omni_inds: sample numbers for OMNI recorded data corresponding to center hold periods
+	'''
+	
+	# Find hdf row numbers corresponding to hold_center times in successful trials only
+	table = tables.openFile(hdf_filename)
+	state = table.root.task_msgs[:]['msg']
+	state_time = table.root.task_msgs[:]['time']
+	ind_reward = np.ravel(np.nonzero(state == 'reward'))
+	ind_hold_center = ind_reward - 7
+
+	state_row_ind = state_time[ind_hold_center]		# gives the hdf row number sampled at 60 Hz
+
+	# Load syncing data
+	hdf_times = dict()
+	sp.io.loadmat(syncHDF_file, hdf_times)
+	hdf_rows = np.ravel(hdf_times['row_number'])
+	hdf_rows = [val for val in hdf_rows]
+	dio_tdt_sample = np.ravel(hdf_times['tdt_samplenumber'])
+	dio_freq = np.ravel(hdf_times['tdt_dio_samplerate'])
+
+	lfp_dio_sample_num = dio_tdt_sample  # assumes DIOx and LFPx are saved using the same sampling rate
+	lfp_state_row_ind = np.zeros(state_row_ind.size)
+
+	for i in range(len(state_row_ind)):
+		hdf_index = np.argmin(np.abs(hdf_rows - state_row_ind[i]))
+		if np.abs(hdf_rows[hdf_index] - state_row_ind[i])==0:
+			lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
+		elif hdf_rows[hdf_index] > state_row_ind[i]:
+			hdf_row_diff = hdf_rows[hdf_index] - hdf_rows[hdf_index -1]  # distance of the interval of the two closest hdf_row_numbers
+			m = (lfp_dio_sample_num[hdf_index]-lfp_dio_sample_num[hdf_index - 1])/hdf_row_diff
+			b = lfp_dio_sample_num[hdf_index-1] - m*hdf_rows[hdf_index-1]
+			lfp_state_row_ind[i] = int(m*state_row_ind[i] + b)
+		elif (hdf_rows[hdf_index] < state_row_ind[i])&(hdf_index + 1 < len(hdf_rows)):
+			hdf_row_diff = hdf_rows[hdf_index + 1] - hdf_rows[hdf_index]
+			if (hdf_row_diff > 0):
+				m = (lfp_dio_sample_num[hdf_index + 1] - lfp_dio_sample_num[hdf_index])/hdf_row_diff
+				b = lfp_dio_sample_num[hdf_index] - m*hdf_rows[hdf_index]
+				lfp_state_row_ind[i] = int(m*state_row_ind[i] + b)
+			else:
+				lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
+		else:
+			lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
+
+	# lfp_state_row_ind now has the TDT sample numbers corresponding to the behavior indices of interest. these
+	# are sampled at the rate dio_freq.
+
+	# Translate lfp_state_row_ind to OMNI sample inds using the two corresponding timepoints. 
+	m = float(omni_freq)/dio_freq
+	b = omni_timepoint - m*tdt_timepoint
+
+	omni_inds = m*lfp_state_row_ind + b
+
+	return omni_inds 
