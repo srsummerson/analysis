@@ -671,4 +671,4 @@ def get_OMNI_inds_hold_center(hdf_filename, syncHDF_file, tdt_timepoint, omni_ti
 
 	omni_inds = m*lfp_state_row_ind + b
 
-	return omni_inds 
+	return state_row_ind, omni_inds 
