@@ -619,6 +619,7 @@ def get_OMNI_inds_hold_center(hdf_filename, syncHDF_file, tdt_timepoint, omni_ti
 	- omni_freq: sampling frequency of OMNI data, e.g. 1000 = 1 kHz sample rate
 
 	Output:
+	- state_row_ind: task timestamps for behavioral events, used to sanity check output
 	- omni_inds: sample numbers for OMNI recorded data corresponding to center hold periods
 	'''
 	
@@ -669,6 +670,6 @@ def get_OMNI_inds_hold_center(hdf_filename, syncHDF_file, tdt_timepoint, omni_ti
 	m = float(omni_freq)/dio_freq
 	b = omni_timepoint - m*tdt_timepoint
 
-	omni_inds = m*lfp_state_row_ind + b
+	omni_inds = np.rint(m*lfp_state_row_ind + b) 	# make sure that indices are integer values
 
 	return state_row_ind, omni_inds 
