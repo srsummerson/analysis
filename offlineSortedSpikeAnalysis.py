@@ -129,6 +129,7 @@ class OfflineSorted_CSVFile():
 		psth_length = np.rint((t_before + t_after)/t_resolution)
 		num_timepoints = len(times_align)
 		psth = np.zeros((num_timepoints, psth_length))
+		print psth_length
 
 		unit_chan = np.ravel(np.nonzero(np.equal(self.channel, chann)))
 		sc_unit = np.ravel(np.nonzero(np.equal(self.sort_code[unit_chan], sc)))
@@ -137,6 +138,7 @@ class OfflineSorted_CSVFile():
 			data = channel_data
 			t_window = np.arange(tp - t_before, tp + t_after, t_resolution)
 			hist, bins = np.histogram(data, bins = t_window)
+			print len(hist)
 			hist_fr = hist/t_resolution
 			psth[i,:] = hist_fr
 
