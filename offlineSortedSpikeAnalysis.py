@@ -128,7 +128,7 @@ class OfflineSorted_CSVFile():
 		'''
 		psth_length = np.rint((t_before + t_after)/t_resolution)
 		num_timepoints = len(times_align)
-		psth = np.zeros(num_timepoints, psth_length)
+		psth = np.zeros((num_timepoints, psth_length))
 
 		unit_chan = np.ravel(np.nonzero(np.equal(self.channel, chann)))
 		sc_unit = np.ravel(np.nonzero(np.equal(self.sort_code[unit_chan], sc)))
@@ -141,3 +141,24 @@ class OfflineSorted_CSVFile():
 			psth[i,:] = hist_fr
 
 		return psth
+
+	def compute_multiple_channel_avg_psth(self, channs, times_align,t_before,t_after,t_resolution):
+		'''
+		Method that returns the average psth of spiking activity for all channels in channs array. The activity for all 
+		channels is aligned to the same event times in times_align.
+		'''
+		unit_list = []
+		avg_psth
+		for chan in channs:
+			# First find number of units recorded on this channel
+			unit_chan = np.ravel(np.nonzero(np.equal(self.channel, chan)))
+			sc_chan = np.unique(self.sort_code[unit_chan])
+			sc_chan = np.array([code for code in sc_chan if code != 31])
+
+			for sc in sc_chan:
+				psth_sc = compute_psth(self,chan,sc,times_align,t_before,t_after,t_resolution)
+				avg_psth_sc = np.nanmean(psth_sc, axis = 0)
+				avg_psth.append([avg_psth_sc])
+				unit_list.append([chan, sc])
+
+		return avg_psth, np.array(unit_list)
