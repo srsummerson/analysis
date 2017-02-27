@@ -475,7 +475,8 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files):
 	Inputs:
 	- hdf_files: list of N hdf_files corresponding to the behavior in the three target task
 	- syncHDF_files: list of N syncHDF_files that containes the syncing DIO data for the corresponding hdf_file and it's
-					TDT recording
+					TDT recording. If TDT data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, syncHDF_files should have the form [syncHDF_file1.mat, '']
 	- spike_files: list of N tuples of spike_files, where each entry is a list of 2 spike files, one corresponding to spike
 					data from the first 96 channels and the other corresponding to the spike data from the last 64 channels.
 					If spike data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
@@ -497,13 +498,16 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files):
 
 		# Find times corresponding to center holds of successful trials
 		ind_hold_center = cb.ind_check_reward_states - 4
-		# Find lfp sample numbers corresponding to these times and the sampling frequency of the lfp data
-		lfp_state_row_ind, lfp_freq = cb.get_state_TDT_LFPvalues(ind_hold_center, syncHDF_files[i])
-		# Convert lfp sample numbers to times in seconds
-		times_row_ind = lfp_state_row_ind/float(lfp_freq)
+		
 
 		# Load spike data: 
 		if (spike_files[i] =! ''):
+			# Find lfp sample numbers corresponding to these times and the sampling frequency of the lfp data
+			lfp_state_row_ind, lfp_freq = cb.get_state_TDT_LFPvalues(ind_hold_center, syncHDF_files[i])
+			# Convert lfp sample numbers to times in seconds
+			times_row_ind = lfp_state_row_ind/float(lfp_freq)
+
+			# Load spike data
 			spike1 = OfflineSorted_CSVFile(spike_files[i][0])
 			spike2 = OfflineSorted_CSVFile(spike_files[i][1])
 			# Find all sort codes associated with good channels
