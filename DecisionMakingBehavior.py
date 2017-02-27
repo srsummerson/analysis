@@ -501,7 +501,7 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files):
 		
 
 		# Load spike data: 
-		if (spike_files[i] =! ''):
+		if (spike_files[i] != ''):
 			# Find lfp sample numbers corresponding to these times and the sampling frequency of the lfp data
 			lfp_state_row_ind, lfp_freq = cb.get_state_TDT_LFPvalues(ind_hold_center, syncHDF_files[i])
 			# Convert lfp sample numbers to times in seconds
