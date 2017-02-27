@@ -492,7 +492,7 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files):
 	'''
 	for i in range(num_files):
 		# Load behavior data
-		cb = ChoiceBehavior_ThreeTargets(hdf_file[i])
+		cb = ChoiceBehavior_ThreeTargets(hdf_files[i])
 		num_successful_trials[i] = len(cb.ind_check_reward_states)
 		target_options, target_chosen, rewarded_choice = TrialOptionsAndChoice()
 
