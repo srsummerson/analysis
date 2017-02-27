@@ -138,7 +138,7 @@ class OfflineSorted_CSVFile():
 			t_window = np.arange(tp - t_before, tp + t_after, t_resolution)
 			hist, bins = np.histogram(data, bins = t_window)
 			hist_fr = hist/t_resolution
-			psth[i,:] = hist_fr
+			psth[i,:] = hist_fr[:psth_length-1]
 
 		return psth
 
