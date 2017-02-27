@@ -629,9 +629,14 @@ def get_OMNI_inds_hold_center(hdf_filename, syncHDF_file, tdt_timepoint, omni_ti
 	state_time = table.root.task_msgs[:]['time']
 	ind_reward = np.ravel(np.nonzero(state == 'reward'))
 	ind_hold_center = ind_reward - 7
+	ind_end_hold = ind_reward - 3
+	ind_hold_peripheral = ind_reward - 2
+	ind_end_hold_peripheral = ind_reward - 1
+	ind_reward_end = ind_reward + 1
 
 	state_row_ind = state_time[ind_hold_center]		# gives the hdf row number sampled at 60 Hz
-
+	state_row_ind_beginhold = state_row_ind
+	
 	# Load syncing data
 	hdf_times = dict()
 	sp.io.loadmat(syncHDF_file, hdf_times)
@@ -663,6 +668,142 @@ def get_OMNI_inds_hold_center(hdf_filename, syncHDF_file, tdt_timepoint, omni_ti
 		else:
 			lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
 
+	lfp_state_row_ind_beginhold = lfp_state_row_ind
+
+	# Repeat for end of hold
+	state_row_ind = state_time[ind_end_hold]
+	state_row_ind_endhold = state_row_ind
+	lfp_state_row_ind = np.zeros(state_row_ind.size)
+
+	for i in range(len(state_row_ind)):
+		hdf_index = np.argmin(np.abs(hdf_rows - state_row_ind[i]))
+		if np.abs(hdf_rows[hdf_index] - state_row_ind[i])==0:
+			lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
+		elif hdf_rows[hdf_index] > state_row_ind[i]:
+			hdf_row_diff = hdf_rows[hdf_index] - hdf_rows[hdf_index -1]  # distance of the interval of the two closest hdf_row_numbers
+			m = (lfp_dio_sample_num[hdf_index]-lfp_dio_sample_num[hdf_index - 1])/hdf_row_diff
+			b = lfp_dio_sample_num[hdf_index-1] - m*hdf_rows[hdf_index-1]
+			lfp_state_row_ind[i] = int(m*state_row_ind[i] + b)
+		elif (hdf_rows[hdf_index] < state_row_ind[i])&(hdf_index + 1 < len(hdf_rows)):
+			hdf_row_diff = hdf_rows[hdf_index + 1] - hdf_rows[hdf_index]
+			if (hdf_row_diff > 0):
+				m = (lfp_dio_sample_num[hdf_index + 1] - lfp_dio_sample_num[hdf_index])/hdf_row_diff
+				b = lfp_dio_sample_num[hdf_index] - m*hdf_rows[hdf_index]
+				lfp_state_row_ind[i] = int(m*state_row_ind[i] + b)
+			else:
+				lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
+		else:
+			lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
+
+	lfp_state_row_ind_endhold = lfp_state_row_ind
+
+	# Repeat for beginning of peripheral hold
+	state_row_ind = state_time[ind_hold_peripheral]
+	lfp_state_row_ind = np.zeros(state_row_ind.size)
+
+	for i in range(len(state_row_ind)):
+		hdf_index = np.argmin(np.abs(hdf_rows - state_row_ind[i]))
+		if np.abs(hdf_rows[hdf_index] - state_row_ind[i])==0:
+			lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
+		elif hdf_rows[hdf_index] > state_row_ind[i]:
+			hdf_row_diff = hdf_rows[hdf_index] - hdf_rows[hdf_index -1]  # distance of the interval of the two closest hdf_row_numbers
+			m = (lfp_dio_sample_num[hdf_index]-lfp_dio_sample_num[hdf_index - 1])/hdf_row_diff
+			b = lfp_dio_sample_num[hdf_index-1] - m*hdf_rows[hdf_index-1]
+			lfp_state_row_ind[i] = int(m*state_row_ind[i] + b)
+		elif (hdf_rows[hdf_index] < state_row_ind[i])&(hdf_index + 1 < len(hdf_rows)):
+			hdf_row_diff = hdf_rows[hdf_index + 1] - hdf_rows[hdf_index]
+			if (hdf_row_diff > 0):
+				m = (lfp_dio_sample_num[hdf_index + 1] - lfp_dio_sample_num[hdf_index])/hdf_row_diff
+				b = lfp_dio_sample_num[hdf_index] - m*hdf_rows[hdf_index]
+				lfp_state_row_ind[i] = int(m*state_row_ind[i] + b)
+			else:
+				lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
+		else:
+			lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
+
+	lfp_state_row_ind_beginhold_peripheral = lfp_state_row_ind
+
+	# Repeat for end of peripheral hold
+	state_row_ind = state_time[ind_end_hold_peripheral]
+	state_row_ind_endhold = state_row_ind
+	lfp_state_row_ind = np.zeros(state_row_ind.size)
+
+	for i in range(len(state_row_ind)):
+		hdf_index = np.argmin(np.abs(hdf_rows - state_row_ind[i]))
+		if np.abs(hdf_rows[hdf_index] - state_row_ind[i])==0:
+			lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
+		elif hdf_rows[hdf_index] > state_row_ind[i]:
+			hdf_row_diff = hdf_rows[hdf_index] - hdf_rows[hdf_index -1]  # distance of the interval of the two closest hdf_row_numbers
+			m = (lfp_dio_sample_num[hdf_index]-lfp_dio_sample_num[hdf_index - 1])/hdf_row_diff
+			b = lfp_dio_sample_num[hdf_index-1] - m*hdf_rows[hdf_index-1]
+			lfp_state_row_ind[i] = int(m*state_row_ind[i] + b)
+		elif (hdf_rows[hdf_index] < state_row_ind[i])&(hdf_index + 1 < len(hdf_rows)):
+			hdf_row_diff = hdf_rows[hdf_index + 1] - hdf_rows[hdf_index]
+			if (hdf_row_diff > 0):
+				m = (lfp_dio_sample_num[hdf_index + 1] - lfp_dio_sample_num[hdf_index])/hdf_row_diff
+				b = lfp_dio_sample_num[hdf_index] - m*hdf_rows[hdf_index]
+				lfp_state_row_ind[i] = int(m*state_row_ind[i] + b)
+			else:
+				lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
+		else:
+			lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
+
+	lfp_state_row_ind_endhold_peripheral = lfp_state_row_ind
+
+	# Repeat for beginning of reward
+	state_row_ind = state_time[ind_reward]
+	state_row_ind_endhold = state_row_ind
+	lfp_state_row_ind = np.zeros(state_row_ind.size)
+
+	for i in range(len(state_row_ind)):
+		hdf_index = np.argmin(np.abs(hdf_rows - state_row_ind[i]))
+		if np.abs(hdf_rows[hdf_index] - state_row_ind[i])==0:
+			lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
+		elif hdf_rows[hdf_index] > state_row_ind[i]:
+			hdf_row_diff = hdf_rows[hdf_index] - hdf_rows[hdf_index -1]  # distance of the interval of the two closest hdf_row_numbers
+			m = (lfp_dio_sample_num[hdf_index]-lfp_dio_sample_num[hdf_index - 1])/hdf_row_diff
+			b = lfp_dio_sample_num[hdf_index-1] - m*hdf_rows[hdf_index-1]
+			lfp_state_row_ind[i] = int(m*state_row_ind[i] + b)
+		elif (hdf_rows[hdf_index] < state_row_ind[i])&(hdf_index + 1 < len(hdf_rows)):
+			hdf_row_diff = hdf_rows[hdf_index + 1] - hdf_rows[hdf_index]
+			if (hdf_row_diff > 0):
+				m = (lfp_dio_sample_num[hdf_index + 1] - lfp_dio_sample_num[hdf_index])/hdf_row_diff
+				b = lfp_dio_sample_num[hdf_index] - m*hdf_rows[hdf_index]
+				lfp_state_row_ind[i] = int(m*state_row_ind[i] + b)
+			else:
+				lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
+		else:
+			lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
+
+	lfp_state_row_ind_reward = lfp_state_row_ind
+
+	# Repeat for end of reward
+	state_row_ind = state_time[ind_reward_end]
+	state_row_ind_endhold = state_row_ind
+	lfp_state_row_ind = np.zeros(state_row_ind.size)
+
+	for i in range(len(state_row_ind)):
+		hdf_index = np.argmin(np.abs(hdf_rows - state_row_ind[i]))
+		if np.abs(hdf_rows[hdf_index] - state_row_ind[i])==0:
+			lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
+		elif hdf_rows[hdf_index] > state_row_ind[i]:
+			hdf_row_diff = hdf_rows[hdf_index] - hdf_rows[hdf_index -1]  # distance of the interval of the two closest hdf_row_numbers
+			m = (lfp_dio_sample_num[hdf_index]-lfp_dio_sample_num[hdf_index - 1])/hdf_row_diff
+			b = lfp_dio_sample_num[hdf_index-1] - m*hdf_rows[hdf_index-1]
+			lfp_state_row_ind[i] = int(m*state_row_ind[i] + b)
+		elif (hdf_rows[hdf_index] < state_row_ind[i])&(hdf_index + 1 < len(hdf_rows)):
+			hdf_row_diff = hdf_rows[hdf_index + 1] - hdf_rows[hdf_index]
+			if (hdf_row_diff > 0):
+				m = (lfp_dio_sample_num[hdf_index + 1] - lfp_dio_sample_num[hdf_index])/hdf_row_diff
+				b = lfp_dio_sample_num[hdf_index] - m*hdf_rows[hdf_index]
+				lfp_state_row_ind[i] = int(m*state_row_ind[i] + b)
+			else:
+				lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
+		else:
+			lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
+
+	lfp_state_row_ind_reward_end = lfp_state_row_ind
+
 	# lfp_state_row_ind now has the TDT sample numbers corresponding to the behavior indices of interest. these
 	# are sampled at the rate dio_freq.
 
@@ -670,6 +811,11 @@ def get_OMNI_inds_hold_center(hdf_filename, syncHDF_file, tdt_timepoint, omni_ti
 	m = float(omni_freq)/dio_freq
 	b = omni_timepoint - m*tdt_timepoint
 
-	omni_inds = np.rint(m*lfp_state_row_ind + b) 	# make sure that indices are integer values
+	omni_inds_beginhold = np.rint(m*lfp_state_row_ind_beginhold + b) 	# make sure that indices are integer values
+	omni_inds_endhold = np.rint(m*lfp_state_row_ind_endhold + b)
+	omni_inds_peripheralhold = np.rint(m*lfp_state_row_ind_beginhold_peripheral + b)
+	omni_inds_endhold_peripheral = np.rint(m*lfp_state_row_ind_endhold_peripheral + b)
+	omni_inds_reward = np.rint(m*lfp_state_row_ind_reward + b)
+	omni_inds_reward_end = np.rint(m*lfp_state_row_ind_reward_end + b)
 
-	return state_row_ind, omni_inds 
+	return omni_inds_beginhold, omni_inds_endhold, omni_inds_peripheralhold, omni_inds_endhold_peripheral, omni_inds_reward, omni_inds_reward_end 
