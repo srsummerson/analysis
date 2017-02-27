@@ -156,7 +156,7 @@ class OfflineSorted_CSVFile():
 			sc_chan = np.array([code for code in sc_chan if code != 31])
 
 			for sc in sc_chan:
-				psth_sc = compute_psth(self,chan,sc,times_align,t_before,t_after,t_resolution)
+				psth_sc = self.compute_psth(chan,sc,times_align,t_before,t_after,t_resolution)
 				avg_psth_sc = np.nanmean(psth_sc, axis = 0)
 				avg_psth.append([avg_psth_sc])
 				unit_list.append([chan, sc])
