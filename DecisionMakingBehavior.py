@@ -582,7 +582,7 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files):
 			plt.plot(avg_psth1.T)
 			plt.plot(avg_psth2.T)
 
-			plt_name = syncHDF_files[i][:-12]
+			plt_name = syncHDF_files[i][34:-12]
 			plt.savefig('/home/srsummerson/code/analysis/Mario_Performance_figs/'+plt_name+'_PSTH.svg')
 
 	return
