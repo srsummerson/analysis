@@ -486,7 +486,7 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files):
 	'''
 	num_files = len(hdf_files)
 	trials_per_file = np.zeros(num_files)
-
+	num_successful_trials = np.zeros(num_files)
 	'''
 	Get data for each set of files
 	'''
