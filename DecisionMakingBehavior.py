@@ -526,7 +526,7 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files):
 			LH_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [1,1,0]) for j in range(int(num_successful_trials[i]))]))
 			avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1.good_channels, times_row_ind[LH_ind],t_before,t_after,t_resolution)
 			avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2.good_channels, times_row_ind[LH_ind],t_before,t_after,t_resolution)
-
+			print avg_psth1.shape
 			plt.subplot(3,2,1)
 			plt.title('Low-High Presented')
 			plt.plot(avg_psth1.T)
@@ -583,6 +583,6 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files):
 			plt.plot(avg_psth2.T)
 
 			plt_name = syncHDF_files[i][:-12]
-			plt.savefig('/home/srsummerson/code/analysis/Mario_Performance_figs/'+plt_name++'_PSTH.svg')
+			plt.savefig('/home/srsummerson/code/analysis/Mario_Performance_figs/'+plt_name+'_PSTH.svg')
 
 	return
