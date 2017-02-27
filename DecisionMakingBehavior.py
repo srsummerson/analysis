@@ -494,7 +494,7 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files):
 		# Load behavior data
 		cb = ChoiceBehavior_ThreeTargets(hdf_files[i])
 		num_successful_trials[i] = len(cb.ind_check_reward_states)
-		target_options, target_chosen, rewarded_choice = TrialOptionsAndChoice()
+		target_options, target_chosen, rewarded_choice = cb.TrialOptionsAndChoice()
 
 		# Find times corresponding to center holds of successful trials
 		ind_hold_center = cb.ind_check_reward_states - 4
