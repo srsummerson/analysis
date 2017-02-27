@@ -148,7 +148,7 @@ class OfflineSorted_CSVFile():
 		channels is aligned to the same event times in times_align.
 		'''
 		unit_list = []
-		avg_psth
+		avg_psth = []
 		for chan in channs:
 			# First find number of units recorded on this channel
 			unit_chan = np.ravel(np.nonzero(np.equal(self.channel, chan)))
