@@ -149,6 +149,7 @@ class OfflineSorted_CSVFile():
 		'''
 		unit_list = []
 		avg_psth = []
+		counter = 0
 		for chan in channs:
 			# First find number of units recorded on this channel
 			unit_chan = np.ravel(np.nonzero(np.equal(self.channel, chan)))
@@ -159,7 +160,11 @@ class OfflineSorted_CSVFile():
 				psth_sc = self.compute_psth(chan,sc,times_align,t_before,t_after,t_resolution)
 				avg_psth_sc = np.nanmean(psth_sc, axis = 0)
 				#avg_psth.append([avg_psth_sc])
-				avg_psth = np.vstack([avg_psth,avg_psth_sc])
+				if counter == 0:
+					avg_psth = avg_psth_sc
+				else:
+					avg_psth = np.vstack([avg_psth,avg_psth_sc])
 				unit_list.append([chan, sc])
+				counter += 1
 
 		return avg_psth, np.array(unit_list)
