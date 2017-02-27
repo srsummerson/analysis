@@ -95,7 +95,7 @@ class ChoiceBehavior_ThreeTargets():
 			else:
 				lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
 
-		return lfp_state_row_ind
+		return lfp_state_row_ind, dio_freq
 
 	def TrialChoices(self, num_trials_slide, plot_results = False):
 		'''
