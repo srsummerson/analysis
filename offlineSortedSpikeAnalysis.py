@@ -158,7 +158,8 @@ class OfflineSorted_CSVFile():
 			for sc in sc_chan:
 				psth_sc = self.compute_psth(chan,sc,times_align,t_before,t_after,t_resolution)
 				avg_psth_sc = np.nanmean(psth_sc, axis = 0)
-				avg_psth.append([avg_psth_sc])
+				#avg_psth.append([avg_psth_sc])
+				avg_psth = np.vstack([avg_psth,avg_psth_sc])
 				unit_list.append([chan, sc])
 
 		return avg_psth, np.array(unit_list)
