@@ -523,7 +523,7 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files):
 			t_resolution = 0.1 		# 100 ms time bins
 
 			# 1. LH presented
-			LH_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [1,1,0]) for j in range(num_successful_trials[i])]))
+			LH_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [1,1,0]) for j in range(int(num_successful_trials[i]))]))
 			avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1.good_channels, times_row_ind[LH_ind],t_before,t_after,t_resolution)
 			avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2.good_channels, times_row_ind[LH_ind],t_before,t_after,t_resolution)
 
@@ -533,7 +533,7 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files):
 			plt.plot(avg_psth2.T)
 
 			# 2. LM presented
-			LM_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [1,0,1]) for j in range(num_successful_trials[i])]))
+			LM_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [1,0,1]) for j in range(int(num_successful_trials[i]))]))
 			avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1.good_channels, times_row_ind[LM_ind],t_before,t_after,t_resolution)
 			avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2.good_channels, times_row_ind[LM_ind],t_before,t_after,t_resolution)
 
@@ -543,7 +543,7 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files):
 			plt.plot(avg_psth2.T)
 
 			# 3. MH presented
-			MH_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [0,1,1]) for j in range(num_successful_trials[i])]))
+			MH_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [0,1,1]) for j in range(int(num_successful_trials[i]))]))
 			avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1.good_channels, times_row_ind[MH_ind],t_before,t_after,t_resolution)
 			avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2.good_channels, times_row_ind[MH_ind],t_before,t_after,t_resolution)
 
@@ -553,7 +553,7 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files):
 			plt.plot(avg_psth2.T)
 
 			# 4. L presented
-			L_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [1,0,0]) for j in range(num_successful_trials[i])]))
+			L_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [1,0,0]) for j in range(int(num_successful_trials[i]))]))
 			avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1.good_channels, times_row_ind[L_ind],t_before,t_after,t_resolution)
 			avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2.good_channels, times_row_ind[L_ind],t_before,t_after,t_resolution)
 
@@ -563,7 +563,7 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files):
 			plt.plot(avg_psth2.T)
 
 			# 5. H presented
-			H_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [0,1,0]) for j in range(num_successful_trials[i])]))
+			H_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [0,1,0]) for j in range(int(num_successful_trials[i]))]))
 			avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1.good_channels, times_row_ind[H_ind],t_before,t_after,t_resolution)
 			avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2.good_channels, times_row_ind[H_ind],t_before,t_after,t_resolution)
 
@@ -573,7 +573,7 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files):
 			plt.plot(avg_psth2.T)
 
 			# 6. M presented
-			M_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [0,0,1]) for j in range(num_successful_trials[i])]))
+			M_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [0,0,1]) for j in range(int(num_successful_trials[i]))]))
 			avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1.good_channels, times_row_ind[M_ind],t_before,t_after,t_resolution)
 			avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2.good_channels, times_row_ind[M_ind],t_before,t_after,t_resolution)
 
