@@ -466,13 +466,26 @@ class ChoiceBehavior_ThreeTargets_Stimulation():
 		return all_choices_A, LM_choices_A, LH_choices_A, MH_choices_A, all_choices_Aprime, LM_choices_Aprime, LH_choices_Aprime, MH_choices_Aprime
 
 
-def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_file, spike_files, num_trials_A, num_trials_B):
+def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files):
 	'''
-	Note: needs to handle data split across multiple files. As written assumes everything occurs within one
-	block of recording.
+	This method aligns spiking data to behavioral choices for all different target presentation combinations
+	in the Three Target Task, where there is a low-value, middle-value and high-value target. This version does not 
+	differentiate between choices in different blocks.
+
+	Inputs:
+	- hdf_files: list of N hdf_files corresponding to the behavior in the three target task
+	- syncHDF_files: list of N syncHDF_files that containes the syncing DIO data for the corresponding hdf_file and it's
+					TDT recording
+	- spike_files: list of N tuples of spike_files, where each entry is a list of 2 spike files, one corresponding to spike
+					data from the first 96 channels and the other corresponding to the spike data from the last 64 channels.
+					If spike data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, the hdf_files and syncHDF_files will both have 2 file names, and the 
+					spike_files entry should be of the form [[spike_file1.csv, spike_file2.csv], ''].
+
 	'''
 	num_files = len(hdf_files)
 	trials_per_file = np.zeros(num_files)
+
 	'''
 	Get data for each set of files
 	'''
@@ -485,83 +498,87 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_file, spike_files, num_tria
 		# Find times corresponding to center holds of successful trials
 		ind_hold_center = cb.ind_check_reward_states - 4
 		# Find lfp sample numbers corresponding to these times and the sampling frequency of the lfp data
-		lfp_state_row_ind, lfp_freq = cb.get_state_TDT_LFPvalues(ind_hold_center, syncHDF_file[i])
+		lfp_state_row_ind, lfp_freq = cb.get_state_TDT_LFPvalues(ind_hold_center, syncHDF_files[i])
 		# Convert lfp sample numbers to times in seconds
 		times_row_ind = lfp_state_row_ind/float(lfp_freq)
 
 		# Load spike data: 
-		spike1 = OfflineSorted_CSVFile(spike_files[i][0])
-		spike2 = OfflineSorted_CSVFile(spike_files[i][1])
-		# Find all sort codes associated with good channels
-		all_units1, total_units1 = spike1.find_unit_sc(spike1.good_channels)
-		all_units2, total_units2 = spike2.find_unit_sc(spike2.good_channels)
+		if (spike_files[i] =! ''):
+			spike1 = OfflineSorted_CSVFile(spike_files[i][0])
+			spike2 = OfflineSorted_CSVFile(spike_files[i][1])
+			# Find all sort codes associated with good channels
+			all_units1, total_units1 = spike1.find_unit_sc(spike1.good_channels)
+			all_units2, total_units2 = spike2.find_unit_sc(spike2.good_channels)
 
-		print "Total number of units: ", total_units1 + total_units2
+			print "Total number of units: ", total_units1 + total_units2
 
-		# Plot average rate for all neurons divided in six cases of targets on option
-		plt.figure()
-		t_before = 1			# 1 s
-		t_after = 3				# 3 s
-		t_resolution = 0.1 		# 100 ms time bins
+			# Plot average rate for all neurons divided in six cases of targets on option
+			plt.figure()
+			t_before = 1			# 1 s
+			t_after = 3				# 3 s
+			t_resolution = 0.1 		# 100 ms time bins
 
-		# 1. LH presented
-		LH_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [1,1,0]) for j in range(num_successful_trials[i])]))
-		avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1.good_channels, times_row_ind[LH_ind],t_before,t_after,t_resolution)
-		avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2.good_channels, times_row_ind[LH_ind],t_before,t_after,t_resolution)
+			# 1. LH presented
+			LH_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [1,1,0]) for j in range(num_successful_trials[i])]))
+			avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1.good_channels, times_row_ind[LH_ind],t_before,t_after,t_resolution)
+			avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2.good_channels, times_row_ind[LH_ind],t_before,t_after,t_resolution)
 
-		plt.subplot(3,2,1)
-		plt.title('Low-High Presented')
-		plt.plot(avg_psth1.T)
-		plt.plot(avg_psth2.T)
+			plt.subplot(3,2,1)
+			plt.title('Low-High Presented')
+			plt.plot(avg_psth1.T)
+			plt.plot(avg_psth2.T)
 
-		# 2. LM presented
-		LM_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [1,0,1]) for j in range(num_successful_trials[i])]))
-		avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1.good_channels, times_row_ind[LM_ind],t_before,t_after,t_resolution)
-		avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2.good_channels, times_row_ind[LM_ind],t_before,t_after,t_resolution)
+			# 2. LM presented
+			LM_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [1,0,1]) for j in range(num_successful_trials[i])]))
+			avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1.good_channels, times_row_ind[LM_ind],t_before,t_after,t_resolution)
+			avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2.good_channels, times_row_ind[LM_ind],t_before,t_after,t_resolution)
 
-		plt.subplot(3,2,2)
-		plt.title('Low-Middle Presented')
-		plt.plot(avg_psth1.T)
-		plt.plot(avg_psth2.T)
+			plt.subplot(3,2,2)
+			plt.title('Low-Middle Presented')
+			plt.plot(avg_psth1.T)
+			plt.plot(avg_psth2.T)
 
-		# 3. MH presented
-		MH_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [0,1,1]) for j in range(num_successful_trials[i])]))
-		avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1.good_channels, times_row_ind[MH_ind],t_before,t_after,t_resolution)
-		avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2.good_channels, times_row_ind[MH_ind],t_before,t_after,t_resolution)
+			# 3. MH presented
+			MH_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [0,1,1]) for j in range(num_successful_trials[i])]))
+			avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1.good_channels, times_row_ind[MH_ind],t_before,t_after,t_resolution)
+			avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2.good_channels, times_row_ind[MH_ind],t_before,t_after,t_resolution)
 
-		plt.subplot(3,2,3)
-		plt.title('Middle-High Presented')
-		plt.plot(avg_psth1.T)
-		plt.plot(avg_psth2.T)
+			plt.subplot(3,2,3)
+			plt.title('Middle-High Presented')
+			plt.plot(avg_psth1.T)
+			plt.plot(avg_psth2.T)
 
-		# 4. L presented
-		L_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [1,0,0]) for j in range(num_successful_trials[i])]))
-		avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1.good_channels, times_row_ind[L_ind],t_before,t_after,t_resolution)
-		avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2.good_channels, times_row_ind[L_ind],t_before,t_after,t_resolution)
+			# 4. L presented
+			L_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [1,0,0]) for j in range(num_successful_trials[i])]))
+			avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1.good_channels, times_row_ind[L_ind],t_before,t_after,t_resolution)
+			avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2.good_channels, times_row_ind[L_ind],t_before,t_after,t_resolution)
 
-		plt.subplot(3,2,4)
-		plt.title('Low Presented')
-		plt.plot(avg_psth1.T)
-		plt.plot(avg_psth2.T)
+			plt.subplot(3,2,4)
+			plt.title('Low Presented')
+			plt.plot(avg_psth1.T)
+			plt.plot(avg_psth2.T)
 
-		# 5. H presented
-		H_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [0,1,0]) for j in range(num_successful_trials[i])]))
-		avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1.good_channels, times_row_ind[H_ind],t_before,t_after,t_resolution)
-		avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2.good_channels, times_row_ind[H_ind],t_before,t_after,t_resolution)
+			# 5. H presented
+			H_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [0,1,0]) for j in range(num_successful_trials[i])]))
+			avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1.good_channels, times_row_ind[H_ind],t_before,t_after,t_resolution)
+			avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2.good_channels, times_row_ind[H_ind],t_before,t_after,t_resolution)
 
-		plt.subplot(3,2,4)
-		plt.title('High Presented')
-		plt.plot(avg_psth1.T)
-		plt.plot(avg_psth2.T)
+			plt.subplot(3,2,4)
+			plt.title('High Presented')
+			plt.plot(avg_psth1.T)
+			plt.plot(avg_psth2.T)
 
-		# 6. M presented
-		M_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [0,0,1]) for j in range(num_successful_trials[i])]))
-		avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1.good_channels, times_row_ind[M_ind],t_before,t_after,t_resolution)
-		avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2.good_channels, times_row_ind[M_ind],t_before,t_after,t_resolution)
+			# 6. M presented
+			M_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [0,0,1]) for j in range(num_successful_trials[i])]))
+			avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1.good_channels, times_row_ind[M_ind],t_before,t_after,t_resolution)
+			avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2.good_channels, times_row_ind[M_ind],t_before,t_after,t_resolution)
 
-		plt.subplot(3,2,1)
-		plt.title('Middle Presented')
-		plt.plot(avg_psth1.T)
-		plt.plot(avg_psth2.T)
+			plt.subplot(3,2,1)
+			plt.title('Middle Presented')
+			plt.plot(avg_psth1.T)
+			plt.plot(avg_psth2.T)
+
+			plt_name = syncHDF_files[i][:-12]
+			plt.savefig('/home/srsummerson/code/analysis/Mario_Performance_figs/'+plt_name++'_PSTH.svg')
 
 	return
