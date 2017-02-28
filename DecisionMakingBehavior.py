@@ -530,12 +530,16 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files):
 			LH_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [1,1,0]) for j in range(int(num_successful_trials[i]))]))
 			avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1_good_channels, times_row_ind[LH_ind],t_before,t_after,t_resolution)
 			avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2_good_channels, times_row_ind[LH_ind],t_before,t_after,t_resolution)
-			print avg_psth1.shape
+			
 			plt.subplot(3,2,1)
 			plt.title('Low-High Presented')
 			plt.plot(avg_psth1.T)
 			plt.plot(avg_psth2.T)
-
+			xticklabels = np.arange(t_before,t_after-t_resolution,t_resolution)
+			xticks = np.arange(0, len(xticklabels), 5)
+			xticklabels = ['{0:.2f}'.format(xticklabels[i]) for i in xticks]
+			plt.xticks(xticks, xticklabels)
+			
 			# 2. LM presented
 			LM_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [1,0,1]) for j in range(int(num_successful_trials[i]))]))
 			avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1_good_channels, times_row_ind[LM_ind],t_before,t_after,t_resolution)
@@ -571,7 +575,7 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files):
 			avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1_good_channels, times_row_ind[H_ind],t_before,t_after,t_resolution)
 			avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2_good_channels, times_row_ind[H_ind],t_before,t_after,t_resolution)
 
-			plt.subplot(3,2,4)
+			plt.subplot(3,2,5)
 			plt.title('High Presented')
 			plt.plot(avg_psth1.T)
 			plt.plot(avg_psth2.T)
@@ -581,7 +585,7 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files):
 			avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1_good_channels, times_row_ind[M_ind],t_before,t_after,t_resolution)
 			avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2_good_channels, times_row_ind[M_ind],t_before,t_after,t_resolution)
 
-			plt.subplot(3,2,1)
+			plt.subplot(3,2,6)
 			plt.title('Middle Presented')
 			plt.plot(avg_psth1.T)
 			plt.plot(avg_psth2.T)
