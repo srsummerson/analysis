@@ -504,7 +504,7 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files):
 		# Load spike data: 
 		if (spike_files[i] != ''):
 			# Find lfp sample numbers corresponding to these times and the sampling frequency of the lfp data
-			lfp_state_row_ind, lfp_freq = cb.get_state_TDT_LFPvalues(ind_hold_center, syncHDF_files[i])
+			lfp_state_row_ind, lfp_freq = cb.get_state_TDT_LFPvalues(ind_picture_onset, syncHDF_files[i])
 			# Convert lfp sample numbers to times in seconds
 			times_row_ind = lfp_state_row_ind/float(lfp_freq)
 
@@ -548,8 +548,8 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files):
 
 			plt.subplot(3,2,2)
 			plt.title('Low-Middle Presented')
-			plt.plot(avg_psth1.T)
-			plt.plot(avg_psth2.T)
+			plt.plot(smooth_avg_psth1.T)
+			plt.plot(smooth_avg_psth2.T)
 
 			# 3. MH presented
 			MH_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [0,1,1]) for j in range(int(num_successful_trials[i]))]))
@@ -558,8 +558,8 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files):
 
 			plt.subplot(3,2,3)
 			plt.title('Middle-High Presented')
-			plt.plot(avg_psth1.T)
-			plt.plot(avg_psth2.T)
+			plt.plot(smooth_avg_psth1.T)
+			plt.plot(smooth_avg_psth2.T)
 
 			# 4. L presented
 			L_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [1,0,0]) for j in range(int(num_successful_trials[i]))]))
@@ -568,8 +568,8 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files):
 
 			plt.subplot(3,2,4)
 			plt.title('Low Presented')
-			plt.plot(avg_psth1.T)
-			plt.plot(avg_psth2.T)
+			plt.plot(smooth_avg_psth1.T)
+			plt.plot(smooth_avg_psth2.T)
 
 			# 5. H presented
 			H_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [0,1,0]) for j in range(int(num_successful_trials[i]))]))
@@ -578,8 +578,8 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files):
 
 			plt.subplot(3,2,5)
 			plt.title('High Presented')
-			plt.plot(avg_psth1.T)
-			plt.plot(avg_psth2.T)
+			plt.plot(smooth_avg_psth1.T)
+			plt.plot(smooth_avg_psth2.T)
 
 			# 6. M presented
 			M_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [0,0,1]) for j in range(int(num_successful_trials[i]))]))
@@ -588,8 +588,8 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files):
 
 			plt.subplot(3,2,6)
 			plt.title('Middle Presented')
-			plt.plot(avg_psth1.T)
-			plt.plot(avg_psth2.T)
+			plt.plot(smooth_avg_psth1.T)
+			plt.plot(smooth_avg_psth2.T)
 
 			plt_name = syncHDF_files[i][34:-12]
 			plt.savefig('/home/srsummerson/code/analysis/Mario_Performance_figs/'+plt_name+'_PSTH.svg')
