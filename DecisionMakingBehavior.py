@@ -685,6 +685,8 @@ def ThreeTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_
 			else:
 				avg_psth, smooth_avg_psth = spike2.compute_psth(spike2_good_channels, sc, times_row_ind[LH_ind],t_before,t_after,t_resolution)
 			
+			avg_psth = np.nanmean(avg_psth, axis = 0)
+			smooth_avg_psth = np.nanmean(smooth_avg_psth, axis = 0)
 			plt.subplot(3,2,1)
 			plt.title('Low-High Presented')
 			plt.plot(smooth_avg_psth)
@@ -700,6 +702,8 @@ def ThreeTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_
 			else:
 				avg_psth, smooth_avg_psth = spike2.compute_psth(spike2_good_channels, sc, times_row_ind[LM_ind],t_before,t_after,t_resolution)
 
+			avg_psth = np.nanmean(avg_psth, axis = 0)
+			smooth_avg_psth = np.nanmean(smooth_avg_psth, axis = 0)
 			plt.subplot(3,2,2)
 			plt.title('Low-Middle Presented')
 			plt.plot(smooth_avg_psth)
@@ -715,6 +719,8 @@ def ThreeTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_
 			else:
 				avg_psth, smooth_avg_psth = spike2.compute_psth(spike2_good_channels, sc, times_row_ind[MH_ind],t_before,t_after,t_resolution)
 
+			avg_psth = np.nanmean(avg_psth, axis = 0)
+			smooth_avg_psth = np.nanmean(smooth_avg_psth, axis = 0)
 			plt.subplot(3,2,3)
 			plt.title('Middle-High Presented')
 			plt.plot(smooth_avg_psth)
@@ -730,6 +736,8 @@ def ThreeTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_
 			else:
 				avg_psth, smooth_avg_psth = spike2.compute_psth(spike2_good_channels, sc, times_row_ind[L_ind],t_before,t_after,t_resolution)
 
+			avg_psth = np.nanmean(avg_psth, axis = 0)
+			smooth_avg_psth = np.nanmean(smooth_avg_psth, axis = 0)
 			plt.subplot(3,2,4)
 			plt.title('Low Presented')
 			plt.plot(smooth_avg_psth)
@@ -745,6 +753,8 @@ def ThreeTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_
 			else:
 				avg_psth, smooth_avg_psth = spike2.compute_psth(spike2_good_channels, sc, times_row_ind[H_ind],t_before,t_after,t_resolution)
 
+			avg_psth = np.nanmean(avg_psth, axis = 0)
+			smooth_avg_psth = np.nanmean(smooth_avg_psth, axis = 0)
 			plt.subplot(3,2,5)
 			plt.title('High Presented')
 			plt.plot(smooth_avg_psth)
@@ -760,6 +770,8 @@ def ThreeTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_
 			else:
 				avg_psth, smooth_avg_psth = spike2.compute_psth(spike2_good_channels, sc, times_row_ind[M_ind],t_before,t_after,t_resolution)
 
+			avg_psth = np.nanmean(avg_psth, axis = 0)
+			smooth_avg_psth = np.nanmean(smooth_avg_psth, axis = 0)
 			plt.subplot(3,2,6)
 			plt.title('Middle Presented')
 			plt.plot(smooth_avg_psth)
