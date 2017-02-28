@@ -543,8 +543,8 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files):
 			
 			# 2. LM presented
 			LM_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [1,0,1]) for j in range(int(num_successful_trials[i]))]))
-			avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1_good_channels, times_row_ind[LM_ind],t_before,t_after,t_resolution)
-			avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2_good_channels, times_row_ind[LM_ind],t_before,t_after,t_resolution)
+			avg_psth1, smooth_avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1_good_channels, times_row_ind[LM_ind],t_before,t_after,t_resolution)
+			avg_psth2, smooth_avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2_good_channels, times_row_ind[LM_ind],t_before,t_after,t_resolution)
 
 			plt.subplot(3,2,2)
 			plt.title('Low-Middle Presented')
@@ -553,8 +553,8 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files):
 
 			# 3. MH presented
 			MH_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [0,1,1]) for j in range(int(num_successful_trials[i]))]))
-			avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1_good_channels, times_row_ind[MH_ind],t_before,t_after,t_resolution)
-			avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2_good_channels, times_row_ind[MH_ind],t_before,t_after,t_resolution)
+			avg_psth1, smooth_avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1_good_channels, times_row_ind[MH_ind],t_before,t_after,t_resolution)
+			avg_psth2, smooth_avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2_good_channels, times_row_ind[MH_ind],t_before,t_after,t_resolution)
 
 			plt.subplot(3,2,3)
 			plt.title('Middle-High Presented')
@@ -563,8 +563,8 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files):
 
 			# 4. L presented
 			L_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [1,0,0]) for j in range(int(num_successful_trials[i]))]))
-			avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1_good_channels, times_row_ind[L_ind],t_before,t_after,t_resolution)
-			avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2_good_channels, times_row_ind[L_ind],t_before,t_after,t_resolution)
+			avg_psth1, smooth_avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1_good_channels, times_row_ind[L_ind],t_before,t_after,t_resolution)
+			avg_psth2, smooth_avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2_good_channels, times_row_ind[L_ind],t_before,t_after,t_resolution)
 
 			plt.subplot(3,2,4)
 			plt.title('Low Presented')
@@ -573,8 +573,8 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files):
 
 			# 5. H presented
 			H_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [0,1,0]) for j in range(int(num_successful_trials[i]))]))
-			avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1_good_channels, times_row_ind[H_ind],t_before,t_after,t_resolution)
-			avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2_good_channels, times_row_ind[H_ind],t_before,t_after,t_resolution)
+			avg_psth1, smooth_avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1_good_channels, times_row_ind[H_ind],t_before,t_after,t_resolution)
+			avg_psth2, smooth_avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2_good_channels, times_row_ind[H_ind],t_before,t_after,t_resolution)
 
 			plt.subplot(3,2,5)
 			plt.title('High Presented')
@@ -583,8 +583,8 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files):
 
 			# 6. M presented
 			M_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [0,0,1]) for j in range(int(num_successful_trials[i]))]))
-			avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1_good_channels, times_row_ind[M_ind],t_before,t_after,t_resolution)
-			avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2_good_channels, times_row_ind[M_ind],t_before,t_after,t_resolution)
+			avg_psth1, smooth_avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1_good_channels, times_row_ind[M_ind],t_before,t_after,t_resolution)
+			avg_psth2, smooth_avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2_good_channels, times_row_ind[M_ind],t_before,t_after,t_resolution)
 
 			plt.subplot(3,2,6)
 			plt.title('Middle Presented')
