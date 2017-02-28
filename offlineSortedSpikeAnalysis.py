@@ -6,6 +6,7 @@ from scipy import stats
 import matplotlib as mpl
 import tables
 from matplotlib import pyplot as plt
+from scipy import signal
 
 class OfflineSorted_CSVFile():
 	'''
@@ -149,7 +150,12 @@ class OfflineSorted_CSVFile():
 		'''
 		unit_list = []
 		avg_psth = []
+		smooth_avg_psth
 		counter = 0
+
+		boxcar_length = 4.
+		boxcar_window = signal.boxcar(boxcar_length)  # 2 bins before, 2 bins after for boxcar smoothing
+
 		for chan in channs:
 			# First find number of units recorded on this channel
 			unit_chan = np.ravel(np.nonzero(np.equal(self.channel, chan)))
@@ -159,12 +165,15 @@ class OfflineSorted_CSVFile():
 			for sc in sc_chan:
 				psth_sc = self.compute_psth(chan,sc,times_align,t_before,t_after,t_resolution)
 				avg_psth_sc = np.nanmean(psth_sc, axis = 0)
+				smooth_avg_psth_sc = np.convolve(avg_psth_sc, boxcar_window,mode='same')/boxcar_length
 				#avg_psth.append([avg_psth_sc])
 				if counter == 0:
 					avg_psth = avg_psth_sc
+					smooth_avg_psth = smooth_avg_psth_sc
 				else:
 					avg_psth = np.vstack([avg_psth,avg_psth_sc])
+					smooth_avg_psth = np.vstack([smooth_avg_psth, smooth_avg_psth_sc])
 				unit_list.append([chan, sc])
 				counter += 1
 
-		return avg_psth, np.array(unit_list)
+		return avg_psth, smooth_avg_psth, np.array(unit_list)
