@@ -150,7 +150,7 @@ class OfflineSorted_CSVFile():
 		'''
 		unit_list = []
 		avg_psth = []
-		smooth_avg_psth
+		smooth_avg_psth = []
 		counter = 0
 
 		boxcar_length = 4.
