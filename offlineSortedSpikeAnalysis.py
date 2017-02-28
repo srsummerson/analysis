@@ -130,6 +130,10 @@ class OfflineSorted_CSVFile():
 		psth_length = np.rint((t_before + t_after)/t_resolution)
 		num_timepoints = len(times_align)
 		psth = np.zeros((num_timepoints, psth_length-1))
+		smooth_psth = psth
+
+		boxcar_length = 4.
+		boxcar_window = signal.boxcar(boxcar_length)  # 2 bins before, 2 bins after for boxcar smoothing
 		
 		unit_chan = np.ravel(np.nonzero(np.equal(self.channel, chann)))
 		sc_unit = np.ravel(np.nonzero(np.equal(self.sort_code[unit_chan], sc)))
@@ -140,8 +144,9 @@ class OfflineSorted_CSVFile():
 			hist, bins = np.histogram(data, bins = t_window)
 			hist_fr = hist/t_resolution
 			psth[i,:] = hist_fr[:psth_length-1]
+			smooth_psth[i,:] = np.convolve(hist_fr[:psth_length-1], boxcar_window,mode='same')/boxcar_length
 
-		return psth
+		return psth, smooth_psth
 
 	def compute_multiple_channel_avg_psth(self, channs, times_align,t_before,t_after,t_resolution):
 		'''

@@ -568,7 +568,6 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files):
 			xticks = np.arange(0, len(xticklabels), 10)
 			xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
 			plt.xticks(xticks, xticklabels)
-			plt.legend()
 
 			# 4. L presented
 			L_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [1,0,0]) for j in range(int(num_successful_trials[i]))]))
@@ -617,7 +616,7 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files):
 
 	return
 
-def ThreeTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_files, chann):
+def ThreeTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_files, chann, sc):
 	'''
 	This method aligns spiking data to behavioral choices for all different target presentation combinations
 	in the Three Target Task, where there is a low-value, middle-value and high-value target. This version does not 
@@ -681,13 +680,13 @@ def ThreeTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_
 
 			# 1. LH presented
 			LH_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [1,1,0]) for j in range(int(num_successful_trials[i]))]))
-			avg_psth1, smooth_avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1_good_channels, times_row_ind[LH_ind],t_before,t_after,t_resolution)
-			avg_psth2, smooth_avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2_good_channels, times_row_ind[LH_ind],t_before,t_after,t_resolution)
+			avg_psth1, smooth_avg_psth1 = spike1.compute_psth(spike1_good_channels, sc, times_row_ind[LH_ind],t_before,t_after,t_resolution)
+			avg_psth2, smooth_avg_psth2 = spike2.compute_psth(spike2_good_channels, sc, times_row_ind[LH_ind],t_before,t_after,t_resolution)
 			
 			plt.subplot(3,2,1)
 			plt.title('Low-High Presented')
-			plt.plot(smooth_avg_psth1.T)
-			plt.plot(smooth_avg_psth2.T)
+			plt.plot(smooth_avg_psth1)
+			plt.plot(smooth_avg_psth2)
 			xticklabels = np.arange(-t_before,t_after-t_resolution,t_resolution)
 			xticks = np.arange(0, len(xticklabels), 10)
 			xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
@@ -695,13 +694,13 @@ def ThreeTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_
 			
 			# 2. LM presented
 			LM_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [1,0,1]) for j in range(int(num_successful_trials[i]))]))
-			avg_psth1, smooth_avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1_good_channels, times_row_ind[LM_ind],t_before,t_after,t_resolution)
-			avg_psth2, smooth_avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2_good_channels, times_row_ind[LM_ind],t_before,t_after,t_resolution)
+			avg_psth1, smooth_avg_psth1 = spike1.compute_psth(spike1_good_channels, sc, times_row_ind[LM_ind],t_before,t_after,t_resolution)
+			avg_psth2, smooth_avg_psth2 = spike2.compute_psth(spike2_good_channels, sc, times_row_ind[LM_ind],t_before,t_after,t_resolution)
 
 			plt.subplot(3,2,2)
 			plt.title('Low-Middle Presented')
-			plt.plot(smooth_avg_psth1.T)
-			plt.plot(smooth_avg_psth2.T)
+			plt.plot(smooth_avg_psth1)
+			plt.plot(smooth_avg_psth2)
 			xticklabels = np.arange(-t_before,t_after-t_resolution,t_resolution)
 			xticks = np.arange(0, len(xticklabels), 10)
 			xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
@@ -709,13 +708,13 @@ def ThreeTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_
 
 			# 3. MH presented
 			MH_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [0,1,1]) for j in range(int(num_successful_trials[i]))]))
-			avg_psth1, smooth_avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1_good_channels, times_row_ind[MH_ind],t_before,t_after,t_resolution)
-			avg_psth2, smooth_avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2_good_channels, times_row_ind[MH_ind],t_before,t_after,t_resolution)
+			avg_psth1, smooth_avg_psth1 = spike1.compute_psth(spike1_good_channels, sc, times_row_ind[MH_ind],t_before,t_after,t_resolution)
+			avg_psth2, smooth_avg_psth2 = spike2.compute_psth(spike2_good_channels, sc, times_row_ind[MH_ind],t_before,t_after,t_resolution)
 
 			plt.subplot(3,2,3)
 			plt.title('Middle-High Presented')
-			plt.plot(smooth_avg_psth1.T)
-			plt.plot(smooth_avg_psth2.T)
+			plt.plot(smooth_avg_psth1)
+			plt.plot(smooth_avg_psth2)
 			xticklabels = np.arange(-t_before,t_after-t_resolution,t_resolution)
 			xticks = np.arange(0, len(xticklabels), 10)
 			xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
@@ -723,13 +722,13 @@ def ThreeTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_
 
 			# 4. L presented
 			L_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [1,0,0]) for j in range(int(num_successful_trials[i]))]))
-			avg_psth1, smooth_avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1_good_channels, times_row_ind[L_ind],t_before,t_after,t_resolution)
-			avg_psth2, smooth_avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2_good_channels, times_row_ind[L_ind],t_before,t_after,t_resolution)
+			avg_psth1, smooth_avg_psth1 = spike1.compute_psth(spike1_good_channels, sc, times_row_ind[L_ind],t_before,t_after,t_resolution)
+			avg_psth2, smooth_avg_psth2 = spike2.compute_psth(spike2_good_channels, sc, times_row_ind[L_ind],t_before,t_after,t_resolution)
 
 			plt.subplot(3,2,4)
 			plt.title('Low Presented')
-			plt.plot(smooth_avg_psth1.T)
-			plt.plot(smooth_avg_psth2.T)
+			plt.plot(smooth_avg_psth1)
+			plt.plot(smooth_avg_psth2)
 			xticklabels = np.arange(-t_before,t_after-t_resolution,t_resolution)
 			xticks = np.arange(0, len(xticklabels), 10)
 			xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
@@ -737,13 +736,13 @@ def ThreeTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_
 
 			# 5. H presented
 			H_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [0,1,0]) for j in range(int(num_successful_trials[i]))]))
-			avg_psth1, smooth_avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1_good_channels, times_row_ind[H_ind],t_before,t_after,t_resolution)
-			avg_psth2, smooth_avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2_good_channels, times_row_ind[H_ind],t_before,t_after,t_resolution)
+			avg_psth1, smooth_avg_psth1 = spike1.compute_psth(spike1_good_channels, sc, times_row_ind[H_ind],t_before,t_after,t_resolution)
+			avg_psth2, smooth_avg_psth2 = spike2.compute_psth(spike2_good_channels, sc, times_row_ind[H_ind],t_before,t_after,t_resolution)
 
 			plt.subplot(3,2,5)
 			plt.title('High Presented')
-			plt.plot(smooth_avg_psth1.T)
-			plt.plot(smooth_avg_psth2.T)
+			plt.plot(smooth_avg_psth1)
+			plt.plot(smooth_avg_psth2)
 			xticklabels = np.arange(-t_before,t_after-t_resolution,t_resolution)
 			xticks = np.arange(0, len(xticklabels), 10)
 			xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
@@ -751,13 +750,13 @@ def ThreeTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_
 
 			# 6. M presented
 			M_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [0,0,1]) for j in range(int(num_successful_trials[i]))]))
-			avg_psth1, smooth_avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1_good_channels, times_row_ind[M_ind],t_before,t_after,t_resolution)
-			avg_psth2, smooth_avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2_good_channels, times_row_ind[M_ind],t_before,t_after,t_resolution)
+			avg_psth1, smooth_avg_psth1 = spike1.compute_psth(spike1_good_channels, sc, times_row_ind[M_ind],t_before,t_after,t_resolution)
+			avg_psth2, smooth_avg_psth2 = spike2.compute_psth(spike2_good_channels, sc, times_row_ind[M_ind],t_before,t_after,t_resolution)
 
 			plt.subplot(3,2,6)
 			plt.title('Middle Presented')
-			plt.plot(smooth_avg_psth1.T)
-			plt.plot(smooth_avg_psth2.T)
+			plt.plot(smooth_avg_psth1)
+			plt.plot(smooth_avg_psth2)
 			xticklabels = np.arange(-t_before,t_after-t_resolution,t_resolution)
 			xticks = np.arange(0, len(xticklabels), 10)
 			xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
