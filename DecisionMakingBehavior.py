@@ -535,7 +535,7 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files):
 			plt.title('Low-High Presented')
 			plt.plot(avg_psth1.T)
 			plt.plot(avg_psth2.T)
-			xticklabels = np.arange(t_before,t_after-t_resolution,t_resolution)
+			xticklabels = np.arange(-t_before,t_after-t_resolution,t_resolution)
 			xticks = np.arange(0, len(xticklabels), 5)
 			xticklabels = ['{0:.2f}'.format(xticklabels[k]) for k in xticks]
 			plt.xticks(xticks, xticklabels)
