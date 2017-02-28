@@ -537,9 +537,9 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files):
 			plt.plot(avg_psth2.T)
 			xticklabels = np.arange(t_before,t_after-t_resolution,t_resolution)
 			xticks = np.arange(0, len(xticklabels), 5)
-			xticklabels = ['{0:.2f}'.format(xticklabels[i]) for i in xticks]
+			xticklabels = ['{0:.2f}'.format(xticklabels[k]) for k in xticks]
 			plt.xticks(xticks, xticklabels)
-			print unit_list1
+			
 			# 2. LM presented
 			LM_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [1,0,1]) for j in range(int(num_successful_trials[i]))]))
 			avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1_good_channels, times_row_ind[LM_ind],t_before,t_after,t_resolution)
