@@ -700,8 +700,12 @@ def ThreeTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_
 				avg_psth_lh, smooth_avg_psth_lh = spike1.compute_psth(spike1_good_channels, sc, times_row_ind[LH_ind],t_before,t_after,t_resolution)
 			else:
 				avg_psth_lh, smooth_avg_psth_lh = spike2.compute_psth(spike2_good_channels, sc, times_row_ind[LH_ind],t_before,t_after,t_resolution)
-			psth_lh = np.vstack([psth_lh, avg_psth_lh])
-			smooth_psth_lh = np.vstack([smooth_psth_lh, smooth_avg_psth_lh])
+			if i == 0:
+				psth_lh = avg_psth_lh
+				smooth_psth_lh = smooth_avg_psth_lh
+			else:
+				psth_lh = np.vstack([psth_lh, avg_psth_lh])
+				smooth_psth_lh = np.vstack([smooth_psth_lh, smooth_avg_psth_lh])
 
 			# 2. LM presented
 			LM_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [1,0,1]) for j in range(int(num_successful_trials[i]))]))
@@ -709,8 +713,12 @@ def ThreeTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_
 				avg_psth_lm, smooth_avg_psth_lm = spike1.compute_psth(spike1_good_channels, sc, times_row_ind[LM_ind],t_before,t_after,t_resolution)
 			else:
 				avg_psth_lm, smooth_avg_psth_lm = spike2.compute_psth(spike2_good_channels, sc, times_row_ind[LM_ind],t_before,t_after,t_resolution)
-			psth_lm = np.vstack([psth_lm, avg_psth_lm])
-			smooth_psth_lm = np.vstack([smooth_psth_lm, smooth_avg_psth_lm])
+			if i == 0:
+				psth_lm = avg_psth_lm
+				smooth_psth_lm = smooth_avg_psth_lm
+			else:
+				psth_lm = np.vstack([psth_lm, avg_psth_lm])
+				smooth_psth_lm = np.vstack([smooth_psth_lm, smooth_avg_psth_lm])
 
 			# 3. MH presented
 			MH_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [0,1,1]) for j in range(int(num_successful_trials[i]))]))
@@ -718,8 +726,12 @@ def ThreeTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_
 				avg_psth_mh, smooth_avg_psth_mh = spike1.compute_psth(spike1_good_channels, sc, times_row_ind[MH_ind],t_before,t_after,t_resolution)
 			else:
 				avg_psth_mh, smooth_avg_psth_mh = spike2.compute_psth(spike2_good_channels, sc, times_row_ind[MH_ind],t_before,t_after,t_resolution)
-			psth_mh = np.vstack([psth_mh, avg_psth_mh])
-			smooth_psth_mh = np.vstack([smooth_psth_mh, smooth_avg_psth_mh])
+			if i == 0:
+				psth_mh = avg_psth_mh
+				smooth_psth_mh = smooth_avg_psth_mh
+			else:
+				psth_mh = np.vstack([psth_mh, avg_psth_mh])
+				smooth_psth_mh = np.vstack([smooth_psth_mh, smooth_avg_psth_mh])
 
 			# 4. L presented
 			L_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [1,0,0]) for j in range(int(num_successful_trials[i]))]))
@@ -727,8 +739,12 @@ def ThreeTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_
 				avg_psth_l, smooth_avg_psth_l = spike1.compute_psth(spike1_good_channels, sc, times_row_ind[L_ind],t_before,t_after,t_resolution)
 			else:
 				avg_psth_l, smooth_avg_psth_l = spike2.compute_psth(spike2_good_channels, sc, times_row_ind[L_ind],t_before,t_after,t_resolution)
-			psth_l = np.vstack([psth_l, avg_psth_l])
-			smooth_psth_l = np.vstack([smooth_psth_l, smooth_avg_psth_l])
+			if i == 0:
+				psth_l = avg_psth_l
+				smooth_psth_l = smooth_avg_psth_l
+			else:
+				psth_l = np.vstack([psth_l, avg_psth_l])
+				smooth_psth_l = np.vstack([smooth_psth_l, smooth_avg_psth_l])
 
 			# 5. H presented
 			H_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [0,1,0]) for j in range(int(num_successful_trials[i]))]))
@@ -736,8 +752,12 @@ def ThreeTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_
 				avg_psth_h, smooth_avg_psth_h = spike1.compute_psth(spike1_good_channels, sc, times_row_ind[H_ind],t_before,t_after,t_resolution)
 			else:
 				avg_psth_h, smooth_avg_psth_h = spike2.compute_psth(spike2_good_channels, sc, times_row_ind[H_ind],t_before,t_after,t_resolution)
-			psth_h = np.vstack([psth_h, avg_psth_h])
-			smooth_psth_h = np.vstack([smooth_psth_h, smooth_avg_psth_h])
+			if i == 0:
+				psth_h = avg_psth_h
+				smooth_psth_h = smooth_avg_psth_h
+			else:
+				psth_h = np.vstack([psth_h, avg_psth_h])
+				smooth_psth_h = np.vstack([smooth_psth_h, smooth_avg_psth_h])
 
 			# 6. M presented
 			M_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [0,0,1]) for j in range(int(num_successful_trials[i]))]))
@@ -745,8 +765,12 @@ def ThreeTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_
 				avg_psth_m, smooth_avg_psth_m = spike1.compute_psth(spike1_good_channels, sc, times_row_ind[M_ind],t_before,t_after,t_resolution)
 			else:
 				avg_psth_m, smooth_avg_psth_m = spike2.compute_psth(spike2_good_channels, sc, times_row_ind[M_ind],t_before,t_after,t_resolution)
-			psth_m = np.vstack([psth_m, avg_psth_m])
-			smooth_psth_m = np.vstack([smooth_psth_m, smooth_avg_psth_m])
+			if i == 0:
+				psth_m = avg_psth_m
+				smooth_psth_m = smooth_avg_psth_m
+			else:
+				psth_m = np.vstack([psth_m, avg_psth_m])
+				smooth_psth_m = np.vstack([smooth_psth_m, smooth_avg_psth_m])
 
 			# Plot average rate for all neurons divided in six cases of targets on option
 			if plot_output:
