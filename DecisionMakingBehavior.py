@@ -616,7 +616,7 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files):
 
 	return
 
-def ThreeTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_files, chann, sc):
+def ThreeTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_files, chann, sc, plot_output):
 	'''
 	This method aligns spiking data to behavioral choices for all different target presentation combinations
 	in the Three Target Task, where there is a low-value, middle-value and high-value target. This version does not 
@@ -633,11 +633,33 @@ def ThreeTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_
 					epoch of recording but not the second, the hdf_files and syncHDF_files will both have 2 file names, and the 
 					spike_files entry should be of the form [[spike_file1.csv, spike_file2.csv], ''].
 	- chann: integer representing a channel
-	
+	- sc: integer representing unit sort code
+	- plot_output: binary indicating whether output should be plotted + saved or not
 	'''
 	num_files = len(hdf_files)
 	trials_per_file = np.zeros(num_files)
 	num_successful_trials = np.zeros(num_files)
+
+	# Define timing parameters for PSTHs
+	t_before = 1			# 1 s
+	t_after = 3				# 3 s
+	t_resolution = 0.1 		# 100 ms time bins
+	num_bins = len(np.arange(-t_before, t_after, t_resolution)) - 1
+
+	# Define arrays to save psth for each trial
+	smooth_psth_lm = np.array([])
+	smooth_psth_lh = np.array([])
+	smooth_psth_mh = np.array([])
+	smooth_psth_l = np.array([])
+	smooth_psth_m = np.array([])
+	smooth_psth_h = np.array([])
+	psth_lm = np.array([])
+	psth_lh = np.array([])
+	psth_mh = np.array([])
+	psth_l = np.array([])
+	psth_m = np.array([])
+	psth_h = np.array([])
+
 	'''
 	Get data for each set of files
 	'''
@@ -672,115 +694,128 @@ def ThreeTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_
 			spike1_good_channels = [unit for unit in cd_units if unit in spike1.good_channels]
 			spike2_good_channels = [unit for unit in cd_units if unit in spike2.good_channels]
 
-			# Plot average rate for all neurons divided in six cases of targets on option
-			plt.figure()
-			t_before = 1			# 1 s
-			t_after = 3				# 3 s
-			t_resolution = 0.1 		# 100 ms time bins
-
 			# 1. LH presented
 			LH_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [1,1,0]) for j in range(int(num_successful_trials[i]))]))
 			if not spike2_good_channels:
-				avg_psth, smooth_avg_psth = spike1.compute_psth(spike1_good_channels, sc, times_row_ind[LH_ind],t_before,t_after,t_resolution)
+				avg_psth_lh, smooth_avg_psth_lh = spike1.compute_psth(spike1_good_channels, sc, times_row_ind[LH_ind],t_before,t_after,t_resolution)
 			else:
-				avg_psth, smooth_avg_psth = spike2.compute_psth(spike2_good_channels, sc, times_row_ind[LH_ind],t_before,t_after,t_resolution)
-			
-			avg_psth = np.nanmean(avg_psth, axis = 0)
-			smooth_avg_psth = np.nanmean(smooth_avg_psth, axis = 0)
-			plt.subplot(3,2,1)
-			plt.title('Low-High Presented')
-			plt.plot(smooth_avg_psth)
-			xticklabels = np.arange(-t_before,t_after-t_resolution,t_resolution)
-			xticks = np.arange(0, len(xticklabels), 10)
-			xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
-			plt.xticks(xticks, xticklabels)
-			
+				avg_psth_lh, smooth_avg_psth_lh = spike2.compute_psth(spike2_good_channels, sc, times_row_ind[LH_ind],t_before,t_after,t_resolution)
+			psth_lh = np.vstack([psth_lh, avg_psth_lh])
+			smooth_psth_lh = np.vstack([smooth_psth_lh, smooth_avg_psth_lh])
+
 			# 2. LM presented
 			LM_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [1,0,1]) for j in range(int(num_successful_trials[i]))]))
 			if not spike2_good_channels:
-				avg_psth, smooth_avg_psth = spike1.compute_psth(spike1_good_channels, sc, times_row_ind[LM_ind],t_before,t_after,t_resolution)
+				avg_psth_lm, smooth_avg_psth_lm = spike1.compute_psth(spike1_good_channels, sc, times_row_ind[LM_ind],t_before,t_after,t_resolution)
 			else:
-				avg_psth, smooth_avg_psth = spike2.compute_psth(spike2_good_channels, sc, times_row_ind[LM_ind],t_before,t_after,t_resolution)
-
-			avg_psth = np.nanmean(avg_psth, axis = 0)
-			smooth_avg_psth = np.nanmean(smooth_avg_psth, axis = 0)
-			plt.subplot(3,2,2)
-			plt.title('Low-Middle Presented')
-			plt.plot(smooth_avg_psth)
-			xticklabels = np.arange(-t_before,t_after-t_resolution,t_resolution)
-			xticks = np.arange(0, len(xticklabels), 10)
-			xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
-			plt.xticks(xticks, xticklabels)
+				avg_psth_lm, smooth_avg_psth_lm = spike2.compute_psth(spike2_good_channels, sc, times_row_ind[LM_ind],t_before,t_after,t_resolution)
+			psth_lm = np.vstack([psth_lm, avg_psth_lm])
+			smooth_psth_lm = np.vstack([smooth_psth_lm, smooth_avg_psth_lm])
 
 			# 3. MH presented
 			MH_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [0,1,1]) for j in range(int(num_successful_trials[i]))]))
 			if not spike2_good_channels:
-				avg_psth, smooth_avg_psth = spike1.compute_psth(spike1_good_channels, sc, times_row_ind[MH_ind],t_before,t_after,t_resolution)
+				avg_psth_mh, smooth_avg_psth_mh = spike1.compute_psth(spike1_good_channels, sc, times_row_ind[MH_ind],t_before,t_after,t_resolution)
 			else:
-				avg_psth, smooth_avg_psth = spike2.compute_psth(spike2_good_channels, sc, times_row_ind[MH_ind],t_before,t_after,t_resolution)
-
-			avg_psth = np.nanmean(avg_psth, axis = 0)
-			smooth_avg_psth = np.nanmean(smooth_avg_psth, axis = 0)
-			plt.subplot(3,2,3)
-			plt.title('Middle-High Presented')
-			plt.plot(smooth_avg_psth)
-			xticklabels = np.arange(-t_before,t_after-t_resolution,t_resolution)
-			xticks = np.arange(0, len(xticklabels), 10)
-			xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
-			plt.xticks(xticks, xticklabels)
+				avg_psth_mh, smooth_avg_psth_mh = spike2.compute_psth(spike2_good_channels, sc, times_row_ind[MH_ind],t_before,t_after,t_resolution)
+			psth_mh = np.vstack([psth_mh, avg_psth_mh])
+			smooth_psth_mh = np.vstack([smooth_psth_mh, smooth_avg_psth_mh])
 
 			# 4. L presented
 			L_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [1,0,0]) for j in range(int(num_successful_trials[i]))]))
 			if not spike2_good_channels:
-				avg_psth, smooth_avg_psth = spike1.compute_psth(spike1_good_channels, sc, times_row_ind[L_ind],t_before,t_after,t_resolution)
+				avg_psth_l, smooth_avg_psth_l = spike1.compute_psth(spike1_good_channels, sc, times_row_ind[L_ind],t_before,t_after,t_resolution)
 			else:
-				avg_psth, smooth_avg_psth = spike2.compute_psth(spike2_good_channels, sc, times_row_ind[L_ind],t_before,t_after,t_resolution)
-
-			avg_psth = np.nanmean(avg_psth, axis = 0)
-			smooth_avg_psth = np.nanmean(smooth_avg_psth, axis = 0)
-			plt.subplot(3,2,4)
-			plt.title('Low Presented')
-			plt.plot(smooth_avg_psth)
-			xticklabels = np.arange(-t_before,t_after-t_resolution,t_resolution)
-			xticks = np.arange(0, len(xticklabels), 10)
-			xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
-			plt.xticks(xticks, xticklabels)
+				avg_psth_l, smooth_avg_psth_l = spike2.compute_psth(spike2_good_channels, sc, times_row_ind[L_ind],t_before,t_after,t_resolution)
+			psth_l = np.vstack([psth_l, avg_psth_l])
+			smooth_psth_l = np.vstack([smooth_psth_l, smooth_avg_psth_l])
 
 			# 5. H presented
 			H_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [0,1,0]) for j in range(int(num_successful_trials[i]))]))
 			if not spike2_good_channels:
-				avg_psth, smooth_avg_psth = spike1.compute_psth(spike1_good_channels, sc, times_row_ind[H_ind],t_before,t_after,t_resolution)
+				avg_psth_h, smooth_avg_psth_h = spike1.compute_psth(spike1_good_channels, sc, times_row_ind[H_ind],t_before,t_after,t_resolution)
 			else:
-				avg_psth, smooth_avg_psth = spike2.compute_psth(spike2_good_channels, sc, times_row_ind[H_ind],t_before,t_after,t_resolution)
-
-			avg_psth = np.nanmean(avg_psth, axis = 0)
-			smooth_avg_psth = np.nanmean(smooth_avg_psth, axis = 0)
-			plt.subplot(3,2,5)
-			plt.title('High Presented')
-			plt.plot(smooth_avg_psth)
-			xticklabels = np.arange(-t_before,t_after-t_resolution,t_resolution)
-			xticks = np.arange(0, len(xticklabels), 10)
-			xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
-			plt.xticks(xticks, xticklabels)
+				avg_psth_h, smooth_avg_psth_h = spike2.compute_psth(spike2_good_channels, sc, times_row_ind[H_ind],t_before,t_after,t_resolution)
+			psth_h = np.vstack([psth_h, avg_psth_h])
+			smooth_psth_h = np.vstack([smooth_psth_h, smooth_avg_psth_h])
 
 			# 6. M presented
 			M_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [0,0,1]) for j in range(int(num_successful_trials[i]))]))
 			if not spike2_good_channels:
-				avg_psth, smooth_avg_psth = spike1.compute_psth(spike1_good_channels, sc, times_row_ind[M_ind],t_before,t_after,t_resolution)
+				avg_psth_m, smooth_avg_psth_m = spike1.compute_psth(spike1_good_channels, sc, times_row_ind[M_ind],t_before,t_after,t_resolution)
 			else:
-				avg_psth, smooth_avg_psth = spike2.compute_psth(spike2_good_channels, sc, times_row_ind[M_ind],t_before,t_after,t_resolution)
+				avg_psth_m, smooth_avg_psth_m = spike2.compute_psth(spike2_good_channels, sc, times_row_ind[M_ind],t_before,t_after,t_resolution)
+			psth_m = np.vstack([psth_m, avg_psth_m])
+			smooth_psth_m = np.vstack([smooth_psth_m, smooth_avg_psth_m])
 
-			avg_psth = np.nanmean(avg_psth, axis = 0)
-			smooth_avg_psth = np.nanmean(smooth_avg_psth, axis = 0)
-			plt.subplot(3,2,6)
-			plt.title('Middle Presented')
-			plt.plot(smooth_avg_psth)
-			xticklabels = np.arange(-t_before,t_after-t_resolution,t_resolution)
-			xticks = np.arange(0, len(xticklabels), 10)
-			xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
-			plt.xticks(xticks, xticklabels)
+			# Plot average rate for all neurons divided in six cases of targets on option
+			if plot_output:
+				plt.figure()
 
-			plt_name = syncHDF_files[i][34:-12]
-			plt.savefig('/home/srsummerson/code/analysis/Mario_Performance_figs/'+plt_name+'_PSTH_Chan'+str(chann)+'.svg')
+				avg_psth_lh = np.nanmean(avg_psth_lh, axis = 0)
+				smooth_avg_psth_lh = np.nanmean(smooth_avg_psth_lh, axis = 0)
+				plt.subplot(3,2,1)
+				plt.title('Low-High Presented')
+				plt.plot(smooth_avg_psth_lh)
+				xticklabels = np.arange(-t_before,t_after-t_resolution,t_resolution)
+				xticks = np.arange(0, len(xticklabels), 10)
+				xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
+				plt.xticks(xticks, xticklabels)
 
-	return
+				avg_psth_lm = np.nanmean(avg_psth_lm, axis = 0)
+				smooth_avg_psth_lm = np.nanmean(smooth_avg_psth_lm, axis = 0)
+				plt.subplot(3,2,2)
+				plt.title('Low-Middle Presented')
+				plt.plot(smooth_avg_psth_lm)
+				xticklabels = np.arange(-t_before,t_after-t_resolution,t_resolution)
+				xticks = np.arange(0, len(xticklabels), 10)
+				xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
+				plt.xticks(xticks, xticklabels)
+
+				avg_psth_mh = np.nanmean(avg_psth_mh, axis = 0)
+				smooth_avg_psth_mh = np.nanmean(smooth_avg_psth_mh, axis = 0)
+				plt.subplot(3,2,3)
+				plt.title('Middle-High Presented')
+				plt.plot(smooth_avg_psth_mh)
+				xticklabels = np.arange(-t_before,t_after-t_resolution,t_resolution)
+				xticks = np.arange(0, len(xticklabels), 10)
+				xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
+				plt.xticks(xticks, xticklabels)
+
+				avg_psth_l = np.nanmean(avg_psth_l, axis = 0)
+				smooth_avg_psth_l = np.nanmean(smooth_avg_psth_l, axis = 0)
+				plt.subplot(3,2,4)
+				plt.title('Low Presented')
+				plt.plot(smooth_avg_psth_l)
+				xticklabels = np.arange(-t_before,t_after-t_resolution,t_resolution)
+				xticks = np.arange(0, len(xticklabels), 10)
+				xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
+				plt.xticks(xticks, xticklabels)
+
+				avg_psth_h = np.nanmean(avg_psth_h, axis = 0)
+				smooth_avg_psth_h = np.nanmean(smooth_avg_psth_h, axis = 0)
+				plt.subplot(3,2,5)
+				plt.title('High Presented')
+				plt.plot(smooth_avg_psth_h)
+				xticklabels = np.arange(-t_before,t_after-t_resolution,t_resolution)
+				xticks = np.arange(0, len(xticklabels), 10)
+				xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
+				plt.xticks(xticks, xticklabels)
+
+				avg_psth_m = np.nanmean(avg_psth_m, axis = 0)
+				smooth_avg_psth_m = np.nanmean(smooth_avg_psth_m, axis = 0)
+				plt.subplot(3,2,6)
+				plt.title('Middle Presented')
+				plt.plot(smooth_avg_psth_m)
+				xticklabels = np.arange(-t_before,t_after-t_resolution,t_resolution)
+				xticks = np.arange(0, len(xticklabels), 10)
+				xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
+				plt.xticks(xticks, xticklabels)
+
+				plt_name = syncHDF_files[i][34:-12]
+				plt.savefig('/home/srsummerson/code/analysis/Mario_Performance_figs/'+plt_name+'_PSTH_Chan'+str(chann)+'.svg')
+				plt.close()
+
+	reg_psth = [psth_lm, psth_lh, psth_mh, psth_l, psth_h, psth_m]
+	smooth_psth = [smooth_psth_lm, smooth_psth_lh, smooth_psth_mh, smooth_psth_l, smooth_psth_h, smooth_psth_m]
+	return reg_psth, smooth_psth
