@@ -613,6 +613,7 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files):
 
 			plt_name = syncHDF_files[i][34:-12]
 			plt.savefig('/home/srsummerson/code/analysis/Mario_Performance_figs/'+plt_name+'_PSTH.svg')
+			plt.close()
 
 	return
 
