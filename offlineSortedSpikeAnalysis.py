@@ -170,7 +170,7 @@ class OfflineSorted_CSVFile():
 			for sc in sc_chan:
 				psth_sc = self.compute_psth(chan,sc,times_align,t_before,t_after,t_resolution)
 				avg_psth_sc = np.nanmean(psth_sc, axis = 0)
-				smooth_avg_psth_sc = np.convolve(avg_psth_sc, boxcar_window,mode='same')/boxcar_length
+				smooth_avg_psth_sc = np.convolve(np.squeeze(avg_psth_sc), boxcar_window,mode='same')/boxcar_length
 				#avg_psth.append([avg_psth_sc])
 				if counter == 0:
 					avg_psth = avg_psth_sc
