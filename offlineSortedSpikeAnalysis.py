@@ -168,11 +168,11 @@ class OfflineSorted_CSVFile():
 			sc_chan = np.array([code for code in sc_chan if code != 31])
 
 			for sc in sc_chan:
-				psth_sc = self.compute_psth(chan,sc,times_align,t_before,t_after,t_resolution)
+				psth_sc, smooth_psth_sc = self.compute_psth(chan,sc,times_align,t_before,t_after,t_resolution)
 				avg_psth_sc = np.nanmean(psth_sc, axis = 0)
+				smooth_avg_psth_sc = np.nanmean(smooth_psth_sc, axis = 0)
 				print avg_psth_sc.shape
-				print np.squeeze(avg_psth_sc).shape
-				smooth_avg_psth_sc = np.convolve(np.squeeze(avg_psth_sc), boxcar_window,mode='same')/boxcar_length
+				print smooth_avg_psth_sc.shape
 				#avg_psth.append([avg_psth_sc])
 				if counter == 0:
 					avg_psth = avg_psth_sc
