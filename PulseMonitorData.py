@@ -2,8 +2,18 @@ import numpy as np
 from neo import io
 
 def findIBIs(pulse,sampling_rate):
-	# Input to method is pulse data channel extracted from TDT recording file.
-	# Method determines the times of the heart pulses and returns an array of the pulse times.
+	'''
+	Method determines the times of the heart pulses and returns an array of inter-beat interval lengths
+	between these pulses.
+
+	Input:
+	- pulse: array containing pulse sensor voltage values
+	- sampling_rate: rate (Hz) of the samples in the pulse array
+
+	Output:
+	- realIBI: array containing the interbeat-interval lengths (s) from the detect heart beat waveforms in the 
+				pulse array input.
+	'''
 	pulse_signal = pulse[np.nonzero(pulse)] # only look at pulse signal when it was saving
 	if len(pulse_signal) > 0:
 		pulse_peak_amp = np.amax(pulse_signal)
