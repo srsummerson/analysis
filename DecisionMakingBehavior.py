@@ -545,12 +545,12 @@ def loglikelihood_ThreeTargetTask_Qlearning(parameters, Q_initial, chosen_target
 		delta_low = float(rewards[i]) - Q_low[i]
 		delta_mid = float(rewards[i]) - Q_mid[i]
         delta_high = float(rewards[i]) - Q_high[i]
-		Q_low[i+1] = Q_low[i] + alpha*(chosen_target[i]==0)*(delta_low)
-		Q_mid[i+1] = Q_mid[i] + alpha*(chosen_target[i]==1)*(delta_mid)
+        Q_low[i+1] = Q_low[i] + alpha*(chosen_target[i]==0)*(delta_low)
+        Q_mid[i+1] = Q_mid[i] + alpha*(chosen_target[i]==1)*(delta_mid)
         Q_high[i+1] = Q_high[i] + alpha*(chosen_target[i]==2)*(delta_high)
 
         # Update probabilities with new Q-values
-        if instructed_or_freechoice[i+1] = 2:
+        if instructed_or_freechoice[i+1] == 2:
         	if (targets_on[i+1] == [1,1,0]):
         		Q_opt = Q_high[i+1]
         		Q_nonopt = Q_low[i+1]
@@ -646,12 +646,12 @@ def loglikelihood_ThreeTargetTask_Qlearning(parameters, Q_initial, chosen_target
 		delta_low = float(rewards[i]) - Q_low[i]
 		delta_mid = float(rewards[i]) - Q_mid[i]
         delta_high = float(rewards[i]) - Q_high[i]
-		Q_low[i+1] = Q_low[i] + alpha*(chosen_target[i]==0)*(delta_low)
-		Q_mid[i+1] = Q_mid[i] + alpha*(chosen_target[i]==1)*(delta_mid)
+        Q_low[i+1] = Q_low[i] + alpha*(chosen_target[i]==0)*(delta_low)
+        Q_mid[i+1] = Q_mid[i] + alpha*(chosen_target[i]==1)*(delta_mid)
         Q_high[i+1] = Q_high[i] + alpha*(chosen_target[i]==2)*(delta_high)
 
         # Update probabilities with new Q-values
-        if instructed_or_freechoice[i+1] = 2:
+        if instructed_or_freechoice[i+1] == 2:
         	if (targets_on[i+1] == [1,1,0]):
         		Q_opt = Q_high[i+1]
         		Q_nonopt = Q_low[i+1]
@@ -702,7 +702,7 @@ def loglikelihood_ThreeTargetTask_Qlearning(parameters, Q_initial, chosen_target
 
 	return Q_low, Q_mid, Q_high, prob_choice_low, prob_choice_mid, prob_choice_high
 
-def ThreeTargetTask_FiringRateRegressedWithValue(hdf_files, hdf_files, syncHDF_files, spike_files, trial_case, var_value):
+def ThreeTargetTask_FiringRateRegressedWithValue(hdf_files, syncHDF_files, spike_files, trial_case, var_value):
 	'''
 	This method regresses the firing rate of all units as a function of value. Only trials from the specified
 	trial_case are considered in the regression. There are six trial cases: (1) instructed to low-value (2) instructed
