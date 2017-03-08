@@ -551,7 +551,7 @@ def loglikelihood_ThreeTargetTask_Qlearning(parameters, Q_initial, chosen_target
 
         # Update probabilities with new Q-values
         if instructed_or_freechoice[i+1] == 2:
-        	if (targets_on[i+1] == [1,1,0]):
+        	if np.array_equal(targets_on[i+1],[1,1,0]):
         		Q_opt = Q_high[i+1]
         		Q_nonopt = Q_low[i+1]
 
@@ -565,7 +565,7 @@ def loglikelihood_ThreeTargetTask_Qlearning(parameters, Q_initial, chosen_target
         		# The choice on trial i+1 as either optimal (choice = 2) or nonoptimal (choice = 1)
         		choice = 0.5*chosen_target[i+1]+1
 
-        	elif (targets_on[i+1] == [1,0,1]):
+        	elif np.array_equal(targets_on[i+1],[1,0,1]):
         		Q_opt = Q_mid[i+1]
         		Q_nonopt = Q_low[i+1]
 
@@ -652,7 +652,7 @@ def loglikelihood_ThreeTargetTask_Qlearning(parameters, Q_initial, chosen_target
 
         # Update probabilities with new Q-values
         if instructed_or_freechoice[i+1] == 2:
-        	if (targets_on[i+1] == [1,1,0]):
+        	if np.array_equal(targets_on[i+1], [1,1,0]):
         		Q_opt = Q_high[i+1]
         		Q_nonopt = Q_low[i+1]
 
@@ -666,7 +666,7 @@ def loglikelihood_ThreeTargetTask_Qlearning(parameters, Q_initial, chosen_target
         		# The choice on trial i+1 as either optimal (choice = 2) or nonoptimal (choice = 1)
         		choice = 0.5*chosen_target[i+1]+1
 
-        	elif (targets_on[i+1] == [1,0,1]):
+        	elif np.array_equal(targets_on[i+1],[1,0,1]):
         		Q_opt = Q_mid[i+1]
         		Q_nonopt = Q_low[i+1]
 
@@ -725,6 +725,7 @@ def ThreeTargetTask_FiringRateRegressedWithValue(hdf_files, syncHDF_files, spike
 				and defined based on their reward probabilties, or whether the Q value(s) should be varying trial-by-trial
 				(var_value == True) based on the Q-learning model fit
 	'''
+
 
 
 	return
