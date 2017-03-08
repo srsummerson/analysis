@@ -233,6 +233,23 @@ class ChoiceBehavior_ThreeTargets():
 
 		return target_options, target_chosen, rewarded_choice
 
+	def GetChoicesAndRewards(self):
+		ind_holds = self.ind_check_reward_states - 2
+		ind_rewards = self.ind_check_reward_states + 1
+		rewards = np.array([float(st=='reward') for st in self.state[ind_rewards]])
+		targets_on = self.targets_on[self.state_time[self.ind_check_reward_states]]  # array of three boolean values: LHM
+		instructed_or_freechoice = np.ravel(self.trial_type[self.state_time[self.ind_check_reward_states]])  # = 1: instructed, =2: free-choice
+		chosen_target = np.zeros(len(ind_holds))
+		rewards = np.zeros(len(ind_holds))
+
+		for i, ind in enumerate(ind_holds):
+			if self.state[ind] == 'hold_targetM':
+				chosen_target[i] = 1
+			elif self.state[ind] == 'hold_targetH':
+				chosen_target[i] = 2
+
+		return targets_on, chosen_target, rewards, instructed_or_freechoice
+
 
 class ChoiceBehavior_ThreeTargets_Stimulation():
 	'''
@@ -465,6 +482,252 @@ class ChoiceBehavior_ThreeTargets_Stimulation():
 
 		return all_choices_A, LM_choices_A, LH_choices_A, MH_choices_A, all_choices_Aprime, LM_choices_Aprime, LH_choices_Aprime, MH_choices_Aprime
 
+	def GetChoicesAndRewards(self):
+		ind_holds = self.ind_check_reward_states - 2
+		ind_rewards = self.ind_check_reward_states + 1
+		rewards = np.array([float(st=='reward') for st in self.state[ind_rewards]])
+		targets_on = self.targets_on[self.state_time[self.ind_check_reward_states]]  # array of three boolean values: LHM
+		instructed_or_freechoice = np.ravel(self.trial_type[self.state_time[self.ind_check_reward_states]])  # = 1: instructed, =2: free-choice
+		chosen_target = np.zeros(len(ind_holds))
+		rewards = np.zeros(len(ind_holds))
+
+		for i, ind in enumerate(ind_holds):
+			if self.state[ind] == 'hold_targetM':
+				chosen_target[i] = 1
+			elif self.state[ind] == 'hold_targetH':
+				chosen_target[i] = 2
+
+		return targets_on, chosen_target, rewards, instructed_or_freechoice
+
+def loglikelihood_ThreeTargetTask_Qlearning(parameters, Q_initial, chosen_target, rewards, targets_on, instructed_or_freechoice):
+	'''
+	This method finds the Q-values associated with the three target options in the probabilistic reward free-choice task
+	with three targets: low-value target, middle-value target, and high-value target. The Q-values are determined based
+	on a Q-learning model with temporal difference error. 
+
+	Inputs:
+	- parameters: length 2 array containing the learning rate, alpha (parameters[0]), and the inverse temperate, beta (parameters[1])
+	- Q_initial: length 3 array containing the initial Q-values set for trial 1
+	- chosen_target: length N array of values in range [0,2] which indicate the selected target for the trial. 0 = low-value,
+						1 = middle-value, 2 = high-value.
+	- rewards: length N array of boolen values indicating whether a reward was given (i.e. = 1) or not (i.e. = 0)
+	- targets_on: length N array of 3-tuples which are indicators of what targets are presented. The values are arranged
+					as LHM.
+	'''
+	# Set Q-learning parameters
+	alpha = parameters[0]
+	beta = parameters[1]
+
+	# Initialize Q values. Note: Q[i] is the value on trial i before reward feedback
+	Q_low = np.zeros(len(chosen_target))
+	Q_mid = np.zeros(len(chosen_target))
+	Q_high = np.zeros(len(chosen_target))
+
+	# Set values for first trial (indexed as trial 0)
+	Q_low = Q_initial[0]
+	Q_mid = Q_initial[1]
+	Q_high = Q_initial[2]
+
+	# Initiaialize probability values. Note: prob[i] is the probability on trial i before reward feedback
+	prob_choice_low = np.zeros(len(chosen_target))
+	prob_choice_mid = np.zeros(len(chosen_target))
+	prob_choice_high = np.zeros(len(chosen_target))
+
+	# Set values for first trial (indexed as trial 0)
+	prob_choice_low[0] = 0.5
+	prob_choice_mid[0] = 0.5
+	prob_choice_high[0] = 0.5
+
+	log_prob_total = 0.
+
+	for i in range(0,len(chosen_target)-1):
+		# Update Q values with temporal difference error
+		delta_low = float(rewards[i]) - Q_low[i]
+		delta_mid = float(rewards[i]) - Q_mid[i]
+        delta_high = float(rewards[i]) - Q_high[i]
+		Q_low[i+1] = Q_low[i] + alpha*(chosen_target[i]==0)*(delta_low)
+		Q_mid[i+1] = Q_mid[i] + alpha*(chosen_target[i]==1)*(delta_mid)
+        Q_high[i+1] = Q_high[i] + alpha*(chosen_target[i]==2)*(delta_high)
+
+        # Update probabilities with new Q-values
+        if instructed_or_freechoice[i+1] = 2:
+        	if (targets_on[i+1] == [1,1,0]):
+        		Q_opt = Q_high[i+1]
+        		Q_nonopt = Q_low[i+1]
+
+        		prob_choice_low[i+1] = 1./(1 + np.exp(beta*(Q_high[i+1] - Q_low[i+1])))
+        		prob_choice_high[i+1] = 1. - prob_choice_low[i+1]
+        		prob_choice_mid[i+1] = prob_choice_mid[i]
+
+        		prob_choice_opt = prob_choice_high[i+1]
+        		prob_choice_nonopt = prob_choice_low[i+1]
+
+        		# The choice on trial i+1 as either optimal (choice = 2) or nonoptimal (choice = 1)
+        		choice = 0.5*chosen_target[i+1]+1
+
+        	elif (targets_on[i+1] == [1,0,1]):
+        		Q_opt = Q_mid[i+1]
+        		Q_nonopt = Q_low[i+1]
+
+        		prob_choice_low[i+1] = 1./(1 + np.exp(beta*(Q_mid[i+1] - Q_low[i+1])))
+        		prob_choice_high[i+1] = prob_choice_high[i]
+        		prob_choice_mid[i+1] = 1. - prob_choice_low[i+1]
+
+        		prob_choice_opt = prob_choice_mid[i+1]
+        		prob_choice_nonopt = prob_choice_low[i+1]
+
+        		# The choice on trial i+1 as either optimal (choice = 2) or nonoptimal (choice = 1)
+        		choice = chosen_target[i+1]+1
+        	else:
+        		Q_opt = Q_high[i+1]
+        		Q_nonopt = Q_mid[i+1]
+
+        		prob_choice_mid[i+1] = 1./(1 + np.exp(beta*(Q_high[i+1] - Q_mid[i+1])))
+        		prob_choice_low[i+1] = prob_choice_low[i]
+        		prob_choice_high[i+1] = 1. - prob_choice_mid[i+1]
+        		
+        		prob_choice_opt = prob_choice_high[i+1]
+        		prob_choice_nonopt = prob_choice_mid[i+1]
+
+        		# The choice on trial i+1 as either optimal (choice = 2) or nonoptimal (choice = 1)
+        		choice = chosen_target[i+1]
+
+        	log_prob_total += np.log(prob_choice_nonopt*(choice==1) + prob_choice_opt*(choice==2))
+        else:
+        	prob_choice_low[i+1] = prob_choice_low[i]
+        	prob_choice_mid[i+1] = prob_choice_mid[i]
+        	prob_choice_high[i+1] = prob_choice_high[i]
+
+	return log_prob_total
+
+def loglikelihood_ThreeTargetTask_Qlearning(parameters, Q_initial, chosen_target, rewards, targets_on, instructed_or_freechoice):
+	'''
+	This method finds the Q-values associated with the three target options in the probabilistic reward free-choice task
+	with three targets: low-value target, middle-value target, and high-value target. The Q-values are determined based
+	on a Q-learning model with temporal difference error. 
+
+	Inputs:
+	- parameters: length 2 array containing the learning rate, alpha (parameters[0]), and the inverse temperate, beta (parameters[1])
+	- Q_initial: length 3 array containing the initial Q-values set for trial 1
+	- chosen_target: length N array of values in range [0,2] which indicate the selected target for the trial. 0 = low-value,
+						1 = middle-value, 2 = high-value.
+	- rewards: length N array of boolen values indicating whether a reward was given (i.e. = 1) or not (i.e. = 0)
+	- targets_on: length N array of 3-tuples which are indicators of what targets are presented. The values are arranged
+					as LHM.
+	'''
+	# Set Q-learning parameters
+	alpha = parameters[0]
+	beta = parameters[1]
+
+	# Initialize Q values. Note: Q[i] is the value on trial i before reward feedback
+	Q_low = np.zeros(len(chosen_target))
+	Q_mid = np.zeros(len(chosen_target))
+	Q_high = np.zeros(len(chosen_target))
+
+	# Set values for first trial (indexed as trial 0)
+	Q_low = Q_initial[0]
+	Q_mid = Q_initial[1]
+	Q_high = Q_initial[2]
+
+	# Initiaialize probability values. Note: prob[i] is the probability on trial i before reward feedback
+	prob_choice_low = np.zeros(len(chosen_target))
+	prob_choice_mid = np.zeros(len(chosen_target))
+	prob_choice_high = np.zeros(len(chosen_target))
+
+	# Set values for first trial (indexed as trial 0)
+	prob_choice_low[0] = 0.5
+	prob_choice_mid[0] = 0.5
+	prob_choice_high[0] = 0.5
+
+	log_prob_total = 0.
+
+	for i in range(0,len(chosen_target)-1):
+		# Update Q values with temporal difference error
+		delta_low = float(rewards[i]) - Q_low[i]
+		delta_mid = float(rewards[i]) - Q_mid[i]
+        delta_high = float(rewards[i]) - Q_high[i]
+		Q_low[i+1] = Q_low[i] + alpha*(chosen_target[i]==0)*(delta_low)
+		Q_mid[i+1] = Q_mid[i] + alpha*(chosen_target[i]==1)*(delta_mid)
+        Q_high[i+1] = Q_high[i] + alpha*(chosen_target[i]==2)*(delta_high)
+
+        # Update probabilities with new Q-values
+        if instructed_or_freechoice[i+1] = 2:
+        	if (targets_on[i+1] == [1,1,0]):
+        		Q_opt = Q_high[i+1]
+        		Q_nonopt = Q_low[i+1]
+
+        		prob_choice_low[i+1] = 1./(1 + np.exp(beta*(Q_high[i+1] - Q_low[i+1])))
+        		prob_choice_high[i+1] = 1. - prob_choice_low[i+1]
+        		prob_choice_mid[i+1] = prob_choice_mid[i]
+
+        		prob_choice_opt = prob_choice_high[i+1]
+        		prob_choice_nonopt = prob_choice_low[i+1]
+
+        		# The choice on trial i+1 as either optimal (choice = 2) or nonoptimal (choice = 1)
+        		choice = 0.5*chosen_target[i+1]+1
+
+        	elif (targets_on[i+1] == [1,0,1]):
+        		Q_opt = Q_mid[i+1]
+        		Q_nonopt = Q_low[i+1]
+
+        		prob_choice_low[i+1] = 1./(1 + np.exp(beta*(Q_mid[i+1] - Q_low[i+1])))
+        		prob_choice_high[i+1] = prob_choice_high[i]
+        		prob_choice_mid[i+1] = 1. - prob_choice_low[i+1]
+
+        		prob_choice_opt = prob_choice_mid[i+1]
+        		prob_choice_nonopt = prob_choice_low[i+1]
+
+        		# The choice on trial i+1 as either optimal (choice = 2) or nonoptimal (choice = 1)
+        		choice = chosen_target[i+1]+1
+        	else:
+        		Q_opt = Q_high[i+1]
+        		Q_nonopt = Q_mid[i+1]
+
+        		prob_choice_mid[i+1] = 1./(1 + np.exp(beta*(Q_high[i+1] - Q_mid[i+1])))
+        		prob_choice_low[i+1] = prob_choice_low[i]
+        		prob_choice_high[i+1] = 1. - prob_choice_mid[i+1]
+        		
+        		prob_choice_opt = prob_choice_high[i+1]
+        		prob_choice_nonopt = prob_choice_mid[i+1]
+
+        		# The choice on trial i+1 as either optimal (choice = 2) or nonoptimal (choice = 1)
+        		choice = chosen_target[i+1]
+
+        	log_prob_total += np.log(prob_choice_nonopt*(choice==1) + prob_choice_opt*(choice==2))
+
+        else:
+        	prob_choice_low[i+1] = prob_choice_low[i]
+        	prob_choice_mid[i+1] = prob_choice_mid[i]
+        	prob_choice_high[i+1] = prob_choice_high[i]
+
+	return Q_low, Q_mid, Q_high, prob_choice_low, prob_choice_mid, prob_choice_high
+
+def ThreeTargetTask_FiringRateRegressedWithValue(hdf_files, hdf_files, syncHDF_files, spike_files, trial_case, var_value):
+	'''
+	This method regresses the firing rate of all units as a function of value. Only trials from the specified
+	trial_case are considered in the regression. There are six trial cases: (1) instructed to low-value (2) instructed
+	to middle-value (3) instructed to high-value (4) free-choice with low and middle values (5) free-choice with low and
+	high values (6) free-choice to middle and high values.
+
+	Inputs:
+	- hdf_files: list of N hdf_files corresponding to the behavior in the three target task
+	- syncHDF_files: list of N syncHDF_files that containes the syncing DIO data for the corresponding hdf_file and it's
+					TDT recording. If TDT data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, syncHDF_files should have the form [syncHDF_file1.mat, '']
+	- spike_files: list of N tuples of spike_files, where each entry is a list of 2 spike files, one corresponding to spike
+					data from the first 96 channels and the other corresponding to the spike data from the last 64 channels.
+					If spike data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, the hdf_files and syncHDF_files will both have 2 file names, and the 
+					spike_files entry should be of the form [[spike_file1.csv, spike_file2.csv], ''].
+	- trial_case: integer in range [1,6] that indicates the trial type considered in the regression. Trial cases are 
+					enumerated as in the above description
+	- var_value: boolenan indicating whether the Q value(s) used in the regression should be fixed (var_value == False) 
+				and defined based on their reward probabilties, or whether the Q value(s) should be varying trial-by-trial
+				(var_value == True) based on the Q-learning model fit
+	'''
+
+
+	return
 
 def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files):
 	'''

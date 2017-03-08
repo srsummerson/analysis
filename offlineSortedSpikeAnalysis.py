@@ -148,6 +148,56 @@ class OfflineSorted_CSVFile():
 
 		return psth, smooth_psth
 
+	def compute_window_fr(self,chann,sc,times_align,t_before,t_after):
+		'''
+		Method that returns an array of avg firing rates for spiking activity aligned to the sample numbers indicated in samples_align
+		with firing activity taking over the window [times_align - t_before, times_align + t_after]
+
+		Input:
+		- chann: integer representing the channel number
+		- sc: integer representing the sort code for the channel
+		- times_align: array of T time points (s) corresponding to the time points for which activity should be aligned
+		- t_before: integer indicating the length of time (s) to be included prior to the alignment time point
+		- t_after: integer indicating the length of time (s) to be included after the alignment time point
+		
+		Output: 
+		- window_fr: length T array containing the average firing rate over the window size indicated aligned to T different
+				time points
+		'''
+		num_timepoints = len(times_align)
+		window_fr = np.zeros(num_timepoints)
+		unit_chan = np.ravel(np.nonzero(np.equal(self.channel, chann)))
+		sc_unit = np.ravel(np.nonzero(np.equal(self.sort_code[unit_chan], sc)))
+		channel_data = self.times[unit_chan[sc_unit]] 
+		for i, tp in enumerate(times_align):
+			data = channel_data
+			spikes = (data > (tp - t_before))&(data < (tp + t_after))  	# find spikes in this window
+			window_fr[i] = np.sum(spikes)/float(t_after - t_before)		# count spikes and divide by window length
+
+		return window_fr
+
+	def compute_window_peak_fr(self,chann,sc,times_align,t_before,t_after, window_length):
+		'''
+		Method that returns an array of avg firing rates around the peak spiking activity aligned to the sample numbers indicated in samples_align
+		with firing activity taking over the window [times_align - t_before, times_align + t_after]. The average firing rate
+		returned is from the activity in the time window of length window_length centered around the peak activity.
+
+		Input:
+		- chann: integer representing the channel number
+		- sc: integer representing the sort code for the channel
+		- times_align: array of T time points (s) corresponding to the time points for which activity should be aligned
+		- t_before: integer indicating the length of time (s) to be included prior to the alignment time point
+		- t_after: integer indicating the length of time (s) to be included after the alignment time point
+		- window_length: integer indicated the size of the time window (s) that the spiking activity will be taken from
+
+		Output: 
+		- window_fr: length T array containing the average firing rate over the window size indicated aligned to T different
+				time points
+		'''
+		###STOPPED HERE
+
+		return window_fr
+
 	def compute_multiple_channel_avg_psth(self, channs, times_align,t_before,t_after,t_resolution):
 		'''
 		Method that returns the average psth of spiking activity for all channels in channs array. The activity for all 
@@ -171,8 +221,6 @@ class OfflineSorted_CSVFile():
 				psth_sc, smooth_psth_sc = self.compute_psth(chan,sc,times_align,t_before,t_after,t_resolution)
 				avg_psth_sc = np.nanmean(psth_sc, axis = 0)
 				smooth_avg_psth_sc = np.nanmean(smooth_psth_sc, axis = 0)
-				print avg_psth_sc.shape
-				print smooth_avg_psth_sc.shape
 				#avg_psth.append([avg_psth_sc])
 				if counter == 0:
 					avg_psth = avg_psth_sc
