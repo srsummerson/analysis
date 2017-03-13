@@ -499,107 +499,6 @@ class ChoiceBehavior_ThreeTargets_Stimulation():
 
 		return targets_on, chosen_target, rewards, instructed_or_freechoice
 
-def loglikelihood_ThreeTargetTask_Qlearning(parameters, Q_initial, chosen_target, rewards, targets_on, instructed_or_freechoice):
-	'''
-	This method finds the Q-values associated with the three target options in the probabilistic reward free-choice task
-	with three targets: low-value target, middle-value target, and high-value target. The Q-values are determined based
-	on a Q-learning model with temporal difference error. 
-
-	Inputs:
-	- parameters: length 2 array containing the learning rate, alpha (parameters[0]), and the inverse temperate, beta (parameters[1])
-	- Q_initial: length 3 array containing the initial Q-values set for trial 1
-	- chosen_target: length N array of values in range [0,2] which indicate the selected target for the trial. 0 = low-value,
-						1 = middle-value, 2 = high-value.
-	- rewards: length N array of boolen values indicating whether a reward was given (i.e. = 1) or not (i.e. = 0)
-	- targets_on: length N array of 3-tuples which are indicators of what targets are presented. The values are arranged
-					as LHM.
-	'''
-	# Set Q-learning parameters
-	alpha = parameters[0]
-	beta = parameters[1]
-
-	# Initialize Q values. Note: Q[i] is the value on trial i before reward feedback
-	Q_low = np.zeros(len(chosen_target))
-	Q_mid = np.zeros(len(chosen_target))
-	Q_high = np.zeros(len(chosen_target))
-
-	# Set values for first trial (indexed as trial 0)
-	Q_low[0] = Q_initial[0]
-	Q_mid[0] = Q_initial[1]
-	Q_high[0] = Q_initial[2]
-
-	# Initiaialize probability values. Note: prob[i] is the probability on trial i before reward feedback
-	prob_choice_low = np.zeros(len(chosen_target))
-	prob_choice_mid = np.zeros(len(chosen_target))
-	prob_choice_high = np.zeros(len(chosen_target))
-
-	# Set values for first trial (indexed as trial 0)
-	prob_choice_low[0] = 0.5
-	prob_choice_mid[0] = 0.5
-	prob_choice_high[0] = 0.5
-
-	log_prob_total = 0
-
-	for i in range(0,len(chosen_target)-1):
-		# Update Q values with temporal difference error
-		delta_low = float(rewards[i]) - Q_low[i]
-		delta_mid = float(rewards[i]) - Q_mid[i]
-        delta_high = float(rewards[i]) - Q_high[i]
-        Q_low[i+1] = Q_low[i] + alpha*(chosen_target[i]==0)*(delta_low)
-        Q_mid[i+1] = Q_mid[i] + alpha*(chosen_target[i]==1)*(delta_mid)
-        Q_high[i+1] = Q_high[i] + alpha*(chosen_target[i]==2)*(delta_high)
-
-        # Update probabilities with new Q-values
-        if instructed_or_freechoice[i+1] == 2:
-        	if np.array_equal(targets_on[i+1],[1,1,0]):
-        		Q_opt = Q_high[i+1]
-        		Q_nonopt = Q_low[i+1]
-
-        		prob_choice_low[i+1] = 1./(1 + np.exp(beta*(Q_high[i+1] - Q_low[i+1])))
-        		prob_choice_high[i+1] = 1. - prob_choice_low[i+1]
-        		prob_choice_mid[i+1] = prob_choice_mid[i]
-
-        		prob_choice_opt = prob_choice_high[i+1]
-        		prob_choice_nonopt = prob_choice_low[i+1]
-
-        		# The choice on trial i+1 as either optimal (choice = 2) or nonoptimal (choice = 1)
-        		choice = 0.5*chosen_target[i+1]+1
-
-        	elif np.array_equal(targets_on[i+1],[1,0,1]):
-        		Q_opt = Q_mid[i+1]
-        		Q_nonopt = Q_low[i+1]
-
-        		prob_choice_low[i+1] = 1./(1 + np.exp(beta*(Q_mid[i+1] - Q_low[i+1])))
-        		prob_choice_high[i+1] = prob_choice_high[i]
-        		prob_choice_mid[i+1] = 1. - prob_choice_low[i+1]
-
-        		prob_choice_opt = prob_choice_mid[i+1]
-        		prob_choice_nonopt = prob_choice_low[i+1]
-
-        		# The choice on trial i+1 as either optimal (choice = 2) or nonoptimal (choice = 1)
-        		choice = chosen_target[i+1]+1
-        	else:
-        		Q_opt = Q_high[i+1]
-        		Q_nonopt = Q_mid[i+1]
-
-        		prob_choice_mid[i+1] = 1./(1 + np.exp(beta*(Q_high[i+1] - Q_mid[i+1])))
-        		prob_choice_low[i+1] = prob_choice_low[i]
-        		prob_choice_high[i+1] = 1. - prob_choice_mid[i+1]
-        		
-        		prob_choice_opt = prob_choice_high[i+1]
-        		prob_choice_nonopt = prob_choice_mid[i+1]
-
-        		# The choice on trial i+1 as either optimal (choice = 2) or nonoptimal (choice = 1)
-        		choice = chosen_target[i+1]
-
-        	log_prob_total += np.log(prob_choice_nonopt*(choice==1) + prob_choice_opt*(choice==2))
-        else:
-        	prob_choice_low[i+1] = prob_choice_low[i]
-        	prob_choice_mid[i+1] = prob_choice_mid[i]
-        	prob_choice_high[i+1] = prob_choice_high[i]
-
-	return log_prob_total
-
 def ThreeTargetTask_Qlearning(parameters, Q_initial, chosen_target, rewards, targets_on, instructed_or_freechoice):
 	'''
 	This method finds the Q-values associated with the three target options in the probabilistic reward free-choice task
@@ -701,7 +600,26 @@ def ThreeTargetTask_Qlearning(parameters, Q_initial, chosen_target, rewards, tar
 			prob_choice_mid[i+1] = prob_choice_mid[i]
 			prob_choice_high[i+1] = prob_choice_high[i]
 
-	return Q_low, Q_mid, Q_high, prob_choice_low, prob_choice_mid, prob_choice_high
+	return Q_low, Q_mid, Q_high, prob_choice_low, prob_choice_mid, prob_choice_high, log_prob_total
+
+def loglikelihood_ThreeTargetTask_Qlearning(parameters, Q_initial, chosen_target, rewards, targets_on, instructed_or_freechoice):
+	'''
+	This method finds the Q-values associated with the three target options in the probabilistic reward free-choice task
+	with three targets: low-value target, middle-value target, and high-value target. The Q-values are determined based
+	on a Q-learning model with temporal difference error. 
+
+	Inputs:
+	- parameters: length 2 array containing the learning rate, alpha (parameters[0]), and the inverse temperate, beta (parameters[1])
+	- Q_initial: length 3 array containing the initial Q-values set for trial 1
+	- chosen_target: length N array of values in range [0,2] which indicate the selected target for the trial. 0 = low-value,
+						1 = middle-value, 2 = high-value.
+	- rewards: length N array of boolen values indicating whether a reward was given (i.e. = 1) or not (i.e. = 0)
+	- targets_on: length N array of 3-tuples which are indicators of what targets are presented. The values are arranged
+					as LHM.
+	'''
+	Q_low, Q_mid, Q_high, prob_choice_low, prob_choice_mid, prob_choice_high, log_prob_total = ThreeTargetTask_Qlearning(parameters, Q_initial, chosen_target, rewards, targets_on, instructed_or_freechoice)
+
+	return log_prob_total
 
 def ThreeTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files, channel, t_before, t_after):
 	'''
@@ -821,7 +739,7 @@ def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, sp
 		alpha_ml, beta_ml = result["x"]
 		print "Best fitting alpha and beta are: ", alpha_ml, beta_ml
 		# RL model fit for Q values
-		Q_low, Q_mid, Q_high, prob_choice_low, prob_choice_mid, prob_choice_high = ThreeTargetTask_Qlearning([alpha_ml, beta_ml], Q_initial, chosen_target, rewards, targets_on, instructed_or_freechoice)
+		Q_low, Q_mid, Q_high, prob_choice_low, prob_choice_mid, prob_choice_high, log_likelihood = ThreeTargetTask_Qlearning([alpha_ml, beta_ml], Q_initial, chosen_target, rewards, targets_on, instructed_or_freechoice)
 	else:
 	# Fixed Q-values
 		Q_low = 0.35*np.ones(total_trials)
