@@ -742,7 +742,7 @@ def ThreeTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_fil
 		# Load spike data: 
 		if (spike_files[i] != ''):
 			# Find lfp sample numbers corresponding to these times and the sampling frequency of the lfp data
-			lfp_state_row_ind, lfp_freq = cb.get_state_TDT_LFPvalues(ind_picture_onset, syncHDF_files[i])
+			lfp_state_row_ind, lfp_freq = cb_block.get_state_TDT_LFPvalues(ind_picture_onset, syncHDF_files[i])
 			# Convert lfp sample numbers to times in seconds
 			times_row_ind = lfp_state_row_ind/float(lfp_freq)
 
