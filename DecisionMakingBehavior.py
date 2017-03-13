@@ -842,6 +842,7 @@ def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, sp
 		fr_mat[:num_units,cum_sum_trials[j] - num_trials:cum_sum_trials[j]] = block_fr
 
 	# 5. Do regression for each unit only on trials of correct trial type with spike data saved.
+	print max_num_units
 	for k in range(max_num_units):
 		unit_data = fr_mat[k,:]
 		trial_inds = np.array([index for index in ind_trial_case if unit_data[index]!=np.NAN], dtype = int)
