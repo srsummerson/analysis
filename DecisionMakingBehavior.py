@@ -850,7 +850,7 @@ def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, sp
 		x = np.vstack((Q_low[trial_inds], Q_mid[trial_inds], Q_high[trial_inds]))
 		x = np.transpose(x)
 		print x.shape
-		x = sm.add_constant(x,prepend=False)
+		x = sm.add_constant(x, prepend=False)
 		print x.shape
 		y = unit_data[trial_inds]
 		print y.shape
