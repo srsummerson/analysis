@@ -242,8 +242,7 @@ class ChoiceBehavior_ThreeTargets():
 		targets_on = self.targets_on[self.state_time[self.ind_check_reward_states]]  # array of three boolean values: LHM
 		instructed_or_freechoice = np.ravel(self.trial_type[self.state_time[self.ind_check_reward_states]])  # = 1: instructed, =2: free-choice
 		chosen_target = np.zeros(len(ind_holds))
-		rewards = np.zeros(len(ind_holds))
-
+		
 		for i, ind in enumerate(ind_holds):
 			if self.state[ind] == 'hold_targetM':
 				chosen_target[i] = 1
@@ -491,7 +490,6 @@ class ChoiceBehavior_ThreeTargets_Stimulation():
 		targets_on = self.targets_on[self.state_time[self.ind_check_reward_states]]  # array of three boolean values: LHM
 		instructed_or_freechoice = np.ravel(self.trial_type[self.state_time[self.ind_check_reward_states]])  # = 1: instructed, =2: free-choice
 		chosen_target = np.zeros(len(ind_holds))
-		rewards = np.zeros(len(ind_holds))
 
 		for i, ind in enumerate(ind_holds):
 			if self.state[ind] == 'hold_targetM':
