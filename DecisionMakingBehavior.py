@@ -856,7 +856,7 @@ def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, sp
 		print y.shape
 
 		print "Regression for unit ", k
-		model_glm = sm.GLS(y,x)
+		model_glm = sm.OLS(y,x)
 		fit_glm = model_glm.fit()
 		print fit_glm.summary()
 
