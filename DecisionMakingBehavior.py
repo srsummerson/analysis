@@ -649,57 +649,58 @@ def ThreeTargetTask_Qlearning(parameters, Q_initial, chosen_target, rewards, tar
 		Q_low[i+1] = Q_low[i] + alpha*delta_low*float(chosen_target[i]==0)
 		Q_mid[i+1] = Q_mid[i] + alpha*delta_mid*float(chosen_target[i]==1)
 		Q_high[i+1] = Q_high[i] + alpha*delta_high*float(chosen_target[i]==2)
-        
-        # Update probabilities with new Q-values
-        if instructed_or_freechoice[i+1] == 2:
-        	if np.array_equal(targets_on[i+1], [1,1,0]):
-        		Q_opt = Q_high[i+1]
-        		Q_nonopt = Q_low[i+1]
 
-        		prob_choice_low[i+1] = 1./(1 + np.exp(beta*(Q_high[i+1] - Q_low[i+1])))
-        		prob_choice_high[i+1] = 1. - prob_choice_low[i+1]
-        		prob_choice_mid[i+1] = prob_choice_mid[i]
+		# Update probabilities with new Q-values
+		if instructed_or_freechoice[i+1] == 2:
+			if np.array_equal(targets_on[i+1], [1,1,0]):
+				Q_opt = Q_high[i+1]
+				Q_nonopt = Q_low[i+1]
 
-        		prob_choice_opt = prob_choice_high[i+1]
-        		prob_choice_nonopt = prob_choice_low[i+1]
+				prob_choice_low[i+1] = 1./(1 + np.exp(beta*(Q_high[i+1] - Q_low[i+1])))
+				prob_choice_high[i+1] = 1. - prob_choice_low[i+1]
+				prob_choice_mid[i+1] = prob_choice_mid[i]
 
-        		# The choice on trial i+1 as either optimal (choice = 2) or nonoptimal (choice = 1)
-        		choice = 0.5*chosen_target[i+1]+1
+				prob_choice_opt = prob_choice_high[i+1]
+				prob_choice_nonopt = prob_choice_low[i+1]
 
-        	elif np.array_equal(targets_on[i+1],[1,0,1]):
-        		Q_opt = Q_mid[i+1]
-        		Q_nonopt = Q_low[i+1]
+				# The choice on trial i+1 as either optimal (choice = 2) or nonoptimal (choice = 1)
+				choice = 0.5*chosen_target[i+1]+1
 
-        		prob_choice_low[i+1] = 1./(1 + np.exp(beta*(Q_mid[i+1] - Q_low[i+1])))
-        		prob_choice_high[i+1] = prob_choice_high[i]
-        		prob_choice_mid[i+1] = 1. - prob_choice_low[i+1]
+			elif np.array_equal(targets_on[i+1],[1,0,1]):
+				Q_opt = Q_mid[i+1]
+				Q_nonopt = Q_low[i+1]
 
-        		prob_choice_opt = prob_choice_mid[i+1]
-        		prob_choice_nonopt = prob_choice_low[i+1]
+				prob_choice_low[i+1] = 1./(1 + np.exp(beta*(Q_mid[i+1] - Q_low[i+1])))
+				prob_choice_high[i+1] = prob_choice_high[i]
+				prob_choice_mid[i+1] = 1. - prob_choice_low[i+1]
 
-        		# The choice on trial i+1 as either optimal (choice = 2) or nonoptimal (choice = 1)
-        		choice = chosen_target[i+1]+1
-        	else:
-        		Q_opt = Q_high[i+1]
-        		Q_nonopt = Q_mid[i+1]
+				prob_choice_opt = prob_choice_mid[i+1]
+				prob_choice_nonopt = prob_choice_low[i+1]
 
-        		prob_choice_mid[i+1] = 1./(1 + np.exp(beta*(Q_high[i+1] - Q_mid[i+1])))
-        		prob_choice_low[i+1] = prob_choice_low[i]
-        		prob_choice_high[i+1] = 1. - prob_choice_mid[i+1]
-        		
-        		prob_choice_opt = prob_choice_high[i+1]
-        		prob_choice_nonopt = prob_choice_mid[i+1]
+				# The choice on trial i+1 as either optimal (choice = 2) or nonoptimal (choice = 1)
+				choice = chosen_target[i+1]+1
 
-        		# The choice on trial i+1 as either optimal (choice = 2) or nonoptimal (choice = 1)
-        		choice = chosen_target[i+1]
+			else:
+				Q_opt = Q_high[i+1]
+				Q_nonopt = Q_mid[i+1]
 
-        	log_prob_total += np.log(prob_choice_nonopt*(choice==1) + prob_choice_opt*(choice==2))
+				prob_choice_mid[i+1] = 1./(1 + np.exp(beta*(Q_high[i+1] - Q_mid[i+1])))
+				prob_choice_low[i+1] = prob_choice_low[i]
+				prob_choice_high[i+1] = 1. - prob_choice_mid[i+1]
 
-        else:
-        	prob_choice_low[i+1] = prob_choice_low[i]
-        	prob_choice_mid[i+1] = prob_choice_mid[i]
-        	prob_choice_high[i+1] = prob_choice_high[i]
-		
+				prob_choice_opt = prob_choice_high[i+1]
+				prob_choice_nonopt = prob_choice_mid[i+1]
+
+				# The choice on trial i+1 as either optimal (choice = 2) or nonoptimal (choice = 1)
+				choice = chosen_target[i+1]
+
+			log_prob_total += np.log(prob_choice_nonopt*(choice==1) + prob_choice_opt*(choice==2))
+
+		else:
+			prob_choice_low[i+1] = prob_choice_low[i]
+			prob_choice_mid[i+1] = prob_choice_mid[i]
+			prob_choice_high[i+1] = prob_choice_high[i]
+
 	return Q_low, Q_mid, Q_high, prob_choice_low, prob_choice_mid, prob_choice_high
 
 def ThreeTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files, channel, t_before, t_after):
