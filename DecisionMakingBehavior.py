@@ -540,7 +540,7 @@ def loglikelihood_ThreeTargetTask_Qlearning(parameters, Q_initial, chosen_target
 	prob_choice_mid[0] = 0.5
 	prob_choice_high[0] = 0.5
 
-	log_prob_total = 0.
+	log_prob_total = 0
 
 	for i in range(0,len(chosen_target)-1):
 		# Update Q values with temporal difference error
@@ -593,7 +593,9 @@ def loglikelihood_ThreeTargetTask_Qlearning(parameters, Q_initial, chosen_target
 
         		# The choice on trial i+1 as either optimal (choice = 2) or nonoptimal (choice = 1)
         		choice = chosen_target[i+1]
-
+        	print prob_choice_nonopt.size
+        	print prob_choice_opt.size
+        	print choice
         	log_prob_total += np.log(prob_choice_nonopt*(choice==1) + prob_choice_opt*(choice==2))
         else:
         	prob_choice_low[i+1] = prob_choice_low[i]
@@ -802,7 +804,7 @@ def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, sp
 	cb = ChoiceBehavior_ThreeTargets_Stimulation(hdf_files, 150, 100)
 	total_trials = cb.num_successful_trials
 	targets_on = cb.targets_on[cb.state_time[cb.ind_check_reward_states]]
-	ind_trial_case = np.array([ind for ind in range(cb.num_successful_trials) if np.array_equal(targets_on[ind],trial_case)])
+	ind_trial_case = np.array([ind for ind in range(total_trials) if np.array_equal(targets_on[ind],trial_case)])
 	
 	# 2. Get firing rates from units on indicated channel around time of target presentation on all trials. Note that
 	# 	window_fr is a dictionary with elements indexed such that the index matches the corresponding set of hdf_files. Each
