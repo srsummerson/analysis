@@ -526,9 +526,9 @@ def loglikelihood_ThreeTargetTask_Qlearning(parameters, Q_initial, chosen_target
 	Q_high = np.zeros(len(chosen_target))
 
 	# Set values for first trial (indexed as trial 0)
-	Q_low = Q_initial[0]
-	Q_mid = Q_initial[1]
-	Q_high = Q_initial[2]
+	Q_low[0] = Q_initial[0]
+	Q_mid[0] = Q_initial[1]
+	Q_high[0] = Q_initial[2]
 
 	# Initiaialize probability values. Note: prob[i] is the probability on trial i before reward feedback
 	prob_choice_low = np.zeros(len(chosen_target))
@@ -627,9 +627,9 @@ def loglikelihood_ThreeTargetTask_Qlearning(parameters, Q_initial, chosen_target
 	Q_high = np.zeros(len(chosen_target))
 
 	# Set values for first trial (indexed as trial 0)
-	Q_low = Q_initial[0]
-	Q_mid = Q_initial[1]
-	Q_high = Q_initial[2]
+	Q_low[0] = Q_initial[0]
+	Q_mid[0] = Q_initial[1]
+	Q_high[0] = Q_initial[2]
 
 	# Initiaialize probability values. Note: prob[i] is the probability on trial i before reward feedback
 	prob_choice_low = np.zeros(len(chosen_target))
