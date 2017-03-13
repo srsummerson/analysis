@@ -803,7 +803,7 @@ def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, sp
 	total_trials = cb.num_successful_trials
 	targets_on = cb.targets_on[cb.state_time[cb.ind_check_reward_states]]
 	ind_trial_case = np.array([ind for ind in range(cb.num_successful_trials) if np.array_equal(targets_on[ind],trial_case)])
-	print ind_trial_case
+	
 	# 2. Get firing rates from units on indicated channel around time of target presentation on all trials. Note that
 	# 	window_fr is a dictionary with elements indexed such that the index matches the corresponding set of hdf_files. Each
 	#	dictionary element contains a matrix of size (num units)x(num trials) with elements corresponding
@@ -843,15 +843,16 @@ def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, sp
 		fr_mat[:num_units,cum_sum_trials[j] - num_trials:cum_sum_trials[j]] = block_fr
 
 	# 5. Do regression for each unit only on trials of correct trial type with spike data saved.
-	print max_num_units
 	for k in range(max_num_units):
 		unit_data = fr_mat[k,:]
 		trial_inds = np.array([index for index in ind_trial_case if unit_data[index]!=np.NAN], dtype = int)
-		print trial_inds
+		
 		x = np.vstack((Q_low[trial_inds], Q_mid[trial_inds], Q_high[trial_inds]))
 		x = np.transpose(x)
 		x = sm.add_constant(x,prepend='False')
+		print x.shape
 		y = unit_data[trial_inds]
+		print y.shape
 
 		print "Regression for unit ", k
 		model_glm = sm.OLS(y,x)
