@@ -650,7 +650,6 @@ def ThreeTargetTask_Qlearning(parameters, Q_initial, chosen_target, rewards, tar
 		Q_mid[i+1] = Q_mid[i] + alpha*delta_mid*float(chosen_target[i]==1)
 		Q_high[i+1] = Q_high[i] + alpha*delta_high*float(chosen_target[i]==2)
         
-        '''
         # Update probabilities with new Q-values
         if instructed_or_freechoice[i+1] == 2:
         	if np.array_equal(targets_on[i+1], [1,1,0]):
@@ -700,7 +699,7 @@ def ThreeTargetTask_Qlearning(parameters, Q_initial, chosen_target, rewards, tar
         	prob_choice_low[i+1] = prob_choice_low[i]
         	prob_choice_mid[i+1] = prob_choice_mid[i]
         	prob_choice_high[i+1] = prob_choice_high[i]
-		'''
+		
 	return Q_low, Q_mid, Q_high, prob_choice_low, prob_choice_mid, prob_choice_high
 
 def ThreeTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files, channel, t_before, t_after):
