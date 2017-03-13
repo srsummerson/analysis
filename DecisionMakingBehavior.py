@@ -834,8 +834,11 @@ def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, sp
 	trial_counter = 0
 	for j in window_fr.keys():
 		block_fr = window_fr[j]
-		print block_fr
-		num_units,num_trials = block_fr.shape 
+		if len(block_fr.shape) == 1:
+			num_units = 1
+			num_trials = len(block_fr)
+		else:
+			num_units,num_trials = block_fr.shape 
 		fr_mat[:num_units,cum_sum_trials[j] - num_trials:cum_sum_trials[j]] = block_fr
 
 	# 5. Do regression for each unit only on trials of correct trial type with spike data saved.
