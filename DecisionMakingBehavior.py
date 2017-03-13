@@ -834,6 +834,7 @@ def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, sp
 	trial_counter = 0
 	for j in window_fr.keys():
 		block_fr = window_fr[j]
+		print block_fr
 		num_units,num_trials = block_fr.shape 
 		fr_mat[:num_units,cum_sum_trials[j] - num_trials:cum_sum_trials[j]] = block_fr
 
