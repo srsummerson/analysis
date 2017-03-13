@@ -801,7 +801,8 @@ def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, sp
 	# 1. Load behavior data and pull out trial indices for the designated trial case
 	cb = ChoiceBehavior_ThreeTargets_Stimulation(hdf_files, 150, 100)
 	total_trials = cb.num_successful_trials
-	ind_trial_case = np.array([ind for ind in range(cb.num_successful_trials) if np.array_equal(cb.targets_on[ind],trial_case)])
+	targets_on = cb.targets_on[cb.state_time[cb.ind_check_reward_states]]
+	ind_trial_case = np.array([ind for ind in range(cb.num_successful_trials) if np.array_equal(targets_on[ind],trial_case)])
 	print ind_trial_case
 	# 2. Get firing rates from units on indicated channel around time of target presentation on all trials. Note that
 	# 	window_fr is a dictionary with elements indexed such that the index matches the corresponding set of hdf_files. Each
