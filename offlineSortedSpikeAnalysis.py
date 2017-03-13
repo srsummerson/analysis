@@ -34,6 +34,21 @@ class OfflineSorted_CSVFile():
 		self.good_units = np.ravel(np.nonzero(np.less(self.sort_code, 31)))
 		self.good_channels = np.unique(self.channel[self.good_units])
 
+	def find_chan_sc(self, chan):
+		'''
+		Method that returns the sort codes for the indicated channel.
+		Input:
+			- chan: integer indicating which recording channel is in question
+		Output:
+			- sc_chan: array containing all sort codes for units on the channel chan
+		'''
+
+		unit_chan = np.ravel(np.nonzero(np.equal(self.channel, chan)))
+		sc_chan = np.unique(self.sort_code[unit_chan])
+		sc_chan = np.array([code for code in sc_chan if code != 31])
+
+		return sc_chan
+
 	def find_unit_sc(self,channs):
 		'''
 		Method that returns the unit sort codes for the channels in channs.
@@ -49,9 +64,7 @@ class OfflineSorted_CSVFile():
 		total_units = 0
 		for chan in channs:
 			# First find number of units recorded on this channel
-			unit_chan = np.ravel(np.nonzero(np.equal(self.channel, chan)))
-			sc_chan = np.unique(self.sort_code[unit_chan])
-			sc_chan = np.array([code for code in sc_chan if code != 31])
+			sc_chan = self.find_chan_sc(chan)
 			total_units += len(sc_chan)
 			sc[chan] = sc_chan
 		return sc, total_units

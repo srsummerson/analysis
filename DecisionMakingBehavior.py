@@ -1,5 +1,7 @@
 import numpy as np 
 import scipy as sp
+import scipy.optimize as op
+import statsmodels.api as sm
 import pandas as pd
 from scipy import io
 from scipy import stats
@@ -702,12 +704,9 @@ def loglikelihood_ThreeTargetTask_Qlearning(parameters, Q_initial, chosen_target
 
 	return Q_low, Q_mid, Q_high, prob_choice_low, prob_choice_mid, prob_choice_high
 
-def ThreeTargetTask_FiringRateRegressedWithValue(hdf_files, syncHDF_files, spike_files, trial_case, var_value):
+def ThreeTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files, channel, t_before, t_after):
 	'''
-	This method regresses the firing rate of all units as a function of value. Only trials from the specified
-	trial_case are considered in the regression. There are six trial cases: (1) instructed to low-value (2) instructed
-	to middle-value (3) instructed to high-value (4) free-choice with low and middle values (5) free-choice with low and
-	high values (6) free-choice to middle and high values.
+	This method returns the average firing rate of all units on the indicated channel during picture onset.
 
 	Inputs:
 	- hdf_files: list of N hdf_files corresponding to the behavior in the three target task
@@ -719,16 +718,142 @@ def ThreeTargetTask_FiringRateRegressedWithValue(hdf_files, syncHDF_files, spike
 					If spike data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
 					epoch of recording but not the second, the hdf_files and syncHDF_files will both have 2 file names, and the 
 					spike_files entry should be of the form [[spike_file1.csv, spike_file2.csv], ''].
-	- trial_case: integer in range [1,6] that indicates the trial type considered in the regression. Trial cases are 
-					enumerated as in the above description
+	- channel: integer value indicating what channel will be used to regress activity
+	- t_before: time before (s) the picture onset that should be included when computing the firing rate. t_before = 0 indicates
+					that we only look from the time of onset forward when considering the window of activity.
+	- t_after: time after (s) the picture onset that should be included when computing the firing rate.
+
+	Output:
+	- num_trials: array of length N with an element corresponding to the number of successful trials in each of the
+					hdf_files
+	- window_fr: dictionary with elements indexed such that the index matches the corresponding set of hdf_files. Each
+					dictionary element contains a matrix of size (num units)x(num trials) with elements corresponding
+					to the average firing rate over the window indicated.
+	'''
+	num_trials = np.zeros(len(hdf_files))
+	num_units = np.zeros(len(hdf_files))
+	window_fr = dict()
+	for i, hdf_file in enumerate(hdf_files):
+		cb_block = ChoiceBehavior_ThreeTargets(hdf_file)
+		num_trials[i] = cb_block.num_successful_trials
+		ind_hold_center = cb_block.ind_check_reward_states - 4
+		ind_picture_onset = cb_block.ind_check_reward_states - 5
+		
+		# Load spike data: 
+		if (spike_files[i] != ''):
+			# Find lfp sample numbers corresponding to these times and the sampling frequency of the lfp data
+			lfp_state_row_ind, lfp_freq = cb.get_state_TDT_LFPvalues(ind_picture_onset, syncHDF_files[i])
+			# Convert lfp sample numbers to times in seconds
+			times_row_ind = lfp_state_row_ind/float(lfp_freq)
+
+			# Load spike data and find all sort codes associated with good channels
+			if channel < 97:
+				spike = OfflineSorted_CSVFile(spike_files[i][0])
+			else:
+				spike = OfflineSorted_CSVFile(spike_files[i][1])
+
+			# Get matrix that is (Num units on channel)x(num trials in hdf_file) containing the firing rates during the
+			# designated window.
+			sc_chan = spike.find_chan_sc(self, channel)
+			num_units[i] = len(sc_chan)
+			for sc in sc_chan:
+				sc_fr = spike.compute_window_fr(channel,sc,times_row_ind,t_before,t_after)
+				if i == 0:
+					all_fr = sc_fr
+				else:
+					all_fr = np.vstack([all_fr, sc_fr])
+
+			# Save matrix of firing rates for units on channel from trials during hdf_file as dictionary element
+			window_fr[i] = all_fr
+
+	return num_trials, num_units, window_fr
+
+
+def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files, trial_case, var_value, channel, t_before, t_after):
+	'''
+	This method regresses the firing rate of all units as a function of value. Only trials from the specified
+	trial_case are considered in the regression. There are six trial cases: (1) instructed to low-value [1,0,0] (2) instructed
+	to middle-value [0,0,1] (3) instructed to high-value [0,1,0] (4) free-choice with low and middle values [1,0,1] (5) free-choice with low and
+	high values [1,1,0] (6) free-choice to middle and high values [0,1,1].
+
+	Inputs:
+	- hdf_files: list of N hdf_files corresponding to the behavior in the three target task
+	- syncHDF_files: list of N syncHDF_files that containes the syncing DIO data for the corresponding hdf_file and it's
+					TDT recording. If TDT data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, syncHDF_files should have the form [syncHDF_file1.mat, '']
+	- spike_files: list of N tuples of spike_files, where each entry is a list of 2 spike files, one corresponding to spike
+					data from the first 96 channels and the other corresponding to the spike data from the last 64 channels.
+					If spike data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, the hdf_files and syncHDF_files will both have 2 file names, and the 
+					spike_files entry should be of the form [[spike_file1.csv, spike_file2.csv], ''].
+	- trial_case: 3-tuple that indicates the trial type considered in the regression. Trial cases are 
+					enumerated as in the above description, which matches the notation used for the 
+					targets_on record of the targets presented.
 	- var_value: boolenan indicating whether the Q value(s) used in the regression should be fixed (var_value == False) 
 				and defined based on their reward probabilties, or whether the Q value(s) should be varying trial-by-trial
 				(var_value == True) based on the Q-learning model fit
+	- channel: integer value indicating what channel will be used to regress activity
+	- t_before: time before (s) the picture onset that should be included when computing the firing rate. t_before = 0 indicates
+					that we only look from the time of onset forward when considering the window of activity.
+	- t_after: time after (s) the picture onset that should be included when computing the firing rate.
+
 	'''
+	# 1. Load behavior data and pull out trial indices for the designated trial case
+	cb = ChoiceBehavior_ThreeTargets_Stimulation(hdf_files, 150, 100)
+	total_trials = cb.num_successful_trials
+	ind_trial_case = np.array([ind for ind in range(cb.num_successful_trials) if np.array_equal(cb.targets_on[ind],trial_case)])
 
+	# 2. Get firing rates from units on indicated channel around time of target presentation on all trials. Note that
+	# 	window_fr is a dictionary with elements indexed such that the index matches the corresponding set of hdf_files. Each
+	#	dictionary element contains a matrix of size (num units)x(num trials) with elements corresponding
+	#	to the average firing rate over the window indicated.
+	num_trials, num_units, window_fr = ThreeTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files, channel, t_before, t_after)
+	cum_sum_trials = np.cumsum(num_trials)
 
+	# 3. Get Q-values
+	if var_value:
+		# Varying Q-values
+		targets_on, chosen_target, rewards, instructed_or_freechoice = cb.GetChoicesAndRewards
+		# Find ML fit of alpha and beta
+		Q_initial = 0.5*np.ones(3)
+		nll = lambda *args: -loglikelihood_ThreeTargetTask_Qlearning(*args)
+		result = op.minimize(nll, [alpha_true, beta_true], args=(Q_initial, chosen_target, rewards, targets_on, instructed_or_freechoice), bounds=[(0,1),(0,None)])
+    	alpha_ml, beta_ml = result["x"]
+    	# RL model fit for Q values
+   		Q_low, Q_mid, Q_high, prob_choice_low, prob_choice_mid, prob_choice_high = loglikelihood_ThreeTargetTask_Qlearning([alpha_ml, beta_ml], Q_initial, chosen_target, rewards, targets_on, instructed_or_freechoice)
+	
+	else:
+		# Fixed Q-values
+		Q_low = 0.35*np.ones(total_trials)
+		Q_mid = 0.6*np.ones(total_trials)
+		Q_high = 0.85*np.ones(total_trials)
 
-	return
+	# 4. Create firing rate matrix with size (max_num_units)x(total_trials)
+	max_num_units = np.max(num_units)
+	fr_mat = np.empty(max_num_units,total_trials,)
+	fr_mat[:] = np.NAN
+	trial_counter = 0
+	for j in window_fr.keys():
+		block_fr = window_fr[j]
+		num_units,num_trials = block_fr.shape 
+		fr_mat[:num_units,cum_sum_trials[j] - num_trials:cum_sum_trials[j]] = block_fr
+
+	# 5. Do regression for each unit only on trials of correct trial type with spike data saved.
+	for k in range(max_num_units):
+		unit_data = fr_mat[k,:]
+		trial_inds = np.array([index for index in ind_trial_case if unit_data[index]!=np.NAN])
+		x = np.vstack((Q_low[trial_inds], Q_mid[trial_inds], Q_high[trial_inds]))
+		x = np.transpose(x)
+		x = sm.add_constant(x,prepend='False')
+		y = unit_data[trial_inds]
+
+		print "Regression for unit ", k
+		model_glm = sm.OLS(y,x)
+		fit_glm = model_glm.fit()
+		print fit_glm.summary()
+
+	return window_fr, fr_mat
+
 
 def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files):
 	'''
