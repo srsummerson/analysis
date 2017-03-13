@@ -818,7 +818,7 @@ def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, sp
 		# Find ML fit of alpha and beta
 		Q_initial = 0.5*np.ones(3)
 		nll = lambda *args: -loglikelihood_ThreeTargetTask_Qlearning(*args)
-		result = op.minimize(nll, [alpha_true, beta_true], args=(Q_initial, chosen_target, rewards, targets_on, instructed_or_freechoice), bounds=[(0,1),(0,None)])
+		result = op.minimize(nll, [0.2, 1], args=(Q_initial, chosen_target, rewards, targets_on, instructed_or_freechoice), bounds=[(0,1),(0,None)])
 		alpha_ml, beta_ml = result["x"]
 		# RL model fit for Q values
 		Q_low, Q_mid, Q_high, prob_choice_low, prob_choice_mid, prob_choice_high = loglikelihood_ThreeTargetTask_Qlearning([alpha_ml, beta_ml], Q_initial, chosen_target, rewards, targets_on, instructed_or_freechoice)
