@@ -849,8 +849,8 @@ def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, sp
 		
 		x = np.vstack((Q_low[trial_inds], Q_mid[trial_inds], Q_high[trial_inds]))
 		x = np.transpose(x)
-		print x.shape
-		x = sm.add_constant(x, prepend=False)
+		x = np.hstack((x, np.ones([len(trial_inds),1]))) 	# use this in place of add_constant which doesn't work when constant Q values are used
+		#x = sm.add_constant(x, prepend=False)
 		print x.shape
 		y = unit_data[trial_inds]
 		print y.shape
@@ -860,7 +860,7 @@ def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, sp
 		fit_glm = model_glm.fit()
 		print fit_glm.summary()
 
-	return window_fr, fr_mat, x
+	return window_fr, fr_mat
 
 
 def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files):
