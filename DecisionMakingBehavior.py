@@ -860,7 +860,7 @@ def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, sp
 		fit_glm = model_glm.fit()
 		print fit_glm.summary()
 
-	return window_fr, fr_mat
+	return window_fr, fr_mat, x
 
 
 def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files):
