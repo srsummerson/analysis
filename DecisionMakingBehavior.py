@@ -593,9 +593,7 @@ def loglikelihood_ThreeTargetTask_Qlearning(parameters, Q_initial, chosen_target
 
         		# The choice on trial i+1 as either optimal (choice = 2) or nonoptimal (choice = 1)
         		choice = chosen_target[i+1]
-        	print prob_choice_nonopt.size
-        	print prob_choice_opt.size
-        	print choice
+
         	log_prob_total += np.log(prob_choice_nonopt*(choice==1) + prob_choice_opt*(choice==2))
         else:
         	prob_choice_low[i+1] = prob_choice_low[i]
@@ -604,7 +602,7 @@ def loglikelihood_ThreeTargetTask_Qlearning(parameters, Q_initial, chosen_target
 
 	return log_prob_total
 
-def loglikelihood_ThreeTargetTask_Qlearning(parameters, Q_initial, chosen_target, rewards, targets_on, instructed_or_freechoice):
+def ThreeTargetTask_Qlearning(parameters, Q_initial, chosen_target, rewards, targets_on, instructed_or_freechoice):
 	'''
 	This method finds the Q-values associated with the three target options in the probabilistic reward free-choice task
 	with three targets: low-value target, middle-value target, and high-value target. The Q-values are determined based
@@ -823,7 +821,7 @@ def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, sp
 		result = op.minimize(nll, [0.2, 1], args=(Q_initial, chosen_target, rewards, targets_on, instructed_or_freechoice), bounds=[(0,1),(0,None)])
 		alpha_ml, beta_ml = result["x"]
 		# RL model fit for Q values
-		Q_low, Q_mid, Q_high, prob_choice_low, prob_choice_mid, prob_choice_high = loglikelihood_ThreeTargetTask_Qlearning([alpha_ml, beta_ml], Q_initial, chosen_target, rewards, targets_on, instructed_or_freechoice)
+		Q_low, Q_mid, Q_high, prob_choice_low, prob_choice_mid, prob_choice_high = ThreeTargetTask_Qlearning([alpha_ml, beta_ml], Q_initial, chosen_target, rewards, targets_on, instructed_or_freechoice)
 	else:
 	# Fixed Q-values
 		Q_low = 0.35*np.ones(total_trials)
