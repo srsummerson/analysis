@@ -643,7 +643,7 @@ def ThreeTargetTask_Qlearning(parameters, Q_initial, chosen_target, rewards, tar
 
 	log_prob_total = 0.
 
-	for i in range(0,len(chosen_target)-1):
+	for i in range(len(chosen_target)-1):
 		# Update Q values with temporal difference error
 		delta_low = float(rewards[i]) - Q_low[i]
 		delta_mid = float(rewards[i]) - Q_mid[i]
