@@ -814,7 +814,7 @@ def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, sp
 	# 3. Get Q-values
 	if var_value:
 	# Varying Q-values
-		targets_on, chosen_target, rewards, instructed_or_freechoice = cb.GetChoicesAndRewards
+		targets_on, chosen_target, rewards, instructed_or_freechoice = cb.GetChoicesAndRewards()
 		# Find ML fit of alpha and beta
 		Q_initial = 0.5*np.ones(3)
 		nll = lambda *args: -loglikelihood_ThreeTargetTask_Qlearning(*args)
