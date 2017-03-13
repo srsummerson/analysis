@@ -754,7 +754,7 @@ def ThreeTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_fil
 
 			# Get matrix that is (Num units on channel)x(num trials in hdf_file) containing the firing rates during the
 			# designated window.
-			sc_chan = spike.find_chan_sc(self, channel)
+			sc_chan = spike.find_chan_sc(channel)
 			num_units[i] = len(sc_chan)
 			for sc in sc_chan:
 				sc_fr = spike.compute_window_fr(channel,sc,times_row_ind,t_before,t_after)
