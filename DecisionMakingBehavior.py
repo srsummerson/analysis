@@ -647,9 +647,9 @@ def ThreeTargetTask_Qlearning(parameters, Q_initial, chosen_target, rewards, tar
 		delta_low = float(rewards[i]) - Q_low[i]
 		delta_mid = float(rewards[i]) - Q_mid[i]
         delta_high = float(rewards[i]) - Q_high[i]
-        Q_low[i+1] = Q_low[i] + alpha*delta_low*float(chosen_target[i]==0)
-        Q_mid[i+1] = Q_mid[i] + alpha*delta_mid*float(chosen_target[i]==1)
-        Q_high[i+1] = Q_high[i] + alpha*delta_high*float(chosen_target[i]==2)
+        #Q_low[i+1] = Q_low[i] + alpha*delta_low*float(chosen_target[i]==0)
+        #Q_mid[i+1] = Q_mid[i] + alpha*delta_mid*float(chosen_target[i]==1)
+        #Q_high[i+1] = Q_high[i] + alpha*delta_high*float(chosen_target[i]==2)
         if i < 10:
         	print i
         	print Q_low[i]
