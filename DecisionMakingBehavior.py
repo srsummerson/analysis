@@ -828,7 +828,7 @@ def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, sp
 		Q_high = 0.85*np.ones(total_trials)
 
 	# 4. Create firing rate matrix with size (max_num_units)x(total_trials)
-	max_num_units = np.max(num_units)
+	max_num_units = int(np.max(num_units))
 	fr_mat = np.empty([max_num_units,total_trials])
 	fr_mat[:] = np.NAN
 	trial_counter = 0
