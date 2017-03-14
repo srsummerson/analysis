@@ -854,7 +854,7 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files, cd_only
 			t_after = 3				# 3 s
 			t_resolution = 0.1 		# 100 ms time bins
 
-			cmap = mpl.cm.cool
+			cmap = mpl.cm.Blues
 
 			# 1. LH presented
 			LH_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [1,1,0]) for j in range(int(num_successful_trials[i]))]))
