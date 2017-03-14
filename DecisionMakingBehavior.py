@@ -976,8 +976,8 @@ def ThreeTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_
 	num_successful_trials = np.zeros(num_files)
 
 	# Define timing parameters for PSTHs
-	t_before = 1			# 1 s
-	t_after = 3				# 3 s
+	t_before = 2			# 1 s
+	t_after = 2				# 3 s
 	t_resolution = 0.1 		# 100 ms time bins
 	num_bins = len(np.arange(-t_before, t_after, t_resolution)) - 1
 
@@ -1026,7 +1026,7 @@ def ThreeTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_
 			all_units1, total_units1 = spike1.find_unit_sc(spike1.good_channels)
 			all_units2, total_units2 = spike2.find_unit_sc(spike2.good_channels)
 
-			print "Total number of units: ", total_units1 + total_units2
+			#print "Total number of units: ", total_units1 + total_units2
 
 			cd_units = [chann]
 			spike1_good_channels = [unit for unit in cd_units if unit in spike1.good_channels]
@@ -1175,7 +1175,7 @@ def ThreeTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_
 		plt.xticks(xticks, xticklabels)
 
 		plt_name = syncHDF_files[i][34:-15]
-		plt.savefig('/home/srsummerson/code/analysis/Mario_Performance_figs/'+plt_name+ '_' + str(align_to) +'_PSTH_Chan'+str(chann)+'.svg')
+		plt.savefig('/home/srsummerson/code/analysis/Mario_Performance_figs/'+plt_name+ '_' + str(align_to) +'_PSTH_Chan'+str(chann)+'-'+str(sc)+'.svg')
 		plt.close()
 
 	reg_psth = [psth_lm, psth_lh, psth_mh, psth_l, psth_h, psth_m]
