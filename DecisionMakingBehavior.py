@@ -860,7 +860,6 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files, cd_only
 			num_units2,num_samples = avg_psth2.shape
 			plt.subplot(3,2,1)
 			plt.title('Low-High Presented')
-			color=cmap(i/float(len(channs)))
 			for k in range(num_units1):
 				plt.plot(smooth_avg_psth1[k,:], color=cmap(k/float(num_units1 + num_units2)))
 			for k in range(num_units2):
