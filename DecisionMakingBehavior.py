@@ -6,6 +6,7 @@ import pandas as pd
 from scipy import io
 from scipy import stats
 import matplotlib as mpl
+from matplotlib import mlab
 import tables
 from matplotlib import pyplot as plt
 from rt_calc import get_rt_change_deriv
@@ -781,7 +782,7 @@ def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, sp
 	return window_fr, fr_mat, x, y
 
 
-def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files):
+def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files, cd_only):
 	'''
 	This method aligns spiking data to behavioral choices for all different target presentation combinations
 	in the Three Target Task, where there is a low-value, middle-value and high-value target. This version does not 
@@ -797,6 +798,8 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files):
 					If spike data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
 					epoch of recording but not the second, the hdf_files and syncHDF_files will both have 2 file names, and the 
 					spike_files entry should be of the form [[spike_file1.csv, spike_file2.csv], ''].
+	- cd_only: Boolean indicating if we only want to look at units in the Caudate (cd_only = 1) or if we want to look at
+				all units (cd_only = 0)
 
 	'''
 	num_files = len(hdf_files)
@@ -832,9 +835,13 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files):
 
 			print "Total number of units: ", total_units1 + total_units2
 
-			cd_units = [1, 3, 4, 17, 18, 20, 40, 41, 54, 56, 57, 63, 64, 72, 75, 81, 83, 88, 89, 96, 100, 112, 114, 126, 130, 140, 143, 146, 156, 157, 159]
-			spike1_good_channels = np.array([unit for unit in cd_units if unit in spike1.good_channels])
-			spike2_good_channels = np.array([unit for unit in cd_units if unit in spike2.good_channels])
+			if cd_only:
+				cd_units = [1, 3, 4, 17, 18, 20, 40, 41, 54, 56, 57, 63, 64, 72, 75, 81, 83, 88, 89, 96, 100, 112, 114, 126, 130, 140, 143, 146, 156, 157, 159]
+				spike1_good_channels = np.array([unit for unit in cd_units if unit in spike1.good_channels])
+				spike2_good_channels = np.array([unit for unit in cd_units if unit in spike2.good_channels])
+			else:
+				spike1_good_channels = spike1.good_channels
+				spike2_good_channels = spike2.good_channels
 
 			# Plot average rate for all neurons divided in six cases of targets on option
 			plt.figure()
@@ -842,15 +849,22 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files):
 			t_after = 3				# 3 s
 			t_resolution = 0.1 		# 100 ms time bins
 
+			cmap = mpl.cm.brg
+
 			# 1. LH presented
 			LH_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [1,1,0]) for j in range(int(num_successful_trials[i]))]))
-			avg_psth1, smooth_avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1_good_channels, times_row_ind[LH_ind],t_before,t_after,t_resolution)
-			avg_psth2, smooth_avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2_good_channels, times_row_ind[LH_ind],t_before,t_after,t_resolution)
+			avg_psth1, smooth_avg_psth1, unit_list11 = spike1.compute_multiple_channel_avg_psth(spike1_good_channels, times_row_ind[LH_ind],t_before,t_after,t_resolution)
+			avg_psth2, smooth_avg_psth2, unit_list21 = spike2.compute_multiple_channel_avg_psth(spike2_good_channels, times_row_ind[LH_ind],t_before,t_after,t_resolution)
 			
+			num_units1,num_samples = avg_psth1.shape
+			num_units2,num_samples = avg_psth2.shape
 			plt.subplot(3,2,1)
 			plt.title('Low-High Presented')
-			plt.plot(smooth_avg_psth1.T)
-			plt.plot(smooth_avg_psth2.T)
+			color=cmap(i/float(len(channs)))
+			for k in range(num_units1):
+				plt.plot(smooth_avg_psth1[k,:], color=cmap(k/float(num_units1 + num_units2)))
+			for k in range(num_units2):
+				plt.plot(smooth_avg_psth2[k,:], color=cmap((k + num_units1)/float(num_units1 + num_units2)))
 			xticklabels = np.arange(-t_before,t_after-t_resolution,t_resolution)
 			xticks = np.arange(0, len(xticklabels), 10)
 			xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
@@ -930,7 +944,7 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files):
 			plt.savefig('/home/srsummerson/code/analysis/Mario_Performance_figs/'+plt_name+'_PSTH.svg')
 			plt.close()
 
-	return
+	return unit_list11, unit_list21
 
 def ThreeTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_files, chann, sc, plot_output):
 	'''
