@@ -950,7 +950,7 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files, cd_only
 
 	return unit_list11, unit_list21
 
-def ThreeTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_files, chann, sc, plot_output):
+def ThreeTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_files, chann, sc, align_to, plot_output):
 	'''
 	This method aligns spiking data to behavioral choices for all different target presentation combinations
 	in the Three Target Task, where there is a low-value, middle-value and high-value target. This version does not 
@@ -968,6 +968,7 @@ def ThreeTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_
 					spike_files entry should be of the form [[spike_file1.csv, spike_file2.csv], ''].
 	- chann: integer representing a channel
 	- sc: integer representing unit sort code
+	- align_to: integer in range [1,2] that indicates whether we align the (1) picture onset or (2) center-hold.
 	- plot_output: binary indicating whether output should be plotted + saved or not
 	'''
 	num_files = len(hdf_files)
@@ -1006,12 +1007,15 @@ def ThreeTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_
 		# Find times corresponding to center holds of successful trials
 		ind_hold_center = cb.ind_check_reward_states - 4
 		ind_picture_onset = cb.ind_check_reward_states - 5
-		
+		if align_to == 1:
+			inds = ind_picture_onset
+		elif align_to == 2:
+			inds = ind_hold_center
 
 		# Load spike data: 
 		if (spike_files[i] != ''):
 			# Find lfp sample numbers corresponding to these times and the sampling frequency of the lfp data
-			lfp_state_row_ind, lfp_freq = cb.get_state_TDT_LFPvalues(ind_picture_onset, syncHDF_files[i])
+			lfp_state_row_ind, lfp_freq = cb.get_state_TDT_LFPvalues(inds, syncHDF_files[i])
 			# Convert lfp sample numbers to times in seconds
 			times_row_ind = lfp_state_row_ind/float(lfp_freq)
 
@@ -1106,73 +1110,73 @@ def ThreeTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_
 				psth_m = np.vstack([psth_m, avg_psth_m])
 				smooth_psth_m = np.vstack([smooth_psth_m, smooth_avg_psth_m])
 
-			# Plot average rate for all neurons divided in six cases of targets on option
-			if plot_output:
-				plt.figure()
+	# Plot average rate for all neurons divided in six cases of targets on option
+	if plot_output:
+		plt.figure()
 
-				avg_psth_lh = np.nanmean(avg_psth_lh, axis = 0)
-				smooth_avg_psth_lh = np.nanmean(smooth_avg_psth_lh, axis = 0)
-				plt.subplot(3,2,1)
-				plt.title('Low-High Presented')
-				plt.plot(smooth_avg_psth_lh)
-				xticklabels = np.arange(-t_before,t_after-t_resolution,t_resolution)
-				xticks = np.arange(0, len(xticklabels), 10)
-				xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
-				plt.xticks(xticks, xticklabels)
+		avg_psth_lh = np.nanmean(avg_psth_lh, axis = 0)
+		smooth_avg_psth_lh = np.nanmean(smooth_avg_psth_lh, axis = 0)
+		plt.subplot(3,2,1)
+		plt.title('Low-High Presented')
+		plt.plot(smooth_avg_psth_lh)
+		xticklabels = np.arange(-t_before,t_after-t_resolution,t_resolution)
+		xticks = np.arange(0, len(xticklabels), 10)
+		xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
+		plt.xticks(xticks, xticklabels)
 
-				avg_psth_lm = np.nanmean(avg_psth_lm, axis = 0)
-				smooth_avg_psth_lm = np.nanmean(smooth_avg_psth_lm, axis = 0)
-				plt.subplot(3,2,2)
-				plt.title('Low-Middle Presented')
-				plt.plot(smooth_avg_psth_lm)
-				xticklabels = np.arange(-t_before,t_after-t_resolution,t_resolution)
-				xticks = np.arange(0, len(xticklabels), 10)
-				xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
-				plt.xticks(xticks, xticklabels)
+		avg_psth_lm = np.nanmean(avg_psth_lm, axis = 0)
+		smooth_avg_psth_lm = np.nanmean(smooth_avg_psth_lm, axis = 0)
+		plt.subplot(3,2,2)
+		plt.title('Low-Middle Presented')
+		plt.plot(smooth_avg_psth_lm)
+		xticklabels = np.arange(-t_before,t_after-t_resolution,t_resolution)
+		xticks = np.arange(0, len(xticklabels), 10)
+		xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
+		plt.xticks(xticks, xticklabels)
 
-				avg_psth_mh = np.nanmean(avg_psth_mh, axis = 0)
-				smooth_avg_psth_mh = np.nanmean(smooth_avg_psth_mh, axis = 0)
-				plt.subplot(3,2,3)
-				plt.title('Middle-High Presented')
-				plt.plot(smooth_avg_psth_mh)
-				xticklabels = np.arange(-t_before,t_after-t_resolution,t_resolution)
-				xticks = np.arange(0, len(xticklabels), 10)
-				xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
-				plt.xticks(xticks, xticklabels)
+		avg_psth_mh = np.nanmean(avg_psth_mh, axis = 0)
+		smooth_avg_psth_mh = np.nanmean(smooth_avg_psth_mh, axis = 0)
+		plt.subplot(3,2,3)
+		plt.title('Middle-High Presented')
+		plt.plot(smooth_avg_psth_mh)
+		xticklabels = np.arange(-t_before,t_after-t_resolution,t_resolution)
+		xticks = np.arange(0, len(xticklabels), 10)
+		xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
+		plt.xticks(xticks, xticklabels)
 
-				avg_psth_l = np.nanmean(avg_psth_l, axis = 0)
-				smooth_avg_psth_l = np.nanmean(smooth_avg_psth_l, axis = 0)
-				plt.subplot(3,2,4)
-				plt.title('Low Presented')
-				plt.plot(smooth_avg_psth_l)
-				xticklabels = np.arange(-t_before,t_after-t_resolution,t_resolution)
-				xticks = np.arange(0, len(xticklabels), 10)
-				xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
-				plt.xticks(xticks, xticklabels)
+		avg_psth_l = np.nanmean(avg_psth_l, axis = 0)
+		smooth_avg_psth_l = np.nanmean(smooth_avg_psth_l, axis = 0)
+		plt.subplot(3,2,4)
+		plt.title('Low Presented')
+		plt.plot(smooth_avg_psth_l)
+		xticklabels = np.arange(-t_before,t_after-t_resolution,t_resolution)
+		xticks = np.arange(0, len(xticklabels), 10)
+		xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
+		plt.xticks(xticks, xticklabels)
 
-				avg_psth_h = np.nanmean(avg_psth_h, axis = 0)
-				smooth_avg_psth_h = np.nanmean(smooth_avg_psth_h, axis = 0)
-				plt.subplot(3,2,5)
-				plt.title('High Presented')
-				plt.plot(smooth_avg_psth_h)
-				xticklabels = np.arange(-t_before,t_after-t_resolution,t_resolution)
-				xticks = np.arange(0, len(xticklabels), 10)
-				xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
-				plt.xticks(xticks, xticklabels)
+		avg_psth_h = np.nanmean(avg_psth_h, axis = 0)
+		smooth_avg_psth_h = np.nanmean(smooth_avg_psth_h, axis = 0)
+		plt.subplot(3,2,5)
+		plt.title('High Presented')
+		plt.plot(smooth_avg_psth_h)
+		xticklabels = np.arange(-t_before,t_after-t_resolution,t_resolution)
+		xticks = np.arange(0, len(xticklabels), 10)
+		xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
+		plt.xticks(xticks, xticklabels)
 
-				avg_psth_m = np.nanmean(avg_psth_m, axis = 0)
-				smooth_avg_psth_m = np.nanmean(smooth_avg_psth_m, axis = 0)
-				plt.subplot(3,2,6)
-				plt.title('Middle Presented')
-				plt.plot(smooth_avg_psth_m)
-				xticklabels = np.arange(-t_before,t_after-t_resolution,t_resolution)
-				xticks = np.arange(0, len(xticklabels), 10)
-				xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
-				plt.xticks(xticks, xticklabels)
+		avg_psth_m = np.nanmean(avg_psth_m, axis = 0)
+		smooth_avg_psth_m = np.nanmean(smooth_avg_psth_m, axis = 0)
+		plt.subplot(3,2,6)
+		plt.title('Middle Presented')
+		plt.plot(smooth_avg_psth_m)
+		xticklabels = np.arange(-t_before,t_after-t_resolution,t_resolution)
+		xticks = np.arange(0, len(xticklabels), 10)
+		xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
+		plt.xticks(xticks, xticklabels)
 
-				plt_name = syncHDF_files[i][34:-12]
-				plt.savefig('/home/srsummerson/code/analysis/Mario_Performance_figs/'+plt_name+'_PSTH_Chan'+str(chann)+'.svg')
-				plt.close()
+		plt_name = syncHDF_files[i][34:-15]
+		plt.savefig('/home/srsummerson/code/analysis/Mario_Performance_figs/'+plt_name+ '_' + str(align_to) +'_PSTH_Chan'+str(chann)+'.svg')
+		plt.close()
 
 	reg_psth = [psth_lm, psth_lh, psth_mh, psth_l, psth_h, psth_m]
 	smooth_psth = [smooth_psth_lm, smooth_psth_lh, smooth_psth_mh, smooth_psth_l, smooth_psth_h, smooth_psth_m]
