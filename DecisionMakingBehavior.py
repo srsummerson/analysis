@@ -782,7 +782,7 @@ def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, sp
 	return window_fr, fr_mat, x, y
 
 
-def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files, cd_only):
+def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files, cd_only,align_to):
 	'''
 	This method aligns spiking data to behavioral choices for all different target presentation combinations
 	in the Three Target Task, where there is a low-value, middle-value and high-value target. This version does not 
@@ -800,6 +800,7 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files, cd_only
 					spike_files entry should be of the form [[spike_file1.csv, spike_file2.csv], ''].
 	- cd_only: Boolean indicating if we only want to look at units in the Caudate (cd_only = 1) or if we want to look at
 				all units (cd_only = 0)
+	- align_to: integer in range [1,2] that indicates whether we align the (1) picture onset or (2) center-hold.
 
 	'''
 	num_files = len(hdf_files)
@@ -817,12 +818,16 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files, cd_only
 		# Find times corresponding to center holds of successful trials
 		ind_hold_center = cb.ind_check_reward_states - 4
 		ind_picture_onset = cb.ind_check_reward_states - 5
-		
 
+		if align_to == 1:
+			inds = ind_picture_onset
+		elif align_to == 2:
+			inds = ind_hold_center
+		
 		# Load spike data: 
 		if (spike_files[i] != ''):
 			# Find lfp sample numbers corresponding to these times and the sampling frequency of the lfp data
-			lfp_state_row_ind, lfp_freq = cb.get_state_TDT_LFPvalues(ind_picture_onset, syncHDF_files[i])
+			lfp_state_row_ind, lfp_freq = cb.get_state_TDT_LFPvalues(inds, syncHDF_files[i])
 			# Convert lfp sample numbers to times in seconds
 			times_row_ind = lfp_state_row_ind/float(lfp_freq)
 
@@ -849,7 +854,7 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files, cd_only
 			t_after = 3				# 3 s
 			t_resolution = 0.1 		# 100 ms time bins
 
-			cmap = mpl.cm.brg
+			cmap = mpl.cm.cool
 
 			# 1. LH presented
 			LH_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [1,1,0]) for j in range(int(num_successful_trials[i]))]))
