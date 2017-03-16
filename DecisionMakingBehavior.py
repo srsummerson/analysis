@@ -8,6 +8,7 @@ from scipy import stats
 import matplotlib as mpl
 from matplotlib import mlab
 import tables
+from rt_calc import compute_rt_per_trial_FreeChoiceTask
 from matplotlib import pyplot as plt
 from rt_calc import get_rt_change_deriv
 from neo import io
