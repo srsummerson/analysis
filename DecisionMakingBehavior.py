@@ -675,10 +675,8 @@ def ThreeTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_fil
 			# designated window.
 			sc_chan = spike.find_chan_sc(channel)
 			num_units[i] = len(sc_chan)
-			print i, num_units
 			for j, sc in enumerate(sc_chan):
 				sc_fr = spike.compute_window_fr(channel,sc,times_row_ind,t_before,t_after)
-				print sc_fr.shape
 				if j == 0:
 					all_fr = sc_fr
 				else:
@@ -745,7 +743,7 @@ def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, sp
 	#	to the average firing rate over the window indicated.
 	num_trials, num_units, window_fr = ThreeTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files, channel, t_before, t_after)
 	cum_sum_trials = np.cumsum(num_trials)
-
+	print window_fr
 	# 3. Get Q-values, chosen targets, and rewards
 	targets_on, chosen_target, rewards, instructed_or_freechoice = cb.GetChoicesAndRewards()
 	if var_value:
@@ -786,7 +784,7 @@ def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, sp
 		trial_inds = np.array([index for index in ind_trial_case if unit_data[index]!=np.NAN], dtype = int)
 		
 		x = np.vstack((Q_low[trial_inds], Q_mid[trial_inds], Q_high[trial_inds]))
-		x = np.vstack((x, rt[trial_inds], mt[trial_inds], chosen_target[trial_inds], rewards[trial_inds]))
+		#x = np.vstack((x, rt[trial_inds], mt[trial_inds], chosen_target[trial_inds], rewards[trial_inds]))
 		x = np.transpose(x)
 		x = np.hstack((x, np.ones([len(trial_inds),1]))) 	# use this in place of add_constant which doesn't work when constant Q values are used
 		#x = sm.add_constant(x, prepend=False)
