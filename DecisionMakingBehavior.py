@@ -677,6 +677,7 @@ def ThreeTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_fil
 			num_units[i] = len(sc_chan)
 			for sc in sc_chan:
 				sc_fr = spike.compute_window_fr(channel,sc,times_row_ind,t_before,t_after)
+				print sc_fr.shape
 				if i == 0:
 					all_fr = sc_fr
 				else:
