@@ -743,7 +743,7 @@ def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, sp
 	#	to the average firing rate over the window indicated.
 	num_trials, num_units, window_fr = ThreeTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files, channel, t_before, t_after)
 	cum_sum_trials = np.cumsum(num_trials)
-	print window_fr
+	
 	# 3. Get Q-values, chosen targets, and rewards
 	targets_on, chosen_target, rewards, instructed_or_freechoice = cb.GetChoicesAndRewards()
 	if var_value:
@@ -764,8 +764,9 @@ def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, sp
 
 	# 4. Create firing rate matrix with size (max_num_units)x(total_trials)
 	max_num_units = int(np.max(num_units))
-	fr_mat = np.empty([max_num_units,total_trials])
-	fr_mat[:] = np.NAN
+	#fr_mat = np.empty([max_num_units,total_trials])
+	#fr_mat[:] = np.NAN
+	fr_mat = np.zeros([max_num_units, total_trials])
 	trial_counter = 0
 	for j in window_fr.keys():
 		block_fr = window_fr[j]
@@ -781,7 +782,7 @@ def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, sp
 	#    reaction time (rt), movement time (mt), choice (chosen_target), and reward (rewards)
 	for k in range(max_num_units):
 		unit_data = fr_mat[k,:]
-		trial_inds = np.array([index for index in ind_trial_case if unit_data[index]!=np.NAN], dtype = int)
+		trial_inds = np.array([index for index in ind_trial_case if unit_data[index]!=0], dtype = int)
 		
 		x = np.vstack((Q_low[trial_inds], Q_mid[trial_inds], Q_high[trial_inds]))
 		#x = np.vstack((x, rt[trial_inds], mt[trial_inds], chosen_target[trial_inds], rewards[trial_inds]))
