@@ -722,6 +722,20 @@ def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, sp
 	targets_on = cb.targets_on[cb.state_time[cb.ind_check_reward_states]]
 	ind_trial_case = np.array([ind for ind in range(total_trials) if np.array_equal(targets_on[ind],trial_case)])
 	
+
+	# 1a. Get reaction time information
+	rt = np.array([])
+	for file in hdf_files:
+		reaction_time, velocity = compute_rt_per_trial_FreeChoiceTask(file)
+		rt = np.append(rt, reaction_time)
+
+	# 1b. Get movementment time information
+	mt = (cb.state_time[cb.ind_target_states + 1] - cb.state_time[cb.ind_target_states])/60.
+
+
+	print "Total trials: ", total_trials
+	print "Length reaction time vec: ", len(rt)
+
 	# 2. Get firing rates from units on indicated channel around time of target presentation on all trials. Note that
 	# 	window_fr is a dictionary with elements indexed such that the index matches the corresponding set of hdf_files. Each
 	#	dictionary element contains a matrix of size (num units)x(num trials) with elements corresponding
@@ -729,10 +743,10 @@ def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, sp
 	num_trials, num_units, window_fr = ThreeTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files, channel, t_before, t_after)
 	cum_sum_trials = np.cumsum(num_trials)
 
-	# 3. Get Q-values
+	# 3. Get Q-values, chosen targets, and rewards
+	targets_on, chosen_target, rewards, instructed_or_freechoice = cb.GetChoicesAndRewards()
 	if var_value:
-	# Varying Q-values
-		targets_on, chosen_target, rewards, instructed_or_freechoice = cb.GetChoicesAndRewards()
+		# Varying Q-values
 		# Find ML fit of alpha and beta
 		Q_initial = 0.5*np.ones(3)
 		nll = lambda *args: -loglikelihood_ThreeTargetTask_Qlearning(*args)
@@ -742,7 +756,7 @@ def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, sp
 		# RL model fit for Q values
 		Q_low, Q_mid, Q_high, prob_choice_low, prob_choice_mid, prob_choice_high, log_likelihood = ThreeTargetTask_Qlearning([alpha_ml, beta_ml], Q_initial, chosen_target, rewards, targets_on, instructed_or_freechoice)
 	else:
-	# Fixed Q-values
+		# Fixed Q-values
 		Q_low = 0.35*np.ones(total_trials)
 		Q_mid = 0.6*np.ones(total_trials)
 		Q_high = 0.85*np.ones(total_trials)
@@ -762,11 +776,14 @@ def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, sp
 		fr_mat[:num_units,cum_sum_trials[j] - num_trials:cum_sum_trials[j]] = block_fr
 
 	# 5. Do regression for each unit only on trials of correct trial type with spike data saved.
+	#    Current regression is just using Q-values and constant. Should be updated to consider: 
+	#    reaction time (rt), movement time (mt), choice (chosen_target), and reward (rewards)
 	for k in range(max_num_units):
 		unit_data = fr_mat[k,:]
 		trial_inds = np.array([index for index in ind_trial_case if unit_data[index]!=np.NAN], dtype = int)
 		
 		x = np.vstack((Q_low[trial_inds], Q_mid[trial_inds], Q_high[trial_inds]))
+		x = np.vstack((x, rt[trial_inds], mt[trial_inds], chosen_target[trial_inds], rewards[trial_inds]))
 		x = np.transpose(x)
 		x = np.hstack((x, np.ones([len(trial_inds),1]))) 	# use this in place of add_constant which doesn't work when constant Q values are used
 		#x = sm.add_constant(x, prepend=False)
@@ -779,7 +796,7 @@ def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, sp
 		fit_glm = model_glm.fit()
 		print fit_glm.summary()
 
-	return window_fr, fr_mat, x, y
+	return window_fr, fr_mat, x, y, rt, mt
 
 
 def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files, cd_only,align_to):
