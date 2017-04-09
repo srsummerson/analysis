@@ -652,6 +652,7 @@ def ThreeTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_fil
 	num_trials = np.zeros(len(hdf_files))
 	num_units = np.zeros(len(hdf_files))
 	window_fr = dict()
+	window_fr_smooth = dict()
 	for i, hdf_file in enumerate(hdf_files):
 		cb_block = ChoiceBehavior_ThreeTargets(hdf_file)
 		num_trials[i] = cb_block.num_successful_trials
@@ -677,15 +678,19 @@ def ThreeTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_fil
 			num_units[i] = len(sc_chan)
 			for j, sc in enumerate(sc_chan):
 				sc_fr = spike.compute_window_fr(channel,sc,times_row_ind,t_before,t_after)
+				sc_fr_smooth = spike.compute_window_fr_smooth(channel,sc,times_row_ind,t_before,t_after)
 				if j == 0:
 					all_fr = sc_fr
+					all_fr_smooth = sc_fr_smooth
 				else:
 					all_fr = np.vstack([all_fr, sc_fr])
+					all_fr_smooth = np.vstack([all_fr_smooth, sc_fr_smooth])
 
 			# Save matrix of firing rates for units on channel from trials during hdf_file as dictionary element
 			window_fr[i] = all_fr
+			window_fr_smooth[i] = all_fr_smooth
 
-	return num_trials, num_units, window_fr
+	return num_trials, num_units, window_fr, window_fr_smooth
 
 
 def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files, trial_case, var_value, channel, t_before, t_after):
@@ -741,7 +746,7 @@ def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, sp
 	# 	window_fr is a dictionary with elements indexed such that the index matches the corresponding set of hdf_files. Each
 	#	dictionary element contains a matrix of size (num units)x(num trials) with elements corresponding
 	#	to the average firing rate over the window indicated.
-	num_trials, num_units, window_fr = ThreeTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files, channel, t_before, t_after)
+	num_trials, num_units, window_fr, window_fr_smooth = ThreeTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files, channel, t_before, t_after)
 	cum_sum_trials = np.cumsum(num_trials)
 	
 	# 3. Get Q-values, chosen targets, and rewards
@@ -770,6 +775,7 @@ def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, sp
 	trial_counter = 0
 	for j in window_fr.keys():
 		block_fr = window_fr[j]
+		#block_fr = window_fr_smooth[j]
 		if len(block_fr.shape) == 1:
 			num_units = 1
 			num_trials = len(block_fr)
@@ -782,10 +788,14 @@ def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, sp
 	#    reaction time (rt), movement time (mt), choice (chosen_target), and reward (rewards)
 	for k in range(max_num_units):
 		unit_data = fr_mat[k,:]
-		trial_inds = np.array([index for index in ind_trial_case if unit_data[index]!=0], dtype = int)
-		
+		#trial_inds = np.array([index for index in ind_trial_case if unit_data[index]!=0], dtype = int)
+
+		# look at all trial types within Blocks A and B
+		trial_inds = np.array([index for index in range(50,250) if unit_data[index]!=0], dtype = int)
 		x = np.vstack((Q_low[trial_inds], Q_mid[trial_inds], Q_high[trial_inds]))
-		#x = np.vstack((x, rt[trial_inds], mt[trial_inds], chosen_target[trial_inds], rewards[trial_inds]))
+		x = np.vstack((x, rt[trial_inds], mt[trial_inds], chosen_target[trial_inds], rewards[trial_inds]))
+		# include which targets were shown
+		x = np.vstack((x, targets_on[:,0][trial_inds], targets_on[:,2][trial_inds], targets_on[:,1][trial_inds]))
 		x = np.transpose(x)
 		x = np.hstack((x, np.ones([len(trial_inds),1]))) 	# use this in place of add_constant which doesn't work when constant Q values are used
 		#x = sm.add_constant(x, prepend=False)
@@ -798,7 +808,7 @@ def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, sp
 		fit_glm = model_glm.fit()
 		print fit_glm.summary()
 
-	return window_fr, fr_mat, x, y, rt, mt
+	return window_fr, window_fr_smooth, fr_mat, x, y, rt, mt
 
 
 def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files, cd_only,align_to):

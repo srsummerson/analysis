@@ -4,9 +4,10 @@ from neo import io
 
 
 
-filename = 'Mario20170215'
+filename = 'Mario20170209'
 #TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
-TDT_tank = '/home/srsummerson/storage/tdt/'+filename
+#TDT_tank = '/home/srsummerson/storage/tdt/'+filename
+TDT_tank = './' + filename
 #block_num = 1
 
 # Load TDT files.
@@ -32,14 +33,14 @@ for block_num in range(1,len(bl.segments)+1):
 	# Pull out recorded DIO channels.
 	for sig in analogsig:
 		if (sig.name == 'DIOx 1'):					# first channel indicates when behavior recording is ON (=1)
-			DIOx1 = np.ravel(sig)
+			DIOx1 = np.array(sig)
 		if (sig.name == 'DIOx 2'):					# second channel is strobe signal that indicates when DIO message is sent from behavior recording
-			DIOx2 = np.ravel(sig)
+			DIOx2 = np.array(sig)
 		if (sig.name == 'DIOx 3'): 					# third channel indicates DIO message type
-			DIOx3 = np.ravel(sig)
+			DIOx3 = np.array(sig)
 			hdf_times['tdt_dio_samplerate'] = sig.sampling_rate
 		if (sig.name == 'DIOx 4'): 					# fourth channels has row numbers (mod 256) plus other messages
-			DIOx4 = np.ravel(sig)
+			DIOx4 = np.array(sig)
 			#DIOx4 = [sig[ind].item() for ind in range(0,sig.size)]
 			##DIOx4_times = sig.times
 
@@ -68,7 +69,8 @@ for block_num in range(1,len(bl.segments)+1):
 
 	# Save syncing data as .mat file
 	mat_filename = filename+'_b'+str(block_num)+'_syncHDF.mat'
-	sp.io.savemat('/home/srsummerson/storage/syncHDF/'+mat_filename,hdf_times)
+	#sp.io.savemat('/home/srsummerson/storage/syncHDF/'+mat_filename,hdf_times)
+	sp.io.savemat('./'+mat_filename,hdf_times)
 
 # Note:
 # If DIO sample num is x, then data sample number is R*(x-1) + 1 where

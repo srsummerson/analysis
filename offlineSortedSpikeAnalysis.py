@@ -189,6 +189,46 @@ class OfflineSorted_CSVFile():
 
 		return window_fr
 
+	def compute_window_fr_smooth(self,chann,sc,times_align,t_before,t_after):
+		'''
+		Method that returns an array of avg firing rates for spiking activity aligned to the sample numbers indicated in samples_align
+		with firing activity taking over the window [times_align - t_before, times_align + t_after]
+
+		Input:
+		- chann: integer representing the channel number
+		- sc: integer representing the sort code for the channel
+		- times_align: array of T time points (s) corresponding to the time points for which activity should be aligned
+		- t_before: integer indicating the length of time (s) to be included prior to the alignment time point
+		- t_after: integer indicating the length of time (s) to be included after the alignment time point
+		
+		Output: 
+		- window_fr: length T array containing the average firing rate over the window size indicated aligned to T different
+				time points
+		'''
+		num_timepoints = len(times_align)
+		window_fr = np.zeros(num_timepoints)
+		unit_chan = np.ravel(np.nonzero(np.equal(self.channel, chann)))
+		sc_unit = np.ravel(np.nonzero(np.equal(self.sort_code[unit_chan], sc)))
+		channel_data = self.times[unit_chan[sc_unit]] 
+
+		t_resolution = 0.1
+		boxcar_length = 4.
+		boxcar_window = signal.boxcar(boxcar_length)  # 2 bins before, 2 bins after for boxcar smoothing
+		
+		for i, tp in enumerate(times_align):
+			data = channel_data
+			# look at time window in question with padded 2 s before and after
+			t_window = np.arange(tp - t_before - 2, tp + t_after + 2, t_resolution)
+			hist, bins = np.histogram(data, bins = t_window)
+			hist_fr = hist/t_resolution
+			smooth_psth = np.convolve(hist_fr, boxcar_window,mode='same')/boxcar_length
+
+			num_samps_in_window = np.rint((t_after + t_before)/t_resolution)
+			len_psth = len(smooth_psth)
+			window_fr[i] = 0.5*np.sum(smooth_psth[len_psth/2 - num_samps_in_window/2:len_psth/2 + num_samps_in_window/2])/(num_samps_in_window/2)		# count spikes and divide by window length
+
+		return window_fr
+
 	def compute_window_peak_fr(self,chann,sc,times_align,t_before,t_after, window_length):
 		'''
 		Method that returns an array of avg firing rates around the peak spiking activity aligned to the sample numbers indicated in samples_align
