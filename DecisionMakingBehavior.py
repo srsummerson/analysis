@@ -668,8 +668,10 @@ def ThreeTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_fil
 
 			# Load spike data and find all sort codes associated with good channels
 			if channel < 97:
+				print channel
 				spike = OfflineSorted_CSVFile(spike_files[i][0])
 			else:
+				print channel
 				spike = OfflineSorted_CSVFile(spike_files[i][1])
 
 			# Get matrix that is (Num units on channel)x(num trials in hdf_file) containing the firing rates during the
@@ -748,7 +750,7 @@ def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, sp
 	#	to the average firing rate over the window indicated.
 	num_trials, num_units, window_fr, window_fr_smooth = ThreeTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files, channel, t_before, t_after)
 	cum_sum_trials = np.cumsum(num_trials)
-	
+
 	# 3. Get Q-values, chosen targets, and rewards
 	targets_on, chosen_target, rewards, instructed_or_freechoice = cb.GetChoicesAndRewards()
 	if var_value:
@@ -774,8 +776,8 @@ def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, sp
 	fr_mat = np.zeros([max_num_units, total_trials])
 	trial_counter = 0
 	for j in window_fr.keys():
-		block_fr = window_fr[j]
-		#block_fr = window_fr_smooth[j]
+		#block_fr = window_fr[j]
+		block_fr = window_fr_smooth[j]
 		if len(block_fr.shape) == 1:
 			num_units = 1
 			num_trials = len(block_fr)
@@ -802,13 +804,14 @@ def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, sp
 		print x.shape
 		y = unit_data[trial_inds]
 		print y.shape
+		#y = y/np.max(y)  # normalize y
 
 		print "Regression for unit ", k
 		model_glm = sm.OLS(y,x)
 		fit_glm = model_glm.fit()
 		print fit_glm.summary()
 
-	return window_fr, window_fr_smooth, fr_mat, x, y, rt, mt
+	return window_fr, window_fr_smooth, fr_mat, x, y, Q_low, Q_mid, Q_high
 
 
 def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files, cd_only,align_to):
