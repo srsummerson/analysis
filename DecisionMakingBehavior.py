@@ -271,11 +271,17 @@ class ChoiceBehavior_ThreeTargets_Stimulation():
 				self.state_time = table.root.task_msgs[:]['time']
 				self.trial_type = table.root.task[:]['target_index']
 				self.targets_on = table.root.task[:]['LHM_target_on']
+				self.targetL = table.root.task[:]['targetL']
+				self.targetH = table.root.task[:]['targetH']
+				self.targetM = table.root.task[:]['targetM']
 			else:
 				self.state = np.append(self.state, table.root.task_msgs[:]['msg'])
 				self.state_time = np.append(self.state_time, self.state_time[-1] + table.root.task_msgs[:]['time'])
 				self.trial_type = np.append(self.trial_type, table.root.task[:]['target_index'])
 				self.targets_on = np.append(self.targets_on, table.root.task[:]['LHM_target_on'])
+				self.targetL = np.vstack([self.targetL, table.root.task[:]['targetL']])
+				self.targetH = np.vstack([self.targetH, table.root.task[:]['targetH']])
+				self.targetM = np.vstack([self.targetM, table.root.task[:]['targetM']])
 		
 		if len(hdf_files) > 1:
 			self.targets_on = np.reshape(self.targets_on, (len(self.targets_on)/3,3))  				# this should contain triples indicating targets
@@ -501,6 +507,41 @@ class ChoiceBehavior_ThreeTargets_Stimulation():
 
 		return targets_on, chosen_target, rewards, instructed_or_freechoice
 
+	def TargetSideSelection_Block3(self):
+		# Get target selection information
+		targets_on, chosen_target, rewards, instructed_or_freechoice = self.GetChoicesAndRewards()
+
+		# Get target side information
+		ind_targets = self.ind_check_reward_states - 3
+		targetL_side = self.targetL[self.state_time[ind_targets]][:,2]
+		targetH_side = self.targetH[self.state_time[ind_targets]][:,2]
+		targetM_side = self.targetM[self.state_time[ind_targets]][:,2]
+
+		# Compute probabilities of target selection given target is on left vs right
+		# 1. Compute choosing HV target when presented with LV target
+		counter_left = 0
+		counter_right = 0
+		prob_chooseHV_left = 0
+		prob_chooseHV_right = 0
+		for i in range(self.num_trials_A + self.num_trials_B,len(chosen_target)):  				# only consider trials in Block A'
+			if np.array_equal(targets_on[i],[0,1,1]):  		# only consider when H and M are shown
+				choice = chosen_target[i]						# choice = 1 if MV, choice = 2 if HV
+				sideH = targetH_side[i]							# side of HV target
+				prob_chooseHV_left += float((choice==2)*(sideH==1))
+				prob_chooseHV_right += float((choice==2)*(sideH==-1))
+				counter_left += float(sideH==1)
+				counter_right += float(sideH==-1)
+
+		prob_chooseHV_left = prob_chooseHV_left/float(counter_left + counter_right)  	# joint prob: P(choose HV, HV is on left)
+		prob_chooseHV_right = prob_chooseHV_right/float(counter_left + counter_right) 	# joint prob: P(choose HV, HV is on right)
+		prob_HV_left = counter_left/float(counter_left + counter_right) 		# prob: P(HV on left)
+		prob_HV_right = counter_right/float(counter_left + counter_right)		# prob: P(HV on right)
+		prob_chooseHV_given_left = prob_chooseHV_left/prob_HV_left 				# conditional prob: P(choose HV|HV on left)
+		prob_chooseHV_given_right = prob_chooseHV_right/prob_HV_right 			# conditional prob: P(choose HV|HV on right)
+
+		return prob_chooseHV_given_left, prob_chooseHV_given_right
+
+
 def ThreeTargetTask_Qlearning(parameters, Q_initial, chosen_target, rewards, targets_on, instructed_or_freechoice):
 	'''
 	This method finds the Q-values associated with the three target options in the probabilistic reward free-choice task
@@ -695,7 +736,7 @@ def ThreeTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_fil
 	return num_trials, num_units, window_fr, window_fr_smooth
 
 
-def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files, trial_case, var_value, channel, t_before, t_after):
+def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files, trial_case, var_value, channel, t_before, t_after, smoothed):
 	'''
 	This method regresses the firing rate of all units as a function of value. Only trials from the specified
 	trial_case are considered in the regression. There are six trial cases: (1) instructed to low-value [1,0,0] (2) instructed
@@ -715,13 +756,14 @@ def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, sp
 	- trial_case: 3-tuple that indicates the trial type considered in the regression. Trial cases are 
 					enumerated as in the above description, which matches the notation used for the 
 					targets_on record of the targets presented.
-	- var_value: boolenan indicating whether the Q value(s) used in the regression should be fixed (var_value == False) 
+	- var_value: boolean indicating whether the Q value(s) used in the regression should be fixed (var_value == False) 
 				and defined based on their reward probabilties, or whether the Q value(s) should be varying trial-by-trial
 				(var_value == True) based on the Q-learning model fit
 	- channel: integer value indicating what channel will be used to regress activity
 	- t_before: time before (s) the picture onset that should be included when computing the firing rate. t_before = 0 indicates
 					that we only look from the time of onset forward when considering the window of activity.
 	- t_after: time after (s) the picture onset that should be included when computing the firing rate.
+	- smoothed: boolean indicating whether to use smoothed firing rates (True) or not (False)
 
 	'''
 	# 1. Load behavior data and pull out trial indices for the designated trial case
@@ -776,8 +818,10 @@ def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, sp
 	fr_mat = np.zeros([max_num_units, total_trials])
 	trial_counter = 0
 	for j in window_fr.keys():
-		#block_fr = window_fr[j]
-		block_fr = window_fr_smooth[j]
+		if not smoothed:
+			block_fr = window_fr[j]
+		else:
+			block_fr = window_fr_smooth[j]
 		if len(block_fr.shape) == 1:
 			num_units = 1
 			num_trials = len(block_fr)
