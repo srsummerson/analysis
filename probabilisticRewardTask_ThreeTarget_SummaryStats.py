@@ -1101,11 +1101,11 @@ def Simulate_ChoiceBehavior_ThreeTargetTask(mario_stim_days, mario_sham_days, nu
 # Figure 2B,C
 #output = TargetLocationAndReward(mario_stim_days_all, 1)
 # Figure 3 b,c,d,e,f
-#alpha_mat_sham, beta_mat_sham, lambda_mat_sham, BIC_mat_sham = RLModel_ThreeTarget_MVHV(mario_sham_days_all)
+alpha_mat_sham, beta_mat_sham, lambda_mat_sham, BIC_mat_sham = RLModel_ThreeTarget_MVHV(mario_sham_days_all)
 #alpha_mat, beta_mat, lambda_mat, BIC_mat = RLModel_ThreeTarget_MVHV(mario_stim_days_all)
 #alpha_mat, beta_mat, lambda_mat, BIC_mat = RLModel_ThreeTarget_MVLV(mario_stim_days_all)
 # Figure 4
-reward_probs = [35, 85, 60]
-percent_instructed = 30
-num_trials = 100
-prob_MV_with_HV, prob_MV_with_LV, prob_MV_with_HV_sham = Simulate_ChoiceBehavior_ThreeTargetTask(mario_stim_days_all, mario_sham_days_all, num_trials, percent_instructed, reward_probs)
+#reward_probs = [35, 85, 60]
+#percent_instructed = 30
+#num_trials = 100
+#prob_MV_with_HV, prob_MV_with_LV, prob_MV_with_HV_sham = Simulate_ChoiceBehavior_ThreeTargetTask(mario_stim_days_all, mario_sham_days_all, num_trials, percent_instructed, reward_probs)

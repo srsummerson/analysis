@@ -1,5 +1,6 @@
 import numpy as np 
 import scipy as sp
+from scipy.interpolate import spline
 import scipy.optimize as op
 import statsmodels.api as sm
 import pandas as pd
@@ -1272,6 +1273,76 @@ def ThreeTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_fil
 
 	return num_trials, num_units, window_fr, window_fr_smooth
 
+def ThreeTargetTask_MaxFiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files, channel, t_before, t_after):
+	'''
+	This method returns the average firing rate of all units on the indicated channel during picture onset.
+
+	Inputs:
+	- hdf_files: list of N hdf_files corresponding to the behavior in the three target task
+	- syncHDF_files: list of N syncHDF_files that containes the syncing DIO data for the corresponding hdf_file and it's
+					TDT recording. If TDT data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, syncHDF_files should have the form [syncHDF_file1.mat, '']
+	- spike_files: list of N tuples of spike_files, where each entry is a list of 2 spike files, one corresponding to spike
+					data from the first 96 channels and the other corresponding to the spike data from the last 64 channels.
+					If spike data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, the hdf_files and syncHDF_files will both have 2 file names, and the 
+					spike_files entry should be of the form [[spike_file1.csv, spike_file2.csv], ''].
+	- channel: integer value indicating what channel will be used to regress activity
+	- t_before: time before (s) the picture onset that should be included when computing the firing rate. t_before = 0 indicates
+					that we only look from the time of onset forward when considering the window of activity.
+	- t_after: time after (s) the picture onset that should be included when computing the firing rate.
+
+	Output:
+	- num_trials: array of length N with an element corresponding to the number of successful trials in each of the
+					hdf_files
+	- window_fr: dictionary with elements indexed such that the index matches the corresponding set of hdf_files. Each
+					dictionary element contains a matrix of size (num units)x(num trials) with elements corresponding
+					to the peak firing rate in the window indicated.
+	'''
+	num_trials = np.zeros(len(hdf_files))
+	num_units = np.zeros(len(hdf_files))
+	window_fr = dict()
+	
+	for i, hdf_file in enumerate(hdf_files):
+		cb_block = ChoiceBehavior_ThreeTargets(hdf_file)
+		num_trials[i] = cb_block.num_successful_trials
+		ind_hold_center = cb_block.ind_check_reward_states - 4
+		ind_picture_onset = cb_block.ind_check_reward_states - 5
+		
+		# Load spike data: 
+		if (spike_files[i] != ''):
+			# Find lfp sample numbers corresponding to these times and the sampling frequency of the lfp data
+			lfp_state_row_ind, lfp_freq = cb_block.get_state_TDT_LFPvalues(ind_picture_onset, syncHDF_files[i])
+			# Convert lfp sample numbers to times in seconds
+			times_row_ind = lfp_state_row_ind/float(lfp_freq)
+
+			# Load spike data and find all sort codes associated with good channels
+			if channel < 97:
+				print channel
+				spike = OfflineSorted_CSVFile(spike_files[i][0])
+			else:
+				print channel
+				spike = OfflineSorted_CSVFile(spike_files[i][1])
+
+			# Get matrix that is (Num units on channel)x(num trials in hdf_file) containing the firing rates during the
+			# designated window.
+			sc_chan = spike.find_chan_sc(channel)
+			num_units[i] = len(sc_chan)
+			for j, sc in enumerate(sc_chan):
+				sc_fr, smooth_sc_fr, psth = spike.compute_window_peak_fr(channel,sc,times_row_ind, t_after)
+				if j == 0:
+					#all_fr = sc_fr
+					all_fr = smooth_sc_fr
+				else:
+					#all_fr = np.vstack([all_fr, sc_fr])
+					all_fr = np.vstack([all_fr, smooth_sc_fr])
+					
+			# Save matrix of firing rates for units on channel from trials during hdf_file as dictionary element
+			window_fr[i] = all_fr
+			
+
+	return num_trials, num_units, window_fr
+
 
 def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files, trial_case, var_value, channel, t_before, t_after, smoothed):
 	'''
@@ -1393,6 +1464,361 @@ def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, sp
 		print fit_glm.summary()
 
 	return window_fr, window_fr_smooth, fr_mat, x, y, Q_low, Q_mid, Q_high
+
+def ThreeTargetTask_RegressedFiringRatesWithValue_PictureOnset(hdf_files, syncHDF_files, spike_files, channel, t_before, t_after, smoothed):
+	'''
+	This method regresses the firing rate of all units as a function of value. It then plots the firing rate as a function of 
+	the modeled value and uses the regression coefficient to plot a linear fit of the relationship between value and 
+	firing rate.
+
+	Inputs:
+	- hdf_files: list of N hdf_files corresponding to the behavior in the three target task
+	- syncHDF_files: list of N syncHDF_files that containes the syncing DIO data for the corresponding hdf_file and it's
+					TDT recording. If TDT data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, syncHDF_files should have the form [syncHDF_file1.mat, '']
+	- spike_files: list of N tuples of spike_files, where each entry is a list of 2 spike files, one corresponding to spike
+					data from the first 96 channels and the other corresponding to the spike data from the last 64 channels.
+					If spike data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, the hdf_files and syncHDF_files will both have 2 file names, and the 
+					spike_files entry should be of the form [[spike_file1.csv, spike_file2.csv], ''].
+	- channel: integer value indicating what channel will be used to regress activity
+	- t_before: time before (s) the picture onset that should be included when computing the firing rate. t_before = 0 indicates
+					that we only look from the time of onset forward when considering the window of activity.
+	- t_after: time after (s) the picture onset that should be included when computing the firing rate.
+	- smoothed: boolean indicating whether to use smoothed firing rates (True) or not (False)
+
+	'''
+	# Get session information for plot
+	str_ind = hdf_files[0].index('201')  	# search for beginning of year in string (used 201 to accomodate both 2016 and 2017)
+	sess_name = 'Mario' + hdf_files[0][str_ind:str_ind + 8]
+
+	# 1. Load behavior data and pull out trial indices for the designated trial case
+	cb = ChoiceBehavior_ThreeTargets_Stimulation(hdf_files, 150, 100)
+	total_trials = cb.num_successful_trials
+	targets_on = cb.targets_on[cb.state_time[cb.ind_check_reward_states]]
+
+	# 1a. Get reaction time information
+	rt = np.array([])
+	for file in hdf_files:
+		reaction_time, velocity = compute_rt_per_trial_FreeChoiceTask(file)
+		rt = np.append(rt, reaction_time)
+
+	# 1b. Get movementment time information
+	mt = (cb.state_time[cb.ind_target_states + 1] - cb.state_time[cb.ind_target_states])/60.
+
+	# 2. Get firing rates from units on indicated channel around time of target presentation on all trials. Note that
+	# 	window_fr is a dictionary with elements indexed such that the index matches the corresponding set of hdf_files. Each
+	#	dictionary element contains a matrix of size (num units)x(num trials) with elements corresponding
+	#	to the average firing rate over the window indicated.
+	num_trials, num_units, window_fr, window_fr_smooth = ThreeTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files, channel, t_before, t_after)
+	cum_sum_trials = np.cumsum(num_trials)
+
+	# 3. Get Q-values, chosen targets, and rewards
+	targets_on, chosen_target, rewards, instructed_or_freechoice = cb.GetChoicesAndRewards()
+	
+	# Varying Q-values
+	# Find ML fit of alpha and beta
+	Q_initial = 0.5*np.ones(3)
+	nll = lambda *args: -loglikelihood_ThreeTargetTask_Qlearning(*args)
+	result = op.minimize(nll, [0.2, 1], args=(Q_initial, chosen_target, rewards, targets_on, instructed_or_freechoice), bounds=[(0,1),(0,None)])
+	alpha_ml, beta_ml = result["x"]
+	print "Best fitting alpha and beta are: ", alpha_ml, beta_ml
+	# RL model fit for Q values
+	Q_low, Q_mid, Q_high, prob_choice_low, prob_choice_mid, prob_choice_high, log_likelihood = ThreeTargetTask_Qlearning([alpha_ml, beta_ml], Q_initial, chosen_target, rewards, targets_on, instructed_or_freechoice)
+
+	# 4. Create firing rate matrix with size (max_num_units)x(total_trials)
+	max_num_units = int(np.max(num_units))
+	fr_mat = np.zeros([max_num_units, total_trials])
+	trial_counter = 0
+	for j in window_fr.keys():
+		if not smoothed:
+			block_fr = window_fr[j]
+		else:
+			block_fr = window_fr_smooth[j]
+		if len(block_fr.shape) == 1:
+			num_units = 1
+			num_trials = len(block_fr)
+		else:
+			num_units,num_trials = block_fr.shape 
+		fr_mat[:num_units,cum_sum_trials[j] - num_trials:cum_sum_trials[j]] = block_fr
+
+	# 5. Do regression for each unit only on trials in Blocks A and B with spike data saved.
+	for k in range(max_num_units):
+		unit_data = fr_mat[k,:]
+		#trial_inds = np.array([index for index in ind_trial_case if unit_data[index]!=0], dtype = int)
+
+		# look at all trial types within Blocks A 
+		trial_inds = np.array([index for index in range(50,150) if unit_data[index]!=0], dtype = int)
+		x = np.vstack((Q_low[trial_inds], Q_mid[trial_inds], Q_high[trial_inds]))
+		x = np.vstack((x, rt[trial_inds], mt[trial_inds], chosen_target[trial_inds], rewards[trial_inds]))
+		# include which targets were shown
+		x = np.vstack((x, targets_on[:,0][trial_inds], targets_on[:,2][trial_inds], targets_on[:,1][trial_inds]))
+		x = np.transpose(x)
+		x = np.hstack((x, np.ones([len(trial_inds),1]))) 	# use this in place of add_constant which doesn't work when constant Q values are used
+		#x = sm.add_constant(x, prepend=False)
+		print x.shape
+		y = unit_data[trial_inds]
+		print y.shape
+		#y = y/np.max(y)  # normalize y
+
+		print "Regression for unit ", k
+		model_glm = sm.OLS(y,x)
+		fit_glm = model_glm.fit()
+		print fit_glm.summary()
+
+		regress_coef = fit_glm.params[1] 		# The regression coefficient for Qmid is the second parameter
+		regress_intercept = y[0] - regress_coef*Q_mid[trial_inds[0]]
+
+		# Get linear regression fit for just Q_mid
+		Q_mid_min = np.amin(Q_mid[trial_inds])
+		Q_mid_max = np.amax(Q_mid[trial_inds])
+		x_lin = np.linspace(Q_mid_min, Q_mid_max, num = len(trial_inds), endpoint = True)
+
+		m,b = np.polyfit(x_lin, y, 1)
+
+		plt.figure(k)
+		plt.subplot(1,2,1)
+		plt.scatter(Q_mid[trial_inds],y, c= 'k', marker = 'o', label ='Learning Trials')
+		plt.plot(x_lin, m*x_lin + b, c = 'k')
+		plt.plot(Q_mid[trial_inds], regress_coef*Q_mid[trial_inds] + regress_intercept, c = 'y')
+		plt.xlabel('Q_mid')
+		plt.ylabel('Firing Rate (spk/s)')
+		plt.title(sess_name + ' - Channel %i - Unit %i' %(channel, k))
+
+		max_fr = np.amax(y)
+		xlim_min = np.amin(Q_mid[trial_inds])
+		xlim_max = np.amax(Q_mid[trial_inds])
+
+		# Get binned firing rates: average firing rate for each of 10 equally populated action value bins
+		num_bins = 5
+		sorted_Qvals_inds = np.argsort(Q_mid[trial_inds])
+		pts_per_bin = len(trial_inds)/num_bins
+		reorg_Qvals = np.reshape(Q_mid[trial_inds][sorted_Qvals_inds[:pts_per_bin*num_bins]], (pts_per_bin, num_bins), order = 'F')
+		avg_Qvals = np.nanmean(reorg_Qvals, axis = 0)
+
+		reorg_FR = np.reshape(y[sorted_Qvals_inds[:pts_per_bin*num_bins]], (pts_per_bin, num_bins), order = 'F')
+		avg_FR = np.nanmean(reorg_FR, axis = 0)
+		sem_FR = np.nanstd(reorg_FR, axis = 0)/np.sqrt(pts_per_bin)
+
+		plt.figure(k)
+		plt.subplot(1,2,2)
+		plt.errorbar(avg_Qvals, avg_FR, yerr = sem_FR, fmt = '--o', color = 'y', ecolor = 'y', label = 'Learning - Avg FR')
+		plt.legend()
+	
+	# 6. Do regression for each unit only on trials in Blocks A' with spike data saved.
+	for k in range(max_num_units):
+		unit_data = fr_mat[k,:]
+		#trial_inds = np.array([index for index in ind_trial_case if unit_data[index]!=0], dtype = int)
+
+		# look at all trial types within Blocks A and B
+		trial_inds = np.array([index for index in range(250,len(unit_data)) if unit_data[index]!=0], dtype = int)
+		x = np.vstack((Q_low[trial_inds], Q_mid[trial_inds], Q_high[trial_inds]))
+		x = np.vstack((x, rt[trial_inds], mt[trial_inds], chosen_target[trial_inds], rewards[trial_inds]))
+		# include which targets were shown
+		x = np.vstack((x, targets_on[:,0][trial_inds], targets_on[:,2][trial_inds], targets_on[:,1][trial_inds]))
+		x = np.transpose(x)
+		x = np.hstack((x, np.ones([len(trial_inds),1]))) 	# use this in place of add_constant which doesn't work when constant Q values are used
+		#x = sm.add_constant(x, prepend=False)
+		print x.shape
+		y = unit_data[trial_inds]
+		print y.shape
+		#y = y/np.max(y)  # normalize y
+
+		print "Regression for unit ", k
+		model_glm = sm.OLS(y,x)
+		fit_glm = model_glm.fit()
+		print fit_glm.summary()
+
+		regress_coef = fit_glm.params[1] 		# The regression coefficient for Qmid is the second parameter
+		regress_intercept = y[0] - regress_coef*Q_mid[trial_inds[0]]
+
+		# Get linear regression fit for just Q_mid
+		Q_mid_min = np.amin(Q_mid[trial_inds])
+		Q_mid_max = np.amax(Q_mid[trial_inds])
+		x_lin = np.linspace(Q_mid_min, Q_mid_max, num = len(trial_inds), endpoint = True)
+
+		m,b = np.polyfit(x_lin, y, 1)
+
+		max_fr_stim = np.amax(y)
+		fr_lim = np.maximum(max_fr, max_fr_stim)
+
+		plt.figure(k)
+		plt.subplot(1,2,1)
+		plt.scatter(Q_mid[trial_inds],y, c= 'c', label = 'Stimulation trials')
+		plt.plot(x_lin, m*x_lin + b, c = 'c')
+		plt.plot(Q_mid[trial_inds], regress_coef*Q_mid[trial_inds] + regress_intercept, c = 'g')
+		plt.ylim((0,1.1*fr_lim))
+		plt.xlim((0.9*xlim_min, 1.1*xlim_max))
+		plt.legend()
+
+		# Get binned firing rates: average firing rate for each of 10 equally populated action value bins
+		sorted_Qvals_inds = np.argsort(Q_mid[trial_inds])
+		pts_per_bin = len(trial_inds)/num_bins
+		reorg_Qvals = np.reshape(Q_mid[trial_inds][sorted_Qvals_inds[:pts_per_bin*num_bins]], (pts_per_bin, num_bins), order = 'F')
+		avg_Qvals = np.nanmean(reorg_Qvals, axis = 0)
+
+		reorg_FR = np.reshape(y[sorted_Qvals_inds[:pts_per_bin*num_bins]], (pts_per_bin, num_bins), order = 'F')
+		avg_FR = np.nanmean(reorg_FR, axis = 0)
+		sem_FR = np.nanstd(reorg_FR, axis = 0)/np.sqrt(pts_per_bin)
+
+		plt.figure(k)
+		plt.subplot(1,2,2)
+		plt.errorbar(avg_Qvals, avg_FR, yerr = sem_FR/2., fmt = '--o', color = 'g', ecolor = 'g', label = 'Stim - Avg FR')
+		plt.ylim((0,1.1*fr_lim))
+		plt.xlim((0.9*xlim_min, 1.1*xlim_max))
+		plt.legend()
+
+	plt.show()
+
+
+	return window_fr, window_fr_smooth, fr_mat, x, y, Q_low, Q_mid, Q_high
+
+def ThreeTargetTask_PeakFiringRatesWithValue_PictureOnset(hdf_files, syncHDF_files, spike_files, channel, t_before, t_after):
+	'''
+	This method regresses the firing rate of all units as a function of value. It then plots the firing rate as a function of 
+	the modeled value and uses the regression coefficient to plot a linear fit of the relationship between value and 
+	firing rate.
+
+	Inputs:
+	- hdf_files: list of N hdf_files corresponding to the behavior in the three target task
+	- syncHDF_files: list of N syncHDF_files that containes the syncing DIO data for the corresponding hdf_file and it's
+					TDT recording. If TDT data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, syncHDF_files should have the form [syncHDF_file1.mat, '']
+	- spike_files: list of N tuples of spike_files, where each entry is a list of 2 spike files, one corresponding to spike
+					data from the first 96 channels and the other corresponding to the spike data from the last 64 channels.
+					If spike data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, the hdf_files and syncHDF_files will both have 2 file names, and the 
+					spike_files entry should be of the form [[spike_file1.csv, spike_file2.csv], ''].
+	- channel: integer value indicating what channel will be used to regress activity
+	- t_before: time before (s) the picture onset that should be included when computing the firing rate. t_before = 0 indicates
+					that we only look from the time of onset forward when considering the window of activity.
+	- t_after: time after (s) the picture onset that should be included when computing the firing rate.
+	- smoothed: boolean indicating whether to use smoothed firing rates (True) or not (False)
+
+	'''
+	# Get session information for plot
+	str_ind = hdf_files[0].index('201')  	# search for beginning of year in string (used 201 to accomodate both 2016 and 2017)
+	sess_name = 'Mario' + hdf_files[0][str_ind:str_ind + 8]
+
+	# 1. Load behavior data and pull out trial indices for the designated trial case
+	cb = ChoiceBehavior_ThreeTargets_Stimulation(hdf_files, 150, 100)
+	total_trials = cb.num_successful_trials
+	targets_on = cb.targets_on[cb.state_time[cb.ind_check_reward_states]]
+
+
+	# 2. Get peak firing rates from units on indicated channel around time of target presentation on all trials. Note that
+	# 	window_fr is a dictionary with elements indexed such that the index matches the corresponding set of hdf_files. Each
+	#	dictionary element contains a matrix of size (num units)x(num trials) with elements corresponding
+	#	to the average firing rate over the window indicated.
+	num_trials, num_units, window_fr = ThreeTargetTask_MaxFiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files, channel, t_before, t_after)
+	cum_sum_trials = np.cumsum(num_trials)
+
+	# 3. Get Q-values, chosen targets, and rewards
+	targets_on, chosen_target, rewards, instructed_or_freechoice = cb.GetChoicesAndRewards()
+	
+	# Varying Q-values
+	# Find ML fit of alpha and beta
+	Q_initial = 0.5*np.ones(3)
+	nll = lambda *args: -loglikelihood_ThreeTargetTask_Qlearning(*args)
+	result = op.minimize(nll, [0.2, 1], args=(Q_initial, chosen_target, rewards, targets_on, instructed_or_freechoice), bounds=[(0,1),(0,None)])
+	alpha_ml, beta_ml = result["x"]
+	print "Best fitting alpha and beta are: ", alpha_ml, beta_ml
+	# RL model fit for Q values
+	Q_low, Q_mid, Q_high, prob_choice_low, prob_choice_mid, prob_choice_high, log_likelihood = ThreeTargetTask_Qlearning([alpha_ml, beta_ml], Q_initial, chosen_target, rewards, targets_on, instructed_or_freechoice)
+
+	# 4. Create firing rate matrix with size (max_num_units)x(total_trials)
+	max_num_units = int(np.max(num_units))
+	fr_mat = np.zeros([max_num_units, total_trials])
+	trial_counter = 0
+	for j in window_fr.keys():
+		block_fr = window_fr[j]
+		if len(block_fr.shape) == 1:
+			num_units = 1
+			num_trials = len(block_fr)
+		else:
+			num_units,num_trials = block_fr.shape 
+		fr_mat[:num_units,cum_sum_trials[j] - num_trials:cum_sum_trials[j]] = block_fr
+
+	# 5. Do binning for each unit only on trials in Blocks A and C with spike data saved.
+	Qbins = np.linspace(0,1,21) 	# bin widths of 0.05
+	FRbinned_late = dict()
+	FRbinned_early = dict()
+
+	for k in range(max_num_units):
+		unit_data = fr_mat[k,:]
+		#trial_inds = np.array([index for index in ind_trial_case if unit_data[index]!=0], dtype = int)
+
+		# look at all trial types within Blocks A
+		trial_inds = np.array([index for index in range(50,150) if unit_data[index]!=0], dtype = int)
+		x = Q_mid[trial_inds]
+		y = unit_data[trial_inds]
+
+		# find sorted Q values
+		sorted_Qvals_inds = np.argsort(Q_mid[trial_inds])
+		# find number of Q values in each Q value bin
+		Qhist, Qbin_edges = np.histogram(Q_mid[trial_inds], Qbins)
+		cumnum_per_bin = np.cumsum(Qhist)
+		for j in range(len(Qhist)):
+			if j==0:
+				FRbinned_early[j] = y[sorted_Qvals_inds][0:cumnum_per_bin[j]]
+			else:
+				FRbinned_early[j] = y[sorted_Qvals_inds][cumnum_per_bin[j-1]:cumnum_per_bin[j]]
+	
+		# look at all trial types within Blocks A'
+		trial_inds = np.array([index for index in range(250,len(unit_data)) if unit_data[index]!=0], dtype = int)
+		x = Q_mid[trial_inds]
+		y = unit_data[trial_inds]
+
+		# find sorted Q values
+		sorted_Qvals_inds = np.argsort(Q_mid[trial_inds])
+		# find number of Q values in each Q value bin
+		Qhist, Qbin_edges = np.histogram(Q_mid[trial_inds], Qbins)
+		cumnum_per_bin = np.cumsum(Qhist)
+		for j in range(len(Qhist)):
+			if j==0:
+				FRbinned_late[j] = y[sorted_Qvals_inds][0:cumnum_per_bin[j]]
+			else:
+				FRbinned_late[j] = y[sorted_Qvals_inds][cumnum_per_bin[j-1]:cumnum_per_bin[j]]
+
+		## plot (a) peak firing rate for Blocks A vs C (b) average change in firing rates between blocks per bins
+		plt.figure(k)
+		#plt.subplot(1,2,1)
+		for j in range(len(Qhist)):
+			plt.scatter(Qbins[j]*np.ones(len(FRbinned_early[j])), FRbinned_early[j], color = 'k')
+			plt.scatter(Qbins[j]*np.ones(len(FRbinned_late[j])), FRbinned_late[j], color = 'c')
+		plt.ylabel('Peak Firing Rate (spks/s)')
+		plt.xlabel('Q_mid')
+
+		#plt.subplot(1,2,2)
+		
+		avg_FRbinned_early = np.zeros(len(Qhist))
+		avg_FRbinned_late = np.zeros(len(Qhist))
+		sem_FRbinned_early = np.zeros(len(Qhist))
+		sem_FRbinned_late = np.zeros(len(Qhist))
+
+		for j in range(len(Qhist)):
+			avg_FRbinned_early[j] = np.nanmean(FRbinned_early[j])
+			avg_FRbinned_late[j] = np.nanmean(FRbinned_late[j])
+			sem_FRbinned_early[j] = np.nanstd(FRbinned_early[j])/np.sqrt(len(FRbinned_early[j]))
+			sem_FRbinned_late[j] = np.nanstd(FRbinned_late[j])/np.sqrt(len(FRbinned_late[j]))
+
+		plt.errorbar(Qbins[:-1], avg_FRbinned_early, yerr = sem_FRbinned_early/2.,color = 'k', ecolor = 'k', label = 'Block A')
+		plt.errorbar(Qbins[:-1], avg_FRbinned_late, yerr = sem_FRbinned_late/2.,color = 'c', ecolor = 'c', label = 'Block C')
+		plt.xlabel('Q_mid')
+		plt.ylabel('Avg Peak Firing Rate (spks/s)')
+		plt.ylim((0,65))
+
+		plt.figure(max_num_units+k)
+		plt.plot(Qbins[:-1], avg_FRbinned_late - avg_FRbinned_early, 'k', label = 'Diff: Block C- A')
+		plt.xlabel('Q_mid')
+		plt.ylabel('Delta Peak Firing Rate (spks/s)')
+
+		## return average change in firing rates per bins
+
+	plt.show()
+
+
+	return avg_FRbinned_late, avg_FRbinned_early
 
 
 def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files, cd_only,align_to):
@@ -1601,12 +2027,14 @@ def ThreeTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_
 	smooth_psth_l = np.array([])
 	smooth_psth_m = np.array([])
 	smooth_psth_h = np.array([])
+	smooth_psth = np.array([])
 	psth_lm = np.array([])
 	psth_lh = np.array([])
 	psth_mh = np.array([])
 	psth_l = np.array([])
 	psth_m = np.array([])
 	psth_h = np.array([])
+	psth = np.array([])
 
 	'''
 	Get data for each set of files
@@ -1723,12 +2151,27 @@ def ThreeTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_
 				psth_m = np.vstack([psth_m, avg_psth_m])
 				smooth_psth_m = np.vstack([smooth_psth_m, smooth_avg_psth_m])
 
+			# Plot Blocks A and A' separately
+			BlockA_ind = np.array([j for j in range(0,int(num_successful_trials[i]))])
+
+			if not spike2_good_channels:
+				avg_psth, smooth_avg_psth = spike1.compute_psth(spike1_good_channels, sc, times_row_ind[BlockA_ind],t_before,t_after,t_resolution)
+			else:
+				avg_psth, smooth_avg_psth = spike2.compute_psth(spike2_good_channels, sc, times_row_ind[BlockA_ind],t_before,t_after,t_resolution)
+			
+			if i == 0:
+				psth = avg_psth
+				smooth_psth = smooth_avg_psth
+			else:
+				psth = np.vstack([psth, avg_psth])
+				smooth_psth = np.vstack([smooth_psth, smooth_avg_psth])
+
 	# Plot average rate for all neurons divided in six cases of targets on option
 	if plot_output:
-		plt.figure()
+		plt.figure(0)
 
-		avg_psth_lh = np.nanmean(avg_psth_lh, axis = 0)
-		smooth_avg_psth_lh = np.nanmean(smooth_avg_psth_lh, axis = 0)
+		avg_psth_lh = np.nanmean(psth_lh, axis = 0)
+		smooth_avg_psth_lh = np.nanmean(smooth_psth_lh, axis = 0)
 		plt.subplot(3,2,1)
 		plt.title('Low-High Presented')
 		plt.plot(smooth_avg_psth_lh)
@@ -1737,8 +2180,8 @@ def ThreeTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_
 		xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
 		plt.xticks(xticks, xticklabels)
 
-		avg_psth_lm = np.nanmean(avg_psth_lm, axis = 0)
-		smooth_avg_psth_lm = np.nanmean(smooth_avg_psth_lm, axis = 0)
+		avg_psth_lm = np.nanmean(psth_lm, axis = 0)
+		smooth_avg_psth_lm = np.nanmean(smooth_psth_lm, axis = 0)
 		plt.subplot(3,2,2)
 		plt.title('Low-Middle Presented')
 		plt.plot(smooth_avg_psth_lm)
@@ -1747,18 +2190,23 @@ def ThreeTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_
 		xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
 		plt.xticks(xticks, xticklabels)
 
-		avg_psth_mh = np.nanmean(avg_psth_mh, axis = 0)
-		smooth_avg_psth_mh = np.nanmean(smooth_avg_psth_mh, axis = 0)
+		avg_psth_mh = np.nanmean(psth_mh, axis = 0)
+		smooth_avg_psth_mh = np.nanmean(smooth_psth_mh, axis = 0)
+
+		avg_psth_mh_early = np.nanmean(psth_mh[:psth_mh.shape[0]/2,:], axis = 0)
+		avg_psth_mh_late = np.nanmean(psth_mh[psth_mh.shape[0]/2:,:], axis = 0)
 		plt.subplot(3,2,3)
 		plt.title('Middle-High Presented')
 		plt.plot(smooth_avg_psth_mh)
+		plt.plot(avg_psth_mh_early, c = 'k')
+		plt.plot(avg_psth_mh_late, c = 'c')
 		xticklabels = np.arange(-t_before,t_after-t_resolution,t_resolution)
 		xticks = np.arange(0, len(xticklabels), 10)
 		xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
 		plt.xticks(xticks, xticklabels)
 
-		avg_psth_l = np.nanmean(avg_psth_l, axis = 0)
-		smooth_avg_psth_l = np.nanmean(smooth_avg_psth_l, axis = 0)
+		avg_psth_l = np.nanmean(psth_l, axis = 0)
+		smooth_avg_psth_l = np.nanmean(smooth_psth_l, axis = 0)
 		plt.subplot(3,2,4)
 		plt.title('Low Presented')
 		plt.plot(smooth_avg_psth_l)
@@ -1767,8 +2215,8 @@ def ThreeTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_
 		xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
 		plt.xticks(xticks, xticklabels)
 
-		avg_psth_h = np.nanmean(avg_psth_h, axis = 0)
-		smooth_avg_psth_h = np.nanmean(smooth_avg_psth_h, axis = 0)
+		avg_psth_h = np.nanmean(psth_h, axis = 0)
+		smooth_avg_psth_h = np.nanmean(smooth_psth_h, axis = 0)
 		plt.subplot(3,2,5)
 		plt.title('High Presented')
 		plt.plot(smooth_avg_psth_h)
@@ -1777,8 +2225,8 @@ def ThreeTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_
 		xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
 		plt.xticks(xticks, xticklabels)
 
-		avg_psth_m = np.nanmean(avg_psth_m, axis = 0)
-		smooth_avg_psth_m = np.nanmean(smooth_avg_psth_m, axis = 0)
+		avg_psth_m = np.nanmean(psth_m, axis = 0)
+		smooth_avg_psth_m = np.nanmean(smooth_psth_m, axis = 0)
 		plt.subplot(3,2,6)
 		plt.title('Middle Presented')
 		plt.plot(smooth_avg_psth_m)
@@ -1787,10 +2235,47 @@ def ThreeTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_
 		xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
 		plt.xticks(xticks, xticklabels)
 
-		plt_name = syncHDF_files[i][34:-15]
-		plt.savefig('/home/srsummerson/code/analysis/Mario_Performance_figs/'+plt_name+ '_' + str(align_to) +'_PSTH_Chan'+str(chann)+'-'+str(sc)+'.svg')
+		#plt_name = syncHDF_files[i][34:-15]
+		#plt.savefig('/home/srsummerson/code/analysis/Mario_Performance_figs/'+plt_name+ '_' + str(align_to) +'_PSTH_Chan'+str(chann)+'-'+str(sc)+'.svg')
+		plt_name = syncHDF_files[i][syncHDF_files[i].index('Mario201'):-15]
+		plt.savefig('C:/Users/Samantha Summerson/Dropbox/Carmena Lab/Mario/Caudate Stim/'+plt_name+ '_' + str(align_to) +'_PSTH_Chan'+str(chann)+'-'+str(sc)+'.svg')
+
+		avg_psth = np.nanmean(psth[50:150,:], axis = 0)
+		sem_avg_psth = np.nanstd(psth[50:150,:], axis = 0)/np.sqrt(100)
+		avg_psth_p = np.nanmean(psth[250:,:], axis = 0)
+		sem_avg_psth_p = np.nanstd(smooth_psth[250:,:], axis = 0)/np.sqrt(smooth_psth[250:,:].shape[0])
+
+		plt.figure(1)
+		plt.title('PSTH Aligned to Target Presentation')
+		plt.plot(avg_psth, 'k', label = 'Block A')
+		plt.plot(avg_psth_p, 'c', label = 'Block C')
+		plt.fill_between(range(39), avg_psth - sem_avg_psth/2., avg_psth + sem_avg_psth/2., color = 'k', alpha = 0.5)
+		plt.fill_between(range(39), avg_psth_p - sem_avg_psth_p/2., avg_psth_p + sem_avg_psth_p/2., color = 'c', alpha = 0.5)
+		xticklabels = np.arange(-t_before,t_after-t_resolution,t_resolution)
+		xticks = np.arange(0, len(xticklabels), 10)
+		xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
+		plt.xticks(xticks, xticklabels)
+
+		plt_name = syncHDF_files[i][syncHDF_files[i].index('Mario201'):-15]
+		plt.savefig('C:/Users/Samantha Summerson/Dropbox/Carmena Lab/Mario/Caudate Stim/'+plt_name+ '_' + str(align_to) +'_PSTH_CompareBlocks_Chan'+str(chann)+'-'+str(sc)+'.svg')
+		
+		plt.figure(2)
+		plt.title('PSTH Aligned to Target Onset - MH Trials Only')
+		sem_psth_mh_early = np.nanstd(psth_mh[:psth_mh.shape[0]/2,:], axis = 0)/np.sqrt(psth_mh.shape[0]/2)
+		sem_psth_mh_late = np.nanstd(psth_mh[psth_mh.shape[0]/2:,:], axis = 0)/np.sqrt(psth_mh.shape[0]/2)
+		plt.plot(avg_psth_mh_early, c = 'k')
+		plt.plot(avg_psth_mh_late, c = 'c')
+		plt.fill_between(range(39), avg_psth_mh_early - sem_psth_mh_early/2., avg_psth_mh_early + sem_psth_mh_early/2., color = 'k', alpha = 0.5)
+		plt.fill_between(range(39), avg_psth_mh_late - sem_psth_mh_late/2., avg_psth_mh_late + sem_psth_mh_late/2., color = 'c', alpha = 0.5)
+		xticklabels = np.arange(-t_before,t_after-t_resolution,t_resolution)
+		xticks = np.arange(0, len(xticklabels), 10)
+		xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
+		plt.xticks(xticks, xticklabels)
+
+		plt.savefig('C:/Users/Samantha Summerson/Dropbox/Carmena Lab/Mario/Caudate Stim/'+plt_name+ '_' + str(align_to) +'_PSTH_CompareBlocksMH_Chan'+str(chann)+'-'+str(sc)+'.svg')
+		
 		plt.close()
 
-	reg_psth = [psth_lm, psth_lh, psth_mh, psth_l, psth_h, psth_m]
-	smooth_psth = [smooth_psth_lm, smooth_psth_lh, smooth_psth_mh, smooth_psth_l, smooth_psth_h, smooth_psth_m]
+	reg_psth = [psth_lm, psth_lh, psth_mh, psth_l, psth_h, psth_m, psth]
+	smooth_psth = [smooth_psth_lm, smooth_psth_lh, smooth_psth_mh, smooth_psth_l, smooth_psth_h, smooth_psth_m, smooth_psth]
 	return reg_psth, smooth_psth

@@ -52,7 +52,9 @@ def TrialClassificationWithPhysiology(phys_filename, trial_types, plot_results =
 
 	ibi = np.zeros([num_trials, 1])
 	ibi[BlockAB_reg_trial_inds] = ibi_reg_mean.reshape((len(BlockAB_reg_trial_inds),1))
+	#ibi[BlockAB_reg_trial_inds] = ibi_reg_mean
 	ibi[BlockAB_stress_trial_inds] = ibi_stress_mean.reshape((len(BlockAB_stress_trial_inds),1))
+	#ibi[BlockAB_stress_trial_inds] = ibi_stress_mean
 	pupil = np.zeros([num_trials,1])
 	pupil[BlockAB_reg_trial_inds] = pupil_reg_mean.reshape((len(BlockAB_reg_trial_inds),1))
 	pupil[BlockAB_stress_trial_inds] = pupil_stress_mean.reshape((len(BlockAB_stress_trial_inds),1))
@@ -62,12 +64,26 @@ def TrialClassificationWithPhysiology(phys_filename, trial_types, plot_results =
 
 	# trial classification with physiological data
 	X_phys = np.hstack((ibi, pupil))
+	X_train, X_test, y_train, y_test = train_test_split(X_phys,trial_types,test_size = 0.3, random_state = 0)
+
+	# instantiate a logistic regression model, and fit with X and y training sets
+	model_lr = LogisticRegression()
+	model_lr = model_lr.fit(X_train, y_train)
+
+	y_model_lr_score = model_lr.decision_function(X_test)
+	fpr_model_lr, tpr_model_lr, thresholds_lr = roc_curve(y_test,y_model_lr_score)
+	auc_model_lr = auc(fpr_model_lr,tpr_model_lr)
+
 	svc = LinearDiscriminantAnalysis(solver='eigen', shrinkage = 'auto')
 	#svc = SVC(kernel='linear', C=0.5, probability=True, random_state=0)
 	#svc = LogisticRegression(C=1.0, penalty='l1')
-	svc.fit(X_phys,trial_types)
-	y_pred = svc.predict(X_phys)
-	classif_rate = np.mean(y_pred.ravel()==trial_types.ravel())*100
+	svc.fit(X_train,y_train)
+	y_pred = svc.predict(X_test)
+	classif_rate = np.mean(y_pred.ravel()==y_test.ravel())*100
+
+	y_svc_score = svc.decision_function(X_test)
+	fpr_svc, tpr_svc, thresholds_svc = roc_curve(y_test,y_svc_score)
+	auc_svc = auc(fpr_svc,tpr_svc)
 
 	xx = np.linspace(0.8*np.min(ibi),1.2*np.max(ibi),100)
 	yy = np.linspace(0.8*np.min(pupil),1.2*np.max(pupil),100)
@@ -81,7 +97,7 @@ def TrialClassificationWithPhysiology(phys_filename, trial_types, plot_results =
 	
 	#plt.title('SVM Classification with Physiological Data: %f correct' % (classif_rate))
 	if plot_results:
-		plt.figure()
+		plt.figure(0)
 		for k in range(n_classes):
 			plt.subplot(1,n_classes,k+1)
 			plt.title(class_labels[k])
@@ -98,6 +114,19 @@ def TrialClassificationWithPhysiology(phys_filename, trial_types, plot_results =
 		ax = plt.axes([0.15, 0.04, 0.7, 0.05])		
 		plt.colorbar(imshow_handle, cax = ax,orientation = 'horizontal')
 		plt.title('SVM Classification with Physiological Data: %f correct' % (classif_rate))
+
+		plt.figure(1)
+		plt.plot(fpr_model_lr,tpr_model_lr,'r',label="Logistic Regression (area = %0.2f)" % auc_model_lr)
+		plt.plot(fpr_svc,tpr_svc,'b--',label="LDA (area = %0.2f)" % auc_svc)
+		plt.plot([0,1],[0,1],'k--')
+		plt.plot(fpr_svc[1],tpr_svc[1],label="Class Stress (area = %0.2f)" % auc_svc[1])
+		plt.xlim([0.0,1.0])
+		plt.ylim([0.0,1.05])
+		plt.xlabel('False Positive Rate')
+		plt.ylabel('True Positive Rate')
+		plt.title('ROC')
+		plt.legend(loc=4)
+
 		plt.show()
 
 	return ibi, pupil
@@ -605,10 +634,10 @@ def ComparePowerWithStim(power_feature_filename_stim, hdf_location_stim,chosen_p
 
 	return power_feat_mat_stim, trial_types_stim
 
-chosen_power_feat, power_feat_mat, trial_types,power_labels, chosen_feat_80per_var = SelectionAndClassification_PowerFeatures(hdf_location, power_feature_filename, var_threshold = 10**-10, num_k_best = 20)
+#chosen_power_feat, power_feat_mat, trial_types,power_labels, chosen_feat_80per_var = SelectionAndClassification_PowerFeatures(hdf_location, power_feature_filename, var_threshold = 10**-10, num_k_best = 20)
 #powerandcoherence_feat_mat, powerandcoherence_chosen_feat, powerandcoherence_chosen_feat_labels, powerandcoherence_chosen_feat_labels_80pervar,feat_labels = SelectionAndClassification_PowerAndCoherenceFeatures(hdf_location, power_feature_filename, coherence_feature_filename, num_k_best = 20)
 #all_feat_mat, all_chosen_feat, all_chosen_feat_labels, all_chosen_feat_labels_80pervar = SelectionAndClassification_AllFeatures(hdf_location, power_feature_filename, coherence_feature_filename,phys_filename, 20, feat_labels)
-power_feat_mat_stim, trial_types_stim = ComparePowerWithStim(power_feature_filename_stim, hdf_location_stim,chosen_power_feat, power_feat_mat, trial_types)
+#power_feat_mat_stim, trial_types_stim = ComparePowerWithStim(power_feature_filename_stim, hdf_location_stim,chosen_power_feat, power_feat_mat, trial_types)
 
 """
 # do this for intervals of 5 features

@@ -7,6 +7,7 @@ import matplotlib as mpl
 import tables
 from matplotlib import pyplot as plt
 from scipy import signal
+from scipy.interpolate import spline
 
 class OfflineSorted_CSVFile():
 	'''
@@ -229,27 +230,53 @@ class OfflineSorted_CSVFile():
 
 		return window_fr
 
-	def compute_window_peak_fr(self,chann,sc,times_align,t_before,t_after, window_length):
+	def compute_window_peak_fr(self,chann,sc,times_align, window_length):
 		'''
 		Method that returns an array of avg firing rates around the peak spiking activity aligned to the sample numbers indicated in samples_align
-		with firing activity taking over the window [times_align - t_before, times_align + t_after]. The average firing rate
-		returned is from the activity in the time window of length window_length centered around the peak activity.
+		with firing activity taking over the window [times_align, times_align + window_length]. The peak firing rate
+		returned is from the activity in the time window of length window_length.
 
 		Input:
 		- chann: integer representing the channel number
 		- sc: integer representing the sort code for the channel
 		- times_align: array of T time points (s) corresponding to the time points for which activity should be aligned
-		- t_before: integer indicating the length of time (s) to be included prior to the alignment time point
-		- t_after: integer indicating the length of time (s) to be included after the alignment time point
 		- window_length: integer indicated the size of the time window (s) that the spiking activity will be taken from
 
 		Output: 
-		- window_fr: length T array containing the average firing rate over the window size indicated aligned to T different
+		- window_fr: length T array containing the peak firing rate in the window size indicated aligned to T different
 				time points
 		'''
-		###STOPPED HERE
+		num_timepoints = len(times_align)
+		window_fr = np.zeros(num_timepoints)
+		smooth_window_fr = np.zeros(num_timepoints)
+		unit_chan = np.ravel(np.nonzero(np.equal(self.channel, chann)))
+		sc_unit = np.ravel(np.nonzero(np.equal(self.sort_code[unit_chan], sc)))
+		channel_data = self.times[unit_chan[sc_unit]] 
 
-		return window_fr
+		t_before = 2
+		t_after = 2
+		t_resolution = 0.1
+		pts_in_linspace = 100
+		t_resolution_linspace = (t_before + t_after)/float(pts_in_linspace)
+		num_pts_in_window = int(window_length/t_resolution)
+		num_pts_in_window_linspace = int(window_length/t_resolution_linspace)
+		psth_length = np.rint((t_before + t_after)/t_resolution)
+		num_timepoints = len(times_align)
+		psth = np.zeros((num_timepoints, psth_length-1))
+		
+		xnew = np.linspace(0,39,100)
+
+		for i, tp in enumerate(times_align):
+			data = channel_data
+			t_window = np.arange(tp - t_before, tp + t_after, t_resolution)
+			hist, bins = np.histogram(data, bins = t_window)
+			hist_fr = hist/t_resolution
+			psth[i,:] = hist_fr[:psth_length-1]
+			smooth_psth = spline(range(39),psth[i,:],xnew)
+			window_fr[i] = np.amax(psth[i,psth_length/2:psth_length/2 + num_pts_in_window])
+			smooth_window_fr[i] = np.amax(smooth_psth[pts_in_linspace/2:pts_in_linspace/2 + num_pts_in_window_linspace])
+			
+		return window_fr, smooth_window_fr, psth
 
 	def compute_multiple_channel_avg_psth(self, channs, times_align,t_before,t_after,t_resolution):
 		'''
