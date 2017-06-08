@@ -31,7 +31,7 @@ def compute_rt_per_trial_FreeChoiceTask(hdf_file):
     
     return kin_feat[:,1], total_vel
 
-def compute_rt_per_trial_StressTask(hdf_file): 
+def compute_rt_per_trial_StressTask(hdf_file, deriv_vel_thres): 
     # Load HDF file
     hdf = tables.openFile(hdf_file)
 
@@ -50,7 +50,7 @@ def compute_rt_per_trial_StressTask(hdf_file):
     ## Calculate 'RT' from vel_in_targ_direction: use with get_cusor_velocity_in_targ_dir
     #kin_feat = get_kin_sig_shenoy_method(vel_in_targ_dir.T, vel_bins, perc=.2, start_tm = .1)
     #kin_feat = get_rt(total_vel.T, vel_bins, vel_thres = 0.1)
-    kin_feat = get_rt_change_deriv(total_vel.T, vel_bins, d_vel_thres = 0.3, fs=60)
+    kin_feat = get_rt_change_deriv(total_vel.T, vel_bins, d_vel_thres = deriv_vel_thres, fs=60)
     
     '''
     #PLot first 5 trials in a row
@@ -64,7 +64,7 @@ def compute_rt_per_trial_StressTask(hdf_file):
     
     return kin_feat[:,1], total_vel, successful_stress_or_not
 
-def compute_rt_per_trial_CenterOut(hdf_file): 
+def compute_rt_per_trial_CenterOut(hdf_file, method, thres, plot_results): 
     # Load HDF file
     hdf = tables.openFile(hdf_file)
 
@@ -72,21 +72,28 @@ def compute_rt_per_trial_CenterOut(hdf_file):
     go_cue_ix = np.array([hdf.root.task_msgs[j-3]['time'] for j, i in enumerate(hdf.root.task_msgs) if i['msg']=='reward'])
     
     # Calculate filtered velocity and 'velocity mag. in target direction'
-    filt_vel, total_vel, vel_bins = get_cursor_velocity(hdf, go_cue_ix, 0., 2., use_filt_vel=False)
+    filt_vel, total_vel, vel_bins, skipped_indices = get_cursor_velocity(hdf, go_cue_ix, 0., 2., use_filt_vel=False)
 
     ## Calculate 'RT' from vel_in_targ_direction: use with get_cusor_velocity_in_targ_dir
     #kin_feat = get_kin_sig_shenoy_method(vel_in_targ_dir.T, vel_bins, perc=.2, start_tm = .1)
-    #kin_feat = get_rt(total_vel.T, vel_bins, vel_thres = 0.1)
-    kin_feat = get_rt_change_deriv(total_vel.T, vel_bins, d_vel_thres = 0.5, fs=60)
+    if method==1:
+        kin_feat = get_rt(total_vel.T, vel_bins, vel_thres = thres)
+    elif method==2:
+        kin_feat = get_rt_change_deriv(total_vel.T, vel_bins, d_vel_thres = thres, fs=60)
+    else:
+        print "Did not choose valid method"
+        kin_feat = np.zeros((len(total_vel),2))
+    
     
     #PLot first 5 trials in a row
-    for n in range(5):
-        plt.plot(total_vel[:, n], '.-')
-        plt.plot(kin_feat[n, :][0], total_vel[int(kin_feat[n,:][0]), n], '.', markersize=10)
-        plt.show()
-        time.sleep(1.)
+    if plot_results:
+        for n in range(5):
+            plt.plot(total_vel[:, n], '.-')
+            plt.plot(kin_feat[n, :][0], total_vel[int(kin_feat[n,:][0]), n], '.', markersize=10)
+            plt.show()
+            time.sleep(1.)
     
-    return kin_feat[:,1], total_vel
+    return kin_feat[:,1], total_vel, skipped_indices
 
 def get_cursor_velocity(hdf, go_cue_ix, before_cue_time, after_cue_time, fs=60., use_filt_vel=True):
     '''
@@ -99,17 +106,19 @@ def get_cursor_velocity(hdf, go_cue_ix, before_cue_time, after_cue_time, fs=60.,
     '''
 
     ix = np.arange(-1*before_cue_time*fs, after_cue_time*fs).astype(int)
-
+    skipped_indices = np.array([])
 
     # Get trial trajectory: 
     cursor = []
-    for g in go_cue_ix:
+    for k,g in enumerate(go_cue_ix):
         try:
             #Get cursor
             cursor.append(hdf.root.task[ix+g]['cursor'][:, [0, 2]])
 
         except:
             print 'skipping index: ', g, ' -- too close to beginning or end of file'
+            skipped_indices = np.append(skipped_indices, k)
+
     cursor = np.dstack((cursor))    # time x (x,y) x trial
     
     dt = 1./fs
@@ -126,7 +135,7 @@ def get_cursor_velocity(hdf, go_cue_ix, before_cue_time, after_cue_time, fs=60.,
 
     vel_bins = np.linspace(-1*before_cue_time, after_cue_time, vel.shape[0])
 
-    return filt_vel, total_vel, vel_bins
+    return filt_vel, total_vel, vel_bins, skipped_indices
 
 def get_cursor_velocity_in_targ_dir(hdf, go_cue_ix, before_cue_time, after_cue_time, fs=60., use_filt_vel=True):
     '''

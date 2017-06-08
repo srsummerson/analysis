@@ -119,7 +119,6 @@ def TrialClassificationWithPhysiology(phys_filename, trial_types, plot_results =
 		plt.plot(fpr_model_lr,tpr_model_lr,'r',label="Logistic Regression (area = %0.2f)" % auc_model_lr)
 		plt.plot(fpr_svc,tpr_svc,'b--',label="LDA (area = %0.2f)" % auc_svc)
 		plt.plot([0,1],[0,1],'k--')
-		plt.plot(fpr_svc[1],tpr_svc[1],label="Class Stress (area = %0.2f)" % auc_svc[1])
 		plt.xlim([0.0,1.0])
 		plt.ylim([0.0,1.05])
 		plt.xlabel('False Positive Rate')

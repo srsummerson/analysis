@@ -1,5 +1,6 @@
 import numpy as np
 import scipy as sp
+from scipy import stats
 from scipy import io
 from scipy import signal
 import re
@@ -11,6 +12,7 @@ from matplotlib import mlab
 import tables
 from pylab import specgram
 import time
+from rt_calc import compute_rt_per_trial_CenterOut
 
 
 
@@ -629,13 +631,13 @@ def get_OMNI_inds_hold_center(hdf_filename, syncHDF_file, tdt_timepoint, omni_ti
 	state_time = table.root.task_msgs[:]['time']
 	ind_reward = np.ravel(np.nonzero(state == 'reward'))
 	ind_hold_center = ind_reward - 7
-	ind_end_hold = ind_reward - 3
+	ind_peripheral_on = ind_reward - 6
+	ind_go_cue = ind_reward - 3
 	ind_hold_peripheral = ind_reward - 2
 	ind_end_hold_peripheral = ind_reward - 1
 	ind_reward_end = ind_reward + 1
 
-	state_row_ind = state_time[ind_hold_center]		# gives the hdf row number sampled at 60 Hz
-	state_row_ind_beginhold = state_row_ind
+	
 	
 	# Load syncing data
 	hdf_times = dict()
@@ -646,6 +648,10 @@ def get_OMNI_inds_hold_center(hdf_filename, syncHDF_file, tdt_timepoint, omni_ti
 	dio_freq = np.ravel(hdf_times['tdt_dio_samplerate'])
 
 	lfp_dio_sample_num = dio_tdt_sample  # assumes DIOx and LFPx are saved using the same sampling rate
+
+	# Get indices for beginning of hold
+	state_row_ind = state_time[ind_hold_center]		# gives the hdf row number sampled at 60 Hz
+	state_row_ind_beginhold = state_row_ind
 	lfp_state_row_ind = np.zeros(state_row_ind.size)
 
 	for i in range(len(state_row_ind)):
@@ -670,8 +676,35 @@ def get_OMNI_inds_hold_center(hdf_filename, syncHDF_file, tdt_timepoint, omni_ti
 
 	lfp_state_row_ind_beginhold = lfp_state_row_ind
 
-	# Repeat for end of hold
-	state_row_ind = state_time[ind_end_hold]
+	# Repeat for peripheral target appearing
+	state_row_ind = state_time[ind_peripheral_on]
+	state_row_ind_peripheralon = state_row_ind
+	lfp_state_row_ind = np.zeros(state_row_ind.size)
+
+	for i in range(len(state_row_ind)):
+		hdf_index = np.argmin(np.abs(hdf_rows - state_row_ind[i]))
+		if np.abs(hdf_rows[hdf_index] - state_row_ind[i])==0:
+			lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
+		elif hdf_rows[hdf_index] > state_row_ind[i]:
+			hdf_row_diff = hdf_rows[hdf_index] - hdf_rows[hdf_index -1]  # distance of the interval of the two closest hdf_row_numbers
+			m = (lfp_dio_sample_num[hdf_index]-lfp_dio_sample_num[hdf_index - 1])/hdf_row_diff
+			b = lfp_dio_sample_num[hdf_index-1] - m*hdf_rows[hdf_index-1]
+			lfp_state_row_ind[i] = int(m*state_row_ind[i] + b)
+		elif (hdf_rows[hdf_index] < state_row_ind[i])&(hdf_index + 1 < len(hdf_rows)):
+			hdf_row_diff = hdf_rows[hdf_index + 1] - hdf_rows[hdf_index]
+			if (hdf_row_diff > 0):
+				m = (lfp_dio_sample_num[hdf_index + 1] - lfp_dio_sample_num[hdf_index])/hdf_row_diff
+				b = lfp_dio_sample_num[hdf_index] - m*hdf_rows[hdf_index]
+				lfp_state_row_ind[i] = int(m*state_row_ind[i] + b)
+			else:
+				lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
+		else:
+			lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
+
+	lfp_state_row_ind_peripheralon = lfp_state_row_ind
+
+	# Repeat for end of hold, i.e. GO CUE
+	state_row_ind = state_time[ind_go_cue]
 	state_row_ind_endhold = state_row_ind
 	lfp_state_row_ind = np.zeros(state_row_ind.size)
 
@@ -812,10 +845,323 @@ def get_OMNI_inds_hold_center(hdf_filename, syncHDF_file, tdt_timepoint, omni_ti
 	b = omni_timepoint - m*tdt_timepoint
 
 	omni_inds_beginhold = np.rint(m*lfp_state_row_ind_beginhold + b) 	# make sure that indices are integer values
+	omni_inds_peripheralon = np.rint(m*lfp_state_row_ind_peripheralon + b)
 	omni_inds_endhold = np.rint(m*lfp_state_row_ind_endhold + b)
 	omni_inds_peripheralhold = np.rint(m*lfp_state_row_ind_beginhold_peripheral + b)
 	omni_inds_endhold_peripheral = np.rint(m*lfp_state_row_ind_endhold_peripheral + b)
 	omni_inds_reward = np.rint(m*lfp_state_row_ind_reward + b)
 	omni_inds_reward_end = np.rint(m*lfp_state_row_ind_reward_end + b)
 
-	return omni_inds_beginhold, omni_inds_endhold, omni_inds_peripheralhold, omni_inds_endhold_peripheral, omni_inds_reward, omni_inds_reward_end 
+	return omni_inds_beginhold, omni_inds_peripheralon,omni_inds_endhold, omni_inds_peripheralhold, omni_inds_endhold_peripheral, omni_inds_reward, omni_inds_reward_end 
+
+def ClosedLoopReactionTimeAnalysis(hdf_filename, task_events_mat_filename, stim_filename, thres, lower_rt, upper_rt, method):
+	'''
+	This method finds which trials have stimulation during the peripheral hold period of the delayed reach task
+	and at what time stimulation occurs relative to the Go Cue.
+
+	Inputs:
+	- hdf_filename: string containing hdf filename and location
+	- task_events_mat_filename: string containing .mat filename that contains task events indices in terms of OMNI timestamps
+	- stim_filename: string containing .mat filename that contains stimulation start and stop times in terms of OMNI timestamps
+	- thres: velocity threshold value used for computing reaction time
+	- method: 1 or 2
+	'''
+
+	# 1. Compute reaction times
+	rt, total_vel, skipped_trials = compute_rt_per_trial_CenterOut(hdf_filename, method, thres, False)
+	all_rt = np.zeros(len(rt) + len(skipped_trials))
+	good_rt = [ind for ind in range(len(all_rt)) if ind not in skipped_trials]
+	all_rt[good_rt] = rt
+
+	# Filter trials by reaction time: only consider when rt in the range (0.1, 1) sec
+	too_short = np.ravel(np.nonzero(np.less(rt,lower_rt)))
+	too_long = np.ravel(np.nonzero(np.greater(rt,upper_rt)))
+	bad_trial_inds = np.ravel(np.append(too_short, too_long))
+	good_trial_inds = [ind for ind in range(len(all_rt)) if ind not in bad_trial_inds]  	# take only trials where reaction time is in allotted window
+	rt_good_trials = all_rt[good_trial_inds]
+
+	# 2. Get OMNI task event times
+	task_events = dict()
+	sp.io.loadmat(task_events_mat_filename, task_events)
+	omni_time_periph_on = np.ravel(task_events['peripheral_on'])					# array of time when peripheral target is shown during center hold
+	omni_time_center_hold_begin = np.ravel(task_events['begin_center_hold'])		# array of time when center hold begins
+	omni_time_go_cue = np.ravel(task_events['go_cue'])							# array of time when center hold ends
+	omni_time_end_reward = np.ravel(task_events['begin_reward']-500)
+
+	time_periph_on = omni_time_periph_on[good_trial_inds]
+	time_center_hold_begin = omni_time_center_hold_begin[good_trial_inds]
+	time_go_cue = omni_time_go_cue[good_trial_inds]
+	time_end_reward = omni_time_end_reward[good_trial_inds]
+
+	# 3. Get stim times
+	stims = dict()
+	sp.io.loadmat(stim_filename, stims)
+	trains = stims['trains']
+	stim_start = trains[:,0]
+	stim_end = trains[0,1]
+
+	# 4. For each trial, find stim time closest to peripheral on
+	time_after_periph = np.zeros(len(good_trial_inds))
+	time_before_go_cue = np.zeros(len(good_trial_inds))
+	is_during_periph_on = np.zeros(len(good_trial_inds))
+	is_during_center_on_alone = np.zeros(len(good_trial_inds))
+
+	ind_during_periph_on = []
+	ind_not_during_periph_on = []
+	ind_during_center_on = []
+	ind_no_stim_trial = []
+
+	for val in range(len(good_trial_inds)):
+		# find closest stim
+		stim_index = np.argmin(np.abs(stim_start - time_periph_on[val]))
+		# find time relative to periph_on: positive is after, negative is before
+		time_after_periph[val] = stim_start[stim_index] - time_periph_on[val]
+		time_before_go_cue[val] = stim_start[stim_index] - time_go_cue[val]
+		is_during_periph_on[val] = (time_after_periph[val] > 0)&(time_after_periph[val] < (time_go_cue[val] - time_periph_on[val]))
+		is_during_center_on_alone[val] = (time_after_periph[val] < 0)&(time_after_periph[val] > (time_center_hold_begin[val] - time_periph_on[val]))
+
+		# build lists of indices for if stim occured when peripheral was shown or not
+		if is_during_periph_on[val]:
+			ind_during_periph_on.append(val)
+		elif is_during_center_on_alone[val]:
+			ind_during_center_on.append(val)
+		else:
+			ind_not_during_periph_on.append(val)
+
+		# did any stim actually happen between the beginning of the hold and end of reward?
+		trial_midpoint = (time_center_hold_begin[val] + time_end_reward[val])/2
+		stim_index = np.argmin(np.abs(stim_start - trial_midpoint))
+		before_center = time_center_hold_begin[val] - stim_start[stim_index]
+		after_reward = stim_start[stim_index] - time_end_reward[val]
+		if (before_center > 0)&(after_reward > 0):
+			ind_no_stim_trial.append(val)
+
+	time_after_periph = time_after_periph/1000. 	# convert from samples to seconds
+	time_before_go_cue = time_before_go_cue/1000.
+
+	# 5. Pull out reaction times for different conditions
+	rt_stim_during_periph = rt_good_trials[ind_during_periph_on]											# triasl when stim is during peripheral hold
+	rt_stim_not_during_periph = rt_good_trials[np.append(ind_not_during_periph_on, ind_during_center_on)] 	# all trials except when stim is on during peripheral hold
+	rt_stim_during_center = rt_good_trials[ind_during_center_on]											# trials when stim is during center on, before peripheral is shown
+	rt_stim_not_during_hold = rt_good_trials[ind_not_during_periph_on]										# all trials except when stim is during any time in the hold
+
+
+	return rt_stim_during_periph, rt_stim_not_during_periph, rt_stim_during_center, rt_stim_not_during_hold, time_after_periph, time_before_go_cue,rt_good_trials, ind_no_stim_trial
+
+def ClosedLoopReactionTimeAnalysis_MultipleSessions(hdf_filename, task_events_mat_filename, stim_filename, thres,lower_rt, upper_rt, method):
+	'''
+	This method finds which trials have stimulation during the peripheral hold period of the delayed reach task
+	and at what time stimulation occurs relative to the Go Cue. It takes in data across multiple behavior sessions
+
+	Inputs:
+	- hdf_filename: list of strings containing hdf filename and location
+	- task_events_mat_filename: list of strings containing .mat filename that contains task events indices in terms of OMNI timestamps
+	- stim_filename: list of strings containing .mat filename that contains stimulation start and stop times in terms of OMNI timestamps
+	- thres: float value used to set threshold for finding reaction times
+	
+	To do: (1) add stats
+	'''
+	num_sessions = len(hdf_filename)
+	rt_stim_during_periph = np.array([])
+	rt_stim_not_during_periph = np.array([])
+	rt_stim_during_center = np.array([])
+	rt_stim_not_during_hold = np.array([])
+	time_after_periph = np.array([])
+	time_before_go_cue = np.array([])
+	rt_good_trials = np.array([])
+	ind_no_stim_trial = np.array([])
+
+	for k in range(num_sessions):
+		output = ClosedLoopReactionTimeAnalysis(hdf_filename[k], task_events_mat_filename[k], stim_filename[k], thres,lower_rt, upper_rt, method)
+		rt_stim_during_periph = np.append(rt_stim_during_periph, output[0])
+		rt_stim_not_during_periph = np.append(rt_stim_not_during_periph, output[1])
+		rt_stim_during_center = np.append(rt_stim_during_center, output[2])
+		rt_stim_not_during_hold = np.append(rt_stim_not_during_hold, output[3])
+		time_after_periph = np.append(time_after_periph, output[4])
+		time_before_go_cue = np.append(time_before_go_cue, output[5])
+		rt_good_trials = np.append(rt_good_trials, output[6])
+		ind_no_stim_trial = np.append(ind_no_stim_trial, output[7])
+		
+	print ind_no_stim_trial
+	avg_rt_stim_during_periph = np.nanmean(rt_stim_during_periph)
+	avg_rt_not_during_periph = np.nanmean(rt_stim_not_during_periph)
+	avg_rt_stim_during_center = np.nanmean(rt_stim_during_center)
+	avg_rt_stim_not_during_hold = np.nanmean(rt_stim_not_during_hold)
+	if not ind_no_stim_trial:
+		avg_rt_no_stim_trial = np.nan
+		sem_rt_no_stim_trial = np.nan
+	else:
+		avg_rt_no_stim_trial = np.nanmean(rt_good_trials[ind_no_stim_trial])
+		sem_rt_no_stim_trial = np.nanstd(rt_good_trials[ind_no_stim_trial])/np.sqrt(len(ind_no_stim_trial))
+	sem_rt_stim_during_periph = np.nanstd(rt_stim_during_periph)/np.sqrt(len(rt_stim_during_periph))
+	sem_rt_not_during_periph = np.nanstd(rt_stim_not_during_periph)/np.sqrt(len(rt_stim_not_during_periph))
+	sem_rt_stim_during_center = np.nanstd(rt_stim_during_center)/np.sqrt(len(rt_stim_during_center))
+	sem_rt_stim_not_during_hold = np.nanstd(rt_stim_not_during_hold)/np.sqrt(len(rt_stim_not_during_hold))
+	
+	print avg_rt_stim_during_periph - avg_rt_stim_during_center
+	'''
+	# 6. Do statistics
+	# t-test
+	t_periph_nothold, p_periph_nothold = stats.ttest_ind(rt_stim_during_periph, rt_stim_not_during_hold)
+	t_periph_notperiph, p_periph_notperiph = stats.ttest_ind(rt_stim_during_periph, rt_stim_not_during_periph)
+
+	# mann-whitney
+	stat_periph_nothold, mw_p_periph_nothold = stats.mannwhitneyu(rt_stim_during_periph, rt_stim_not_during_hold)
+	stat_periph_notperiph, mw_p_periph_notperiph = stats.mannwhitneyu(rt_stim_during_periph, rt_stim_not_during_periph)
+
+	# kruskal-wallis h-test
+	h_periph_nothold, kw_p_periph_nothold = stats.kruskal(rt_stim_during_periph, rt_stim_not_during_hold)
+	h_periph_notperiph, kw_p_periph_notperiph = stats.kruskal(rt_stim_during_periph, rt_stim_not_during_periph)
+
+
+	print "T-test Results: \n Periph vs Not During Hold - (t, p) = (%f,%f)" % (t_periph_nothold, p_periph_nothold)
+	print " Periph vs Not During Periph - (t, p) = (%f,%f)" % (t_periph_notperiph, p_periph_notperiph)
+	print "\nMann-Whitney Results:\n Periph vs Not Durhing Hold - (s, p) = (%f,%f)" % (stat_periph_nothold, mw_p_periph_nothold)
+	print " Periph vs Not During Periph - (s, p) = (%f,%f)" % (stat_periph_notperiph, mw_p_periph_notperiph)
+	print "\nKruskal-Wallis Results: \n Periph vs Not During Hold - (h, p) = (%f,%f)" % (h_periph_nothold, kw_p_periph_nothold)
+	print " Periph vs Not During Periph - (h, p) = (%f,%f)" % (h_periph_notperiph, kw_p_periph_notperiph)
+
+	'''
+	# 6. Plot results
+	avg_rt = [avg_rt_stim_during_periph, avg_rt_not_during_periph, avg_rt_stim_during_center, avg_rt_stim_not_during_hold, avg_rt_no_stim_trial]
+	sem_rt = [sem_rt_stim_during_periph, sem_rt_not_during_periph, sem_rt_stim_during_center, sem_rt_stim_not_during_hold, sem_rt_no_stim_trial]
+	plt.figure(0)
+	plt.errorbar(range(5),avg_rt,yerr = sem_rt,fmt = 'o', color = 'k', ecolor = 'k')
+	xticklabels = ['Stim during Peripheral', 'Stim not during Peripheral', 'Stim during Center', 'Stim not during hold', 'No Stim']
+  	plt.xticks(range(5), xticklabels)
+  	plt.xlim((-0.5,4.5))
+  	plt.ylabel('Reaction time (s)')
+  	plt.title('Average Reaction Time')
+  	plt.show()
+	
+  	# sort time_after_periph
+  	sorted_time_inds = np.argsort(time_after_periph)
+  	#time_bins = np.linspace(np.amin(time_after_periph),np.amax(time_after_periph),21)
+  	t_min = -0.4
+  	t_max = 0.2
+  	nbins = 6
+  	stepsize = 0.1		# 100 ms
+  	#time_bins = np.linspace(t_min,t_max,nbins)		# center hold is 200 ms before peripheral, max peripheral hold is 400 ms
+  	time_bins = np.arange(t_min,t_max+stepsize,stepsize)
+  	bin_centers = (time_bins[:-1] + time_bins[1:])/2.
+  	
+	avg_RT_binned = np.zeros(len(bin_centers))
+	sem_RT_binned = np.zeros(len(bin_centers))
+	RT_binned = dict()
+
+	for j in range(len(bin_centers)):
+		rt_inds = np.ravel(np.nonzero(np.greater(time_after_periph, time_bins[j])&np.less(time_after_periph,time_bins[j+1])))	
+		RT_binned[j] = rt_good_trials[rt_inds]
+		
+		avg_RT_binned[j] = np.nanmean(RT_binned[j])
+		sem_RT_binned[j] = np.nanstd(RT_binned[j])/np.sqrt(len(RT_binned[j]))
+
+	# Sliding Average
+	N = 50
+	sorted_rt = rt_good_trials[sorted_time_inds]
+	mean_sorted_rt = np.convolve(sorted_rt, np.ones((N,))/N)[N-1:]
+	#mean_time_after_periph = np.convolve(time_after_periph[sorted_time_inds], np.ones((N,))/N)[N-1:]
+
+  	plt.figure(1)
+  	plt.subplot(1,2,1)
+  	plt.scatter(time_after_periph, rt_good_trials, c = 'c')
+  	plt.errorbar(bin_centers, avg_RT_binned, yerr = sem_RT_binned, color = 'k', ecolor = 'k')
+  	plt.plot(time_after_periph[sorted_time_inds], mean_sorted_rt, 'm')
+  	plt.xlabel('Time relative to Peripheral On (s)')
+  	plt.xlim((t_min*1.05,t_max*1.05))
+  	plt.ylim((lower_rt,upper_rt))
+  	plt.ylabel('Reaction time (s)')
+  	
+
+  	# sort time_before_go_cue
+  	sorted_time_inds_before_gocue = np.argsort(time_before_go_cue)
+  	#time_bins = np.linspace(np.amin(time_after_periph),np.amax(time_after_periph),21)
+  	t_min = -0.6
+  	t_max = 0.2
+  	nbins = 6
+  	stepsize = 0.1		# 100 ms
+  	#time_bins = np.linspace(t_min,t_max,nbins)		# center hold is 200 ms before peripheral, max peripheral hold is 400 ms
+  	time_bins = np.arange(t_min,t_max+stepsize,stepsize)
+  	bin_centers_before_gocue = (time_bins[:-1] + time_bins[1:])/2.
+	avg_RT_binned_before_gocue = np.zeros(len(bin_centers_before_gocue))
+	sem_RT_binned_before_gocue = np.zeros(len(bin_centers_before_gocue))
+	RT_binned_before_gocue = dict()
+
+	for j in range(len(bin_centers_before_gocue)):
+		rt_inds = np.ravel(np.nonzero(np.greater(time_before_go_cue, time_bins[j])&np.less(time_before_go_cue,time_bins[j+1])))	
+		RT_binned_before_gocue[j] = rt_good_trials[rt_inds]
+
+		avg_RT_binned_before_gocue[j] = np.nanmean(RT_binned_before_gocue[j])
+		sem_RT_binned_before_gocue[j] = np.nanstd(RT_binned_before_gocue[j])/np.sqrt(len(RT_binned_before_gocue[j]))
+
+	# Sliding Average
+	N = 50
+	sorted_rt_before_gocue = rt_good_trials[sorted_time_inds_before_gocue]
+	mean_sorted_rt_before_gocue = np.convolve(sorted_rt_before_gocue, np.ones((N,))/N)[N-1:]
+	#mean_time_after_periph = np.convolve(time_after_periph[sorted_time_inds], np.ones((N,))/N)[N-1:]
+
+  	plt.figure(1)
+  	plt.subplot(1,2,2)
+  	plt.scatter(time_before_go_cue, rt_good_trials, c = 'c')
+  	plt.errorbar(bin_centers_before_gocue, avg_RT_binned_before_gocue, yerr = sem_RT_binned_before_gocue, color = 'k', ecolor = 'k')
+  	plt.plot(time_before_go_cue[sorted_time_inds_before_gocue], mean_sorted_rt_before_gocue, 'm')
+  	plt.xlabel('Time relative to Go Cue (s)')
+  	plt.xlim((t_min*1.05,t_max*1.05))
+  	plt.ylim((lower_rt,upper_rt))
+  	plt.ylabel('Reaction time (s)')
+  	plt.show()
+
+  	'''
+  	thresname = float(thres*10)
+  	lower_rt_name = float(lower_rt*100)
+  	upper_rt_name = float(upper_rt*10)
+  	plt_name = 'DelayedReach_RT_Method' + str(method) + '_Thres' + str(thresname) + '_lowerRT' + str(lower_rt_name) + 'upperRT' + str(upper_rt_name) + '.png'
+  	plt.savefig(plt_name)
+  	plt.close()
+  	
+  	# Plot RT distributions: stim during peripheral vs stim not during peripheral
+  	# First, fit with log-normal distribution
+  	x_stim_during_periph, pdf_stim_during_periph, cdf_stim_during_periph = rt_lognormal_fit(rt_stim_during_periph)
+  	x_stim_not_during_periph, pdf_stim_not_during_periphd, cdf_stim_not_during_periph = rt_lognormal_fit(rt_stim_not_during_periph)
+	x_stim_not_during_hold, pdf_stim_not_during_hold, cdf_stim_not_during_hold = rt_lognormal_fit(rt_stim_not_during_hold)
+
+
+  	plt.figure(4)
+  	plt.hist(rt_stim_during_periph,bins=10,normed=True,color = 'c',alpha = 0.75)
+  	plt.plot(x_stim_during_periph,pdf_stim_during_periph,'k')
+  	plt.title('PDF of Reaction Times for Stim During Peripheral')
+  	plt.xlabel('Reaction Time (s)')
+  	plt.ylabel('Probability')
+
+
+  	rt_stim_during_periph_sorted_inds = np.argsort(rt_stim_during_periph)
+  	rt_stim_not_during_periph_sorted_inds = np.argsort(rt_stim_not_during_periph)
+  	rt_stim_not_during_hold_sorted_inds = np.argsort(rt_stim_not_during_hold)
+
+
+  	plt.figure(3)
+  	plt.plot(rt_stim_during_periph[rt_stim_during_periph_sorted_inds],np.arange(len(rt_stim_during_periph))/float(len(rt_stim_during_periph)), 'c',label = 'During Peripheral')
+  	plt.plot(x_stim_during_periph,cdf_stim_during_periph,'k',label='During Peripheral Fit')
+  	plt.plot(rt_stim_not_during_periph[rt_stim_not_during_periph_sorted_inds],np.arange(len(rt_stim_not_during_periph))/float(len(rt_stim_not_during_periph)), 'b',label = 'Not During Peripheral')
+  	plt.plot(x_stim_not_during_periph,cdf_stim_not_during_periph,'m',label='Not During Peripheral Fit')
+  	plt.plot(rt_stim_not_during_hold[rt_stim_not_during_hold_sorted_inds],np.arange(len(rt_stim_not_during_hold))/float(len(rt_stim_not_during_hold)), 'y',label = 'Not During Hold')
+  	plt.plot(x_stim_not_during_hold,cdf_stim_not_during_hold,'g',label='Not During Hold Fit')
+  	
+  	plt.xlabel('Reaction Time (s)')
+  	plt.ylabel('Fraction of Trials')
+  	plt.legend()
+  	plt.ylim((-0.05,1.05))
+  	plt.show()
+	'''
+  	#### add: find trials completely without stimulation to compare with
+	return RT_binned, bin_centers, RT_binned_before_gocue, bin_centers_before_gocue
+
+def rt_lognormal_fit(rt):
+	s, loc, scale = stats.lognorm.fit(rt, floc = 0)
+	xmin = rt.min()
+  	xmax = rt.max()
+  	x = np.linspace(xmin,xmax,100)
+  	pdf = stats.lognorm.pdf(x,s,scale = scale)
+  	cdf = np.cumsum(pdf)/np.sum(pdf)
+
+	return x, pdf, cdf

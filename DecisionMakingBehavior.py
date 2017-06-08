@@ -1,5 +1,6 @@
 import numpy as np 
 import scipy as sp
+from scipy import stats
 from scipy.interpolate import spline
 import scipy.optimize as op
 import statsmodels.api as sm
@@ -1585,11 +1586,15 @@ def ThreeTargetTask_RegressedFiringRatesWithValue_PictureOnset(hdf_files, syncHD
 		plt.ylabel('Firing Rate (spk/s)')
 		plt.title(sess_name + ' - Channel %i - Unit %i' %(channel, k))
 
+		# save Q and firing rate data
+		Q_learning = Q_mid[trial_inds]
+		FR_learning = y
+
 		max_fr = np.amax(y)
 		xlim_min = np.amin(Q_mid[trial_inds])
 		xlim_max = np.amax(Q_mid[trial_inds])
 
-		# Get binned firing rates: average firing rate for each of 10 equally populated action value bins
+		# Get binned firing rates: average firing rate for each of num_bins equally populated action value bins
 		num_bins = 5
 		sorted_Qvals_inds = np.argsort(Q_mid[trial_inds])
 		pts_per_bin = len(trial_inds)/num_bins
@@ -1597,6 +1602,7 @@ def ThreeTargetTask_RegressedFiringRatesWithValue_PictureOnset(hdf_files, syncHD
 		avg_Qvals = np.nanmean(reorg_Qvals, axis = 0)
 
 		reorg_FR = np.reshape(y[sorted_Qvals_inds[:pts_per_bin*num_bins]], (pts_per_bin, num_bins), order = 'F')
+		reorg_FR_BlockA = reorg_FR
 		avg_FR = np.nanmean(reorg_FR, axis = 0)
 		sem_FR = np.nanstd(reorg_FR, axis = 0)/np.sqrt(pts_per_bin)
 
@@ -1651,7 +1657,11 @@ def ThreeTargetTask_RegressedFiringRatesWithValue_PictureOnset(hdf_files, syncHD
 		plt.xlim((0.9*xlim_min, 1.1*xlim_max))
 		plt.legend()
 
-		# Get binned firing rates: average firing rate for each of 10 equally populated action value bins
+		# save Q and firing rate data
+		Q_late = Q_mid[trial_inds]
+		FR_late = y
+
+		# Get binned firing rates: average firing rate for each of num_bins equally populated action value bins
 		sorted_Qvals_inds = np.argsort(Q_mid[trial_inds])
 		pts_per_bin = len(trial_inds)/num_bins
 		reorg_Qvals = np.reshape(Q_mid[trial_inds][sorted_Qvals_inds[:pts_per_bin*num_bins]], (pts_per_bin, num_bins), order = 'F')
@@ -1661,17 +1671,23 @@ def ThreeTargetTask_RegressedFiringRatesWithValue_PictureOnset(hdf_files, syncHD
 		avg_FR = np.nanmean(reorg_FR, axis = 0)
 		sem_FR = np.nanstd(reorg_FR, axis = 0)/np.sqrt(pts_per_bin)
 
+		pval = np.zeros(num_bins)
+		for j in range(num_bins):
+			t, p = stats.ttest_ind(reorg_FR_BlockA[:,j], reorg_FR[:,j])
+			pval[j] = p
+
 		plt.figure(k)
 		plt.subplot(1,2,2)
 		plt.errorbar(avg_Qvals, avg_FR, yerr = sem_FR/2., fmt = '--o', color = 'g', ecolor = 'g', label = 'Stim - Avg FR')
 		plt.ylim((0,1.1*fr_lim))
 		plt.xlim((0.9*xlim_min, 1.1*xlim_max))
+		plt.text(xlim_min,fr_lim,'P-values: %s' %(pval))
 		plt.legend()
 
 	plt.show()
 
 
-	return window_fr, window_fr_smooth, fr_mat, x, y, Q_low, Q_mid, Q_high
+	return window_fr, window_fr_smooth, fr_mat, x, y, Q_low, Q_mid, Q_high, Q_learning, Q_late, FR_learning, FR_late
 
 def ThreeTargetTask_PeakFiringRatesWithValue_PictureOnset(hdf_files, syncHDF_files, spike_files, channel, t_before, t_after):
 	'''
@@ -1779,6 +1795,8 @@ def ThreeTargetTask_PeakFiringRatesWithValue_PictureOnset(hdf_files, syncHDF_fil
 				FRbinned_late[j] = y[sorted_Qvals_inds][0:cumnum_per_bin[j]]
 			else:
 				FRbinned_late[j] = y[sorted_Qvals_inds][cumnum_per_bin[j-1]:cumnum_per_bin[j]]
+
+
 
 		## plot (a) peak firing rate for Blocks A vs C (b) average change in firing rates between blocks per bins
 		plt.figure(k)
