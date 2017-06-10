@@ -917,8 +917,8 @@ def ClosedLoopReactionTimeAnalysis(hdf_filename, task_events_mat_filename, stim_
 		# find time relative to periph_on: positive is after, negative is before
 		time_after_periph[val] = stim_start[stim_index] - time_periph_on[val]
 		time_before_go_cue[val] = stim_start[stim_index] - time_go_cue[val]
-		is_during_periph_on[val] = (time_after_periph[val] > 0)&(time_after_periph[val] < (time_go_cue[val] - time_periph_on[val]))
-		is_during_center_on_alone[val] = (time_after_periph[val] < 0)&(time_after_periph[val] > (time_center_hold_begin[val] - time_periph_on[val]))
+		is_during_periph_on[val] = (time_after_periph[val] > -0.067)&(time_after_periph[val] < (time_go_cue[val] - time_periph_on[val]))
+		is_during_center_on_alone[val] = (time_after_periph[val] < -0.067)&(time_after_periph[val] > (time_center_hold_begin[val] - time_periph_on[val]))
 
 		# build lists of indices for if stim occured when peripheral was shown or not
 		if is_during_periph_on[val]:
@@ -987,6 +987,11 @@ def ClosedLoopReactionTimeAnalysis_MultipleSessions(hdf_filename, task_events_ma
 	avg_rt_not_during_periph = np.nanmean(rt_stim_not_during_periph)
 	avg_rt_stim_during_center = np.nanmean(rt_stim_during_center)
 	avg_rt_stim_not_during_hold = np.nanmean(rt_stim_not_during_hold)
+
+	all_stim_in_hold = np.append(rt_stim_during_periph, rt_stim_during_center)
+	avg_rt_stim_during_hold = np.nanmean(all_stim_in_hold)
+	sem_rt_stim_during_hold = np.nanstd(all_stim_in_hold)/np.sqrt(len(all_stim_in_hold))
+
 	if not ind_no_stim_trial:
 		avg_rt_no_stim_trial = np.nan
 		sem_rt_no_stim_trial = np.nan
@@ -998,19 +1003,18 @@ def ClosedLoopReactionTimeAnalysis_MultipleSessions(hdf_filename, task_events_ma
 	sem_rt_stim_during_center = np.nanstd(rt_stim_during_center)/np.sqrt(len(rt_stim_during_center))
 	sem_rt_stim_not_during_hold = np.nanstd(rt_stim_not_during_hold)/np.sqrt(len(rt_stim_not_during_hold))
 	
-	print avg_rt_stim_during_periph - avg_rt_stim_during_center
-	'''
+	
 	# 6. Do statistics
 	# t-test
-	t_periph_nothold, p_periph_nothold = stats.ttest_ind(rt_stim_during_periph, rt_stim_not_during_hold)
+	t_periph_nothold, p_periph_nothold = stats.ttest_ind(np.append(rt_stim_during_periph, rt_stim_during_center), rt_stim_not_during_hold)
 	t_periph_notperiph, p_periph_notperiph = stats.ttest_ind(rt_stim_during_periph, rt_stim_not_during_periph)
 
 	# mann-whitney
-	stat_periph_nothold, mw_p_periph_nothold = stats.mannwhitneyu(rt_stim_during_periph, rt_stim_not_during_hold)
+	stat_periph_nothold, mw_p_periph_nothold = stats.mannwhitneyu(np.append(rt_stim_during_periph, rt_stim_during_center), rt_stim_not_during_hold)
 	stat_periph_notperiph, mw_p_periph_notperiph = stats.mannwhitneyu(rt_stim_during_periph, rt_stim_not_during_periph)
 
 	# kruskal-wallis h-test
-	h_periph_nothold, kw_p_periph_nothold = stats.kruskal(rt_stim_during_periph, rt_stim_not_during_hold)
+	h_periph_nothold, kw_p_periph_nothold = stats.kruskal(np.append(rt_stim_during_periph, rt_stim_during_center), rt_stim_not_during_hold)
 	h_periph_notperiph, kw_p_periph_notperiph = stats.kruskal(rt_stim_during_periph, rt_stim_not_during_periph)
 
 
@@ -1021,26 +1025,34 @@ def ClosedLoopReactionTimeAnalysis_MultipleSessions(hdf_filename, task_events_ma
 	print "\nKruskal-Wallis Results: \n Periph vs Not During Hold - (h, p) = (%f,%f)" % (h_periph_nothold, kw_p_periph_nothold)
 	print " Periph vs Not During Periph - (h, p) = (%f,%f)" % (h_periph_notperiph, kw_p_periph_notperiph)
 
-	'''
+
+	thresname = float(thres*10)
+  	lower_rt_name = float(lower_rt*100)
+  	upper_rt_name = float(upper_rt*10)
+  	plt_name = 'DelayedReach_RT_Method' + str(method) + '_Thres' + str(thresname) + '_lowerRT' + str(lower_rt_name) + 'upperRT' + str(upper_rt_name) + '.png'
+  	
+  	print plt_name
+  	print avg_rt_stim_during_hold - avg_rt_stim_not_during_hold
+
 	# 6. Plot results
-	avg_rt = [avg_rt_stim_during_periph, avg_rt_not_during_periph, avg_rt_stim_during_center, avg_rt_stim_not_during_hold, avg_rt_no_stim_trial]
-	sem_rt = [sem_rt_stim_during_periph, sem_rt_not_during_periph, sem_rt_stim_during_center, sem_rt_stim_not_during_hold, sem_rt_no_stim_trial]
+	avg_rt = [avg_rt_stim_during_periph, avg_rt_not_during_periph, avg_rt_stim_during_center, avg_rt_stim_not_during_hold, avg_rt_no_stim_trial, avg_rt_stim_during_hold]
+	sem_rt = [sem_rt_stim_during_periph, sem_rt_not_during_periph, sem_rt_stim_during_center, sem_rt_stim_not_during_hold, sem_rt_no_stim_trial, sem_rt_stim_during_hold]
 	plt.figure(0)
-	plt.errorbar(range(5),avg_rt,yerr = sem_rt,fmt = 'o', color = 'k', ecolor = 'k')
+	plt.errorbar(range(6),avg_rt,yerr = sem_rt,fmt = 'o', color = 'k', ecolor = 'k')
 	xticklabels = ['Stim during Peripheral', 'Stim not during Peripheral', 'Stim during Center', 'Stim not during hold', 'No Stim']
-  	plt.xticks(range(5), xticklabels)
-  	plt.xlim((-0.5,4.5))
+  	plt.xticks(range(6), xticklabels)
+  	plt.xlim((-0.5,5.5))
   	plt.ylabel('Reaction time (s)')
-  	plt.title('Average Reaction Time')
+  	plt.title('Average Reaction Time - %s' % (plt_name))
   	plt.show()
 	
   	# sort time_after_periph
   	sorted_time_inds = np.argsort(time_after_periph)
   	#time_bins = np.linspace(np.amin(time_after_periph),np.amax(time_after_periph),21)
   	t_min = -0.4
-  	t_max = 0.2
+  	t_max = 0.4
   	nbins = 6
-  	stepsize = 0.1		# 100 ms
+  	stepsize = 0.2	# 100 ms
   	#time_bins = np.linspace(t_min,t_max,nbins)		# center hold is 200 ms before peripheral, max peripheral hold is 400 ms
   	time_bins = np.arange(t_min,t_max+stepsize,stepsize)
   	bin_centers = (time_bins[:-1] + time_bins[1:])/2.
@@ -1077,9 +1089,9 @@ def ClosedLoopReactionTimeAnalysis_MultipleSessions(hdf_filename, task_events_ma
   	sorted_time_inds_before_gocue = np.argsort(time_before_go_cue)
   	#time_bins = np.linspace(np.amin(time_after_periph),np.amax(time_after_periph),21)
   	t_min = -0.6
-  	t_max = 0.2
+  	t_max = 0.4
   	nbins = 6
-  	stepsize = 0.1		# 100 ms
+  	stepsize = 0.2		# 100 ms
   	#time_bins = np.linspace(t_min,t_max,nbins)		# center hold is 200 ms before peripheral, max peripheral hold is 400 ms
   	time_bins = np.arange(t_min,t_max+stepsize,stepsize)
   	bin_centers_before_gocue = (time_bins[:-1] + time_bins[1:])/2.
@@ -1109,16 +1121,16 @@ def ClosedLoopReactionTimeAnalysis_MultipleSessions(hdf_filename, task_events_ma
   	plt.xlim((t_min*1.05,t_max*1.05))
   	plt.ylim((lower_rt,upper_rt))
   	plt.ylabel('Reaction time (s)')
-  	plt.show()
+  	#plt.show()
 
-  	'''
+  	
   	thresname = float(thres*10)
   	lower_rt_name = float(lower_rt*100)
   	upper_rt_name = float(upper_rt*10)
   	plt_name = 'DelayedReach_RT_Method' + str(method) + '_Thres' + str(thresname) + '_lowerRT' + str(lower_rt_name) + 'upperRT' + str(upper_rt_name) + '.png'
   	plt.savefig(plt_name)
   	plt.close()
-  	
+  	'''
   	# Plot RT distributions: stim during peripheral vs stim not during peripheral
   	# First, fit with log-normal distribution
   	x_stim_during_periph, pdf_stim_during_periph, cdf_stim_during_periph = rt_lognormal_fit(rt_stim_during_periph)
