@@ -245,6 +245,9 @@ class OfflineSorted_CSVFile():
 		Output: 
 		- window_fr: length T array containing the peak firing rate in the window size indicated aligned to T different
 				time points
+		- smooth_window_fr: length T array containing the peak firing rate taken from smoothed psth in the window size indicated aligned to T different
+				time points
+		- psth: size T by 39 array, containing psth values aligned to timepoints indicated in times_align array
 		'''
 		num_timepoints = len(times_align)
 		window_fr = np.zeros(num_timepoints)
