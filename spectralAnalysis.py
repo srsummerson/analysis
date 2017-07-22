@@ -294,18 +294,24 @@ def LFPPowerPerTrial_SingleBand_PerChannel(lfp,Fs,channels,window_start_times,t_
 
 	# Set up plotting variables
 	# Set up matrix for plotting peak powers
+	power_mat = np.array([])
 
 	for chann in channels:
 		trial_power = []
 		for i, time in enumerate(window_start_times):
-			Sxx,f,t = specgram(lfp[time - t_before_samp:time + t_after_samp,chann],Fs=Fs)
+			Sxx,f,t,im = specgram(lfp[time - t_before_samp:time + t_after_samp,chann],Fs=Fs)
+			Sxx = Sxx/np.sum(Sxx)
+			Sxx = 10*np.log10(Sxx)
 			f_band_ind = [ind for ind in range(0,len(f)) if (f[ind] <= freq_window[1])&(freq_window[0] <= f[ind])]
 			f_band = np.sum(Sxx[f_band_ind,:],axis=0)
-			trial_power.append(f_band)
-		
-		power_mat = np.zeros([len(window_start_times),len(trial_power[0])])
-		for ind in range(0,len(window_start_times)):
-			power_mat[i,:] = trial_power[i]
+			#trial_power.append(f_band)
+			
+			if i==0:
+				power_mat = f_band
+			else:
+				power_mat = np.vstack([power_mat, f_band])
+		#for ind in range(0,len(window_start_times)):
+			#power_mat[i,:] = trial_power[i]
 
 		dx, dy = float(t_before+t_after)/len(t), 1
 		y, x = np.mgrid[slice(0,len(window_start_times),dy),
@@ -318,6 +324,8 @@ def LFPPowerPerTrial_SingleBand_PerChannel(lfp,Fs,channels,window_start_times,t_
 		plt.xlabel('Time (s)')
 		plt.axis([x.min(),x.max(),y.min(),y.max()])
 		plt.show()
+
+	return power_mat
 
 def LFPPowerPerTrial_SingleBand_PerChannel_Timestamps(lfp,timestamps,Avg_Fs,channels,t_start,t_before,t_after,freq_window):
 	'''
@@ -593,3 +601,84 @@ def computeAllCoherenceFeatures(lfp_data, Fs, power_bands, event_indices, t_wind
 	print "There are %i channel pairs" % (len(channel_pairs))
 	features = computeCoherenceFeatures(lfp_data, channel_pairs, Fs, power_bands, event_indices, t_window)
 	return features
+
+def notchFilterData(data, Fs, notch_freq):
+	'''
+	This method lowpass filters data using a butterworth filter.
+
+	Inputs:
+		- data: array of time-stamped values to be filtered 
+		- Fs: sampling frequency of data 
+		- cutoff: cutoff frequency of the LPF in Hz
+	Outputs:
+		- filtered_data: array contained the lowpass-filtered data
+
+	'''
+	nyq = 0.5*Fs
+	order = 2
+	notch_start = (notch_freq - 1) / nyq
+	notch_stop = (notch_freq + 1) / nyq
+
+	b, a = signal.butter(order, [notch_start, notch_stop], btype= 'bandstop', analog = False)
+	filtered_data = signal.filtfilt(b,a,data)
+
+	return filtered_data
+
+def lowpassFilterData(data, Fs, cutoff):
+	'''
+	This method lowpass filters data using a butterworth filter.
+
+	Inputs:
+		- data: array of time-stamped values to be filtered 
+		- Fs: sampling frequency of data 
+		- cutoff: cutoff frequency of the LPF in Hz
+	Outputs:
+		- filtered_data: array contained the lowpass-filtered data
+
+	'''
+	nyq = 0.5*Fs
+	order = 5
+	normal_cutoff = cutoff / nyq
+
+	b, a = signal.butter(order, normal_cutoff, btype= 'low', analog = False)
+	filtered_data = signal.filtfilt(b,a,data)
+
+	return filtered_data
+
+def averagedPSD(data, Fs, cutoff, len_windows, num_wins, notch):
+	'''
+	Computes a normalized PSD that is average over several windows of length len_windows. Data is first filtered and line-noise
+	is notched out, and then the PSD is computed.
+
+	Inputs:
+		- data: array of time-stamped values to be filtered 
+		- Fs: sampling frequency of data 
+		- cutoff: cutoff frequency of the LPF in Hz
+		- len_windows: integer indicating the length of windows that the data should be taken over
+		- num_wins: integer indicating the number of windows to be avearged over
+	Outputs:
+		- freq: array containing frequency values for which the PSD was computed
+		- Pxx: array containing normalized PSD values for each corresponding frequency bin
+	'''
+	if notch:
+		filtered_data = notchFilterData(data, Fs, 60) 					# remove line noise
+	else:
+		filtered_data = data
+	filtered_data = lowpassFilterData(filtered_data, Fs, cutoff) 	# low-pass filter
+
+	for i in range(num_wins):
+		if i==0:
+			freq, Pxx = signal.welch(filtered_data[i*len_windows:(i+1)*len_windows], Fs, nperseg=512, noverlap=256)
+			Pxx = Pxx/np.sum(Pxx)
+			print Pxx.shape
+		else:
+			freq, Pxx_den = signal.welch(filtered_data[i*len_windows:(i+1)*len_windows], Fs, nperseg=512, noverlap=256)
+			Pxx_den = Pxx_den/np.sum(Pxx_den)
+			print Pxx_den.shape
+			Pxx = np.vstack([Pxx, Pxx_den])
+
+	freq_cutoff = np.sum(np.less(freq,cutoff))
+	Pxx_avg = np.nanmean(Pxx[:,:freq_cutoff+1], axis = 0)
+	Pxx_sem = np.nanstd(Pxx[:,:freq_cutoff+1], axis = 0)
+
+	return freq[:freq_cutoff+1], Pxx_avg, Pxx_sem
