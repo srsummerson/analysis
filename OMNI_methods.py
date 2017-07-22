@@ -13,6 +13,9 @@ import tables
 from pylab import specgram
 import time
 from rt_calc import compute_rt_per_trial_CenterOut
+from spectralAnalysis import averagedPSD
+from neo import io
+import tables
 
 
 
@@ -339,12 +342,167 @@ def convert_OMNI_from_hdf(hdf_filename, chunk_num, total_chunks):
 
 	# split data into 5 files
 	for i in range(1):
-		filename = 'Mario20161028-OMNI_b' + str(chunk_num) + '.mat'
+		filename = 'Mario20161026-OMNI_b' + str(chunk_num) + '.mat'
 		omni = dict()
 		omni['corrected_data'] = corrected_channel_data
 		sp.io.savemat(filename,omni)
 	print "Data saved - took %f secs" % (time.time() - t)
 	return corrected_channel_data
+
+def convert_OMNI_from_hdf_overnight(hdf_filename, total_chunks):
+	'''
+	This method converts csv files saved using the OMNI device to a pandas DataFrame for easy
+	analysis in Python.
+
+	Input:
+		- hdf_filename: string containing the file path for a csv file saved with the OMNI device
+		- total_chunks: the number of chunks that data will be divided into
+
+	'''
+	hdf = tables.openFile(hdf_filename)
+	print "Loading data."
+	t = time.time()
+	data = hdf.root.dataGroup.dataTable[:]['out']
+	#data = data[:num_input_samples,:]
+	#timestamps = hdf.root.dataGroup.dataTable[:]['time']
+	#dur = timestamps[-1] - timestamps[0]
+
+	elapsed = time.time() -t
+	print "Loaded data: took %f secs." % (elapsed)
+	#time_samps, num_col = data.shape
+	crc_flag = np.array(data[:,0])
+	
+	t = time.time()
+	ind_crc_pass = np.ravel(np.nonzero(crc_flag==0))
+	elapsed = time.time() -t
+	print "Found which inds pass CRC: took %f secs." % (elapsed)
+	
+	channel_data = data[ind_crc_pass,1:-2]
+	print channel_data.shape
+	num_time_samps, num_col = channel_data.shape
+	num_col = int(num_col)
+
+	#timestamps = time_stamps[ind_crc_pass]
+	counter_ramp = np.array(data[ind_crc_pass,-1], dtype = float) 		# note: if dtype is int16 we can't represent differences in adjacent values of -2**16
+
+	corrected_counter = [counter_ramp[0]]
+	num_cycle = 0
+	print "Finding missed samples in ramp."
+	# Counter is 16 bit and resets at 2**16. This loop unwraps this cycling so that values are monotonically increasing.
+	t = time.time()
+	for i in range(1,len(counter_ramp)):
+		#print float(i)/len(counter_ramp)
+		diff = counter_ramp[i] - counter_ramp[i-1]
+		diff = int(diff)
+		
+		if (diff == -2**16 +1):
+			num_cycle += 1
+			corrected_counter.append(counter_ramp[i] + num_cycle*(2**16))
+		else:
+			corrected_counter.append(counter_ramp[i] + num_cycle*(2**16))
+	print "Corrected counter: took %f secs" % (time.time() - t)
+
+	# corrected counter should be same length at final corrected recordings
+	
+	num_corrected_samples = len(corrected_counter)
+	num_samps_per_chunk = int(num_corrected_samples/total_chunks)
+
+	corrected_counter = np.array(corrected_counter)
+	diff_corrected_counter = corrected_counter[1:] - corrected_counter[:-1]
+	miss_samp_index = np.ravel(np.nonzero(np.greater(diff_corrected_counter,1)))
+	
+	corrected_channel_data = channel_data[0:miss_samp_index[0]+1]
+	diff = corrected_counter[miss_samp_index[0]+1] - corrected_counter[miss_samp_index[0]]
+	diff = int(diff)
+	inter_mat = np.zeros([diff,num_col])
+	
+	for j in range(0,num_col):
+		y = np.interp(range(1,diff),[0, diff], [channel_data[miss_samp_index[0],j], channel_data[miss_samp_index[0]+1,j]])
+		y = np.append(y,channel_data[miss_samp_index[0]+1,j])
+		inter_mat[:,j] = y
+	corrected_channel_data = np.vstack([corrected_channel_data,inter_mat])
+	
+	print "There are %i instances of missed samples." % len(miss_samp_index)
+	print "Beginning looping through regeneration of data"
+	t = time.time()
+	chunk_counter = 0		# variable to count number of chunks recording is split into
+	chunk_end = 0			# variable to keep track of when last chunk stopped
+	for i in range(1,len(miss_samp_index)):
+		if (i % 3000 == 0):
+			print i/float(len(miss_samp_index)), i, corrected_channel_data.shape, time.time() - t
+		
+		corrected_channel_data = np.vstack([corrected_channel_data, channel_data[miss_samp_index[i-1] + 2:miss_samp_index[i]+1,:]])
+		# check numbers of samples that were skipped and need to be regenerated
+		diff = corrected_counter[miss_samp_index[i]+1] - corrected_counter[miss_samp_index[i]]
+		diff = int(diff)
+		inter_mat = np.zeros([diff,num_col])
+		# interpolate values to regenerate missing data
+		for j in range(0,num_col):
+			y = np.interp(range(1,diff),[0, diff], [channel_data[miss_samp_index[i],j], channel_data[miss_samp_index[i]+1,j]])
+			y = np.append(y,channel_data[miss_samp_index[i]+1,j])
+			inter_mat[:,j] = y
+		corrected_channel_data = np.vstack([corrected_channel_data,inter_mat])
+		
+		if (corrected_channel_data.shape[0] > (chunk_counter+1)*num_samps_per_chunk):
+			filename = 'Mario20161026-OMNI_b' + str(chunk_counter) + '.mat'
+			omni = dict()
+			omni['corrected_data'] = corrected_channel_data[chunk_end:-1]
+			sp.io.savemat(filename,omni)
+			print "Data saved - took %f secs" % (time.time() - t)
+			chunk_counter += 1
+			chunk_end = corrected_channel_data.shape[0]
+
+	print "Regeneration done - took % f secs" % (time.time() - t)
+	if (miss_samp_index[-1]+1 != len(ind_crc_pass)-1)&(chunk_counter<=total_chunks):
+		print "Adding last data"
+		corrected_channel_data = np.vstack([corrected_channel_data, channel_data[miss_samp_index[-1] + 2:,:]])
+		filename = 'Mario20161026-OMNI_b' + str(chunk_counter) + '.mat'
+		omni = dict()
+		omni['corrected_data'] = corrected_channel_data[chunk_end:-1]
+		sp.io.savemat(filename,omni)
+		print "Data saved - took %f secs" % (time.time() - t)
+	hdf.close()
+
+	return 
+
+def OMNI_detect_sleep_spindles(data, amp_threshold, channel):
+	'''
+	This method detects when sleep spindles occur in a matrix of data recorded with the OMNI device. It is assumed
+	that the data has already been corrected and that the sampling rate is 1000 Hz. Sleep spindles are detected
+	by first band-pass filtering the LFP activity into the spindle band (11 - 16 Hz), thresholding the resulting
+	signal amplitude, and ensuring that the activity lasts at least 0.5 s (500 ms).
+
+	Inputs:
+	- data: M x N array, where M is the number of time samples and N is the number of channels
+	- amp_threshold: float representing the value in uV used to threshold the filtered data when detecting the
+		occurance of sleep spindles
+	- channel: integer in range 1 to N
+
+	Outputs:
+	- time_sleep: length P arrays, where P is the number of times sleep spindles were detected, and each element of the
+		array represents the time index at which the sleep spindle began
+	'''
+	Fs = 1000.
+	nyq = 0.5*Fs
+	order = 5
+	Wn_start = 11. / nyq
+	Wn_stop = 16. / nyq
+	chan = channel - 1
+
+	# 1. Filter data in band [11,16] Hz
+	b, a = signal.butter(order, [Wn_start, Wn_stop], btype= 'bandpass', analog = False)
+	filtered_data = signal.filtfilt(b,a,data[:,chan])
+
+	# 2. Apply amplitude threshold.
+	filtered_data = filtered_data - np.nanmean(filtered_data) 	# make sure the data has zero mean
+	above_thres = np.greater(filtered_data,amp_threshold)		# check when data is above threshold
+	above_thres_ind = np.ravel(np.nonzero(above_thres))			# find indicated when data is above threshold
+
+	# 3. Check for epochs of activity being above threshold
+	neighboring_inds = above_thres_ind[1:] - above_thres_ind[:-1]
+	epoch_inds = np.greater(neighboring_inds,)
+
+	return
 
 def convert_OMNI_basic_stats(hdf_filename):
 	'''
@@ -886,7 +1044,7 @@ def ClosedLoopReactionTimeAnalysis(hdf_filename, task_events_mat_filename, stim_
 	omni_time_periph_on = np.ravel(task_events['peripheral_on'])					# array of time when peripheral target is shown during center hold
 	omni_time_center_hold_begin = np.ravel(task_events['begin_center_hold'])		# array of time when center hold begins
 	omni_time_go_cue = np.ravel(task_events['go_cue'])							# array of time when center hold ends
-	omni_time_end_reward = np.ravel(task_events['begin_reward']-500)
+	omni_time_end_reward = np.ravel(task_events['end_reward'])
 
 	time_periph_on = omni_time_periph_on[good_trial_inds]
 	time_center_hold_begin = omni_time_center_hold_begin[good_trial_inds]
@@ -981,6 +1139,8 @@ def ClosedLoopReactionTimeAnalysis_MultipleSessions(hdf_filename, task_events_ma
 		time_before_go_cue = np.append(time_before_go_cue, output[5])
 		rt_good_trials = np.append(rt_good_trials, output[6])
 		ind_no_stim_trial = np.append(ind_no_stim_trial, output[7])
+
+	print "Number of good trials:", len(rt_good_trials)
 		
 	print ind_no_stim_trial
 	avg_rt_stim_during_periph = np.nanmean(rt_stim_during_periph)
@@ -1006,15 +1166,15 @@ def ClosedLoopReactionTimeAnalysis_MultipleSessions(hdf_filename, task_events_ma
 	
 	# 6. Do statistics
 	# t-test
-	t_periph_nothold, p_periph_nothold = stats.ttest_ind(np.append(rt_stim_during_periph, rt_stim_during_center), rt_stim_not_during_hold)
+	t_periph_nothold, p_periph_nothold = stats.ttest_ind(rt_stim_during_center, rt_stim_not_during_hold)
 	t_periph_notperiph, p_periph_notperiph = stats.ttest_ind(rt_stim_during_periph, rt_stim_not_during_periph)
 
 	# mann-whitney
-	stat_periph_nothold, mw_p_periph_nothold = stats.mannwhitneyu(np.append(rt_stim_during_periph, rt_stim_during_center), rt_stim_not_during_hold)
+	stat_periph_nothold, mw_p_periph_nothold = stats.mannwhitneyu(rt_stim_during_center, rt_stim_not_during_hold)
 	stat_periph_notperiph, mw_p_periph_notperiph = stats.mannwhitneyu(rt_stim_during_periph, rt_stim_not_during_periph)
 
 	# kruskal-wallis h-test
-	h_periph_nothold, kw_p_periph_nothold = stats.kruskal(np.append(rt_stim_during_periph, rt_stim_during_center), rt_stim_not_during_hold)
+	h_periph_nothold, kw_p_periph_nothold = stats.kruskal(rt_stim_during_center, rt_stim_not_during_hold)
 	h_periph_notperiph, kw_p_periph_notperiph = stats.kruskal(rt_stim_during_periph, rt_stim_not_during_periph)
 
 
@@ -1029,22 +1189,25 @@ def ClosedLoopReactionTimeAnalysis_MultipleSessions(hdf_filename, task_events_ma
 	thresname = float(thres*10)
   	lower_rt_name = float(lower_rt*100)
   	upper_rt_name = float(upper_rt*10)
-  	plt_name = 'DelayedReach_RT_Method' + str(method) + '_Thres' + str(thresname) + '_lowerRT' + str(lower_rt_name) + 'upperRT' + str(upper_rt_name) + '.png'
+  	plt_name = 'DelayedReach_RT_Method' + str(method) + '_Thres' + str(thresname) + '_lowerRT' + str(lower_rt_name) + 'upperRT' + str(upper_rt_name) + '.svg'
   	
   	print plt_name
-  	print avg_rt_stim_during_hold - avg_rt_stim_not_during_hold
+  	print "RT change:", avg_rt_stim_during_center - avg_rt_stim_not_during_hold
 
 	# 6. Plot results
 	avg_rt = [avg_rt_stim_during_periph, avg_rt_not_during_periph, avg_rt_stim_during_center, avg_rt_stim_not_during_hold, avg_rt_no_stim_trial, avg_rt_stim_during_hold]
 	sem_rt = [sem_rt_stim_during_periph, sem_rt_not_during_periph, sem_rt_stim_during_center, sem_rt_stim_not_during_hold, sem_rt_no_stim_trial, sem_rt_stim_during_hold]
-	plt.figure(0)
+	plt.figure()
 	plt.errorbar(range(6),avg_rt,yerr = sem_rt,fmt = 'o', color = 'k', ecolor = 'k')
-	xticklabels = ['Stim during Peripheral', 'Stim not during Peripheral', 'Stim during Center', 'Stim not during hold', 'No Stim']
+	xticklabels = ['Stim during Peripheral', 'Stim not during Peripheral', 'Stim during Center', 'Stim not during hold', 'No Stim', 'Stim during hold']
   	plt.xticks(range(6), xticklabels)
   	plt.xlim((-0.5,5.5))
   	plt.ylabel('Reaction time (s)')
   	plt.title('Average Reaction Time - %s' % (plt_name))
-  	plt.show()
+  	plt.text(0,1.1*np.nanmax(avg_rt), "Number of good trials: %i" % (len(rt_good_trials)))
+  	plt.text(0,1.0*np.nanmax(avg_rt), "RT change = %f" % (avg_rt_stim_during_center - avg_rt_stim_not_during_hold))
+  	plt.savefig(plt_name)
+	
 	
   	# sort time_after_periph
   	sorted_time_inds = np.argsort(time_after_periph)
@@ -1074,7 +1237,8 @@ def ClosedLoopReactionTimeAnalysis_MultipleSessions(hdf_filename, task_events_ma
 	mean_sorted_rt = np.convolve(sorted_rt, np.ones((N,))/N)[N-1:]
 	#mean_time_after_periph = np.convolve(time_after_periph[sorted_time_inds], np.ones((N,))/N)[N-1:]
 
-  	plt.figure(1)
+	'''
+  	plt.figure(0)
   	plt.subplot(1,2,1)
   	plt.scatter(time_after_periph, rt_good_trials, c = 'c')
   	plt.errorbar(bin_centers, avg_RT_binned, yerr = sem_RT_binned, color = 'k', ecolor = 'k')
@@ -1083,7 +1247,7 @@ def ClosedLoopReactionTimeAnalysis_MultipleSessions(hdf_filename, task_events_ma
   	plt.xlim((t_min*1.05,t_max*1.05))
   	plt.ylim((lower_rt,upper_rt))
   	plt.ylabel('Reaction time (s)')
-  	
+  	'''
 
   	# sort time_before_go_cue
   	sorted_time_inds_before_gocue = np.argsort(time_before_go_cue)
@@ -1112,7 +1276,8 @@ def ClosedLoopReactionTimeAnalysis_MultipleSessions(hdf_filename, task_events_ma
 	mean_sorted_rt_before_gocue = np.convolve(sorted_rt_before_gocue, np.ones((N,))/N)[N-1:]
 	#mean_time_after_periph = np.convolve(time_after_periph[sorted_time_inds], np.ones((N,))/N)[N-1:]
 
-  	plt.figure(1)
+	'''
+  	plt.figure(0)
   	plt.subplot(1,2,2)
   	plt.scatter(time_before_go_cue, rt_good_trials, c = 'c')
   	plt.errorbar(bin_centers_before_gocue, avg_RT_binned_before_gocue, yerr = sem_RT_binned_before_gocue, color = 'k', ecolor = 'k')
@@ -1122,36 +1287,64 @@ def ClosedLoopReactionTimeAnalysis_MultipleSessions(hdf_filename, task_events_ma
   	plt.ylim((lower_rt,upper_rt))
   	plt.ylabel('Reaction time (s)')
   	#plt.show()
-
+	'''
   	
   	thresname = float(thres*10)
   	lower_rt_name = float(lower_rt*100)
   	upper_rt_name = float(upper_rt*10)
   	plt_name = 'DelayedReach_RT_Method' + str(method) + '_Thres' + str(thresname) + '_lowerRT' + str(lower_rt_name) + 'upperRT' + str(upper_rt_name) + '.png'
-  	plt.savefig(plt_name)
-  	plt.close()
-  	'''
+  	
+  	
   	# Plot RT distributions: stim during peripheral vs stim not during peripheral
   	# First, fit with log-normal distribution
   	x_stim_during_periph, pdf_stim_during_periph, cdf_stim_during_periph = rt_lognormal_fit(rt_stim_during_periph)
   	x_stim_not_during_periph, pdf_stim_not_during_periphd, cdf_stim_not_during_periph = rt_lognormal_fit(rt_stim_not_during_periph)
 	x_stim_not_during_hold, pdf_stim_not_during_hold, cdf_stim_not_during_hold = rt_lognormal_fit(rt_stim_not_during_hold)
+	x_stim_not_during_hold_gamma, pdf_stim_not_during_hold_gamma, cdf_stim_not_during_hold_gamma = rt_gamma_fit(rt_stim_not_during_hold)
+	x_stim_during_center, pdf_stim_during_center, cdf_stim_during_center = rt_lognormal_fit(rt_stim_during_center)
+	x_stim_during_center_gamma, pdf_stim_during_center_gamma, cdf_stim_during_center_gamma = rt_gamma_fit(rt_stim_during_center)
 
+	hist_rt_during_center, bins_during_center = np.histogram(rt_stim_during_center,bins=10)
+	weights = np.ones_like(rt_stim_during_center)/len(rt_stim_during_center)
 
-  	plt.figure(4)
-  	plt.hist(rt_stim_during_periph,bins=10,normed=True,color = 'c',alpha = 0.75)
-  	plt.plot(x_stim_during_periph,pdf_stim_during_periph,'k')
-  	plt.title('PDF of Reaction Times for Stim During Peripheral')
+	plt_name = 'DelayedReach_RT_Method' + str(method) + '_Thres' + str(thresname) + '_lowerRT' + str(lower_rt_name) + 'upperRT' + str(upper_rt_name) + '_hold.svg'
+  	bins = np.arange(0,1+1./15,1./15)
+
+  	plt.figure()
+  	plt.hist(rt_stim_during_center,bins=bins,normed=0,color = 'c',alpha = 0.75, weights = weights)
+  	#plt.plot(x_stim_during_center,pdf_stim_during_center,'g', label = 'Hold - lognormal')
+  	#plt.plot(x_stim_during_center_gamma, pdf_stim_during_center_gamma,'b', label = 'Hold - gamma')
+  	plt.title('PDF of Reaction Times for Stim During Hold')
   	plt.xlabel('Reaction Time (s)')
   	plt.ylabel('Probability')
+  	plt.legend()
+  	plt.xlim((0,1))
+  	#plt.ylim((0,6))
+  	plt.savefig(plt_name)
 
+  	plt_name = 'DelayedReach_RT_Method' + str(method) + '_Thres' + str(thresname) + '_lowerRT' + str(lower_rt_name) + 'upperRT' + str(upper_rt_name) + '_not_hold.svg'
+  	
+  	print 'Not hold = ', len(rt_stim_not_during_hold)
+  	print 'Hold = ', len(rt_stim_during_center)
+  	plt.figure()
+  	plt.hist(rt_stim_not_during_hold,bins=bins,normed=0,color = 'm',alpha = 0.75)
+  	#plt.plot(x_stim_not_during_hold,pdf_stim_not_during_hold,'r', label = 'Not hold-lognormal')
+  	#plt.plot(x_stim_not_during_hold_gamma, pdf_stim_not_during_hold_gamma,'k', label = 'Not hold - gamma')
+  	plt.title('PDF of Reaction Times for Stim Not During Hold')
+  	plt.xlabel('Reaction Time (s)')
+  	plt.ylabel('Probability')
+  	plt.legend()
+  	plt.xlim((0,1))
+  	#plt.ylim((0,6))
+  	plt.savefig(plt_name)
 
+  	'''
   	rt_stim_during_periph_sorted_inds = np.argsort(rt_stim_during_periph)
   	rt_stim_not_during_periph_sorted_inds = np.argsort(rt_stim_not_during_periph)
   	rt_stim_not_during_hold_sorted_inds = np.argsort(rt_stim_not_during_hold)
 
 
-  	plt.figure(3)
+  	plt.figure(5)
   	plt.plot(rt_stim_during_periph[rt_stim_during_periph_sorted_inds],np.arange(len(rt_stim_during_periph))/float(len(rt_stim_during_periph)), 'c',label = 'During Peripheral')
   	plt.plot(x_stim_during_periph,cdf_stim_during_periph,'k',label='During Peripheral Fit')
   	plt.plot(rt_stim_not_during_periph[rt_stim_not_during_periph_sorted_inds],np.arange(len(rt_stim_not_during_periph))/float(len(rt_stim_not_during_periph)), 'b',label = 'Not During Peripheral')
@@ -1164,9 +1357,11 @@ def ClosedLoopReactionTimeAnalysis_MultipleSessions(hdf_filename, task_events_ma
   	plt.legend()
   	plt.ylim((-0.05,1.05))
   	plt.show()
-	'''
+	
   	#### add: find trials completely without stimulation to compare with
 	return RT_binned, bin_centers, RT_binned_before_gocue, bin_centers_before_gocue
+	'''
+	return
 
 def rt_lognormal_fit(rt):
 	s, loc, scale = stats.lognorm.fit(rt, floc = 0)
@@ -1177,3 +1372,215 @@ def rt_lognormal_fit(rt):
   	cdf = np.cumsum(pdf)/np.sum(pdf)
 
 	return x, pdf, cdf
+
+def rt_gamma_fit(rt):
+	dist = getattr(sp.stats,'gamma')
+	params = dist.fit(rt)
+	xmin = rt.min()
+  	xmax = rt.max()
+  	x = np.linspace(xmin,xmax,100)
+  	pdf = dist.pdf(x,*params[:-2], loc = params[-2], scale = params[-1])
+  	cdf = np.cumsum(pdf)/np.sum(pdf)
+
+	return x, pdf, cdf
+
+
+def OMNI_sleep_power(data, Wn_start, Wn_stop, win_size):
+	'''
+	Compute power using OMNI data over frequency window defined by [Wn_start, Wn_stop].
+
+	Inputs:
+	- data: array of N time domain samples
+	- Wn_start: float indicating the value of the beginning of the bandpass filter (Hz)
+	- Wn_stop: float indicating the value of the end of the bandpass filter (Hz)
+	- win_size: integer indicating the length of the sliding window using to compute power
+	
+	Output:
+	- time: array indicating time points for powers computed
+	- power: array indicating power for frequency band indicated by inputs
+	'''
+	# 1. Filter data into designated band.
+	Fs = 1000.
+	nyq = 0.5*Fs
+	Wn_start = Wn_start/nyq
+	Wn_stop = Wn_stop/nyq
+	order = 3
+
+	b, a = signal.butter(order, [Wn_start, Wn_stop], btype= 'bandpass', analog = False)
+	filtered_data = signal.filtfilt(b,a,data)
+
+	# 2. Compute power over sliding windows
+	t_len = len(data)/Fs 	# len in seconds of data
+	win_size = float(win_size)
+	count = 0
+
+	power = np.zeros(len(data) - int(win_size))
+	for j in range(int(win_size),len(data)):
+		power[j-win_size] = np.sum((filtered_data[j- int(win_size):j])**2)/win_size
+		count += 1
+
+	# 3. Smooth output
+	boxcar_length = 10000.
+	boxcar_window = signal.boxcar(boxcar_length)  # 2 bins before, 2 bins after for boxcar smoothing
+	smooth_power = np.convolve(power, boxcar_window,mode='same')/boxcar_length
+
+	time = np.arange(0,t_len,t_len/len(power))
+	return time, power, smooth_power
+
+def OMNI_to_TDT_stim_indices(OMNI_channel, omni_timepoints, tdt_timepoints, tdt_Fs):
+	'''
+	This method finds the stim flags in the OMNI data and convert the time indices to the TDT timescale.
+
+	Inputs:
+	- OMNI_channel: array of L floats representing OMNI data from one channel
+	- omni_timepoints: array of 2 floats, representing two sample indices for stim points in OMNI recording
+	- lfp_timepoints: array of 2 floats, representing two sample indices for stim points in the TDT recording
+	- tdt_Fs: float representing the sampling frequency of the TDT recordings
+
+	Outputs:
+	- tdt_stim_flags: array of M ints representing indices in TDT recordings when stim occurred with the OMNI device
+	'''
+
+	# 1. Get stim flags from OMNI_channel data
+	stim_flags = np.ravel(np.nonzero(np.greater(OMNI_channel, 2**15)))
+
+	# 2. Translate stim flags from OMNI sampling rate to TDT sampling rate
+	m = float(tdt_timepoints[1] - tdt_timepoints[0])/(omni_timepoints[1] - omni_timepoints[0])
+	b = tdt_timepoints[1] - m*omni_timepoints[1]
+	tdt_stim_flags = np.rint(m*stim_flags + b)
+
+	return tdt_stim_flags
+
+
+def FindTDTArtifact(TDT_channel, tdt_Fs, thres):
+	nyq = 0.5*tdt_Fs
+	order = 3
+	cutoff = 3000
+	normal_cutoff = cutoff / nyq
+
+	b, a = signal.butter(order, normal_cutoff, btype= 'highpass', analog = False)
+	filtered_data = signal.filtfilt(b,a,TDT_channel)
+
+	above_thres = np.ravel(np.nonzero(np.greater(filtered_data, thres)))
+	tdt_stim_flags = np.array([above_thres[j] for j in range(1,len(above_thres)) if ((above_thres[j]-above_thres[j-1])>5)])
+
+	return tdt_stim_flags
+
+def TDT_stim_psth(TDT_channel, tdt_Fs, len_psth_before, len_psth_after, thres):
+	'''
+	This method finds the stim flags in the OMNI data and convert the time indices to the TDT timescale.
+
+	Inputs:
+	- TDT_channel: array of M floats representing TDT data recorded simultaneously
+	- tdt_Fs: float representing the sampling frequency of the TDT recordings
+	- len_psth_before: integer number of samples used before the stim flags
+	- len_psth_after: integer number of samples used after the stim flags
+	'''
+	tdt_stim_flags = FindTDTArtifact(TDT_channel, tdt_Fs, thres)
+	num_stim_flags = len(tdt_stim_flags)
+	tdt_stim_artifact = np.zeros((num_stim_flags, len_psth_before + len_psth_after))
+	for j, val in enumerate(tdt_stim_flags):
+		tdt_stim_artifact[j,:] = TDT_channel[val-len_psth_before:val+len_psth_after]
+
+	avg_stim_artifact = np.nanmean(tdt_stim_artifact, axis = 0)
+	std_stim_artifact = np.nanstd(tdt_stim_artifact, axis = 0)
+
+	plt.plot(avg_stim_artifact)
+	plt.show()
+
+	return tdt_stim_flags, tdt_stim_artifact, avg_stim_artifact, std_stim_artifact
+
+def comparePSD(TDT_tank, omni_mat, TDT_channel_list, omni_channel_list, cutoff, len_windows, num_wins):
+	'''
+	This method computes averaged PSDs for TDT channels and compared them to corresponding PSDs for OMNI channels.
+
+	Inputs:
+	- TDT_tanks
+	- omni_filename
+	- TDT_channel_list
+	- omni_channel_list
+	- cutoff
+	- len_windows: duration in seconds of time windows
+	- nun_windows
+	'''
+
+	# 1. Load TDT data and extract specified channels
+	tdt_lfp = dict()
+	tdt_lfp1 = np.array([chan for chan in TDT_channel_list if chan < 97])
+	tdt_lfp2 = np.array([(chan-96) for chan in TDT_channel_list if chan > 96])
+	for sig in TDT_tank.segments[0].analogsignals:
+		if sig.name[:4] == 'LFP1':
+			if (sig.channel_index in tdt_lfp1):
+				tdt_lfp[sig.channel_index] = np.array(sig)
+				Fs = np.float(sig.sampling_rate)
+		elif sig.name[:4] == 'LFP2':
+			if (sig.channel_index in tdt_lfp2):
+				tdt_lfp[sig.channel_index + 96] = np.array(sig)
+
+	# 2. Load OMNI data and extract specified channels.
+	#out = omni_hdf.root.dataGroup.dataTable[:]['out']
+	out = omni_mat['corrected_data']
+	omni_lfp = out[:,omni_channel_list - 1]
+	#omni_lfp = out[:,omni_channel_list]
+	omni_fs = 1000
+
+	# 3. Compute PSDs
+	num_pairs = np.min([len(TDT_channel_list), len(omni_channel_list)])
+	tdt_keys = tdt_lfp.keys()
+	for i in range(num_pairs):
+		tdt_data = tdt_lfp[tdt_keys[i]]
+		omni_data = omni_lfp[:,i]
+		freq_tdt, Pxx_avg_tdt, Pxx_sem_tdt = averagedPSD(tdt_data, Fs, cutoff, int(len_windows*Fs), num_wins, notch = True)
+		freq_omni, Pxx_avg_omni, Pxx_sem_omni = averagedPSD(omni_data, omni_fs, cutoff, int(len_windows*omni_fs), num_wins, notch = False)
+
+		plt.figure()
+		spl = plt.subplot(111)
+		spl.plot(freq_tdt, Pxx_avg_tdt, 'b', label = 'TDT')
+		spl.fill_between(freq_tdt, Pxx_avg_tdt - Pxx_sem_tdt, Pxx_avg_tdt + Pxx_sem_tdt, facecolor = 'blue', alpha = 0.5)
+		spl.plot(freq_omni, Pxx_avg_omni, 'r', label = 'OMNI')
+		spl.fill_between(freq_omni, Pxx_avg_omni - Pxx_sem_omni, Pxx_avg_omni + Pxx_sem_omni, facecolor = 'red', alpha = 0.5)
+		spl.set_yscale('log')
+		spl.set_xscale('log')
+		plt.xlabel('Frequency (Hz)')
+		plt.ylabel('Normalized PSD')
+		spl.grid(True)
+		plt.legend()
+		plt.xlim((-1,cutoff))
+		plt.title('TDT Channel %i' %(tdt_keys[i]))
+		plt.show()
+
+
+	return 
+
+def findStimStartAndStop(omni_hdf):
+	'''
+	This method takes in an OMNI hdf file corresponding to closed-loop stim recordings and find the start and stop times
+	of stimulation trains.
+
+	Inputs:
+	- omni_hdf: string containing hdf filename for OMNI recording
+
+	Outputs:
+	- trains: N x 2 array containing the stim sample start and stop times in each column, where N is the number of stim trains
+	'''
+	# Load data
+	hdf = tables.openFile(omni_hdf)
+	out = hdf.root.dataGroup.dataTable[:]['out']
+
+	# Find stim pulses and then trains
+	stim_inds = np.ravel(np.nonzero(np.greater(out[:,1], 2**15)))
+	stim_start = np.array([stim_inds[i+1] for i in range(len(stim_inds)-1) if (stim_inds[i+1] - stim_inds[i] > 5)])
+	stim_start = np.append(stim_inds[0], stim_start)
+	stim_end = np.array([stim_inds[i] for i in range(len(stim_inds)-1) if (stim_inds[i+1] - stim_inds[i] > 5)])
+	stim_end = np.append(stim_end, stim_inds[-1])
+
+	# Form matrix
+	trains = np.vstack([stim_start, stim_end]).T  	# should generate N x 2 array, where N is the number of stim trains
+	stims = dict()
+	stims['trains'] = trains
+
+	# Save data
+	filename = omni_hdf[:-4] + '_stims.mat'
+	sp.io.savemat(filename, stims)
+
+	return trains
