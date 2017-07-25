@@ -25,11 +25,12 @@ Also do high-gamma: should see high-gamma increase during movement
 """
 
 blocks = [1,2,3]
-channel = 86  		# picking subset of channels to analyze
+#channel = 86  		# picking subset of channels to analyze
 fmax = 200.
 
 filename_prefix = 'C:/Users/Samantha Summerson/Dropbox/Carmena Lab/OMNI_Device/Data/'
 
+'''
 print 'Loading TDT data'
 tdt_filename = 'Mario20161103'
 r = io.TdtIO(filename_prefix + tdt_filename)
@@ -44,229 +45,343 @@ for sig in bl.segments[0].analogsignals:
 	if (sig.name[0:4] == 'LFP2'):
 		chann = sig.channel_index + 96
 		tdt_lfp[chann] = np.ravel(sig)
+'''
 
-
-tdt_filename = 'Mario20160720-OMNI'
+tdt_filename = 'Mario20161215-OMNI'
 
 mat_filename1 = filename_prefix + tdt_filename + '_b1.mat'
-mat_filename2 = filename_prefix + tdt_filename + '_b2.mat'
-mat_filename3 = filename_prefix + tdt_filename + '_b3.mat'
 
-mat_files = [mat_filename1, mat_filename2, mat_filename3]
-#mat_files = [mat_filename1]
+
+#mat_files = [mat_filename1, mat_filename2, mat_filename3]
+mat_files = [mat_filename1]
 print "Loading .mat files with data"
 
+omnib1 = dict()
+mat_file = mat_files[0]
+print "Loading data for Block 1."
+sp.io.loadmat(mat_file,omnib1)
+
+data = omnib1['corrected_data']
+fs = float(omnib1['omni_data_rate'])
+omni_ind_reward = np.ravel(omnib1['reward_index'])
+omni_ind_gocue = np.ravel(omnib1['gocue_index'])
+
+num_time_samps = 8*fs   # adding padding
+num_begin_pad = 2*fs
+num_end_pad = 2*fs
+lfp = np.zeros([len(omni_ind_gocue), num_time_samps])
+
 # Get all power data
-for i in range(len(mat_files)):
-	omnib1 = dict()
-	mat_file = mat_files[i]
-	print "Loading data for Block %i." % (i+1)
-	sp.io.loadmat(mat_file,omnib1)
-
-	data = omnib1['corrected_data']
-	fs = float(omnib1['omni_data_rate'])
-	omni_ind_reward = np.ravel(omnib1['reward_index'])
-	omni_ind_gocue = np.ravel(omnib1['gocue_index'])
-
-	num_time_samps = 8*fs   # adding padding
-	num_begin_pad = 2*fs
-	num_end_pad = 2*fs
-	lfp = np.zeros([len(omni_ind_gocue), num_time_samps])
-
+def OMNI_TrialPowers(channel):
+	
 	for j, ind in enumerate(omni_ind_gocue):
 		lfp[j,:] = data[ind - 3*fs:ind + 5*fs, channel-1]
-	"""
-	if i == 0:
-		print "Computing powers for Block 1."
-		powers, Power, cf_list = make_spectrogram(lfp, fs, fmax, 1, 0, num_begin_pad, num_end_pad)
-		time_to_reward = omni_ind_reward- omni_ind_gocue  # in samples with rate 944 Hz
-		all_powers = powers
-		all_times_to_reward = time_to_reward
-	else:
-		print "Computing powers for Block %i." % (i+1)
-		powers, Power, cf_list = make_spectrogram(lfp, fs, fmax, 1, 0, num_begin_pad, num_end_pad)
-		time_to_reward = omni_ind_reward- omni_ind_gocue  # in samples with rate 944 Hz
-		all_powers = np.vstack([all_powers,powers])
-		all_times_to_reward = np.append(all_times_to_reward, time_to_reward)
-	"""
-'''
-# Compute average low (19.51 - 25.75 Hz) and high (33.47 - 43.59 Hz) beta. When fmax = 100, these are the appropriate cf_list indices
-avg_low_beta_per_trial = np.nanmean(all_powers[:,20:26,2*fs:-2*fs], axis = 1)
-avg_high_beta_per_trial = np.nanmean(all_powers[:,30:36,2*fs:-2*fs], axis = 1)
-avg_all_beta_per_trial = np.nanmean(all_powers[:,20:36,2*fs:-2*fs], axis = 1)
-'''
-"""
-# Compute average low (19.51 - 25.75 Hz) and high (33.47 - 43.59 Hz) beta 
-avg_low_beta_per_trial = np.nanmean(all_powers[:,18:23,2*fs:-2*fs], axis = 1)
-avg_high_beta_per_trial = np.nanmean(all_powers[:,26:31,2*fs:-2*fs], axis = 1)
-avg_all_beta_per_trial = np.nanmean(all_powers[:,18:31,2*fs:-2*fs], axis = 1)
-avg_high_gamma_per_trial = np.nanmean(all_powers[:,37:, 2*fs:-2*fs], axis = 1)
+	
+	
+	print "Computing powers for Block 1."
+	powers, Power, cf_list = make_spectrogram(lfp, fs, fmax, 1, 0, num_begin_pad, num_end_pad)
+	time_to_reward = omni_ind_reward- omni_ind_gocue  # in samples with rate 944 Hz
+	all_powers = powers
+	all_times_to_reward = time_to_reward
 
-num_trials, num_samples = avg_low_beta_per_trial.shape
+	print "Number of rewards:", len(all_times_to_reward)
+	print cf_list	
 
-# Compute trial-averaged powers in high and low beta bands
-trial_avg_low_beta = np.nanmean(avg_low_beta_per_trial,axis = 0)
-trial_avg_high_beta = np.nanmean(avg_high_beta_per_trial,axis = 0)
-trial_avg_all_beta = np.nanmean(avg_all_beta_per_trial,axis = 0)
-trial_avg_high_gamma = np.nanmean(avg_high_gamma_per_trial, axis = 0)
+	N = 100
+	lfp_snippet = lfp[100, 2.5*fs:-1*fs]
+	# Compute average low (19.51 - 25.75 Hz) and high (33.47 - 43.59 Hz) beta 
+	avg_low_beta_per_trial = np.nanmean(all_powers[:,18:23,2.5*fs:-1*fs], axis = 1)
+	avg_low_beta_per_trial_norm = sp.stats.zscore(avg_low_beta_per_trial, axis = 1)
+	for m in range(avg_low_beta_per_trial.shape[0]):
+		sliding_avg = np.convolve(avg_low_beta_per_trial[m,:], np.ones((N,))/N)[(N-1):]
+		avg_low_beta_per_trial_norm[m,:] = sliding_avg
 
-x = np.linspace(-1,3,len(trial_avg_low_beta))
-#xnew = np.linspace(-1,3,100)
-#low_beta_smooth = spline(x,trial_avg_low_beta,xnew)
-#high_beta_smooth = spline(x,trial_avg_high_beta,xnew)
-#all_beta_smooth = spline(x,trial_avg_all_beta,xnew)
-#high_gamma_smooth = spline(x,trial_avg_high_gamma,xnew)
+	# Compute lower beta (13.2626 - 22.27)
+	avg_lower_beta_per_trial = np.nanmean(all_powers[:,13:21,2.5*fs:-1*fs], axis = 1)
+	avg_lower_beta_per_trial_norm = sp.stats.zscore(avg_lower_beta_per_trial, axis = 1)
+	for m in range(avg_lower_beta_per_trial.shape[0]):
+		sliding_avg = np.convolve(avg_lower_beta_per_trial[m,:], np.ones((N,))/N)[(N-1):]
+		avg_lower_beta_per_trial_norm[m,:] = np.log10(sliding_avg)
 
-# Gaussian smoothing
-b = signal.gaussian(39,3)
-low_beta_smooth = filters.convolve1d(trial_avg_low_beta, b/b.sum())
-high_beta_smooth = filters.convolve1d(trial_avg_high_beta, b/b.sum())
-high_gamma_smooth = filters.convolve1d(trial_avg_high_gamma, b/b.sum())
-all_beta_smooth = filters.convolve1d(trial_avg_all_beta, b/b.sum())
-xnew = np.linspace(-1, 3, len(low_beta_smooth))
 
-adjusted_times_to_reward = np.array([int(fs + all_times_to_reward[i]) for i in range(num_trials)])  # gives sample number in x array
+	avg_high_beta_per_trial = np.nanmean(all_powers[:,26:31,2.5*fs:-1*fs], axis = 1)
+	avg_high_beta_per_trial_norm = sp.stats.zscore(avg_high_beta_per_trial, axis = 1)
+	for m in range(avg_high_beta_per_trial.shape[0]):
+		sliding_avg = np.convolve(avg_high_beta_per_trial[m,:], np.ones((N,))/N)[(N-1):]
+		avg_high_beta_per_trial_norm[m,:] = sliding_avg
 
-# convert times from samples to secs
-adjusted_times_to_reward = (1./fs)*adjusted_times_to_reward - 1
-adjusted_times_to_target_hold = adjusted_times_to_reward - 0.5 			# target hold begins 0.5 s before reward
-adjusted_time_following_reward = adjusted_times_to_reward + 1 			# reward duration is 1 s following reward commencement
+	avg_all_beta_per_trial = np.nanmean(all_powers[:,18:31,2.5*fs:-1*fs], axis = 1)
+	avg_all_beta_per_trial_norm = sp.stats.zscore(avg_all_beta_per_trial, axis = 1)
+	for m in range(avg_all_beta_per_trial.shape[0]):
+		sliding_avg = np.convolve(avg_all_beta_per_trial[m,:], np.ones((N,))/N)[(N-1):]
+		avg_all_beta_per_trial_norm[m,:] = sliding_avg
 
-# Get rid of outlier trials
-min_high_gamma = np.min(avg_high_gamma_per_trial,axis = 1)
-bad_trials = np.ravel(np.nonzero(np.less(min_high_gamma, -39)))
-sort_ind = np.argsort(all_times_to_reward)
-sort_ind = np.array([ind for ind in sort_ind if ind not in bad_trials])
-num_trials = len(sort_ind)
+	avg_high_gamma_per_trial = np.nanmean(all_powers[:,37:,2.5*fs:-1*fs], axis = 1)
+	avg_high_gamma_per_trial_norm = sp.stats.zscore(avg_high_gamma_per_trial, axis = 1)
+	for m in range(avg_high_gamma_per_trial.shape[0]):
+		sliding_avg = np.convolve(avg_high_gamma_per_trial[m,:], np.ones((N,))/N)[(N-1):]
+		avg_high_gamma_per_trial_norm[m,:] = sliding_avg
 
-# Make plot for low-beta
+	num_trials, num_samples = avg_low_beta_per_trial.shape
 
-fig = plt.figure()
-ax1 = plt.subplot(211)
-#plt.plot(x,trial_avg_low_beta,'b')
-plt.plot(xnew,low_beta_smooth,'k')
-ax1.get_yaxis().set_tick_params(direction='out')
-ax1.get_xaxis().set_tick_params(direction='out')
-ax1.get_xaxis().tick_bottom()
-ax1.get_yaxis().tick_left()
-plt.title('Trial-averaged Low Beta: n = %f' % (num_trials))
-ax1 = plt.subplot(212)
-ax = plt.imshow(avg_low_beta_per_trial[sort_ind,:],interpolation = 'bicubic', aspect='auto', origin='lower', 
-	extent = [-1,int((num_samples)/fs)-1,0, num_trials])
-plt.plot(np.zeros(num_trials),range(num_trials),'k')								# Go cue line (x = 0)
-plt.plot(adjusted_times_to_target_hold[sort_ind],range(num_trials),'k')			# Peripheral hold begin
-plt.plot(adjusted_times_to_reward[sort_ind],range(num_trials),'k--')				# Reward begin following peripheral hold
-plt.plot(adjusted_time_following_reward[sort_ind],range(num_trials),'k--')		# Reward end 
-#yticks = np.arange(0, len(cf_list), 5)
-#yticks = np.append(yticks,len(cf_list)-1)
-#yticklabels = ['{0:.2f}'.format(cf_list[i]) for i in yticks]
-#plt.yticks(yticks, yticklabels)
-ax1.get_yaxis().set_tick_params(direction='out')
-ax1.get_xaxis().set_tick_params(direction='out')
-ax1.get_xaxis().tick_bottom()
-ax1.get_yaxis().tick_left()
-plt.xlim((-1,int((num_samples)/fs)-1))
-plt.ylabel('Trials')
-plt.xlabel('Time (s)')
-plt.title('Average Low Beta Power: 19 - 26 Hz')
-fig.colorbar(ax)
-plt.show()
+	# Compute trial-averaged powers in high and low beta bands
+	trial_avg_low_beta = np.nanmean(avg_low_beta_per_trial,axis = 0)
+	trial_avg_lower_beta = np.nanmean(avg_lower_beta_per_trial, axis = 0)
+	trial_avg_high_beta = np.nanmean(avg_high_beta_per_trial,axis = 0)
+	trial_avg_all_beta = np.nanmean(avg_all_beta_per_trial,axis = 0)
+	trial_avg_high_gamma = np.nanmean(avg_high_gamma_per_trial, axis = 0)
 
-# Make plot for high-beta
+	x = np.linspace(-1,3,len(trial_avg_low_beta))
+	#xnew = np.linspace(-1,3,100)
+	#low_beta_smooth = spline(x,trial_avg_low_beta,xnew)
+	#high_beta_smooth = spline(x,trial_avg_high_beta,xnew)
+	#all_beta_smooth = spline(x,trial_avg_all_beta,xnew)
+	#high_gamma_smooth = spline(x,trial_avg_high_gamma,xnew)
 
-fig = plt.figure()
-ax1 = plt.subplot(211)
-#plt.plot(trial_avg_high_beta)
-plt.plot(xnew,high_beta_smooth,'k')
-ax1.get_yaxis().set_tick_params(direction='out')
-ax1.get_xaxis().set_tick_params(direction='out')
-ax1.get_xaxis().tick_bottom()
-ax1.get_yaxis().tick_left()
-plt.title('Trial-averaged High Beta: n = %f' % (num_trials))
-ax1 = plt.subplot(212)
-ax = plt.imshow(avg_high_beta_per_trial[sort_ind,:],interpolation = 'bicubic', aspect='auto', origin='lower', 
-	extent = [0-1,int((num_samples)/fs)-1,0, num_trials])
-plt.plot(np.zeros(num_trials),range(num_trials),'k')								# Go cue line (x = 0)
-plt.plot(adjusted_times_to_target_hold[sort_ind],range(num_trials),'k')			# Peripheral hold begin
-plt.plot(adjusted_times_to_reward[sort_ind],range(num_trials),'k--')				# Reward begin following peripheral hold
-plt.plot(adjusted_time_following_reward[sort_ind],range(num_trials),'k--')		# Reward end 
-#yticks = np.arange(0, len(cf_list), 5)
-#yticks = np.append(yticks,len(cf_list)-1)
-#yticklabels = ['{0:.2f}'.format(cf_list[i]) for i in yticks]
-#plt.yticks(yticks, yticklabels)
-ax1.get_yaxis().set_tick_params(direction='out')
-ax1.get_xaxis().set_tick_params(direction='out')
-ax1.get_xaxis().tick_bottom()
-ax1.get_yaxis().tick_left()
-plt.xlim((-1,int((num_samples)/fs)-1))
-plt.ylabel('Trials')
-plt.xlabel('Time (s)')
-plt.title('Average High Beta Power: 32 - 45 Hz')
-fig.colorbar(ax)
-plt.show()
+	# Gaussian smoothing
+	b = signal.gaussian(39,3)
+	low_beta_smooth = filters.convolve1d(trial_avg_low_beta, b/b.sum())
+	lower_beta_smooth = filters.convolve1d(trial_avg_lower_beta, b/b.sum())
+	high_beta_smooth = filters.convolve1d(trial_avg_high_beta, b/b.sum())
+	high_gamma_smooth = filters.convolve1d(trial_avg_high_gamma, b/b.sum())
+	all_beta_smooth = filters.convolve1d(trial_avg_all_beta, b/b.sum())
+	xnew = np.linspace(-1, 3, len(low_beta_smooth))
 
-fig = plt.figure()
-ax1 = plt.subplot(211)
-#plt.plot(trial_avg_high_beta)
-plt.plot(xnew,all_beta_smooth,'k')
-ax1.get_yaxis().set_tick_params(direction='out')
-ax1.get_xaxis().set_tick_params(direction='out')
-ax1.get_xaxis().tick_bottom()
-ax1.get_yaxis().tick_left()
-plt.title('Trial-averaged All Beta: n = %f' % (num_trials))
-ax1 = plt.subplot(212)
-ax = plt.imshow(avg_all_beta_per_trial[sort_ind,:],interpolation = 'bicubic', aspect='auto', origin='lower', 
-	extent = [0-1,int((num_samples)/fs)-1,0, num_trials])
-plt.plot(np.zeros(num_trials),range(num_trials),'k')								# Go cue line (x = 0)
-plt.plot(adjusted_times_to_target_hold[sort_ind],range(num_trials),'k')			# Peripheral hold begin
-plt.plot(adjusted_times_to_reward[sort_ind],range(num_trials),'k--')				# Reward begin following peripheral hold
-plt.plot(adjusted_time_following_reward[sort_ind],range(num_trials),'k--')		# Reward end 
-#yticks = np.arange(0, len(cf_list), 5)
-#yticks = np.append(yticks,len(cf_list)-1)
-#yticklabels = ['{0:.2f}'.format(cf_list[i]) for i in yticks]
-#plt.yticks(yticks, yticklabels)
-ax1.get_yaxis().set_tick_params(direction='out')
-ax1.get_xaxis().set_tick_params(direction='out')
-ax1.get_xaxis().tick_bottom()
-ax1.get_yaxis().tick_left()
-plt.xlim((-1,int((num_samples)/fs)-1))
-plt.ylabel('Trials')
-plt.xlabel('Time (s)')
-plt.title('Average Beta Power: 19 - 45 Hz')
-fig.colorbar(ax)
-plt.show()
+	high_gamma_smooth = spline(xnew, high_gamma_smooth,np.linspace(-1,3,100))
 
-fig = plt.figure()
-ax1 = plt.subplot(211)	
-#plt.plot(trial_avg_high_beta)
-plt.plot(xnew,high_gamma_smooth,'k')
-ax1.get_yaxis().set_tick_params(direction='out')
-ax1.get_xaxis().set_tick_params(direction='out')
-ax1.get_xaxis().tick_bottom()
-ax1.get_yaxis().tick_left()
-plt.title('Trial-averaged High Gamma: n = %f' % (num_trials))
-ax1 = plt.subplot(212)
-ax = plt.imshow(avg_high_gamma_per_trial[sort_ind,:],interpolation = 'bicubic', aspect='auto', origin='lower', 
-	extent = [0-1,int((num_samples)/fs)-1,0, num_trials])
-plt.plot(np.zeros(num_trials),range(num_trials),'k')								# Go cue line (x = 0)
-plt.plot(adjusted_times_to_target_hold[sort_ind],range(num_trials),'k')			# Peripheral hold begin
-plt.plot(adjusted_times_to_reward[sort_ind],range(num_trials),'k--')				# Reward begin following peripheral hold
-plt.plot(adjusted_time_following_reward[sort_ind],range(num_trials),'k--')		# Reward end 
-#yticks = np.arange(0, len(cf_list), 5)
-#yticks = np.append(yticks,len(cf_list)-1)
-#yticklabels = ['{0:.2f}'.format(cf_list[i]) for i in yticks]
-#plt.yticks(yticks, yticklabels)
-ax1.get_yaxis().set_tick_params(direction='out')
-ax1.get_xaxis().set_tick_params(direction='out')
-ax1.get_xaxis().tick_bottom()
-ax1.get_yaxis().tick_left()
-plt.xlim((-1,int((num_samples)/fs)-1))
-plt.ylabel('Trials')
-plt.xlabel('Time (s)')
-plt.title('Average High Gamma Power: 70 - 200 Hz')
-fig.colorbar(ax)
-plt.show()
-"""
+	adjusted_times_to_reward = np.array([int(fs + all_times_to_reward[i]) for i in range(num_trials)])  # gives sample number in x array
+
+	# convert times from samples to secs
+	adjusted_times_to_reward = (1./fs)*adjusted_times_to_reward - 1
+	adjusted_times_to_target_hold = adjusted_times_to_reward - 0.5 			# target hold begins 0.5 s before reward
+	adjusted_time_following_reward = adjusted_times_to_reward + 1 			# reward duration is 1 s following reward commencement
+
+	# Get rid of outlier trials
+	min_high_gamma = np.min(avg_high_gamma_per_trial,axis = 1)
+	max_beta = np.max(avg_low_beta_per_trial, axis = 1)
+	bad_trials = np.ravel(np.nonzero(np.less(min_high_gamma, -39)))
+	bad_trials = np.ravel(np.nonzero(np.greater(max_beta,-10)))
+	bad_trials = np.ravel([])
+	sort_ind = np.argsort(all_times_to_reward)
+	sort_ind = np.array([ind for ind in sort_ind if ind not in bad_trials])
+	num_trials = len(sort_ind)
+	print num_trials
+
+	print len(xnew)
+	print len(lfp_snippet)
+	# Plot lfp snippet
+	fig = plt.figure()
+	plt.plot(xnew,lfp_snippet)
+	plt.savefig('CenterOut_LFPsnippet_Channel_' + str(channel) + '.svg')
+
+	# Make plot for low-beta
+
+	fig = plt.figure()
+	ax1 = plt.subplot(211)
+	#plt.plot(x,trial_avg_low_beta,'b')
+	plt.plot(xnew,low_beta_smooth,'k')
+	ax1.get_yaxis().set_tick_params(direction='out')
+	ax1.get_xaxis().set_tick_params(direction='out')
+	ax1.get_xaxis().tick_bottom()
+	ax1.get_yaxis().tick_left()
+	plt.title('Trial-averaged Low Beta: n = %i' % (int(num_trials)))
+	ax1 = plt.subplot(212)
+	ax = plt.imshow(avg_low_beta_per_trial[sort_ind,:4000],interpolation = 'bicubic', aspect='auto', origin='lower', 
+		extent = [-1,int((4000)/fs)-1,0, num_trials])
+	plt.plot(np.zeros(num_trials),range(num_trials),'k')								# Go cue line (x = 0)
+	plt.plot(adjusted_times_to_target_hold[sort_ind],range(num_trials),'k')			# Peripheral hold begin
+	plt.plot(adjusted_times_to_reward[sort_ind],range(num_trials),'k--')				# Reward begin following peripheral hold
+	plt.plot(adjusted_time_following_reward[sort_ind],range(num_trials),'k--')		# Reward end 
+	#yticks = np.arange(0, len(cf_list), 5)
+	#yticks = np.append(yticks,len(cf_list)-1)
+	#yticklabels = ['{0:.2f}'.format(cf_list[i]) for i in yticks]
+	#plt.yticks(yticks, yticklabels)
+	ax1.get_yaxis().set_tick_params(direction='out')
+	ax1.get_xaxis().set_tick_params(direction='out')
+	ax1.get_xaxis().tick_bottom()
+	ax1.get_yaxis().tick_left()
+	plt.xlim((-1,int((4000)/fs)-1))
+	plt.ylabel('Trials')
+	plt.xlabel('Time (s)')
+	plt.title('Average Low Beta Power: 19 - 26 Hz')
+	fig.colorbar(ax)
+	#plt.show()
+	plt_name = 'CenterOut'  '_Channel_' + str(channel) + '_LowBeta' + '.svg'
+  	plt.savefig(plt_name)
+
+  	# Make plot for lower-beta
+
+	fig = plt.figure()
+	ax1 = plt.subplot(211)
+	#plt.plot(x,trial_avg_low_beta,'b')
+	plt.plot(xnew,lower_beta_smooth,'k')
+	ax1.get_yaxis().set_tick_params(direction='out')
+	ax1.get_xaxis().set_tick_params(direction='out')
+	ax1.get_xaxis().tick_bottom()
+	ax1.get_yaxis().tick_left()
+	plt.title('Channel %i - Trial-averaged Lower Beta: n = %i' % (channel, int(num_trials)))
+	ax1 = plt.subplot(212)
+	ax = plt.imshow(avg_lower_beta_per_trial[sort_ind,:4000],interpolation = 'bicubic', aspect='auto', origin='lower', 
+		extent = [-1,int((4000)/fs)-1,0, num_trials])
+	plt.plot(np.zeros(num_trials),range(num_trials),'k')								# Go cue line (x = 0)
+	plt.plot(adjusted_times_to_target_hold[sort_ind],range(num_trials),'k')			# Peripheral hold begin
+	plt.plot(adjusted_times_to_reward[sort_ind],range(num_trials),'k--')				# Reward begin following peripheral hold
+	plt.plot(adjusted_time_following_reward[sort_ind],range(num_trials),'k--')		# Reward end 
+	#yticks = np.arange(0, len(cf_list), 5)
+	#yticks = np.append(yticks,len(cf_list)-1)
+	#yticklabels = ['{0:.2f}'.format(cf_list[i]) for i in yticks]
+	#plt.yticks(yticks, yticklabels)
+	ax1.get_yaxis().set_tick_params(direction='out')
+	ax1.get_xaxis().set_tick_params(direction='out')
+	ax1.get_xaxis().tick_bottom()
+	ax1.get_yaxis().tick_left()
+	plt.xlim((-1,int((4000)/fs)-1))
+	plt.ylabel('Trials')
+	plt.xlabel('Time (s)')
+	plt.title('Average Lower Beta Power: 13 - 22 Hz')
+	fig.colorbar(ax)
+	#plt.show()
+	plt_name = 'CenterOut'  '_Channel_' + str(channel) + '_LowerBeta' + '.svg'
+  	plt.savefig(plt_name)
+
+	# Make plot for normalized low-beta
+
+	fig = plt.figure()
+	ax1 = plt.subplot(211)
+	#plt.plot(x,trial_avg_low_beta,'b')
+	plt.plot(xnew,low_beta_smooth,'k')
+	ax1.get_yaxis().set_tick_params(direction='out')
+	ax1.get_xaxis().set_tick_params(direction='out')
+	ax1.get_xaxis().tick_bottom()
+	ax1.get_yaxis().tick_left()
+	plt.title('Channel %i - Trial-averaged Low Beta: n = %i' % (channel, int(num_trials)))
+	ax1 = plt.subplot(212)
+	ax = plt.imshow(avg_low_beta_per_trial_norm[sort_ind,:4000],interpolation = 'bicubic', aspect='auto', origin='lower', 
+		extent = [-1,int((4000)/fs)-1,0, num_trials])
+	plt.plot(np.zeros(num_trials),range(num_trials),'k')								# Go cue line (x = 0)
+	plt.plot(adjusted_times_to_target_hold[sort_ind],range(num_trials),'k')			# Peripheral hold begin
+	plt.plot(adjusted_times_to_reward[sort_ind],range(num_trials),'k--')				# Reward begin following peripheral hold
+	plt.plot(adjusted_time_following_reward[sort_ind],range(num_trials),'k--')		# Reward end 
+	#yticks = np.arange(0, len(cf_list), 5)
+	#yticks = np.append(yticks,len(cf_list)-1)
+	#yticklabels = ['{0:.2f}'.format(cf_list[i]) for i in yticks]
+	#plt.yticks(yticks, yticklabels)
+	ax1.get_yaxis().set_tick_params(direction='out')
+	ax1.get_xaxis().set_tick_params(direction='out')
+	ax1.get_xaxis().tick_bottom()
+	ax1.get_yaxis().tick_left()
+	plt.xlim((-1,int((4000)/fs)-1))
+	plt.ylabel('Trials')
+	plt.xlabel('Time (s)')
+	plt.title('Normalized Average Low Beta Power: 19 - 26 Hz')
+	fig.colorbar(ax)
+	#plt.show()
+	plt_name = 'CenterOut'  '_Channel_' + str(channel) + '_NormLowBeta' + '.svg'
+  	plt.savefig(plt_name)
+  	
+
+	# Make plot for high-beta
+
+	fig = plt.figure()
+	ax1 = plt.subplot(211)
+	#plt.plot(trial_avg_high_beta)
+	plt.plot(xnew,high_beta_smooth,'k')
+	ax1.get_yaxis().set_tick_params(direction='out')
+	ax1.get_xaxis().set_tick_params(direction='out')
+	ax1.get_xaxis().tick_bottom()
+	ax1.get_yaxis().tick_left()
+	plt.title('Channel %i - Trial-averaged High Beta: n = %i' % (channel, int(num_trials)))
+	ax1 = plt.subplot(212)
+	ax = plt.imshow(avg_high_beta_per_trial_norm[sort_ind,:4000],interpolation = 'bicubic', aspect='auto', origin='lower', 
+		extent = [0-1,int((4000)/fs)-1,0, num_trials])
+	plt.plot(np.zeros(num_trials),range(num_trials),'k')								# Go cue line (x = 0)
+	plt.plot(adjusted_times_to_target_hold[sort_ind],range(num_trials),'k')			# Peripheral hold begin
+	plt.plot(adjusted_times_to_reward[sort_ind],range(num_trials),'k--')				# Reward begin following peripheral hold
+	plt.plot(adjusted_time_following_reward[sort_ind],range(num_trials),'k--')		# Reward end 
+	#yticks = np.arange(0, len(cf_list), 5)
+	#yticks = np.append(yticks,len(cf_list)-1)
+	#yticklabels = ['{0:.2f}'.format(cf_list[i]) for i in yticks]
+	#plt.yticks(yticks, yticklabels)
+	ax1.get_yaxis().set_tick_params(direction='out')
+	ax1.get_xaxis().set_tick_params(direction='out')
+	ax1.get_xaxis().tick_bottom()
+	ax1.get_yaxis().tick_left()
+	plt.xlim((-1,int((4000)/fs)-1))
+	plt.ylabel('Trials')
+	plt.xlabel('Time (s)')
+	plt.title('Average High Beta Power: 32 - 45 Hz')
+	fig.colorbar(ax)
+	#plt.show()
+	plt_name = 'CenterOut'  '_Channel_' + str(channel) + '_HighBeta' + '.svg'
+  	plt.savefig(plt_name)
+  	
+	fig = plt.figure()
+	ax1 = plt.subplot(211)
+	#plt.plot(trial_avg_high_beta)
+	plt.plot(xnew,all_beta_smooth,'k')
+	ax1.get_yaxis().set_tick_params(direction='out')
+	ax1.get_xaxis().set_tick_params(direction='out')
+	ax1.get_xaxis().tick_bottom()
+	ax1.get_yaxis().tick_left()
+	plt.title('Channel %i - Trial-averaged All Beta: n = %i' % (channel, int(num_trials)))
+	ax1 = plt.subplot(212)
+	ax = plt.imshow(avg_all_beta_per_trial_norm[sort_ind,:4000],interpolation = 'bicubic', aspect='auto', origin='lower', 
+		extent = [0-1,int((4000)/fs)-1,0, num_trials])
+	plt.plot(np.zeros(num_trials),range(num_trials),'k')								# Go cue line (x = 0)
+	plt.plot(adjusted_times_to_target_hold[sort_ind],range(num_trials),'k')			# Peripheral hold begin
+	plt.plot(adjusted_times_to_reward[sort_ind],range(num_trials),'k--')				# Reward begin following peripheral hold
+	plt.plot(adjusted_time_following_reward[sort_ind],range(num_trials),'k--')		# Reward end 
+	#yticks = np.arange(0, len(cf_list), 5)
+	#yticks = np.append(yticks,len(cf_list)-1)
+	#yticklabels = ['{0:.2f}'.format(cf_list[i]) for i in yticks]
+	#plt.yticks(yticks, yticklabels)
+	ax1.get_yaxis().set_tick_params(direction='out')
+	ax1.get_xaxis().set_tick_params(direction='out')
+	ax1.get_xaxis().tick_bottom()
+	ax1.get_yaxis().tick_left()
+	plt.xlim((-1,int((4000)/fs)-1))
+	plt.ylabel('Trials')
+	plt.xlabel('Time (s)')
+	plt.title('Average Beta Power: 19 - 45 Hz')
+	fig.colorbar(ax)
+	#plt.show()
+	plt_name = 'CenterOut'  '_Channel_' + str(channel) + '_AllBeta' + '.svg'
+  	plt.savefig(plt_name)
+
+	fig = plt.figure()
+	ax1 = plt.subplot(211)	
+	#plt.plot(trial_avg_high_beta)
+	plt.plot(np.linspace(-1,3,100),high_gamma_smooth,'k')
+	ax1.get_yaxis().set_tick_params(direction='out')
+	ax1.get_xaxis().set_tick_params(direction='out')
+	ax1.get_xaxis().tick_bottom()
+	ax1.get_yaxis().tick_left()
+	plt.title('Channel %i - Trial-averaged High Gamma: n = %i' % (channel, int(num_trials)))
+	ax1 = plt.subplot(212)
+	ax = plt.imshow(avg_high_gamma_per_trial_norm[sort_ind,:4000],interpolation = 'bicubic', aspect='auto', origin='lower', 
+		extent = [0-1,int((4000)/fs)-1,0, num_trials])
+	plt.plot(np.zeros(num_trials),range(num_trials),'k')								# Go cue line (x = 0)
+	plt.plot(adjusted_times_to_target_hold[sort_ind],range(num_trials),'k')			# Peripheral hold begin
+	plt.plot(adjusted_times_to_reward[sort_ind],range(num_trials),'k--')				# Reward begin following peripheral hold
+	plt.plot(adjusted_time_following_reward[sort_ind],range(num_trials),'k--')		# Reward end 
+	#yticks = np.arange(0, len(cf_list), 5)
+	#yticks = np.append(yticks,len(cf_list)-1)
+	#yticklabels = ['{0:.2f}'.format(cf_list[i]) for i in yticks]
+	#plt.yticks(yticks, yticklabels)
+	ax1.get_yaxis().set_tick_params(direction='out')
+	ax1.get_xaxis().set_tick_params(direction='out')
+	ax1.get_xaxis().tick_bottom()
+	ax1.get_yaxis().tick_left()
+	plt.xlim((-1,int((4000)/fs)-1))
+	plt.ylabel('Trials')
+	plt.xlabel('Time (s)')
+	plt.title('Average High Gamma Power: 70 - 200 Hz')
+	fig.colorbar(ax)
+	#plt.show()
+	plt_name = 'CenterOut'  '_Channel_' + str(channel) + '_HighGamma' + '.svg'
+  	plt.savefig(plt_name)
+  	
+	return avg_lower_beta_per_trial, avg_high_gamma_per_trial_norm
 
 '''
 Compute PSDs 
@@ -274,7 +389,7 @@ Compute PSDs
 '''
 # NOTE: Need to add in TDT recording data. Need to add in conversion from OMNI mapping to TDT mapping
 # data variable already has time samples by channel array
-
+'''
 tdt_channels = [95, 79, 93, 77, 91, 75, 89, 73, 96, 80, 94, 78, 92, #13
 				76, 90, 74, 88, 72, 86, 70, 84, 68, 82, 66, 87, 71, #13
 				85, 69, 83, 67, 81, 65, 127, 111, 125, 109, 123, 107, #12
@@ -328,3 +443,4 @@ plt.show()
 # normalize TDT 0 - 200 Hz power (:68): ch 16, 22, 23, 6, 38, 39, 26, 62, 65, 70, 50, 58
 # normalize TDT all power: 16, 22, 23, 6
 # should notch filter for 60 Hz noise
+'''
