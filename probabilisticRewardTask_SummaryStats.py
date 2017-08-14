@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from statsmodels.formula.api import ols
 from statsmodels.stats.anova import anova_lm
 from rt_calc import compute_rt_per_trial_FreeChoiceTask
+import pyvttbl as pt
 from collections import namedtuple
 from scipy import stats
 from statsmodels.stats.multicomp import pairwise_tukeyhsd

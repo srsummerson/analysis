@@ -42,7 +42,7 @@ hdf_list_sham = ['\papa20150213_10.hdf','\papa20150217_05.hdf','\papa20150225_02
     '\papa20150307_02.hdf','\papa20150308_06.hdf','\papa20150310_02.hdf','\papa20150506_09.hdf','\papa20150506_10.hdf',
     '\papa20150519_02.hdf','\papa20150519_03.hdf','\papa20150519_04.hdf','\papa20150527_01.hdf','\papa20150528_02.hdf']
 """
-hdf_list_sham = ['\papa20150217_05.hdf','\papa20150305_02.hdf',
+hdf_list_sham2 = ['\papa20150217_05.hdf','\papa20150305_02.hdf',
     '\papa20150310_02.hdf',
     '\papa20150519_02.hdf','\papa20150519_04.hdf','\papa20150528_02.hdf']
 
@@ -112,9 +112,9 @@ hdf_list_hv = ['\luig20160218_10_te1469.hdf','\luig20160223_11_te1508.hdf','\lui
 
 
 
-hdf_prefix = 'C:\Users\Carmena Lab\Dropbox\Carmena Lab\Luigi\hdf'
-stim_hdf_list = hdf_list_stim
-sham_hdf_list = hdf_list_sham
+hdf_prefix = 'C:\Users\Samantha Summerson\Dropbox\Carmena Lab\Papa\hdf'
+stim_hdf_list = hdf_list_stim_papa
+sham_hdf_list = hdf_list_sham_papa
 
 global_max_trial_dist = 0
 Q_initial = [0.5, 0.5]
@@ -1873,24 +1873,31 @@ plt.xlabel('Days')
 plt.ylabel('Gamma')
 plt.show()
 
-adjusted_alpha_means = [np.mean(stim_alpha_block3),np.mean(stim_alpha_block3_Qadditive),np.mean(stim_alpha_block3_Qmultiplicative),np.mean(stim_alpha_block3_Padditive),np.mean(stim_alpha_block3_Pmultiplicative)]
-adjusted_beta_means = [np.mean(stim_beta_block3),np.mean(stim_beta_block3_Qadditive),np.mean(stim_beta_block3_Qmultiplicative),np.mean(stim_beta_block3_Padditive),np.mean(stim_beta_block3_Pmultiplicative)]
-adjusted_gamma_means = [np.mean(stim_gamma_block3_Qadditive),np.mean(stim_gamma_block3_Qmultiplicative),np.mean(stim_gamma_block3_Padditive),np.mean(stim_gamma_block3_Pmultiplicative)]
-index = np.arange(5)
+papa_ind = [0,1,2,3,5,8,9]
+adjusted_alpha_means = np.array([np.mean(sham_alpha_block3[papa_ind]),np.mean(stim_alpha_block3),np.mean(stim_alpha_block3_Qadditive),np.mean(stim_alpha_block3_Qmultiplicative),np.mean(stim_alpha_block3_Padditive),np.mean(stim_alpha_block3_Pmultiplicative)])
+adjusted_alpha_sem = np.array([np.std(sham_alpha_block3[papa_ind])/np.sqrt(len(sham_alpha_block3)),np.std(stim_alpha_block3)/np.sqrt(len(stim_alpha_block3)),np.std(stim_alpha_block3_Qadditive)/np.sqrt(len(stim_alpha_block3)),np.std(stim_alpha_block3_Qmultiplicative)/np.sqrt(len(stim_alpha_block3)),np.std(stim_alpha_block3_Padditive)/np.sqrt(len(stim_alpha_block3)),np.std(stim_alpha_block3_Pmultiplicative)/np.sqrt(len(stim_alpha_block3))])
+adjusted_beta_means = np.array([np.mean(sham_beta_block3[papa_ind]), np.mean(stim_beta_block3),np.mean(stim_beta_block3_Qadditive),np.mean(stim_beta_block3_Qmultiplicative),np.mean(stim_beta_block3_Padditive),np.mean(stim_beta_block3_Pmultiplicative)])
+adjusted_beta_sem = np.array([np.std(sham_beta_block3[papa_ind])/np.sqrt(len(sham_beta_block3)), np.std(stim_beta_block3)/np.sqrt(len(stim_beta_block3)),np.std(stim_beta_block3_Qadditive)/np.sqrt(len(stim_beta_block3)),np.std(stim_beta_block3_Qmultiplicative)/np.sqrt(len(stim_beta_block3)),np.std(stim_beta_block3_Padditive)/np.sqrt(len(stim_beta_block3)),np.std(stim_beta_block3_Pmultiplicative)/np.sqrt(len(stim_beta_block3))])
+adjusted_gamma_means = np.array([np.mean(stim_gamma_block3_Qadditive),np.mean(stim_gamma_block3_Qmultiplicative),np.mean(stim_gamma_block3_Padditive),np.mean(stim_gamma_block3_Pmultiplicative)])
+index = np.arange(6)
 
 plt.figure()
-plt.subplot(1,3,1)
-plt.bar(index,adjusted_alpha_means,width/2, color='c')
+plt.subplot(1,2,1)
+plt.bar(index,adjusted_alpha_means,width/2, yerr=adjusted_alpha_sem/2., color='c')
 plt.ylabel('avg alpha')
-plt.xticks(index,('Regular','Q Additive','Q Multiplicative','P Additive','P Multiplicative'))
-plt.subplot(1,3,2)
-plt.bar(index,adjusted_beta_means,width/2,color='m')
+plt.xticks(index,('Sham','Regular','Q Additive','Q Multiplicative','P Additive','P Multiplicative'))
+plt.ylim((0,0.6))
+plt.subplot(1,2,2)
+plt.bar(index,adjusted_beta_means,width/2, yerr=adjusted_beta_sem/2.,color='m')
 plt.ylabel('avg beta')
-plt.xticks(index,('Regular','Q Additive','Q Multiplicative','P Additive','P Multiplicative'))
+plt.xticks(index,('Sham','Regular','Q Additive','Q Multiplicative','P Additive','P Multiplicative'))
+plt.ylim((0,16))
+"""
 plt.subplot(1,3,3)
-plt.bar(index[1:],adjusted_gamma_means,width/2,color='y')
+plt.bar(index[2:],adjusted_gamma_means,width/2,color='y')
 plt.ylabel('avg gamma')
-plt.xticks(index,('Regular','Q Additive','Q Multiplicative','P Additive','P Multiplicative'))
+plt.xticks(index,('Sham','Regular','Q Additive','Q Multiplicative','P Additive','P Multiplicative'))
+"""
 plt.show()
 
 prob_choose_low_mean = (np.mean(stim_prob_choose_low), np.mean(sham_prob_choose_low))

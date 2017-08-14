@@ -17,7 +17,8 @@ from DecisionMakingBehavior import loglikelihood_ThreeTargetTask_Qlearning_MVHV,
 									ThreeTargetTask_Qlearning_QMultiplicative_MVHV, loglikelihood_ThreeTargetTask_Qlearning_PAdditive_MVHV, \
 									ThreeTargetTask_Qlearning_PAdditive_MVHV, loglikelihood_ThreeTargetTask_Qlearning_PMultiplicative_MVHV, \
 									ThreeTargetTask_Qlearning_PMultiplicative_MVHV, ThreeTargetTask_Qlearning_QMultiplicative_MVLV, \
-									loglikelihood_ThreeTargetTask_Qlearning_QMultiplicative_MVLV
+									loglikelihood_ThreeTargetTask_Qlearning_QMultiplicative_MVLV,\
+									loglikelihood_ThreeTargetTask_Qlearning_MVLV, ThreeTargetTask_Qlearning_MVLV
 
 mario_sham_days_all = [['\mari20161219_07_te2785.hdf'],
 					['\mari20161220_05_te2795.hdf'],
@@ -797,10 +798,10 @@ def RLModel_ThreeTarget_MVLV(mario_days):
 	'''
 	# Initialize parameters
 	num_days = len(mario_days)
-	alpha_mat = np.zeros((num_days, 1))		# each column stores alpha values for each of the 5 RL models considered
-	beta_mat = np.zeros((num_days, 1))		# each column stores beta values for each of the 5 RL models considered
+	alpha_mat = np.zeros((num_days, 2))		# each column stores alpha values for each of the 5 RL models considered
+	beta_mat = np.zeros((num_days, 2))		# each column stores beta values for each of the 5 RL models considered
 	lambda_mat = np.zeros((num_days, 1)) 	# each column stores lambda value for the 4 adjusted RL models
-	BIC_mat = np.zeros((num_days, 1))		# each column stores the BIC value for the 5 models considered
+	BIC_mat = np.zeros((num_days, 2))		# each column stores the BIC value for the 5 models considered
 
 	for k, day in enumerate(mario_days):
 		print "Session %i of %i" %(k+1,num_days)
@@ -815,6 +816,22 @@ def RLModel_ThreeTarget_MVLV(mario_days):
 
 		# 3. Model 3: Multiplicative Q parameter
 		# Find ML fit of alpha, beta, and gamma
+		nll = lambda *args: -loglikelihood_ThreeTargetTask_Qlearning_MVLV(*args)
+		result = op.minimize(nll, [alpha_true, beta_true], args=(Q_initial, chosen_target[250:], rewards[250:], targets_on[250:]), bounds=[(0.04,1),(1,20)])
+		alpha_ml, beta_ml = result["x"]
+		# RL model fit for Q values
+		Q_mid, Q_high, prob_choice_mid, prob_choice_high, max_log_likelihood, counter = ThreeTargetTask_Qlearning_MVLV([alpha_ml, beta_ml], Q_initial, chosen_target[250:], rewards[250:], targets_on[250:])
+
+		# Compute BIC 
+		BIC = -2*max_log_likelihood + len(result["x"])*np.log(len(Q_mid))
+
+		# Store values
+		alpha_mat[k,0] = alpha_ml
+		beta_mat[k,0] = beta_ml
+		BIC_mat[k,0] = BIC
+
+
+		# Find ML fit of alpha, beta, and gamma
 		nll = lambda *args: -loglikelihood_ThreeTargetTask_Qlearning_QMultiplicative_MVLV(*args)
 		result = op.minimize(nll, [alpha_true, beta_true, gamma_true], args=(Q_initial, chosen_target[250:], rewards[250:], targets_on[250:]), bounds=[(0,1),(1,10),(0.1,None)])
 		alpha_ml, beta_ml, lambda_ml = result["x"]
@@ -825,10 +842,10 @@ def RLModel_ThreeTarget_MVLV(mario_days):
 		BIC = -2*max_log_likelihood + len(result["x"])*np.log(len(Q_mid))
 
 		# Store values
-		alpha_mat[k,0] = alpha_ml
-		beta_mat[k,0] = beta_ml
+		alpha_mat[k,1] = alpha_ml
+		beta_mat[k,1] = beta_ml
 		lambda_mat[k,0] = lambda_ml
-		BIC_mat[k,0] = BIC
+		BIC_mat[k,1] = BIC
 
 	return alpha_mat, beta_mat, lambda_mat, BIC_mat
 
@@ -1103,9 +1120,29 @@ def Simulate_ChoiceBehavior_ThreeTargetTask(mario_stim_days, mario_sham_days, nu
 # Figure 3 b,c,d,e,f
 alpha_mat_sham, beta_mat_sham, lambda_mat_sham, BIC_mat_sham = RLModel_ThreeTarget_MVHV(mario_sham_days_all)
 #alpha_mat, beta_mat, lambda_mat, BIC_mat = RLModel_ThreeTarget_MVHV(mario_stim_days_all)
-#alpha_mat, beta_mat, lambda_mat, BIC_mat = RLModel_ThreeTarget_MVLV(mario_stim_days_all)
+alpha_mat, beta_mat, lambda_mat, BIC_mat = RLModel_ThreeTarget_MVLV(mario_stim_days_all)
 # Figure 4
 #reward_probs = [35, 85, 60]
 #percent_instructed = 30
 #num_trials = 100
 #prob_MV_with_HV, prob_MV_with_LV, prob_MV_with_HV_sham = Simulate_ChoiceBehavior_ThreeTargetTask(mario_stim_days_all, mario_sham_days_all, num_trials, percent_instructed, reward_probs)
+
+adjusted_alpha_means = np.append(np.nanmean(alpha_mat_sham[:,0]), np.nanmean(alpha_mat,axis = 0))
+adjusted_alpha_sem = np.append(np.nanstd(alpha_mat_sham[:,0])/np.sqrt(len(alpha_mat_sham[:,0])), np.nanstd(alpha_mat,axis = 0)/np.sqrt(len(alpha_mat[:,0])))
+adjusted_beta_means = np.append(np.nanmean(beta_mat_sham[:,0]), np.nanmean(beta_mat,axis = 0))
+adjusted_beta_sem = np.append(np.nanstd(beta_mat_sham[:,0])/np.sqrt(len(beta_mat_sham[:,0])), np.nanstd(beta_mat,axis = 0)/np.sqrt(len(beta_mat[:,0])))
+
+width = float(0.35)
+index = np.arange(3)
+plt.figure()
+plt.subplot(1,2,1)
+plt.bar(index,adjusted_alpha_means,width/2, yerr=adjusted_alpha_sem/2., color='c')
+plt.ylabel('avg alpha')
+plt.xticks(index,('Sham','Regular','Q Multiplicative'))
+plt.ylim((0,0.6))
+plt.subplot(1,2,2)
+plt.bar(index,adjusted_beta_means,width/2, yerr=adjusted_beta_sem/2.,color='m')
+plt.ylabel('avg beta')
+plt.xticks(index,('Sham','Regular','Q Multiplicative'))
+plt.ylim((0,16))
+plt.show()

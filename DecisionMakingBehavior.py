@@ -814,6 +814,80 @@ def loglikelihood_ThreeTargetTask_Qlearning_MVHV(parameters, Q_initial, chosen_t
 
 	return log_prob_total
 
+def ThreeTargetTask_Qlearning_MVLV(parameters, Q_initial, chosen_target, rewards, targets_on):
+	'''
+	This method finds the Q-values associated with the three target options in the probabilistic reward free-choice task
+	with three targets: low-value target, middle-value target, and high-value target. The Q-values are determined based
+	on a Q-learning model with temporal difference error. Only freechoice trials with the MV and LV targets are 
+	considered, although the Q values advance for all trials.
+
+	Inputs:
+	- parameters: length 2 array containing the learning rate, alpha (parameters[0]), and the inverse temperate, beta (parameters[1])
+	- Q_initial: length 2 array containing the initial Q-values set for trial 1
+	- chosen_target: length N array of values in range [0,2] which indicate the selected target for the trial. 0 = low-value,
+						1 = middle-value, 2 = high-value.
+	- rewards: length N array of boolen values indicating whether a reward was given (i.e. = 1) or not (i.e. = 0)
+	- targets_on: length N array of 3-tuples which are indicators of what targets are presented. The values are arranged
+					as LHM.
+	'''
+	# Set Q-learning parameters
+	alpha = parameters[0]
+	beta = parameters[1]
+	
+	# Initialize Q values. Note: Q[i] is the value on trial i before reward feedback
+	Q_mid = np.zeros(len(chosen_target))
+	Q_low = np.zeros(len(chosen_target))
+
+	# Set values for first trial (indexed as trial 0)
+	Q_mid[0] = Q_initial[0]
+	Q_low[0] = Q_initial[1]
+
+	# Initiaialize probability values. Note: prob[i] is the probability on trial i before reward feedback
+	prob_choice_mid = np.zeros(len(chosen_target))
+	prob_choice_low = np.zeros(len(chosen_target))
+
+	log_prob_total = 0.
+	counter = 0
+
+	for i in range(len(chosen_target)-1):
+
+		# Update Q values with temporal difference error
+		delta_mid = float(rewards[i]) - Q_mid[i]
+		delta_low = float(rewards[i]) - Q_low[i]
+		Q_mid[i+1] = Q_mid[i] + alpha*delta_mid*float(chosen_target[i]==1)
+		Q_low[i+1] = Q_low[i] + alpha*delta_low*float(chosen_target[i]==0)
+
+		# Update probabilities with new Q-values
+		if np.array_equal(targets_on[i+1], [1,0,1]):
+			
+			Q_opt = Q_mid[i+1]
+			Q_nonopt = Q_low[i+1]
+
+			prob_choice_mid[i+1] = 1./(1 + np.exp(beta*(Q_mid[i+1] - Q_low[i+1])))
+			prob_choice_low[i+1] = 1. - prob_choice_mid[i+1]
+
+			prob_choice_opt = prob_choice_mid[i+1]
+			prob_choice_nonopt = prob_choice_low[i+1]
+
+			# The choice on trial i+1 as either optimal (choice = 2) or nonoptimal (choice = 1)
+			choice = chosen_target[i+1]
+
+			counter += 1 		# count number of trials used to compute the log likelihood
+
+			log_prob_total += np.log(prob_choice_nonopt*(choice==0) + prob_choice_opt*(choice==1))
+
+		else:
+			prob_choice_mid[i+1] = prob_choice_mid[i]
+			prob_choice_low[i+1] = prob_choice_low[i]
+
+	return Q_mid, Q_low, prob_choice_mid, prob_choice_low, log_prob_total, counter
+
+def loglikelihood_ThreeTargetTask_Qlearning_MVLV(parameters, Q_initial, chosen_target, rewards, targets_on):
+	
+	Q_mid, Q_high, prob_choice_mid, prob_choice_high, log_prob_total, counter = ThreeTargetTask_Qlearning_MVLV(parameters, Q_initial, chosen_target, rewards, targets_on)
+
+	return log_prob_total
+
 def ThreeTargetTask_Qlearning_QAdditive_MVHV(parameters, Q_initial, chosen_target, rewards, targets_on):
 	'''
 	This method finds the Q-values associated with the three target options in the probabilistic reward free-choice task

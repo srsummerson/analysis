@@ -4,7 +4,7 @@ from neo import io
 
 
 
-filename = 'Mario20170608'
+filename = 'Mario20160124'
 #TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
 #TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 TDT_tank = './' + filename
@@ -69,7 +69,7 @@ for block_num in range(1,len(bl.segments)+1):
 
 	# Save syncing data as .mat file
 	mat_filename = filename+'_b'+str(block_num)+'_syncHDF.mat'
-	#sp.io.savemat('/home/srsummerson/storage/syncHDF/'+mat_filename,hdf_times)
+	#sp.io.savemat('/storage/syncHDF/'+mat_filename,hdf_times)
 	sp.io.savemat('./'+mat_filename,hdf_times)
 
 # Note:
