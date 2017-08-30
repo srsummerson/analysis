@@ -7,7 +7,7 @@ from neo import io
 filename = 'Mario20170829'
 #TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
-TDT_tank = './' + filename
+#TDT_tank = './' + filename
 #block_num = 1
 
 # Load TDT files.
