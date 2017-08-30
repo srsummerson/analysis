@@ -4,9 +4,9 @@ from neo import io
 
 
 
-filename = 'Mario20160124'
+filename = 'Mario20170829'
 #TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
-#TDT_tank = '/home/srsummerson/storage/tdt/'+filename
+TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 TDT_tank = './' + filename
 #block_num = 1
 
@@ -69,8 +69,8 @@ for block_num in range(1,len(bl.segments)+1):
 
 	# Save syncing data as .mat file
 	mat_filename = filename+'_b'+str(block_num)+'_syncHDF.mat'
-	#sp.io.savemat('/storage/syncHDF/'+mat_filename,hdf_times)
-	sp.io.savemat('./'+mat_filename,hdf_times)
+	sp.io.savemat('/storage/syncHDF/'+mat_filename,hdf_times)
+	#sp.io.savemat('./'+mat_filename,hdf_times)
 
 # Note:
 # If DIO sample num is x, then data sample number is R*(x-1) + 1 where
