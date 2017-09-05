@@ -17,6 +17,7 @@ from scipy.interpolate import spline
 from spectrogram.spectrogram_methods import make_spectrogram
 from neo import io
 from basicAnalysis import notchFilterData
+from rt_calc import compute_rt_per_trial_CenterOut
 
 
 """
@@ -47,10 +48,11 @@ for sig in bl.segments[0].analogsignals:
 		tdt_lfp[chann] = np.ravel(sig)
 '''
 
-tdt_filename = 'Mario20161215-OMNI'
+tdt_filename = filename_prefix + 'Mario20161215-OMNI'
 
-mat_filename1 = filename_prefix + tdt_filename + '_b1.mat'
-
+mat_filename1 =  tdt_filename + '_b1.mat'
+hdf1 = filename_prefix + 'mari20161215_11_te2764.hdf'
+hdf2 = 'mari20161215_12_te2765.hdf'
 
 #mat_files = [mat_filename1, mat_filename2, mat_filename3]
 mat_files = [mat_filename1]
@@ -70,6 +72,8 @@ num_time_samps = 8*fs   # adding padding
 num_begin_pad = 2*fs
 num_end_pad = 2*fs
 lfp = np.zeros([len(omni_ind_gocue), num_time_samps])
+
+rt, total_vel, skipped_trials = compute_rt_per_trial_CenterOut(hdf1, 1, 5, False)
 
 # Get all power data
 def OMNI_TrialPowers(channel):
@@ -381,7 +385,11 @@ def OMNI_TrialPowers(channel):
 	plt_name = 'CenterOut'  '_Channel_' + str(channel) + '_HighGamma' + '.svg'
   	plt.savefig(plt_name)
   	
-	return avg_lower_beta_per_trial, avg_high_gamma_per_trial_norm
+	return avg_lower_beta_per_trial, , avg_high_beta_per_trial, avg_high_gamma_per_trial_norm
+
+avg_lower_beta_per_trial86, avg_high_gamma_per_trial_norm86 = OMNI_TrialPowers(86)
+avg_lower_beta_per_trial85, avg_high_gamma_per_trial_norm85 = OMNI_TrialPowers(85)
+rt, total_vel, skipped_trials = compute_rt_per_trial_CenterOut(hdf1, 1, 5, False)
 
 '''
 Compute PSDs 
