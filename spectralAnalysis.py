@@ -662,6 +662,7 @@ def averagedPSD(data, Fs, cutoff, len_windows, num_wins, notch):
 	'''
 	if notch:
 		filtered_data = notchFilterData(data, Fs, 60) 					# remove line noise
+		filtered_data = notchFilterData(filtered_data, Fs, 120)
 	else:
 		filtered_data = data
 	filtered_data = lowpassFilterData(filtered_data, Fs, cutoff) 	# low-pass filter

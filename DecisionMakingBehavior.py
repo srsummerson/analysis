@@ -2,6 +2,8 @@ import numpy as np
 import scipy as sp
 from scipy import stats
 from scipy.interpolate import spline
+from scipy import signal
+from scipy.ndimage import filters
 import scipy.optimize as op
 import statsmodels.api as sm
 import pandas as pd
@@ -2946,7 +2948,6 @@ def ThreeTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_
 
 def TwoTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_files, chann, sc, align_to, t_before, t_after, plot_output):
 	'''
-	### STOPP AT LINE 3026: NEED TO FIGURE OUT HOW TO DO RASTER IN BACKGROUND
 
 	This method aligns spiking data to behavioral choices 
 	in the Two Target Task, where there is a low-value and high-value target. This version does not 
@@ -3029,72 +3030,101 @@ def TwoTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_fi
 			if i == 0:
 				psth_l = avg_psth_l
 				smooth_psth_l = smooth_avg_psth_l
+				all_raster_l = raster_l
 			else:
 				psth_l = np.vstack([psth_l, avg_psth_l])
 				smooth_psth_l = np.vstack([smooth_psth_l, smooth_avg_psth_l])
+				all_raster_l.update(raster_l)
 
 			# 5. H chosen
 			H_ind = np.ravel(np.nonzero([np.array_equal(target_chosen[j,:], [0,1]) for j in range(int(num_successful_trials[i]))]))
 			if not spike2_good_channels:
 				avg_psth_h, smooth_avg_psth_h = spike1.compute_psth(spike1_good_channels, sc, times_row_ind[H_ind],t_before,t_after,t_resolution)
+				raster_h = spike1.compute_raster(spike1_good_channels, sc, times_row_ind[H_ind],t_before,t_after)
 			else:
 				avg_psth_h, smooth_avg_psth_h = spike2.compute_psth(spike2_good_channels, sc, times_row_ind[H_ind],t_before,t_after,t_resolution)
+				raster_h = spike2.compute_raster(spike2_good_channels, sc, times_row_ind[H_ind],t_before,t_after)
 			if i == 0:
 				psth_h = avg_psth_h
 				smooth_psth_h = smooth_avg_psth_h
+				all_raster_h = raster_h
 			else:
 				psth_h = np.vstack([psth_h, avg_psth_h])
 				smooth_psth_h = np.vstack([smooth_psth_h, smooth_avg_psth_h])
+				all_raster_h.update(raster_h)
 
 	# Plot average rate for all neurons divided in six cases of targets on option
 	if plot_output:
 		plt.figure(0)
-
+		b = signal.gaussian(39,0.6)
 		avg_psth_l = np.nanmean(psth_l, axis = 0)
 		sem_avg_psth_l = np.nanstd(psth_l, axis = 0)/np.sqrt(psth_l.shape[0])
-		smooth_avg_psth_l = np.nanmean(smooth_psth_l, axis = 0)
+		#smooth_avg_psth_l = np.nanmean(smooth_psth_l, axis = 0)
+		smooth_avg_psth_l = filters.convolve1d(np.nanmean(psth_l,axis=0), b/b.sum())
 		sem_smooth_avg_psth_l = np.nanstd(smooth_psth_l, axis = 0)/np.sqrt(smooth_psth_l.shape[0])
+
 		avg_psth_h = np.nanmean(psth_h, axis = 0)
 		sem_avg_psth_h = np.nanstd(psth_h, axis = 0)/np.sqrt(psth_h.shape[0])
 		smooth_avg_psth_h = np.nanmean(smooth_psth_h, axis = 0)
+		smooth_avg_psth_h = filters.convolve1d(np.nanmean(psth_h,axis=0), b/b.sum())
 		sem_smooth_avg_psth_h = np.nanstd(smooth_psth_h, axis = 0)/np.sqrt(smooth_psth_h.shape[0])
 		
+		y_min_l = (smooth_avg_psth_l - sem_smooth_avg_psth_l).min()
+		y_max_l = (smooth_avg_psth_l+ sem_smooth_avg_psth_l).max()
+		y_min_h = (smooth_avg_psth_h - sem_smooth_avg_psth_h).min()
+		y_max_h = (smooth_avg_psth_h+ sem_smooth_avg_psth_h).max()
+
+		y_min = np.array([y_min_l, y_min_h]).min()
+		y_max = np.array([y_max_l, y_max_h]).max()
+
+
+		num_trials = len(all_raster_l.keys())
+
+		linelengths = float((y_max - y_min))/num_trials
+		lineoffsets = 1
+		xticklabels = np.arange(-t_before,t_after-t_resolution,t_resolution)
+
 		ax1 = plt.subplot(1,2,1)
 		plt.title('All Trials')
-		plt.plot(smooth_avg_psth_l,'b', label = 'LV Chosen')
-		plt.fill_between(range(len(avg_psth_l)), smooth_avg_psth_l - sem_smooth_avg_psth_l, smooth_avg_psth_l + sem_smooth_avg_psth_l, facecolor = 'b', alpha = 0.3)
-		xticklabels = np.arange(-t_before,t_after-t_resolution,t_resolution)
-		xticks = np.arange(0, len(xticklabels), 10)
-		xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
-		plt.xticks(xticks, xticklabels)
+		plt.plot(xticklabels, smooth_avg_psth_l,'b', label = 'LV Chosen')
+		plt.fill_between(xticklabels, smooth_avg_psth_l - sem_smooth_avg_psth_l, smooth_avg_psth_l + sem_smooth_avg_psth_l, facecolor = 'b', alpha = 0.2)
+		#xticks = np.arange(0, len(xticklabels), 10)
+		#xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
+		#plt.xticks(xticks, xticklabels)
 		plt.xlabel('Time from Center Hold (s)')
 		plt.ylabel('Firing Rate (spk/s)')
-		ax.get_yaxis().set_tick_params(direction='out')
-		ax.get_xaxis().set_tick_params(direction='out')
-		ax.get_xaxis().tick_bottom()
-		ax.get_yaxis().tick_left()
-		plt.legend()
+		ax1.get_yaxis().set_tick_params(direction='out')
+		ax1.get_xaxis().set_tick_params(direction='out')
+		ax1.get_xaxis().tick_bottom()
+		ax1.get_yaxis().tick_left()
+		
 
 		# DEFINE LINEOFFSETS AND LINELENGTHS BY Y-RANGE OF PSTH
-		plt.eventplot(raster_l, colors=[[0,0,0]], lineoffsets=lineoffsets,linelengths=linelengths)
+		for k in range(len(all_raster_l.keys())):
+			plt.eventplot(all_raster_l[k], colors=[[0,0,0]], lineoffsets= y_min + k*linelengths,linelengths=linelengths)
+		plt.legend()
+		plt.ylim((y_min - 1, y_max + 1))
 
 		ax2 = plt.subplot(1,2,2)
-		plt.plot(smooth_avg_psth_h, 'r', label = 'HV Chosen')
-		plt.fill_between(range(len(avg_psth_h)), smooth_avg_psth_h - sem_smooth_avg_psth_h, smooth_avg_psth_h + sem_smooth_avg_psth_h, facecolor = 'r', alpha = 0.3)
-		xticklabels = np.arange(-t_before,t_after-t_resolution,t_resolution)
-		xticks = np.arange(0, len(xticklabels), 10)
-		xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
-		plt.xticks(xticks, xticklabels)
+		plt.plot(xticklabels, smooth_avg_psth_h, 'r', label = 'HV Chosen')
+		plt.fill_between(xticklabels, smooth_avg_psth_h - sem_smooth_avg_psth_h, smooth_avg_psth_h + sem_smooth_avg_psth_h, facecolor = 'r', alpha = 0.2)
+		#xticklabels = np.arange(-t_before,t_after-t_resolution,t_resolution)
+		#xticks = np.arange(0, len(xticklabels), 10)
+		#xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
+		#plt.xticks(xticks, xticklabels)
 		plt.xlabel('Time from Center Hold (s)')
 		plt.ylabel('Firing Rate (spk/s)')
-		ax.get_yaxis().set_tick_params(direction='out')
-		ax.get_xaxis().set_tick_params(direction='out')
-		ax.get_xaxis().tick_bottom()
-		ax.get_yaxis().tick_left()
-		plt.legend()
+		ax2.get_yaxis().set_tick_params(direction='out')
+		ax2.get_xaxis().set_tick_params(direction='out')
+		ax2.get_xaxis().tick_bottom()
+		ax2.get_yaxis().tick_left()
 
-		
-		
+		# DEFINE LINEOFFSETS AND LINELENGTHS BY Y-RANGE OF PSTH
+		for k in range(len(all_raster_h.keys())):
+			plt.eventplot(all_raster_h[k], colors=[[0,0,0]], lineoffsets= y_min + k*linelengths,linelengths=linelengths)
+		plt.legend()
+		plt.ylim((y_min - 1, y_max + 1))
+
 
 		#plt_name = syncHDF_files[i][34:-15]
 		#plt.savefig('/home/srsummerson/code/analysis/Mario_Performance_figs/'+plt_name+ '_' + str(align_to) +'_PSTH_Chan'+str(chann)+'-'+str(sc)+'.svg')
@@ -3105,4 +3135,4 @@ def TwoTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_fi
 
 	reg_psth = [psth_l, psth_h]
 	smooth_psth = [smooth_psth_l, smooth_psth_h]
-	return reg_psth, smooth_psth
+	return reg_psth, smooth_psth, all_raster_l

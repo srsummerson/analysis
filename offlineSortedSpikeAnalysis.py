@@ -142,7 +142,7 @@ class OfflineSorted_CSVFile():
 		- psth: T x N array containing the average firing rate over a window of total length N samples for T different
 				time points
 		'''
-		psth_length = np.rint((t_before + t_after)/t_resolution)
+		psth_length = int(np.rint((t_before + t_after)/t_resolution))
 		num_timepoints = len(times_align)
 		psth = np.zeros((num_timepoints, psth_length-1))
 		smooth_psth = psth
@@ -189,7 +189,7 @@ class OfflineSorted_CSVFile():
 		for i, tp in enumerate(times_align):
 			data = channel_data
 			data_window = np.ravel(np.nonzero(np.greater(data, tp - t_before)&np.less(data,tp + t_after)))
-			raster_spikes = data[data_window]
+			raster_spikes = data[data_window] - tp
 			raster[i] = raster_spikes
 		return raster
 
