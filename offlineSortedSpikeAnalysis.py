@@ -164,6 +164,47 @@ class OfflineSorted_CSVFile():
 			smooth_psth[i,:] = filters.convolve1d(hist_fr[:psth_length-1], b/b.sum())
 		return psth, smooth_psth
 
+	def compute_sliding_psth(self,chann,sc,times_align,t_before,t_after,t_resolution, t_overlap):
+		'''
+		Method that returns an array of psths for spiking activity aligned to the sample numbers indicated in samples_align
+		with firing rates quantized to bins of size samp_resolution.
+
+		Input:
+		- chann: integer representing the channel number
+		- sc: integer representing the sort code for the channel
+		- times_align: array of T time points (s) corresponding to the time points for which activity should be aligned
+		- t_before: integer indicating the length of time (s) to be included prior to the alignment time point
+		- t_after: integer indicating the length of time (s) to be included after the alignment time point
+		- t_resolution: the size of the time bins in terms of seconds, i.e. 0.1 = 100 ms and 1  = 1 s
+		- t_overlap: the size of the overlap of the time bins in terms of seconds, i.e. 0.05 = 50 ms, should be less than t_resolution
+
+		Output: 
+		- psth: T x N array containing the average firing rate over a window of total length N samples for T different
+				time points
+		'''
+		psth_length = int(np.rint((t_before + t_after - t_overlap)/(t_resolution - t_overlap)))
+		print psth_length
+		num_timepoints = len(times_align)
+		psth = np.zeros((num_timepoints, psth_length))
+		
+
+		boxcar_length = 4.
+		boxcar_window = signal.boxcar(boxcar_length)  # 2 bins before, 2 bins after for boxcar smoothing
+		b = signal.gaussian(39, 0.6)
+		
+		unit_chan = np.ravel(np.nonzero(np.equal(self.channel, chann)))
+		sc_unit = np.ravel(np.nonzero(np.equal(self.sort_code[unit_chan], sc)))
+		channel_data = self.times[unit_chan[sc_unit]] 
+		for i, tp in enumerate(times_align):
+			data = channel_data
+			t_start = tp - t_before
+			t_end = tp + t_after
+			for k in range(psth_length):
+				data_window = np.ravel(np.greater(data, t_start + k*t_overlap)&np.less(data, t_start + k*t_overlap + t_resolution))
+				psth[i,k] = np.sum(data_window)/t_resolution
+			
+		return psth
+
 	def compute_raster(self,chann,sc,times_align,t_before,t_after):
 		'''
 		Method that returns times for spiking activity aligned to the sample numbers indicated in samples_align.
