@@ -2,6 +2,8 @@ import numpy as np
 import scipy as sp
 from scipy import stats
 from scipy.interpolate import spline
+from scipy import signal
+from scipy.ndimage import filters
 import scipy.optimize as op
 import statsmodels.api as sm
 import pandas as pd
@@ -16,6 +18,7 @@ from rt_calc import get_rt_change_deriv
 from neo import io
 from PulseMonitorData import findIBIs
 from offlineSortedSpikeAnalysis import OfflineSorted_CSVFile
+from logLikelihoodRLPerformance import logLikelihoodRLPerformance, RLPerformance
 
 
 
@@ -254,6 +257,178 @@ class ChoiceBehavior_ThreeTargets():
 				chosen_target[i] = 2
 
 		return targets_on, chosen_target, rewards, instructed_or_freechoice
+
+class ChoiceBehavior_TwoTargets():
+
+	def __init__(self, hdf_file):
+		self.filename =  hdf_file
+		self.table = tables.openFile(self.filename)
+
+		self.state = self.table.root.task_msgs[:]['msg']
+		self.state_time = self.table.root.task_msgs[:]['time']
+		self.trial_type = self.table.root.task[:]['target_index']
+	  
+		self.ind_wait_states = np.ravel(np.nonzero(self.state == 'wait'))   # total number of unique trials
+		self.ind_center_states = np.ravel(np.nonzero(self.state == 'center'))   # total number of totals (includes repeats if trial was incomplete)
+		self.ind_hold_center_states = np.ravel(np.nonzero(self.state == 'hold_center'))
+		self.ind_target_states = np.ravel(np.nonzero(self.state == 'target'))
+		self.ind_check_reward_states = np.ravel(np.nonzero(self.state == 'check_reward'))
+		
+		self.num_trials = self.ind_center_states.size
+		self.num_successful_trials = self.ind_check_reward_states.size
+
+		self.table.close()
+
+
+	def get_state_TDT_LFPvalues(self,ind_state,syncHDF_file):
+		'''
+		This method finds the TDT sample numbers that correspond to indicated task state using the syncHDF.mat file.
+
+		Inputs:
+			- ind_state: array with state numbers corresponding to which state we're interested in finding TDT sample numbers for, e.g. self.ind_hold_center_states
+			- syncHDF_file: syncHDF.mat file path, e.g. '/home/srsummerson/storage/syncHDF/Mario20161104_b1_syncHDF.mat'
+		Output:
+			- lfp_state_row_ind: array of tdt sample numbers that correspond the the task state events in ind_state array
+		'''
+		# Load syncing data
+		hdf_times = dict()
+		sp.io.loadmat(syncHDF_file, hdf_times)
+		hdf_rows = np.ravel(hdf_times['row_number'])
+		hdf_rows = [val for val in hdf_rows]
+		dio_tdt_sample = np.ravel(hdf_times['tdt_samplenumber'])
+		dio_freq = np.ravel(hdf_times['tdt_dio_samplerate'])
+
+		lfp_dio_sample_num = dio_tdt_sample  # assumes DIOx and LFPx are saved using the same sampling rate
+
+		state_row_ind = self.state_time[ind_state]		# gives the hdf row number sampled at 60 Hz
+		lfp_state_row_ind = np.zeros(state_row_ind.size)
+
+		for i in range(len(state_row_ind)):
+			hdf_index = np.argmin(np.abs(hdf_rows - state_row_ind[i]))
+			if np.abs(hdf_rows[hdf_index] - state_row_ind[i])==0:
+				lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
+			elif hdf_rows[hdf_index] > state_row_ind[i]:
+				hdf_row_diff = hdf_rows[hdf_index] - hdf_rows[hdf_index -1]  # distance of the interval of the two closest hdf_row_numbers
+				m = (lfp_dio_sample_num[hdf_index]-lfp_dio_sample_num[hdf_index - 1])/hdf_row_diff
+				b = lfp_dio_sample_num[hdf_index-1] - m*hdf_rows[hdf_index-1]
+				lfp_state_row_ind[i] = np.rint(m*state_row_ind[i] + b)
+			elif (hdf_rows[hdf_index] < state_row_ind[i])&(hdf_index + 1 < len(hdf_rows)):
+				hdf_row_diff = hdf_rows[hdf_index + 1] - hdf_rows[hdf_index]
+				if (hdf_row_diff > 0):
+					m = (lfp_dio_sample_num[hdf_index + 1] - lfp_dio_sample_num[hdf_index])/hdf_row_diff
+					b = lfp_dio_sample_num[hdf_index] - m*hdf_rows[hdf_index]
+					lfp_state_row_ind[i] = np.rint(m*state_row_ind[i] + b)
+				else:
+					lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
+			else:
+				lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
+
+		return lfp_state_row_ind, dio_freq
+
+	def TrialChoices(self, num_trials_slide, plot_results = False):
+		'''
+		This method computes the sliding average over num_trials_slide trials of the number of choices for the 
+		optimal target choice (high-value target). 
+
+		Input:
+		- num_trials_slide: integer, indicates the number of points to perform sliding average over
+		- plot_results: Boolean, indicates if the output should be plotted and shown (=True) or not (=False)
+
+		Output:
+		- all_choices: array of length N, where N is the number of free-choice trials, that indicates whether an
+					optimal choice was made or not. Low-value choices are indicated with 0s and high-value choices
+					are indicated with 1s. 
+		'''
+		freechoice_trial = np.ravel(self.trial_type[self.state_time[self.ind_check_reward_states]]) - 1
+		freechoice_trial_ind = np.ravel(np.nonzero(freechoice_trial))
+		target_choices = self.state[self.ind_check_reward_states - 2]
+		num_trials = len(target_choices)
+		all_choices = np.array([int(choice=='hold_targetH') for choice in target_choices[freechoice_trial_ind]])
+		cmap = mpl.cm.hsv
+
+		sliding_avg_all_choices = trial_sliding_avg(all_choices, num_trials_slide)
+
+		if plot_results:
+			fig = plt.figure()
+			ax = plt.subplot(111)
+			plt.plot(sliding_avg_all_choices, c = 'b', label = 'HV')
+			plt.plot(1 - sliding_avg_all_choices, c = 'r', label = 'LV')
+			plt.xlabel('Free-choice Trials')
+			plt.ylabel('Probability Target Choice')
+			ax.get_yaxis().set_tick_params(direction='out')
+			ax.get_xaxis().set_tick_params(direction='out')
+			ax.get_xaxis().tick_bottom()
+			ax.get_yaxis().tick_left()
+			plt.legend()
+			plt.show()
+
+		return all_choices
+
+	def TrialOptionsAndChoice(self):
+		'''
+		This method extracts for each trial which targets were on options and what the ultimate target
+		choice was. It also gives whether or not that choice was rewarded.
+
+		Output:
+		- target_options: N x 2 array, where N is the number of trials (instructed + freechoice), which contains 0 or 1s
+							to indicate on a given trial which of the 2 targets was shown. The order is Low - High.
+							For example, if on the ith trial the Low and High value targets are shown, then 
+							target_options[i,:] = [1, 1]. If on the ith trial, only the Low value target is shown, then 
+							target_options[i,:] = [1, 0].
+		- target_chosen: N x 2 array, which contains 0 or 1s to indicate on a given trial which of the 2 targets was chosen.
+							The order is Low - High. Note that only one entry per row may be non-zero (1). For 
+							example, if on the ith trial the High value target was selected, then 
+							target_chosen[i,:] = [0, 1].
+		- reward_chosen: length N array, which contains 0s or 1s to indicate whether a reward was received at the end
+							of the ith trial. 
+		'''
+		target_choices = self.state[self.ind_check_reward_states - 2]
+		instructed_or_freechoice = np.ravel(self.trial_type[self.state_time[self.ind_check_reward_states]])
+		target_options = np.zeros((len(target_choices), 2))  	# array of two boolean values: LH
+		target_chosen = np.zeros((len(target_choices), 2)) 		# placeholder for array with boolen values indicating choice: LH
+		rewarded_choice = np.array(self.state[self.ind_check_reward_states + 1] == 'reward', dtype = float)
+		num_trials = len(target_choices)
+
+		for i, choice in enumerate(target_choices):
+			if choice == 'hold_targetL':
+				target_chosen[i,0] = 1
+				target_options[i,:] = [1,instructed_or_freechoice[i] - 1]
+			if choice == 'hold_targetH':
+				target_chosen[i,1] = 1
+				target_options[i,:] = [instructed_or_freechoice[i] - 1, 1]
+
+		return target_options, target_chosen, rewarded_choice
+
+	def GetChoicesAndRewards(self):
+		'''
+		This method extracts for each trial which target was chosen, whether or not a reward was given, and if
+		the trial was instructed or free-choice. These arrays are needed for the RLPerformance methods in 
+		logLikelihoodRLPerformance.py.
+
+		Output:
+		- chosen_target: array of length N, where N is the number of trials (instructed + freechoice), which contains 
+						contains values indicating a low-value target choice was made (=1) or if a high-value target
+						choice was made (=2)
+		- rewards: array of length N, which contains 0s or 1s to indicate whether a reward was received at the end
+							of the ith trial. 
+		- instructed_or_freechoice: array of length N, which indicates whether a trial was instructed (=1) or free-choice (=2)
+		'''
+
+		ind_holds = self.ind_check_reward_states - 2
+		ind_rewards = self.ind_check_reward_states + 1
+		rewards = np.array([float(st=='reward') for st in self.state[ind_rewards]])
+		instructed_or_freechoice = np.ravel(self.trial_type[self.state_time[self.ind_check_reward_states]])  # = 1: instructed, =2: free-choice
+		chosen_target = np.zeros(len(ind_holds))
+		chosen_target = np.array([(int(self.state[ind]=='hold_targetH') + 1) for ind in ind_holds])
+
+		'''
+		for i, ind in enumerate(ind_holds):
+			if self.state[ind] == 'hold_targetL':
+				chosen_target[i] = 1
+			elif self.state[ind] == 'hold_targetH':
+				chosen_target[i] = 2
+		'''
+		return chosen_target, rewards, instructed_or_freechoice
 
 
 class ChoiceBehavior_ThreeTargets_Stimulation():
@@ -613,6 +788,212 @@ class ChoiceBehavior_ThreeTargets_Stimulation():
 				counter += 1
 
 		return targets_on_after, choice, choice_side, stim_reward, target_reward, stim_side, stim_trial_ind
+
+class ChoiceBehavior_TwoTargets_Stimulation():
+	'''
+	Class for behavior taken from ABA' task, where there are two targets of different probabilities of reward
+	and stimulation is paired with the middle-value target during the hold-period of instructed trials during
+	blocks B and A'. Can pass in a list of hdf files when initially instantiated in the case that behavioral data
+	is split across multiple hdf files. In this case, the files should be listed in the order in which they were saved.
+	'''
+
+	def __init__(self, hdf_files, num_trials_A, num_trials_B):
+		for i, hdf_file in enumerate(hdf_files): 
+			filename =  hdf_file
+			table = tables.openFile(filename)
+			if i == 0:
+				self.state = table.root.task_msgs[:]['msg']
+				self.state_time = table.root.task_msgs[:]['time']
+				self.trial_type = table.root.task[:]['target_index']
+				self.targetL = table.root.task[:]['targetL']
+				self.targetH = table.root.task[:]['targetH']
+			else:
+				self.state = np.append(self.state, table.root.task_msgs[:]['msg'])
+				self.state_time = np.append(self.state_time, self.state_time[-1] + table.root.task_msgs[:]['time'])
+				self.trial_type = np.append(self.trial_type, table.root.task[:]['target_index'])
+				self.targetL = np.vstack([self.targetL, table.root.task[:]['targetL']])
+				self.targetH = np.vstack([self.targetH, table.root.task[:]['targetH']])
+				
+		self.ind_wait_states = np.ravel(np.nonzero(self.state == 'wait'))   # total number of unique trials
+		self.ind_center_states = np.ravel(np.nonzero(self.state == 'center'))   # total number of totals (includes repeats if trial was incomplete)
+		self.ind_hold_center_states = np.ravel(np.nonzero(self.state == 'hold_center'))
+		self.ind_target_states = np.ravel(np.nonzero(self.state == 'target'))
+		self.ind_check_reward_states = np.ravel(np.nonzero(self.state == 'check_reward'))
+		
+		self.num_trials = self.ind_center_states.size
+		self.num_successful_trials = self.ind_check_reward_states.size
+		self.num_trials_A = num_trials_A
+		self.num_trials_B = num_trials_B
+
+
+	def get_state_TDT_LFPvalues(self,ind_state,syncHDF_file):
+		'''
+		This method finds the TDT sample numbers that correspond to indicated task state using the syncHDF.mat file.
+
+		Inputs:
+			- ind_state: array with state numbers corresponding to which state we're interested in finding TDT sample numbers for, e.g. self.ind_hold_center_states
+			- syncHDF_file: syncHDF.mat file path, e.g. '/home/srsummerson/storage/syncHDF/Mario20161104_b1_syncHDF.mat'
+		Output:
+			- lfp_state_row_ind: array of tdt sample numbers that correspond the the task state events in ind_state array
+		'''
+		# Load syncing data
+		hdf_times = dict()
+		sp.io.loadmat(syncHDF_file, hdf_times)
+		hdf_rows = np.ravel(hdf_times['row_number'])
+		hdf_rows = [val for val in hdf_rows]
+		dio_tdt_sample = np.ravel(hdf_times['tdt_samplenumber'])
+		dio_freq = np.ravel(hdf_times['tdt_dio_samplerate'])
+
+		lfp_dio_sample_num = dio_tdt_sample  # assumes DIOx and LFPx are saved using the same sampling rate
+
+		state_row_ind = self.state_time[ind_state]		# gives the hdf row number sampled at 60 Hz
+		lfp_state_row_ind = np.zeros(state_row_ind.size)
+
+		for i in range(len(state_row_ind)):
+			hdf_index = np.argmin(np.abs(hdf_rows - state_row_ind[i]))
+			if np.abs(hdf_rows[hdf_index] - state_row_ind[i])==0:
+				lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
+			elif hdf_rows[hdf_index] > state_row_ind[i]:
+				hdf_row_diff = hdf_rows[hdf_index] - hdf_rows[hdf_index -1]  # distance of the interval of the two closest hdf_row_numbers
+				m = (lfp_dio_sample_num[hdf_index]-lfp_dio_sample_num[hdf_index - 1])/hdf_row_diff
+				b = lfp_dio_sample_num[hdf_index-1] - m*hdf_rows[hdf_index-1]
+				lfp_state_row_ind[i] = int(m*state_row_ind[i] + b)
+			elif (hdf_rows[hdf_index] < state_row_ind[i])&(hdf_index + 1 < len(hdf_rows)):
+				hdf_row_diff = hdf_rows[hdf_index + 1] - hdf_rows[hdf_index]
+				if (hdf_row_diff > 0):
+					m = (lfp_dio_sample_num[hdf_index + 1] - lfp_dio_sample_num[hdf_index])/hdf_row_diff
+					b = lfp_dio_sample_num[hdf_index] - m*hdf_rows[hdf_index]
+					lfp_state_row_ind[i] = int(m*state_row_ind[i] + b)
+				else:
+					lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
+			else:
+				lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
+
+		return lfp_state_row_ind, dio_freq
+
+
+	def TrialChoices(self, num_trials_slide, plot_results = False):
+		'''
+		This method computes the sliding average over num_trials_slide trials of the number of choices for the 
+		optimal target choice. It looks at overall the liklihood of selecting the better choice in free-choice
+		trials. Choice behavior is split across the three blocks.
+
+		Input:
+		- num_trials_slide: integer, indicates the number of points to perform sliding average over
+		- plot_results: Boolean, indicates if the output should be plotted and shown (=True) or not (=False)
+
+		Output:
+		- all_choices_A: array of length num_trials_A that indicates whether an
+					optimal choice was made or not. Low-value choices are indicated with 0s and high-value choices
+					are indicated with 1s. 
+		- all_choices_Aprime: array of length num_successful_trials - num_trials_A - num_trials_B (equal to length
+					of the final block of behavior, A'), that indicates whether an optimal choice was made or not.
+					Low-value choices are indicated with 0s and high-value choices are indicated with 1s.
+		'''
+
+		# Get indices of free-choice trials for Blocks A and A', as well as the corresponding target selections.
+		freechoice_trial = np.ravel(self.trial_type[self.state_time[self.ind_check_reward_states]]) - 1
+		freechoice_trial_ind_A = np.ravel(np.nonzero(freechoice_trial[:self.num_trials_A]))
+		freechoice_trial_ind_Aprime = np.ravel(np.nonzero(freechoice_trial[self.num_trials_A+self.num_trials_B:])) + self.num_trials_A+self.num_trials_B
+		
+		target_choices_A = self.state[self.ind_check_reward_states - 2][freechoice_trial_ind_A]
+		target_choices_Aprime = self.state[self.ind_check_reward_states - 2][freechoice_trial_ind_Aprime]
+		
+		# Initialize variables
+		num_FC_trials_A = len(freechoice_trial_ind_A)
+		num_FC_trials_Aprime = len(freechoice_trial_ind_Aprime)
+		all_choices_A = np.array([int(choice=='hold_targetH') for choice in target_choices_A])
+		all_choices_Aprime = np.array([int(choice=='hold_targetH') for choice in target_choices_Aprime])
+
+		sliding_avg_all_choices_A = trial_sliding_avg(all_choices_A, num_trials_slide)
+		sliding_avg_all_choices_Aprime = trial_sliding_avg(all_choices_Aprime, num_trials_slide)
+		
+		if plot_results:
+			fig = plt.figure()
+			ax = plt.subplot(121)
+			plt.plot(sliding_avg_all_choices_A, c = 'b', label = 'Block A')
+			plt.xlabel('Free-choice Trials')
+			plt.ylabel('Probability Best Choice')
+			plt.title('Block A')
+			plt.ylim((0,1))
+			ax.get_yaxis().set_tick_params(direction='out')
+			ax.get_xaxis().set_tick_params(direction='out')
+			ax.get_xaxis().tick_bottom()
+			ax.get_yaxis().tick_left()
+			ax = plt.subplot(122)
+			plt.plot(sliding_avg_all_choices_Aprime, c = 'r', label = "Block A'")
+			plt.xlabel('Free-choice Trials')
+			plt.ylabel('Probability Best Choice')
+			plt.title("Block A'")
+			plt.ylim((0,1))
+			ax.get_yaxis().set_tick_params(direction='out')
+			ax.get_xaxis().set_tick_params(direction='out')
+			ax.get_xaxis().tick_bottom()
+			ax.get_yaxis().tick_left()
+			plt.show()
+
+		return all_choices_A, all_choices_Aprime
+
+	def GetChoicesAndRewards(self):
+		'''
+		This method extracts for each trial which target was chosen, whether or not a reward was given, and if
+		the trial was instructed or free-choice. These arrays are needed for the RLPerformance methods in 
+		logLikelihoodRLPerformance.py.
+
+		Output:
+		- chosen_target: array of length N, where N is the number of trials (instructed + freechoice), which contains 
+						contains values indicating a low-value target choice was made (=1) or if a high-value target
+						choice was made (=2)
+		- rewards: array of length N, which contains 0s or 1s to indicate whether a reward was received at the end
+							of the ith trial. 
+		- instructed_or_freechoice: array of length N, which indicates whether a trial was instructed (=1) or free-choice (=2)
+		'''
+
+		ind_holds = self.ind_check_reward_states - 2
+		ind_rewards = self.ind_check_reward_states + 1
+		rewards = np.array([float(st=='reward') for st in self.state[ind_rewards]])
+		instructed_or_freechoice = np.ravel(self.trial_type[self.state_time[self.ind_check_reward_states]])  # = 1: instructed, =2: free-choice
+		chosen_target = np.array([(int(self.state[ind]=='hold_targetH') + 1) for ind in ind_holds])
+
+		return chosen_target, rewards, instructed_or_freechoice
+
+
+	def ChoicesAfterStimulation(self):
+		'''
+		Method to extract information about the stimulation trials and the trial immediately following
+		stimulation. 
+
+		Output: 
+		- choice: length n array with values indicating which target was selecting in the trial following
+			stimulation (= 1 if LV, = 2 if HV)
+		- stim_reward: length n array with Boolean values indicating whether reward was given (True) during
+			the stimulation trial or not (False)
+		- target_reward: length n array with Boolean values indicating whether reward was given (True) in
+			the trial following the stimulation trial or not (False)
+		- stim side: length n array with values indicating what side the MV target was on during the 
+			stimulation trial (= 1 for left, -1 for right)
+		- stim_trial_ind: length n array containing trial numbers during which stimulation was performed. 
+			Since stimulation is during Block A' only, the minimum value should be num_trials_A + num_trials_B
+			and the maximum value should be the total number of trials.
+		'''
+
+		# Get target selection information
+		chosen_target, rewards, instructed_or_freechoice = self.GetChoicesAndRewards()
+		ind_targets = self.ind_check_reward_states - 3
+		targetH_side = self.targetH[self.state_time[ind_targets]][:,2]
+		targetL_side = self.targetL[self.state_time[ind_targets]][:,2]
+		instructed_trials_inds = np.ravel(np.nonzero(2 - instructed_or_freechoice))
+		stim_trial_inds = instructed_trials_inds[np.ravel(np.nonzero(np.greater(instructed_trials_inds, self.num_trials_A + self.num_trials_B)))]
+		stim_trial_inds = np.array([ind for ind in stim_trial_inds if ((ind+1) not in stim_trial_inds)&(ind < (self.num_successful_trials-1))])
+		fc_trial_inds = stim_trial_inds + 1
+
+		choice = chosen_target[fc_trial_inds]		# what target was selected in trial following stim trial
+		stim_reward = rewards[stim_trial_inds]		# was the stim trial rewarded
+		target_reward = rewards[fc_trial_inds]		# was the target selected in trial after stimulation rewarded
+		stim_side = targetL_side[stim_trial_inds] 		# side the MV target was on during stimulation
+		choice_side = np.array([(targetH_side[ind]*(choice[i]==2) + targetL_side[ind]*(choice[i]==1)) for i,ind in enumerate(fc_trial_inds)])		# what side the selected target was on following the stim trial
+		
+		return choice, choice_side, stim_reward, target_reward, stim_side, stim_trial_inds
 
 
 
@@ -1348,6 +1729,77 @@ def ThreeTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_fil
 
 	return num_trials, num_units, window_fr, window_fr_smooth
 
+def TwoTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files, channel, t_before, t_after):
+	'''
+	This method returns the average firing rate of all units on the indicated channel during picture onset.
+
+	Inputs:
+	- hdf_files: list of N hdf_files corresponding to the behavior in the three target task
+	- syncHDF_files: list of N syncHDF_files that containes the syncing DIO data for the corresponding hdf_file and it's
+					TDT recording. If TDT data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, syncHDF_files should have the form [syncHDF_file1.mat, '']
+	- spike_files: list of N tuples of spike_files, where each entry is a list of 2 spike files, one corresponding to spike
+					data from the first 96 channels and the other corresponding to the spike data from the last 64 channels.
+					If spike data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, the hdf_files and syncHDF_files will both have 2 file names, and the 
+					spike_files entry should be of the form [[spike_file1.csv, spike_file2.csv], ''].
+	- channel: integer value indicating what channel will be used to regress activity
+	- t_before: time before (s) the picture onset that should be included when computing the firing rate. t_before = 0 indicates
+					that we only look from the time of onset forward when considering the window of activity.
+	- t_after: time after (s) the picture onset that should be included when computing the firing rate.
+
+	Output:
+	- num_trials: array of length N with an element corresponding to the number of successful trials in each of the
+					hdf_files
+	- window_fr: dictionary with elements indexed such that the index matches the corresponding set of hdf_files. Each
+					dictionary element contains a matrix of size (num units)x(num trials) with elements corresponding
+					to the average firing rate over the window indicated.
+	'''
+	num_trials = np.zeros(len(hdf_files))
+	num_units = np.zeros(len(hdf_files))
+	window_fr = dict()
+	window_fr_smooth = dict()
+	for i, hdf_file in enumerate(hdf_files):
+		cb_block = ChoiceBehavior_TwoTargets(hdf_file)
+		num_trials[i] = cb_block.num_successful_trials
+		ind_hold_center = cb_block.ind_check_reward_states - 4
+		ind_picture_onset = cb_block.ind_check_reward_states - 5
+		
+		# Load spike data: 
+		if (spike_files[i] != ''):
+			# Find lfp sample numbers corresponding to these times and the sampling frequency of the lfp data
+			lfp_state_row_ind, lfp_freq = cb_block.get_state_TDT_LFPvalues(ind_picture_onset, syncHDF_files[i])
+			# Convert lfp sample numbers to times in seconds
+			times_row_ind = lfp_state_row_ind/float(lfp_freq)
+
+			# Load spike data and find all sort codes associated with good channels
+			if channel < 97:
+				print channel
+				spike = OfflineSorted_CSVFile(spike_files[i][0])
+			else:
+				print channel
+				spike = OfflineSorted_CSVFile(spike_files[i][1])
+
+			# Get matrix that is (Num units on channel)x(num trials in hdf_file) containing the firing rates during the
+			# designated window.
+			sc_chan = spike.find_chan_sc(channel)
+			num_units[i] = len(sc_chan)
+			for j, sc in enumerate(sc_chan):
+				sc_fr = spike.compute_window_fr(channel,sc,times_row_ind,t_before,t_after)
+				sc_fr_smooth = spike.compute_window_fr_smooth(channel,sc,times_row_ind,t_before,t_after)
+				if j == 0:
+					all_fr = sc_fr
+					all_fr_smooth = sc_fr_smooth
+				else:
+					all_fr = np.vstack([all_fr, sc_fr])
+					all_fr_smooth = np.vstack([all_fr_smooth, sc_fr_smooth])
+
+			# Save matrix of firing rates for units on channel from trials during hdf_file as dictionary element
+			window_fr[i] = all_fr
+			window_fr_smooth[i] = all_fr_smooth
+
+	return num_trials, num_units, window_fr, window_fr_smooth
+
 def ThreeTargetTask_MaxFiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files, channel, t_before, t_after):
 	'''
 	This method returns the average firing rate of all units on the indicated channel during picture onset.
@@ -1419,7 +1871,7 @@ def ThreeTargetTask_MaxFiringRates_PictureOnset(hdf_files, syncHDF_files, spike_
 	return num_trials, num_units, window_fr
 
 
-def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files, trial_case, var_value, channel, t_before, t_after, smoothed):
+def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files, trial_case, var_value, channel, t_before, t_after, smoothed, trial_start, trial_end):
 	'''
 	This method regresses the firing rate of all units as a function of value. Only trials from the specified
 	trial_case are considered in the regression. There are six trial cases: (1) instructed to low-value [1,0,0] (2) instructed
@@ -1447,11 +1899,15 @@ def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, sp
 					that we only look from the time of onset forward when considering the window of activity.
 	- t_after: time after (s) the picture onset that should be included when computing the firing rate.
 	- smoothed: boolean indicating whether to use smoothed firing rates (True) or not (False)
+	- trial_start: integer indicating at which trial to start for the analysis
+	- trial_end: integer indicating at which trial to end for the analysis
 
 	'''
 	# 1. Load behavior data and pull out trial indices for the designated trial case
 	cb = ChoiceBehavior_ThreeTargets_Stimulation(hdf_files, 150, 100)
 	total_trials = cb.num_successful_trials
+	trial_end = trial_end*(trial_end < total_trials) + total_trials*(trial_end >= total_trials)
+	
 	targets_on = cb.targets_on[cb.state_time[cb.ind_check_reward_states]]
 	ind_trial_case = np.array([ind for ind in range(total_trials) if np.array_equal(targets_on[ind],trial_case)])
 	
@@ -1520,7 +1976,8 @@ def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, sp
 		#trial_inds = np.array([index for index in ind_trial_case if unit_data[index]!=0], dtype = int)
 
 		# look at all trial types within Blocks A and B
-		trial_inds = np.array([index for index in range(50,250) if unit_data[index]!=0], dtype = int)
+		#trial_inds = np.array([index for index in range(50,250) if unit_data[index]!=0], dtype = int)
+		trial_inds = np.array([index for index in range(trial_start,trial_end) if unit_data[index]!=0], dtype = int)
 		x = np.vstack((Q_low[trial_inds], Q_mid[trial_inds], Q_high[trial_inds]))
 		x = np.vstack((x, rt[trial_inds], mt[trial_inds], chosen_target[trial_inds], rewards[trial_inds]))
 		# include which targets were shown
@@ -1539,6 +1996,123 @@ def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, sp
 		print fit_glm.summary()
 
 	return window_fr, window_fr_smooth, fr_mat, x, y, Q_low, Q_mid, Q_high
+
+def TwoTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files, var_value, channel, t_before, t_after, smoothed, trial_start,trial_end):
+	'''
+	This method regresses the firing rate of all units as a function of value. Only trials from the specified
+	trial_case are considered in the regression. There are six trial cases: (1) instructed to low-value [1,0,0] (2) instructed
+	to middle-value [0,0,1] (3) instructed to high-value [0,1,0] (4) free-choice with low and middle values [1,0,1] (5) free-choice with low and
+	high values [1,1,0] (6) free-choice to middle and high values [0,1,1].
+
+	Inputs:
+	- hdf_files: list of N hdf_files corresponding to the behavior in the three target task
+	- syncHDF_files: list of N syncHDF_files that containes the syncing DIO data for the corresponding hdf_file and it's
+					TDT recording. If TDT data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, syncHDF_files should have the form [syncHDF_file1.mat, '']
+	- spike_files: list of N tuples of spike_files, where each entry is a list of 2 spike files, one corresponding to spike
+					data from the first 96 channels and the other corresponding to the spike data from the last 64 channels.
+					If spike data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, the hdf_files and syncHDF_files will both have 2 file names, and the 
+					spike_files entry should be of the form [[spike_file1.csv, spike_file2.csv], ''].
+	- var_value: boolean indicating whether the Q value(s) used in the regression should be fixed (var_value == False) 
+				and defined based on their reward probabilties, or whether the Q value(s) should be varying trial-by-trial
+				(var_value == True) based on the Q-learning model fit
+	- channel: integer value indicating what channel will be used to regress activity
+	- t_before: time before (s) the picture onset that should be included when computing the firing rate. t_before = 0 indicates
+					that we only look from the time of onset forward when considering the window of activity.
+	- t_after: time after (s) the picture onset that should be included when computing the firing rate.
+	- smoothed: boolean indicating whether to use smoothed firing rates (True) or not (False)
+	- trial_start: integer indicating at which trial to start for the analysis
+	- trial_end: integer indicating at which trial to end for the analysis
+
+	'''
+	# 1. Load behavior data and pull out trial indices for the designated trial case
+	cb = ChoiceBehavior_TwoTargets_Stimulation(hdf_files, 100, 100)
+	total_trials = cb.num_successful_trials
+	trial_end = trial_end*(trial_end < total_trials) + total_trials*(trial_end >= total_trials)
+	#ind_trial_case = np.array([ind for ind in range(total_trials) if np.array_equal(targets_on[ind],trial_case)])
+	
+
+	# 1a. Get reaction time information
+	rt = np.array([])
+	for file in hdf_files:
+		reaction_time, velocity = compute_rt_per_trial_FreeChoiceTask(file)
+		rt = np.append(rt, reaction_time)
+
+	# 1b. Get movementment time information
+	mt = (cb.state_time[cb.ind_target_states + 1] - cb.state_time[cb.ind_target_states])/60.
+
+
+	print "Total trials: ", total_trials
+	print "Length reaction time vec: ", len(rt)
+
+	# 2. Get firing rates from units on indicated channel around time of target presentation on all trials. Note that
+	# 	window_fr is a dictionary with elements indexed such that the index matches the corresponding set of hdf_files. Each
+	#	dictionary element contains a matrix of size (num units)x(num trials) with elements corresponding
+	#	to the average firing rate over the window indicated.
+	num_trials, num_units, window_fr, window_fr_smooth = TwoTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files, channel, t_before, t_after)
+	cum_sum_trials = np.cumsum(num_trials)
+
+	# 3. Get Q-values, chosen targets, and rewards
+	chosen_target, rewards, instructed_or_freechoice = cb.GetChoicesAndRewards()
+	if var_value:
+		# Varying Q-values
+		# Find ML fit of alpha and beta
+		Q_initial = 0.5*np.ones(3)
+		nll = lambda *args: -logLikelihoodRLPerformance(*args)
+		result = op.minimize(nll, [0.2, 1], args=(Q_initial, rewards, chosen_target, instructed_or_freechoice), bounds=[(0,1),(0,None)])
+		alpha_ml, beta_ml = result["x"]
+		print "Best fitting alpha and beta are: ", alpha_ml, beta_ml
+		# RL model fit for Q values
+		Q_low, Q_high, prob_choice_low, log_likelihood = RLPerformance([alpha_ml, beta_ml], Q_initial, rewards,  chosen_target, instructed_or_freechoice)
+	else:
+		# Fixed Q-values
+		Q_low = 0.4*np.ones(total_trials)
+		Q_high = 0.8*np.ones(total_trials)
+
+	# 4. Create firing rate matrix with size (max_num_units)x(total_trials)
+	max_num_units = int(np.max(num_units))
+	#fr_mat = np.empty([max_num_units,total_trials])
+	#fr_mat[:] = np.NAN
+	fr_mat = np.zeros([max_num_units, total_trials])
+	trial_counter = 0
+	for j in window_fr.keys():
+		if not smoothed:
+			block_fr = window_fr[j]
+		else:
+			block_fr = window_fr_smooth[j]
+		if len(block_fr.shape) == 1:
+			num_units = 1
+			num_trials = len(block_fr)
+		else:
+			num_units,num_trials = block_fr.shape 
+		fr_mat[:num_units,cum_sum_trials[j] - num_trials:cum_sum_trials[j]] = block_fr
+
+	# 5. Do regression for each unit with spike data saved.
+	#    Current regression uses Q-values and constant, as well as: 
+	#    reaction time (rt), movement time (mt), choice (chosen_target), and reward (rewards)
+	for k in range(max_num_units):
+		unit_data = fr_mat[k,:]
+		#trial_inds = np.array([index for index in ind_trial_case if unit_data[index]!=0], dtype = int)
+
+		# look at all trial types within Blocks A and B
+		trial_inds = np.array([index for index in range(trial_start,trial_end) if unit_data[index]!=0], dtype = int)
+		x = np.vstack((Q_low[trial_inds], Q_high[trial_inds]))
+		x = np.vstack((x, rt[trial_inds], mt[trial_inds], chosen_target[trial_inds], rewards[trial_inds]))
+		x = np.transpose(x)
+		x = np.hstack((x, np.ones([len(trial_inds),1]))) 	# use this in place of add_constant which doesn't work when constant Q values are used
+		#x = sm.add_constant(x, prepend=False)
+		print x.shape
+		y = unit_data[trial_inds]
+		print y.shape
+		#y = y/np.max(y)  # normalize y
+
+		print "Regression for unit ", k
+		model_glm = sm.OLS(y,x)
+		fit_glm = model_glm.fit()
+		print fit_glm.summary()
+
+	return window_fr, window_fr_smooth, fr_mat, x, y, Q_low, Q_high
 
 def ThreeTargetTask_RegressedFiringRatesWithValue_PictureOnset(hdf_files, syncHDF_files, spike_files, channel, t_before, t_after, smoothed):
 	'''
@@ -2371,3 +2945,194 @@ def ThreeTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_
 	reg_psth = [psth_lm, psth_lh, psth_mh, psth_l, psth_h, psth_m, psth]
 	smooth_psth = [smooth_psth_lm, smooth_psth_lh, smooth_psth_mh, smooth_psth_l, smooth_psth_h, smooth_psth_m, smooth_psth]
 	return reg_psth, smooth_psth
+
+def TwoTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_files, chann, sc, align_to, t_before, t_after, plot_output):
+	'''
+
+	This method aligns spiking data to behavioral choices 
+	in the Two Target Task, where there is a low-value and high-value target. This version does not 
+	differentiate between choices in different blocks.
+
+	Inputs:
+	- hdf_files: list of N hdf_files corresponding to the behavior in the three target task
+	- syncHDF_files: list of N syncHDF_files that containes the syncing DIO data for the corresponding hdf_file and it's
+					TDT recording. If TDT data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, syncHDF_files should have the form [syncHDF_file1.mat, '']
+	- spike_files: list of N tuples of spike_files, where each entry is a list of 2 spike files, one corresponding to spike
+					data from the first 96 channels and the other corresponding to the spike data from the last 64 channels.
+					If spike data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, the hdf_files and syncHDF_files will both have 2 file names, and the 
+					spike_files entry should be of the form [[spike_file1.csv, spike_file2.csv], ''].
+	- chann: integer representing a channel
+	- sc: integer representing unit sort code
+	- align_to: integer in range [1,2] that indicates whether we align the (1) picture onset, a.k. center-hold or (2) check_reward.
+	- plot_output: binary indicating whether output should be plotted + saved or not
+	'''
+	num_files = len(hdf_files)
+	trials_per_file = np.zeros(num_files)
+	num_successful_trials = np.zeros(num_files)
+
+	# Define timing parameters for PSTHs
+	t_resolution = 0.1 		# 100 ms time bins
+	num_bins = len(np.arange(-t_before, t_after, t_resolution)) - 1
+
+	# Define arrays to save psth for each trial
+	smooth_psth_l = np.array([])
+	smooth_psth_h = np.array([])
+	psth_l = np.array([])
+	psth_h = np.array([])
+
+	'''
+	Get data for each set of files
+	'''
+	for i in range(num_files):
+		# Load behavior data
+		cb = ChoiceBehavior_TwoTargets(hdf_files[i])
+		num_successful_trials[i] = len(cb.ind_check_reward_states)
+		target_options, target_chosen, rewarded_choice = cb.TrialOptionsAndChoice()
+
+		# Find times corresponding to center holds of successful trials
+		ind_hold_center = cb.ind_check_reward_states - 4
+		ind_check_reward = cb.ind_check_reward_states
+		if align_to == 1:
+			inds = ind_hold_center
+		elif align_to == 2:
+			inds = ind_check_reward
+
+		# Load spike data: 
+		if (spike_files[i] != ''):
+			# Find lfp sample numbers corresponding to these times and the sampling frequency of the lfp data
+			lfp_state_row_ind, lfp_freq = cb.get_state_TDT_LFPvalues(inds, syncHDF_files[i])
+			# Convert lfp sample numbers to times in seconds
+			times_row_ind = lfp_state_row_ind/float(lfp_freq)
+
+			# Load spike data
+			cd_units = [chann]
+			if chann < 97:
+				spike1 = OfflineSorted_CSVFile(spike_files[i][0])
+				all_units1, total_units1 = spike1.find_unit_sc(spike1.good_channels)
+				spike1_good_channels = [unit for unit in cd_units if unit in spike1.good_channels]
+				spike2_good_channels = []
+			else:
+				spike2 = OfflineSorted_CSVFile(spike_files[i][1])
+				all_units2, total_units2 = spike2.find_unit_sc(spike2.good_channels)
+				spike2_good_channels = [unit for unit in cd_units if unit in spike2.good_channels]
+				spike1_good_channels = []
+
+			# 2. L chosen
+			L_ind = np.ravel(np.nonzero([np.array_equal(target_chosen[j,:], [1,0]) for j in range(int(num_successful_trials[i]))]))
+			if not spike2_good_channels:
+				avg_psth_l, smooth_avg_psth_l = spike1.compute_psth(spike1_good_channels, sc, times_row_ind[L_ind],t_before,t_after,t_resolution)
+				raster_l = spike1.compute_raster(spike1_good_channels, sc, times_row_ind[L_ind],t_before,t_after)
+			else:
+				avg_psth_l, smooth_avg_psth_l = spike2.compute_psth(spike2_good_channels, sc, times_row_ind[L_ind],t_before,t_after,t_resolution)
+				raster_l = spike2.compute_raster(spike1_good_channels, sc, times_row_ind[L_ind],t_before,t_after)
+			if i == 0:
+				psth_l = avg_psth_l
+				smooth_psth_l = smooth_avg_psth_l
+				all_raster_l = raster_l
+			else:
+				psth_l = np.vstack([psth_l, avg_psth_l])
+				smooth_psth_l = np.vstack([smooth_psth_l, smooth_avg_psth_l])
+				all_raster_l.update(raster_l)
+
+			# 5. H chosen
+			H_ind = np.ravel(np.nonzero([np.array_equal(target_chosen[j,:], [0,1]) for j in range(int(num_successful_trials[i]))]))
+			if not spike2_good_channels:
+				avg_psth_h, smooth_avg_psth_h = spike1.compute_psth(spike1_good_channels, sc, times_row_ind[H_ind],t_before,t_after,t_resolution)
+				raster_h = spike1.compute_raster(spike1_good_channels, sc, times_row_ind[H_ind],t_before,t_after)
+			else:
+				avg_psth_h, smooth_avg_psth_h = spike2.compute_psth(spike2_good_channels, sc, times_row_ind[H_ind],t_before,t_after,t_resolution)
+				raster_h = spike2.compute_raster(spike2_good_channels, sc, times_row_ind[H_ind],t_before,t_after)
+			if i == 0:
+				psth_h = avg_psth_h
+				smooth_psth_h = smooth_avg_psth_h
+				all_raster_h = raster_h
+			else:
+				psth_h = np.vstack([psth_h, avg_psth_h])
+				smooth_psth_h = np.vstack([smooth_psth_h, smooth_avg_psth_h])
+				all_raster_h.update(raster_h)
+
+	# Plot average rate for all neurons divided in six cases of targets on option
+	if plot_output:
+		plt.figure(0)
+		b = signal.gaussian(39,0.6)
+		avg_psth_l = np.nanmean(psth_l, axis = 0)
+		sem_avg_psth_l = np.nanstd(psth_l, axis = 0)/np.sqrt(psth_l.shape[0])
+		#smooth_avg_psth_l = np.nanmean(smooth_psth_l, axis = 0)
+		smooth_avg_psth_l = filters.convolve1d(np.nanmean(psth_l,axis=0), b/b.sum())
+		sem_smooth_avg_psth_l = np.nanstd(smooth_psth_l, axis = 0)/np.sqrt(smooth_psth_l.shape[0])
+
+		avg_psth_h = np.nanmean(psth_h, axis = 0)
+		sem_avg_psth_h = np.nanstd(psth_h, axis = 0)/np.sqrt(psth_h.shape[0])
+		smooth_avg_psth_h = np.nanmean(smooth_psth_h, axis = 0)
+		smooth_avg_psth_h = filters.convolve1d(np.nanmean(psth_h,axis=0), b/b.sum())
+		sem_smooth_avg_psth_h = np.nanstd(smooth_psth_h, axis = 0)/np.sqrt(smooth_psth_h.shape[0])
+		
+		y_min_l = (smooth_avg_psth_l - sem_smooth_avg_psth_l).min()
+		y_max_l = (smooth_avg_psth_l+ sem_smooth_avg_psth_l).max()
+		y_min_h = (smooth_avg_psth_h - sem_smooth_avg_psth_h).min()
+		y_max_h = (smooth_avg_psth_h+ sem_smooth_avg_psth_h).max()
+
+		y_min = np.array([y_min_l, y_min_h]).min()
+		y_max = np.array([y_max_l, y_max_h]).max()
+
+
+		num_trials = len(all_raster_l.keys())
+
+		linelengths = float((y_max - y_min))/num_trials
+		lineoffsets = 1
+		xticklabels = np.arange(-t_before,t_after-t_resolution,t_resolution)
+
+		ax1 = plt.subplot(1,2,1)
+		plt.title('All Trials')
+		plt.plot(xticklabels, smooth_avg_psth_l,'b', label = 'LV Chosen')
+		plt.fill_between(xticklabels, smooth_avg_psth_l - sem_smooth_avg_psth_l, smooth_avg_psth_l + sem_smooth_avg_psth_l, facecolor = 'b', alpha = 0.2)
+		#xticks = np.arange(0, len(xticklabels), 10)
+		#xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
+		#plt.xticks(xticks, xticklabels)
+		plt.xlabel('Time from Center Hold (s)')
+		plt.ylabel('Firing Rate (spk/s)')
+		ax1.get_yaxis().set_tick_params(direction='out')
+		ax1.get_xaxis().set_tick_params(direction='out')
+		ax1.get_xaxis().tick_bottom()
+		ax1.get_yaxis().tick_left()
+		
+
+		# DEFINE LINEOFFSETS AND LINELENGTHS BY Y-RANGE OF PSTH
+		for k in range(len(all_raster_l.keys())):
+			plt.eventplot(all_raster_l[k], colors=[[0,0,0]], lineoffsets= y_min + k*linelengths,linelengths=linelengths)
+		plt.legend()
+		plt.ylim((y_min - 1, y_max + 1))
+
+		ax2 = plt.subplot(1,2,2)
+		plt.plot(xticklabels, smooth_avg_psth_h, 'r', label = 'HV Chosen')
+		plt.fill_between(xticklabels, smooth_avg_psth_h - sem_smooth_avg_psth_h, smooth_avg_psth_h + sem_smooth_avg_psth_h, facecolor = 'r', alpha = 0.2)
+		#xticklabels = np.arange(-t_before,t_after-t_resolution,t_resolution)
+		#xticks = np.arange(0, len(xticklabels), 10)
+		#xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
+		#plt.xticks(xticks, xticklabels)
+		plt.xlabel('Time from Center Hold (s)')
+		plt.ylabel('Firing Rate (spk/s)')
+		ax2.get_yaxis().set_tick_params(direction='out')
+		ax2.get_xaxis().set_tick_params(direction='out')
+		ax2.get_xaxis().tick_bottom()
+		ax2.get_yaxis().tick_left()
+
+		# DEFINE LINEOFFSETS AND LINELENGTHS BY Y-RANGE OF PSTH
+		for k in range(len(all_raster_h.keys())):
+			plt.eventplot(all_raster_h[k], colors=[[0,0,0]], lineoffsets= y_min + k*linelengths,linelengths=linelengths)
+		plt.legend()
+		plt.ylim((y_min - 1, y_max + 1))
+
+
+		#plt_name = syncHDF_files[i][34:-15]
+		#plt.savefig('/home/srsummerson/code/analysis/Mario_Performance_figs/'+plt_name+ '_' + str(align_to) +'_PSTH_Chan'+str(chann)+'-'+str(sc)+'.svg')
+		plt_name = syncHDF_files[i][syncHDF_files[i].index('Luigi201'):-15]
+		plt.savefig('C:/Users/Samantha Summerson/Dropbox/Carmena Lab/Luigi/Caudate Stim/'+plt_name+ '_' + str(align_to) +'_PSTH_Chan'+str(chann)+'-'+str(sc)+'.svg')
+		
+		plt.close()
+
+	reg_psth = [psth_l, psth_h]
+	smooth_psth = [smooth_psth_l, smooth_psth_h]
+	return reg_psth, smooth_psth, all_raster_l

@@ -12,7 +12,7 @@ def compute_rt_per_trial_FreeChoiceTask(hdf_file):
     go_cue_ix = np.array([hdf.root.task_msgs[j-3]['time'] for j, i in enumerate(hdf.root.task_msgs) if i['msg']=='check_reward'])
     
     # Calculate filtered velocity and 'velocity mag. in target direction'
-    filt_vel, total_vel, vel_bins = get_cursor_velocity(hdf, go_cue_ix, 0., 2., use_filt_vel=False)
+    filt_vel, total_vel, vel_bins, skipped_indices = get_cursor_velocity(hdf, go_cue_ix, 0., 2., use_filt_vel=False)
 
     ## Calculate 'RT' from vel_in_targ_direction: use with get_cusor_velocity_in_targ_dir
     #kin_feat = get_kin_sig_shenoy_method(vel_in_targ_dir.T, vel_bins, perc=.2, start_tm = .1)

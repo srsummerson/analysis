@@ -7,6 +7,7 @@ import matplotlib as mpl
 import tables
 from matplotlib import pyplot as plt
 from scipy import signal
+from scipy.ndimage import filters
 from scipy.interpolate import spline
 
 class OfflineSorted_CSVFile():
@@ -141,13 +142,14 @@ class OfflineSorted_CSVFile():
 		- psth: T x N array containing the average firing rate over a window of total length N samples for T different
 				time points
 		'''
-		psth_length = np.rint((t_before + t_after)/t_resolution)
+		psth_length = int(np.rint((t_before + t_after)/t_resolution))
 		num_timepoints = len(times_align)
 		psth = np.zeros((num_timepoints, psth_length-1))
 		smooth_psth = psth
 
 		boxcar_length = 4.
 		boxcar_window = signal.boxcar(boxcar_length)  # 2 bins before, 2 bins after for boxcar smoothing
+		b = signal.gaussian(39, 0.6)
 		
 		unit_chan = np.ravel(np.nonzero(np.equal(self.channel, chann)))
 		sc_unit = np.ravel(np.nonzero(np.equal(self.sort_code[unit_chan], sc)))
@@ -159,8 +161,78 @@ class OfflineSorted_CSVFile():
 			hist_fr = hist/t_resolution
 			psth[i,:] = hist_fr[:psth_length-1]
 			smooth_psth[i,:] = np.convolve(hist_fr[:psth_length-1], boxcar_window,mode='same')/boxcar_length
-
+			smooth_psth[i,:] = filters.convolve1d(hist_fr[:psth_length-1], b/b.sum())
 		return psth, smooth_psth
+
+	def compute_sliding_psth(self,chann,sc,times_align,t_before,t_after,t_resolution, t_overlap):
+		'''
+		Method that returns an array of psths for spiking activity aligned to the sample numbers indicated in samples_align
+		with firing rates quantized to bins of size samp_resolution.
+
+		Input:
+		- chann: integer representing the channel number
+		- sc: integer representing the sort code for the channel
+		- times_align: array of T time points (s) corresponding to the time points for which activity should be aligned
+		- t_before: integer indicating the length of time (s) to be included prior to the alignment time point
+		- t_after: integer indicating the length of time (s) to be included after the alignment time point
+		- t_resolution: the size of the time bins in terms of seconds, i.e. 0.1 = 100 ms and 1  = 1 s
+		- t_overlap: the size of the overlap of the time bins in terms of seconds, i.e. 0.05 = 50 ms, should be less than t_resolution
+
+		Output: 
+		- psth: T x N array containing the average firing rate over a window of total length N samples for T different
+				time points
+		'''
+		psth_length = int(np.rint((t_before + t_after - t_overlap)/(t_resolution - t_overlap)))
+		print psth_length
+		num_timepoints = len(times_align)
+		psth = np.zeros((num_timepoints, psth_length))
+		
+
+		boxcar_length = 4.
+		boxcar_window = signal.boxcar(boxcar_length)  # 2 bins before, 2 bins after for boxcar smoothing
+		b = signal.gaussian(39, 0.6)
+		
+		unit_chan = np.ravel(np.nonzero(np.equal(self.channel, chann)))
+		sc_unit = np.ravel(np.nonzero(np.equal(self.sort_code[unit_chan], sc)))
+		channel_data = self.times[unit_chan[sc_unit]] 
+		for i, tp in enumerate(times_align):
+			data = channel_data
+			t_start = tp - t_before
+			t_end = tp + t_after
+			for k in range(psth_length):
+				data_window = np.ravel(np.greater(data, t_start + k*t_overlap)&np.less(data, t_start + k*t_overlap + t_resolution))
+				psth[i,k] = np.sum(data_window)/t_resolution
+			
+		return psth
+
+	def compute_raster(self,chann,sc,times_align,t_before,t_after):
+		'''
+		Method that returns times for spiking activity aligned to the sample numbers indicated in samples_align.
+
+		Input:
+		- chann: integer representing the channel number
+		- sc: integer representing the sort code for the channel
+		- times_align: array of T time points (s) corresponding to the time points for which activity should be aligned
+		- t_before: integer indicating the length of time (s) to be included prior to the alignment time point
+		- t_after: integer indicating the length of time (s) to be included after the alignment time point
+		- t_resolution: the size of the time bins in terms of seconds, i.e. 0.1 = 100 ms and 1  = 1 s
+
+		Output: 
+		- psth: T x N array containing the average firing rate over a window of total length N samples for T different
+				time points
+		'''
+		num_timepoints = len(times_align)
+		raster = dict()
+		
+		unit_chan = np.ravel(np.nonzero(np.equal(self.channel, chann)))
+		sc_unit = np.ravel(np.nonzero(np.equal(self.sort_code[unit_chan], sc)))
+		channel_data = self.times[unit_chan[sc_unit]] 
+		for i, tp in enumerate(times_align):
+			data = channel_data
+			data_window = np.ravel(np.nonzero(np.greater(data, tp - t_before)&np.less(data,tp + t_after)))
+			raster_spikes = data[data_window] - tp
+			raster[i] = raster_spikes
+		return raster
 
 	def compute_window_fr(self,chann,sc,times_align,t_before,t_after):
 		'''
@@ -186,7 +258,7 @@ class OfflineSorted_CSVFile():
 		for i, tp in enumerate(times_align):
 			data = channel_data
 			spikes = (data > (tp - t_before))&(data < (tp + t_after))  	# find spikes in this window
-			window_fr[i] = np.sum(spikes)/float(t_after - t_before)		# count spikes and divide by window length
+			window_fr[i] = np.sum(spikes)/float(t_after + t_before)		# count spikes and divide by window length
 
 		return window_fr
 
@@ -215,7 +287,8 @@ class OfflineSorted_CSVFile():
 		t_resolution = 0.1
 		boxcar_length = 4.
 		boxcar_window = signal.boxcar(boxcar_length)  # 2 bins before, 2 bins after for boxcar smoothing
-		
+		b = signal.gaussian(39,4)
+
 		for i, tp in enumerate(times_align):
 			data = channel_data
 			# look at time window in question with padded 2 s before and after
@@ -223,10 +296,10 @@ class OfflineSorted_CSVFile():
 			hist, bins = np.histogram(data, bins = t_window)
 			hist_fr = hist/t_resolution
 			smooth_psth = np.convolve(hist_fr, boxcar_window,mode='same')/boxcar_length
-
+			#smooth_psth = filters.convolve1d(hist_fr, b/b.sum())
 			num_samps_in_window = np.rint((t_after + t_before)/t_resolution)
 			len_psth = len(smooth_psth)
-			window_fr[i] = 0.5*np.sum(smooth_psth[len_psth/2 - num_samps_in_window/2:len_psth/2 + num_samps_in_window/2])/(num_samps_in_window/2)		# count spikes and divide by window length
+			window_fr[i] = 0.5*np.sum(smooth_psth[len_psth/2 - num_samps_in_window/2:len_psth/2 + num_samps_in_window/2])/(num_samps_in_window/2.)		# count spikes and divide by window length
 
 		return window_fr
 

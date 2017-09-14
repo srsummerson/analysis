@@ -12,7 +12,17 @@ def logLikelihoodRLPerformance(parameters, Q_initial, reward_schedule,choice,ins
      The Q-values here update for all trials, whereas the probability of selecting the low-value and high-value targets only updates for the free-choice
      trials. 
 
-     Q[t] is the value at the beginning of trial t, reward_schedule[t] is the reward at the end of trial t, 
+     Q[t] is the value at the beginning of trial t, reward_schedule[t] is the reward at the end of trial t.
+
+     Input:
+     - parameters: array of length 2; first element is the value of alpha, second element is the value of beta
+     - Q_initial: array of length 2; first value is the initial Q-value for the LV target, second value is the 
+                initial Q-value for the HV target
+    - reward_schedule: array of length N, where N is the number of trials, indicating whether or not a reward was
+                administed in a given trial (0: no reward, 1: reward)
+    - choice: array of length N, indicating the target choice on each trial (1: LV target, 2: HV target)
+    - instructed_or_freechoice: array of length N indicating whether a trial was free-choice or instructed-choice
+                (1: instructed-choice, 2: free-choice)
     '''
     num_freechoice = np.sum(instructed_or_freechoice) - instructed_or_freechoice.size
     Q_low = np.zeros(reward_schedule.size+1)
