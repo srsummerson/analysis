@@ -1,4 +1,5 @@
 import numpy as np
+import random
 import scipy.optimize as op
 import statsmodels.api as sm
 import matplotlib.pyplot as plt
@@ -686,6 +687,8 @@ def RLModel_ThreeTarget_MVHV(mario_days):
 	beta_mat = np.zeros((num_days, 5))		# each column stores beta values for each of the 5 RL models considered
 	lambda_mat = np.zeros((num_days, 4)) 	# each column stores lambda value for the 4 adjusted RL models
 	BIC_mat = np.zeros((num_days, 5))		# each column stores the BIC value for the 5 models considered
+	accuracy = np.zeros((num_days, 5))
+	shuffle_accuracy = np.zeros((num_days, 5))
 
 	for k, day in enumerate(mario_days):
 		print "Session %i of %i" %(k+1,num_days)
@@ -716,6 +719,22 @@ def RLModel_ThreeTarget_MVHV(mario_days):
 		beta_mat[k,0] = beta_ml
 		BIC_mat[k,0] = BIC
 
+		# Accuracy of fit
+		model3 = 0.33*(prob_choice_mid > 0.5) + 0.66*(np.less_equal(prob_choice_mid, 0.5))  # scaling by 0.33 and 0.66 just for plotting purposes
+		target_freechoice_block3 = np.array(chosen_target[250:])
+		fit3 = np.equal(model3,(0.33*target_freechoice_block3))
+
+		shuff_accuracy = np.zeros(100)
+		num_block3_trials = len(target_freechoice_block3)
+		for m in range(100):
+			shuffle_inds = np.random.choice(num_block3_trials, num_block3_trials,replace=False)
+			shuffle_choices = 0.33*target_freechoice_block3[shuffle_inds]
+			fit_shuffled = np.equal(model3,shuffle_choices)
+			shuff_accuracy[m] = float(np.sum(fit_shuffled))/model3.size
+
+		accuracy[k,0] = float(np.sum(fit3))/model3.size
+		shuffle_accuracy[k,0] = np.nanmean(shuff_accuracy)
+
 		# 4. Model 2: Additive Q parameter
 		# Find ML fit of alpha, beta, and gamma
 		nll = lambda *args: -loglikelihood_ThreeTargetTask_Qlearning_QAdditive_MVHV(*args)
@@ -732,6 +751,12 @@ def RLModel_ThreeTarget_MVHV(mario_days):
 		beta_mat[k,1] = beta_ml
 		lambda_mat[k,0] = lambda_ml
 		BIC_mat[k,1] = BIC
+
+		# Accuracy of fit
+		model3 = 0.33*(prob_choice_mid > 0.5) + 0.66*(np.less_equal(prob_choice_mid, 0.5))  # scaling by 0.33 and 0.66 just for plotting purposes
+		target_freechoice_block3 = np.array(chosen_target[250:])
+		fit3 = np.equal(model3,(0.33*target_freechoice_block3))
+		accuracy[k,1] = float(np.sum(fit3))/model3.size
 
 		# 5. Model 3: Multiplicative Q parameter
 		# Find ML fit of alpha, beta, and gamma
@@ -750,6 +775,12 @@ def RLModel_ThreeTarget_MVHV(mario_days):
 		lambda_mat[k,1] = lambda_ml
 		BIC_mat[k,2] = BIC
 
+		# Accuracy of fit
+		model3 = 0.33*(prob_choice_mid > 0.5) + 0.66*(np.less_equal(prob_choice_mid, 0.5))  # scaling by 0.33 and 0.66 just for plotting purposes
+		target_freechoice_block3 = np.array(chosen_target[250:])
+		fit3 = np.equal(model3,(0.33*target_freechoice_block3))
+		accuracy[k,2] = float(np.sum(fit3))/model3.size
+
 		# 6. Model 4: Additive P parameter
 		# Find ML fit of alpha, beta, and gamma
 		nll = lambda *args: -loglikelihood_ThreeTargetTask_Qlearning_PAdditive_MVHV(*args)
@@ -766,6 +797,12 @@ def RLModel_ThreeTarget_MVHV(mario_days):
 		beta_mat[k,3] = beta_ml
 		lambda_mat[k,2] = lambda_ml
 		BIC_mat[k,3] = BIC
+
+		# Accuracy of fit
+		model3 = 0.33*(prob_choice_mid > 0.5) + 0.66*(np.less_equal(prob_choice_mid, 0.5))  # scaling by 0.33 and 0.66 just for plotting purposes
+		target_freechoice_block3 = np.array(chosen_target[250:])
+		fit3 = np.equal(model3,(0.33*target_freechoice_block3))
+		accuracy[k,3] = float(np.sum(fit3))/model3.size
 
 		# 7. Model 5: Multiplicative P parameter
 		# Find ML fit of alpha, beta, and gamma
@@ -784,7 +821,13 @@ def RLModel_ThreeTarget_MVHV(mario_days):
 		lambda_mat[k,3] = lambda_ml
 		BIC_mat[k,4] = BIC
 
-	return alpha_mat, beta_mat, lambda_mat, BIC_mat
+		# Accuracy of fit
+		model3 = 0.33*(prob_choice_mid > 0.5) + 0.66*(np.less_equal(prob_choice_mid, 0.5))  # scaling by 0.33 and 0.66 just for plotting purposes
+		target_freechoice_block3 = np.array(chosen_target[250:])
+		fit3 = np.equal(model3,(0.33*target_freechoice_block3))
+		accuracy[k,4] = float(np.sum(fit3))/model3.size
+
+	return alpha_mat, beta_mat, lambda_mat, BIC_mat, accuracy, shuffle_accuracy
 
 def RLModel_ThreeTarget_MVLV(mario_days):
 	'''
@@ -1118,7 +1161,7 @@ def Simulate_ChoiceBehavior_ThreeTargetTask(mario_stim_days, mario_sham_days, nu
 # Figure 2B,C
 #output = TargetLocationAndReward(mario_stim_days_all, 1)
 # Figure 3 b,c,d,e,f
-alpha_mat_sham, beta_mat_sham, lambda_mat_sham, BIC_mat_sham = RLModel_ThreeTarget_MVHV(mario_sham_days_all)
+alpha_mat_sham, beta_mat_sham, lambda_mat_sham, BIC_mat_sham, accuracy, shuffle_accuracy = RLModel_ThreeTarget_MVHV(mario_stim_days_all)
 #alpha_mat, beta_mat, lambda_mat, BIC_mat = RLModel_ThreeTarget_MVHV(mario_stim_days_all)
 alpha_mat, beta_mat, lambda_mat, BIC_mat = RLModel_ThreeTarget_MVLV(mario_stim_days_all)
 # Figure 4
@@ -1127,6 +1170,7 @@ alpha_mat, beta_mat, lambda_mat, BIC_mat = RLModel_ThreeTarget_MVLV(mario_stim_d
 #num_trials = 100
 #prob_MV_with_HV, prob_MV_with_LV, prob_MV_with_HV_sham = Simulate_ChoiceBehavior_ThreeTargetTask(mario_stim_days_all, mario_sham_days_all, num_trials, percent_instructed, reward_probs)
 
+"""
 adjusted_alpha_means = np.append(np.nanmean(alpha_mat_sham[:,0]), np.nanmean(alpha_mat,axis = 0))
 adjusted_alpha_sem = np.append(np.nanstd(alpha_mat_sham[:,0])/np.sqrt(len(alpha_mat_sham[:,0])), np.nanstd(alpha_mat,axis = 0)/np.sqrt(len(alpha_mat[:,0])))
 adjusted_beta_means = np.append(np.nanmean(beta_mat_sham[:,0]), np.nanmean(beta_mat,axis = 0))
@@ -1146,3 +1190,4 @@ plt.ylabel('avg beta')
 plt.xticks(index,('Sham','Regular','Q Multiplicative'))
 plt.ylim((0,16))
 plt.show()
+"""
