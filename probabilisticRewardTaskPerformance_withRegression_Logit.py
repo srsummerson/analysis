@@ -112,9 +112,9 @@ hdf_list_hv = ['\luig20160218_10_te1469.hdf','\luig20160223_11_te1508.hdf','\lui
 
 
 
-hdf_prefix = 'C:\Users\Samantha Summerson\Dropbox\Carmena Lab\Papa\hdf'
-stim_hdf_list = hdf_list_stim_papa
-sham_hdf_list = hdf_list_sham_papa
+hdf_prefix = 'C:\Users\Samantha Summerson\Dropbox\Carmena Lab\Luigi\hdf'
+stim_hdf_list = hdf_list_stim
+sham_hdf_list = hdf_list_sham
 
 global_max_trial_dist = 0
 Q_initial = [0.5, 0.5]

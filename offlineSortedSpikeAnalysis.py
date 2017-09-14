@@ -167,7 +167,8 @@ class OfflineSorted_CSVFile():
 	def compute_sliding_psth(self,chann,sc,times_align,t_before,t_after,t_resolution, t_overlap):
 		'''
 		Method that returns an array of psths for spiking activity aligned to the sample numbers indicated in samples_align
-		with firing rates quantized to bins of size samp_resolution.
+		with firing rates quantized to bins of size t_resolution. Bins overlap in time with overlap defined by
+		t_overlap.
 
 		Input:
 		- chann: integer representing the channel number

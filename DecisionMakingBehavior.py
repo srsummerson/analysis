@@ -2967,6 +2967,17 @@ def TwoTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_fi
 	- sc: integer representing unit sort code
 	- align_to: integer in range [1,2] that indicates whether we align the (1) picture onset, a.k. center-hold or (2) check_reward.
 	- plot_output: binary indicating whether output should be plotted + saved or not
+
+	Outputs:
+	- reg_psth: a 2 x N array, where the first row corresponds to the psth values for trials where the low-value 
+				target was selected and the second row corresponds to the psth values for trials where the high-value
+				target was selected
+	- smooth_psth: a 2 x N array of the same format as reg_psth, but with values taken from psths smoothed with a 
+				Gaussian kernel
+	- all_raster_l: a dictionary with number of elements equal to the number of trials where the low-value target was selected,
+				where each element contains spike times for the designated unit within that trial
+	- all_raster_h: a dictionary with number of elements equal to the number of trials where the high-value target was selected,
+				where each element contains spike times for the designated unit within that trial
 	'''
 	num_files = len(hdf_files)
 	trials_per_file = np.zeros(num_files)
@@ -3135,4 +3146,79 @@ def TwoTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_fi
 
 	reg_psth = [psth_l, psth_h]
 	smooth_psth = [smooth_psth_l, smooth_psth_h]
-	return reg_psth, smooth_psth, all_raster_l
+	return reg_psth, smooth_psth, all_raster_l, all_raster_h
+
+def TwoTargetTask_BinnedSpikeRates_AllChannels(hdf_files, syncHDF_files, spike_files, align_to, t_before, t_after, t_resolution, t_overlap):
+	'''
+	This method computes the binned spike rates for all channels aligned to a specified task event. Bins may be overlapping
+	in time.
+
+	Inputs:
+	- hdf_files: list of N hdf_files corresponding to the behavior in the three target task
+	- syncHDF_files: list of N syncHDF_files that containes the syncing DIO data for the corresponding hdf_file and it's
+					TDT recording. If TDT data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, syncHDF_files should have the form [syncHDF_file1.mat, '']
+	- spike_files: list of N tuples of spike_files, where each entry is a list of 2 spike files, one corresponding to spike
+					data from the first 96 channels and the other corresponding to the spike data from the last 64 channels.
+					If spike data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, the hdf_files and syncHDF_files will both have 2 file names, and the 
+					spike_files entry should be of the form [[spike_file1.csv, spike_file2.csv], ''].
+	- align_to: integer in range [1,2] that indicates whether we align the (1) picture onset, a.k. center-hold or (2) check_reward.
+	- t_before: float representing the time before (seconds) the align_to point that should be used to compute binned spike rates
+	- t_after: float representing the time after (seconds) the align_to point that should be used to compute binned spike rates
+	- t_resolution: the bin widths for the time bins, in seconds
+	- t_overlap: the overmount of time consecutive time bins should overlap in seconds, must be less than t_resolution
+
+	Outputs:
+	- binned_rates: 
+	- binned_rates_zscored:
+	'''
+
+
+	num_files = len(hdf_files)
+	trials_per_file = np.zeros(num_files)
+	num_successful_trials = np.zeros(num_files)
+
+	# Define timing parameters for PSTHs
+	t_resolution = 0.1 		# 100 ms time bins
+	num_bins = len(np.arange(-t_before, t_after, t_resolution)) - 1
+
+	# Define arrays to save psth for each trial
+	binned_rates = np.array([])
+
+	'''
+	Get data for each set of files
+	'''
+	for i in range(num_files):
+		# Load behavior data
+		cb = ChoiceBehavior_TwoTargets(hdf_files[i])
+		num_successful_trials[i] = len(cb.ind_check_reward_states)
+		target_options, target_chosen, rewarded_choice = cb.TrialOptionsAndChoice()
+
+		# Find times corresponding to center holds of successful trials
+		ind_hold_center = cb.ind_check_reward_states - 4
+		ind_check_reward = cb.ind_check_reward_states
+		if align_to == 1:
+			inds = ind_hold_center
+		elif align_to == 2:
+			inds = ind_check_reward
+
+		# Load spike data: 
+		if (spike_files[i] != ''):
+			# Find lfp sample numbers corresponding to these times and the sampling frequency of the lfp data
+			lfp_state_row_ind, lfp_freq = cb.get_state_TDT_LFPvalues(inds, syncHDF_files[i])
+			# Convert lfp sample numbers to times in seconds
+			times_row_ind = lfp_state_row_ind/float(lfp_freq)
+
+			# Load spike data
+			spike1 = OfflineSorted_CSVFile(spike_files[i][0])
+			spike2 = OfflineSorted_CSVFile(spike_files[i][1])
+			spike1_good_channels = spike1.good_channels
+			spike2_good_channels = spike2.good_channels
+
+			for chann in spike1_good_channels:
+				# find sort codes, then computing sliding psth
+				output = spike1.compute_sliding_psth(chann,sc,times_align,t_before,t_after,t_resolution, t_overlap)
+				
+
+	return

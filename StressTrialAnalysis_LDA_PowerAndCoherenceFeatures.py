@@ -41,19 +41,19 @@ mari20160418_04_te2002.hdf, mari20160418_06_te2004.hdf
 '''
 
 
-hdf_filename = 'mari20160418_04_te2002.hdf'
-hdf_filename_stim = 'mari20160418_06_te2004.hdf'
-filename = 'Mario20160418'
-filename2 = 'Mario20160418'
+hdf_filename = 'mari20160424_03_te2035.hdf'
+hdf_filename_stim = 'mari20160424_05_te2037.hdf'
+filename = 'Mario20160424'
+filename2 = 'Mario20160424-2'
 block_num = 1
-block_num_stim = 2
+block_num_stim = 1
 print filename
 TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
 #TDT_tank = '/home/srsummerson/storage/tdt/'+filename
-hdf_location = '/storage/rawdata/hdf/'+hdf_filename
-hdf_location_stim = '/storage/rawdata/hdf/'+hdf_filename_stim
+hdf_location = '/backup/subnetsrig/storage/rawdata/hdf/'+hdf_filename
+hdf_location_stim = '/backup/subnetsrig/storage/rawdata/hdf/'+hdf_filename_stim
 #hdf_location = hdffilename
-pf_location = '/home/srsummerson/storage/PowerFeatures/'
+pf_location = '/storage/PowerFeatures/'
 pf_filename = pf_location + filename+'_b'+str(block_num)+'_PowerFeatures.mat'
 pf_filename_stim = pf_location + filename+'_b'+str(block_num_stim)+'_PowerFeatures.mat'
 phys_filename = pf_location + filename+'_b'+str(block_num)+'_PhysFeatures.mat'
