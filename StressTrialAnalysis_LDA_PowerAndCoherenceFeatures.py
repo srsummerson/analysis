@@ -181,11 +181,11 @@ else:
 
 	hdf_times = dict()
 	mat_filename = filename+'_b'+str(block_num)+'_syncHDF.mat'
-	sp.io.loadmat('/home/srsummerson/storage/syncHDF/'+mat_filename,hdf_times)
+	sp.io.loadmat('/backup/subnetsrig/storage/syncHDF/'+mat_filename,hdf_times)
 
 	hdf_times_stim = dict()
 	mat_filename_stim = filename+'_b'+str(block_num_stim)+'_syncHDF.mat'
-	sp.io.loadmat('/home/srsummerson/storage/syncHDF/'+mat_filename_stim,hdf_times_stim)
+	sp.io.loadmat('/backup/subnetsrig/storage/syncHDF/'+mat_filename_stim,hdf_times_stim)
 
 	print "Loading TDT data."
 	'''
