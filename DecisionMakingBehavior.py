@@ -3148,6 +3148,98 @@ def TwoTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_fi
 	smooth_psth = [smooth_psth_l, smooth_psth_h]
 	return reg_psth, smooth_psth, all_raster_l, all_raster_h
 
+def TwoTargetTask_RegressFiringRates_Value(hdf_files, syncHDF_files, spike_files, channel, sc, t_before, t_after, t_resolution, t_overlap, smoothed, trial_start,trial_end):
+	'''
+	This method regresses the firing rate of all units as a function of value over time. 
+
+	Inputs:
+	- hdf_files: list of N hdf_files corresponding to the behavior in the three target task
+	- syncHDF_files: list of N syncHDF_files that containes the syncing DIO data for the corresponding hdf_file and it's
+					TDT recording. If TDT data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, syncHDF_files should have the form [syncHDF_file1.mat, '']
+	- spike_files: list of N tuples of spike_files, where each entry is a list of 2 spike files, one corresponding to spike
+					data from the first 96 channels and the other corresponding to the spike data from the last 64 channels.
+					If spike data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, the hdf_files and syncHDF_files will both have 2 file names, and the 
+					spike_files entry should be of the form [[spike_file1.csv, spike_file2.csv], ''].
+	- channel: integer value indicating what channel will be used to regress activity
+	- t_before: time before (s) the picture onset that should be included when computing the firing rate. t_before = 0 indicates
+					that we only look from the time of onset forward when considering the window of activity.
+	- t_after: time after (s) the picture onset that should be included when computing the firing rate.
+	- smoothed: boolean indicating whether to use smoothed firing rates (True) or not (False)
+	- trial_start: integer indicating at which trial to start for the analysis
+	- trial_end: integer indicating at which trial to end for the analysis
+
+	'''
+	# 1. Load behavior data and pull out trial indices for the designated trial case
+	cb = ChoiceBehavior_TwoTargets_Stimulation(hdf_files, 100, 100)
+	total_trials = cb.num_successful_trials
+	trial_end = trial_end*(trial_end < total_trials) + total_trials*(trial_end >= total_trials)
+	#ind_trial_case = np.array([ind for ind in range(total_trials) if np.array_equal(targets_on[ind],trial_case)])
+	
+
+	# 2. Get firing rates from units on indicated channel around time of target presentation on all trials. 
+	psth = TwoTargetTask_FiringRates_OverTime(hdf_files, syncHDF_files, spike_files, channel, sc, t_before, t_after, t_resolution, t_overlap)
+	num_timebins = psth.shape[1]
+
+	# 3. Get Q-values, chosen targets, and rewards
+	Q_low, Q_high = TwoTargetTask_Qvalues(hdf_files, 0.2, 1, 0, total_trials-1)
+
+	# 4. Do regression for each time bin.
+	#    Current regression uses Q-values and constant.
+	beta_Q_low = np.zeros(num_timebins)
+	beta_Q_high = np.zeros(num_timebins)
+	p_Q_low = np.zeros(num_timebins)
+	p_Q_high = np.zeros(num_timebins)
+	for k in range(num_timebins):
+		unit_data = psth[:,k]
+		#trial_inds = np.array([index for index in ind_trial_case if unit_data[index]!=0], dtype = int)
+
+		# look at all trial types within Blocks A and B
+		trial_inds = np.array([index for index in range(trial_start,trial_end) if unit_data[index]!=0], dtype = int)
+		x = np.vstack((Q_low[trial_inds], Q_high[trial_inds]))
+		x = np.transpose(x)
+		x = np.hstack((x, np.ones([len(trial_inds),1]))) 	# use this in place of add_constant which doesn't work when constant Q values are used
+		#x = sm.add_constant(x, prepend=False)
+		y = unit_data[trial_inds]
+		#y = y/np.max(y)  # normalize y
+
+		print "Regression for timebin ", k
+		model_glm = sm.OLS(y,x)
+		fit_glm = model_glm.fit()
+		beta_Q_low[k] = fit_glm.params[0]
+		beta_Q_high[k] = fit_glm.params[1]
+		p_Q_low[k] = fit_glm.pvalues[0]
+		p_Q_high[k] = fit_glm.pvalues[1]
+		#print fit_glm.summary()
+	Q_low_sig = np.ravel(np.nonzero(np.less(p_Q_low,0.05)))
+	Q_high_sig = np.ravel(np.nonzero(np.less(p_Q_high, 0.05)))
+	beta_Q_low_sig = np.zeros(len(beta_Q_low))
+	beta_Q_low_sig = None
+	beta_Q_low_sig[Q_low_sig] = beta_Q_low[Q_low_sig]
+	beta_Q_high_sig = np.zeros(len(beta_Q_high))
+	beta_Q_high_sig = None
+	beta_Q_high_sig[Q_high_sig] = beta_Q_high[Q_high_sig]
+
+	time_values = np.arange(-t_before,t_after,float(t_after + t_before)/num_timebins)
+
+	plt.figure()
+	ax = plt.subplot(111)
+	plt.plot(time_values, beta_Q_low, 'r', alpha = 0.2)
+	plt.plot(time_values, beta_Q_low_sig, 'r', label = 'LV')
+	plt.plot(time_values, beta_Q_high, 'b', alpha = 0.2)
+	plt.plot(time_values, beta_Q_high_sig, 'b', label = 'HV')
+	plt.xlabel('Time from Center Hold (s) ')
+	plt.ylabel('Beta coefficient')
+	ax.get_yaxis().set_tick_params(direction='out')
+	ax.get_xaxis().set_tick_params(direction='out')
+	ax.get_xaxis().tick_bottom()
+	ax.get_yaxis().tick_left()
+	plt.legend()
+	plt.show()
+
+	return time_values, beta_Q_low, beta_Q_high, p_Q_low, p_Q_high, fit_glm
+
 def ThreeTargetTask_DecodeChoice_LogisticRegression(hdf_files, syncHDF_files, spike_files, t_before, t_after, align_to, bin_size, bin_overlap):
 	'''
 	This method performs logistic regression of the subject's choice on free-choice trials where the LV and MV are presented
