@@ -789,6 +789,7 @@ def get_OMNI_inds_hold_center(hdf_filename, syncHDF_file, tdt_timepoint, omni_ti
 	state_time = table.root.task_msgs[:]['time']
 	ind_reward = np.ravel(np.nonzero(state == 'reward'))
 	ind_hold_center = ind_reward - 7
+	ind_all_hold_center = np.ravel(np.nonzero(state == 'hold_center'))
 	ind_peripheral_on = ind_reward - 6
 	ind_go_cue = ind_reward - 3
 	ind_hold_peripheral = ind_reward - 2
@@ -833,6 +834,33 @@ def get_OMNI_inds_hold_center(hdf_filename, syncHDF_file, tdt_timepoint, omni_ti
 			lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
 
 	lfp_state_row_ind_beginhold = lfp_state_row_ind
+
+	# Get indices for all trials beginning of hold
+	state_row_ind = state_time[ind_all_hold_center]		# gives the hdf row number sampled at 60 Hz
+	state_row_ind_beginhold = state_row_ind
+	lfp_state_row_ind = np.zeros(state_row_ind.size)
+
+	for i in range(len(state_row_ind)):
+		hdf_index = np.argmin(np.abs(hdf_rows - state_row_ind[i]))
+		if np.abs(hdf_rows[hdf_index] - state_row_ind[i])==0:
+			lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
+		elif hdf_rows[hdf_index] > state_row_ind[i]:
+			hdf_row_diff = hdf_rows[hdf_index] - hdf_rows[hdf_index -1]  # distance of the interval of the two closest hdf_row_numbers
+			m = (lfp_dio_sample_num[hdf_index]-lfp_dio_sample_num[hdf_index - 1])/hdf_row_diff
+			b = lfp_dio_sample_num[hdf_index-1] - m*hdf_rows[hdf_index-1]
+			lfp_state_row_ind[i] = int(m*state_row_ind[i] + b)
+		elif (hdf_rows[hdf_index] < state_row_ind[i])&(hdf_index + 1 < len(hdf_rows)):
+			hdf_row_diff = hdf_rows[hdf_index + 1] - hdf_rows[hdf_index]
+			if (hdf_row_diff > 0):
+				m = (lfp_dio_sample_num[hdf_index + 1] - lfp_dio_sample_num[hdf_index])/hdf_row_diff
+				b = lfp_dio_sample_num[hdf_index] - m*hdf_rows[hdf_index]
+				lfp_state_row_ind[i] = int(m*state_row_ind[i] + b)
+			else:
+				lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
+		else:
+			lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
+
+	lfp_state_row_ind_beginhold_all = lfp_state_row_ind
 
 	# Repeat for peripheral target appearing
 	state_row_ind = state_time[ind_peripheral_on]
@@ -1003,6 +1031,7 @@ def get_OMNI_inds_hold_center(hdf_filename, syncHDF_file, tdt_timepoint, omni_ti
 	b = omni_timepoint - m*tdt_timepoint
 
 	omni_inds_beginhold = np.rint(m*lfp_state_row_ind_beginhold + b) 	# make sure that indices are integer values
+	omni_inds_beginhold_all = np.rint(m*lfp_state_row_ind_beginhold_all + b)
 	omni_inds_peripheralon = np.rint(m*lfp_state_row_ind_peripheralon + b)
 	omni_inds_endhold = np.rint(m*lfp_state_row_ind_endhold + b)
 	omni_inds_peripheralhold = np.rint(m*lfp_state_row_ind_beginhold_peripheral + b)
@@ -1010,7 +1039,7 @@ def get_OMNI_inds_hold_center(hdf_filename, syncHDF_file, tdt_timepoint, omni_ti
 	omni_inds_reward = np.rint(m*lfp_state_row_ind_reward + b)
 	omni_inds_reward_end = np.rint(m*lfp_state_row_ind_reward_end + b)
 
-	return omni_inds_beginhold, omni_inds_peripheralon,omni_inds_endhold, omni_inds_peripheralhold, omni_inds_endhold_peripheral, omni_inds_reward, omni_inds_reward_end 
+	return omni_inds_beginhold, omni_inds_beginhold_all, omni_inds_peripheralon,omni_inds_endhold, omni_inds_peripheralhold, omni_inds_endhold_peripheral, omni_inds_reward, omni_inds_reward_end 
 
 def ClosedLoopReactionTimeAnalysis(hdf_filename, task_events_mat_filename, stim_filename, thres, lower_rt, upper_rt, method):
 	'''
@@ -1104,7 +1133,7 @@ def ClosedLoopReactionTimeAnalysis(hdf_filename, task_events_mat_filename, stim_
 	rt_stim_not_during_hold = rt_good_trials[ind_not_during_periph_on]										# all trials except when stim is during any time in the hold
 
 
-	return rt_stim_during_periph, rt_stim_not_during_periph, rt_stim_during_center, rt_stim_not_during_hold, time_after_periph, time_before_go_cue,rt_good_trials, ind_no_stim_trial
+	return rt_stim_during_periph, rt_stim_not_during_periph, rt_stim_during_center, rt_stim_not_during_hold, time_after_periph, time_before_go_cue,rt_good_trials, ind_no_stim_trial, good_trial_inds
 
 def ClosedLoopReactionTimeAnalysis_MultipleSessions(hdf_filename, task_events_mat_filename, stim_filename, thres,lower_rt, upper_rt, method):
 	'''
@@ -1128,6 +1157,8 @@ def ClosedLoopReactionTimeAnalysis_MultipleSessions(hdf_filename, task_events_ma
 	time_before_go_cue = np.array([])
 	rt_good_trials = np.array([])
 	ind_no_stim_trial = np.array([])
+	num_trials_per_session = np.array([])
+	inds_good_trials = np.array([])
 
 	for k in range(num_sessions):
 		output = ClosedLoopReactionTimeAnalysis(hdf_filename[k], task_events_mat_filename[k], stim_filename[k], thres,lower_rt, upper_rt, method)
@@ -1139,6 +1170,8 @@ def ClosedLoopReactionTimeAnalysis_MultipleSessions(hdf_filename, task_events_ma
 		time_before_go_cue = np.append(time_before_go_cue, output[5])
 		rt_good_trials = np.append(rt_good_trials, output[6])
 		ind_no_stim_trial = np.append(ind_no_stim_trial, output[7])
+		inds_good_trials = np.append(inds_good_trials, output[8])
+		num_trials_per_session = np.append(num_trials_per_session, len(output[6]))
 
 	print "Number of good trials:", len(rt_good_trials)
 		
@@ -1361,7 +1394,7 @@ def ClosedLoopReactionTimeAnalysis_MultipleSessions(hdf_filename, task_events_ma
   	#### add: find trials completely without stimulation to compare with
 	return RT_binned, bin_centers, RT_binned_before_gocue, bin_centers_before_gocue
 	'''
-	return
+	return rt_good_trials, num_trials_per_session, inds_good_trials
 
 def rt_lognormal_fit(rt):
 	s, loc, scale = stats.lognorm.fit(rt, floc = 0)
@@ -1584,3 +1617,107 @@ def findStimStartAndStop(omni_hdf):
 	sp.io.savemat(filename, stims)
 
 	return trains
+
+def AnalyzeOnlinePowerComputations(session):
+	'''
+	Method to extract online computed power recorded using OMNI and relate it to task variables.
+
+	Input: 
+	- session: .mat filename for .mat file generated by Andy's CompileSessionX code.
+	'''
+	
+	# Load data and pull out information into arrays
+	mat = sp.io.loadmat(session, squeeze_me = True)
+	data = mat['session']
+	behavior = np.ravel(data['behavior'])[0]			# behavior matrix, each row represents a trial, each column the timing of each event
+	betaF = np.ravel(data['betaF'])[0] 					# FFT bins used for beta calculation
+	ctrl = np.ravel(data['ctrl'])[0]					# control channel signal
+	endFFT = np.ravel(data['endFFT'])[0]				# indices of the last sample of each computed FFT
+	threshPower = np.ravel(data['threshPower'])[0]		# power threshold used for closed loop
+	threshDeriv = np.ravel(data['threshDeriv'])[0]		# power derivative threshold for closed loop
+	NFFT = np.ravel(data['NFFT'])[0]					# FFT size
+	omniSpec = np.ravel(data['omniSpec'])[0]			# compiled online computed power spectrums (endFFT contains timing info)
+	stim = np.ravel(data['stim'])[0]					# stim channel signal
+	stimFlags = np.ravel(data['stimFlags'])[0]			# stim flags (0 = no stim, 1 = stim)
+	stimEvents = np.ravel(data['stimEvents'])[0]		# indices of beginning and end of each stim pulse
+	stimIdx = np.ravel(data['stimIdx'])[0]				# indices of all stim flags
+	t = np.ravel(data['t'])[0]							# time vector
+	trains = np.ravel(data['trains'])[0]				# indices of beginning and end of each stim pulse train
+	trialSuccess = np.ravel(data['trialSuccess'])[0]	# indices of the successful trials
+	centerHoldAll = np.ravel(data['centerHoldAll'])[0]  # center hold for ALL (successful and unsuccessful) trials
+	rtInd = np.ravel(data['rtInd'])[0]					# indices of trial times (index into centerHoldAll) for reaction times
+	rt = np.ravel(data['rt'])[0]						# reaction times
+
+	# Find time samples corresponding to reaction time computations
+	rt_times = centerHoldAll[rtInd]
+
+	# Find average RT
+	avg_rt = np.nanmean(rt)
+
+	# Compute beta power from spectral data saved
+	beta_power = np.sqrt(np.sum(omniSpec[:, betaF[0]:betaF[1]],1))	# power is in lsb/sqrt(Hz)
+	beta_power = 3*beta_power 										# convert to uV/sqrt(Hz) since 3 uV/lsb
+	avg_beta = np.nanmean(beta_power)
+	beta_per_trial = np.zeros(len(rtInd))
+
+	# Find beta power computation that is closest to beginning of trial
+	# Note: Hold is 400 - 600 ms in duration
+	for i, trial_ind in enumerate(rtInd):
+		power_index = np.argmin(np.abs(endFFT - rt_times[i]))
+		if endFFT[power_index] > rt_times[i]:
+			# if closest computation is after trial started, look one computation (256 ms) ahead
+			beta_per_trial[i] = beta_power[power_index + 1]
+		else:
+			# if closest computation is just before trial starts, look two computations (512 ms) ahead
+			beta_per_trial[i] = beta_power[power_index + 2]
+
+	r, p = sp.stats.pearsonr(rt, beta_per_trial)
+	print session[17:-4]
+	print "Correlation (not normalized): %f (p = %f)" % (r, p)
+
+	return rt, beta_per_trial, avg_beta, avg_rt
+
+def AnalyzeOnlinePowerComputations_AcrossSessions(sessions):
+	'''
+	Aggragate analysis from AnalyzeOnlinePowerComputations across sessions.
+
+	Input:
+	- sessions: list of sessionX.mat files created by Andy
+	'''
+	rt_all = np.array([])
+	beta_per_trial_all = np.array([])
+	norm_beta_per_trial_all = np.array([])
+	norm_rt_all = np.array([])
+
+	for session in sessions:
+		rt, beta_per_trial, avg_beta, avg_rt = AnalyzeOnlinePowerComputations(session)
+		rt_all = np.append(rt_all, rt)
+		norm_rt_all = np.append(norm_rt_all, rt/avg_rt)
+		beta_per_trial_all = np.append(beta_per_trial_all, beta_per_trial)
+		# Beta powers normalized by within session average beta power
+		norm_beta_per_trial_all = np.append(norm_beta_per_trial_all, beta_per_trial/avg_beta)
+
+	r, p = sp.stats.pearsonr(rt_all, beta_per_trial_all)
+	r_norm, p_norm = sp.stats.pearsonr(rt_all, norm_beta_per_trial_all)
+	print "\n All Sessions Together:"
+	print "Correlation (not normalized): %f (p = %f)" % (r, p)
+	print "Correlation (normalized): %f (p = %f)" % (r_norm, p_norm)
+
+	m, b = np.polyfit(rt_all, beta_per_trial_all,1)
+	m_norm, b_norm = np.polyfit(rt_all, norm_beta_per_trial_all,1)
+
+	plt.figure()
+	plt.subplot(1,2,1)
+	plt.plot(rt_all,beta_per_trial_all,'.')
+	plt.plot(rt_all, m*rt_all + b, '-')
+	plt.xlabel('Reaction Time (s)')
+	plt.ylabel('Beta Power (uv/' + r'$\sqrt{Hz}$' + ')')
+
+	plt.subplot(1,2,2)
+	plt.plot(rt_all,norm_beta_per_trial_all,'.')
+	plt.plot(rt_all, m_norm*rt_all + b_norm, '-')
+	plt.xlabel('Normalized Reaction Time')
+	plt.ylabel('Normalized Beta Power')
+	plt.show()
+
+	return

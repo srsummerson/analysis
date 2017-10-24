@@ -22,14 +22,14 @@ from sklearn.metrics import roc_curve, auc
 from sklearn.cross_validation import cross_val_score
 import os.path
 import time
-
+'''
 from pybrain.datasets import ClassificationDataSet
 from pybrain.utilities import percentError
 from pybrain.tools.shortcuts import buildNetwork
 from pybrain.supervised.trainers import BackpropTrainer
 from pybrain.structure.modules import SoftmaxLayer, TanhLayer
 from pybrain.datasets import SupervisedDataSet
-
+'''
 '''
 Do 6/14 and 7/12
 
@@ -48,12 +48,16 @@ filename2 = 'Mario20160424-2'
 block_num = 1
 block_num_stim = 1
 print filename
-TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
+#TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
 #TDT_tank = '/home/srsummerson/storage/tdt/'+filename
-hdf_location = '/backup/subnetsrig/storage/rawdata/hdf/'+hdf_filename
-hdf_location_stim = '/backup/subnetsrig/storage/rawdata/hdf/'+hdf_filename_stim
+TDT_tank = './' + filename
+#hdf_location = '/backup/subnetsrig/storage/rawdata/hdf/'+hdf_filename
+hdf_location = './' + hdf_filename
+#hdf_location_stim = '/backup/subnetsrig/storage/rawdata/hdf/'+hdf_filename_stim
+hdf_location_stim = './' + hdf_filename_stim
 #hdf_location = hdffilename
-pf_location = '/storage/PowerFeatures/'
+#pf_location = '/storage/PowerFeatures/'
+pf_location = './'
 pf_filename = pf_location + filename+'_b'+str(block_num)+'_PowerFeatures.mat'
 pf_filename_stim = pf_location + filename+'_b'+str(block_num_stim)+'_PowerFeatures.mat'
 phys_filename = pf_location + filename+'_b'+str(block_num)+'_PhysFeatures.mat'
@@ -63,9 +67,9 @@ lfp_channels = range(0,160)
 lfp_channels.pop(129)  # delete channel 129
 lfp_channels.pop(130)  # delete channel 131
 lfp_channels.pop(143)  # delete channel 145
-bands = [[4,8],[8,12],[12,16],[16,20],[20,24],[24,28]]
+bands = [[8,13],[13,30],[40,70],[70,200]]
 #bands = [[0,20],[20,40],[40,60]]
-
+lfp_channels = range(0,5)
 '''
 Load behavior data
 '''
@@ -181,11 +185,14 @@ else:
 
 	hdf_times = dict()
 	mat_filename = filename+'_b'+str(block_num)+'_syncHDF.mat'
-	sp.io.loadmat('/backup/subnetsrig/storage/syncHDF/'+mat_filename,hdf_times)
+	#sp.io.loadmat('/backup/subnetsrig/storage/syncHDF/'+mat_filename,hdf_times)
+	sp.io.loadmat('./'+mat_filename,hdf_times)
+
 
 	hdf_times_stim = dict()
 	mat_filename_stim = filename+'_b'+str(block_num_stim)+'_syncHDF.mat'
-	sp.io.loadmat('/backup/subnetsrig/storage/syncHDF/'+mat_filename_stim,hdf_times_stim)
+	#sp.io.loadmat('/backup/subnetsrig/storage/syncHDF/'+mat_filename_stim,hdf_times_stim)
+	sp.io.loadmat('./'+mat_filename_stim,hdf_times_stim)
 
 	print "Loading TDT data."
 	'''
@@ -209,38 +216,38 @@ else:
 		# Get Pulse and Pupil Data
 		for sig in bl.segments[block_num-1].analogsignals:
 			if (sig.name == 'PupD 1'):
-				pupil_data = np.ravel(sig)
+				pupil_data = np.array(sig)
 				pupil_samprate = sig.sampling_rate.item()
 			if (sig.name == 'HrtR 1'):
-				pulse_data = np.ravel(sig)
+				pulse_data = np.array(sig)
 				pulse_samprate = sig.sampling_rate.item()
 			if (sig.name[0:4] == 'LFP1'):
 				channel = sig.channel_index
 				if (channel in lfp_channels)&(channel < 97):
 					lfp_samprate = sig.sampling_rate.item()
-					lfp[channel] = np.ravel(sig)
+					lfp[channel] = np.array(sig)
 			if (sig.name[0:4] == 'LFP2'):
 				channel = sig.channel_index
 				if (channel % 96) in lfp_channels:
 					channel_name = channel + 96
-					lfp[channel_name] = np.ravel(sig)
+					lfp[channel_name] = np.array(sig)
 		for sig in bl.segments[block_num_stim-1].analogsignals:
 			if (sig.name == 'PupD 1'):
-				pupil_data_stim = np.ravel(sig)
+				pupil_data_stim = np.array(sig)
 				pupil_samprate_stim = sig.sampling_rate.item()
 			if (sig.name == 'HrtR 1'):
-				pulse_data_stim = np.ravel(sig)
+				pulse_data_stim = np.array(sig)
 				pulse_samprate_stim = sig.sampling_rate.item()
 			if (sig.name[0:4] == 'LFP1'):
 				channel = sig.channel_index
 				if (channel in lfp_channels)&(channel < 97):
 					lfp_samprate_stim = sig.sampling_rate.item()
-					lfp_stim[channel] = np.ravel(sig)
+					lfp_stim[channel] = np.array(sig)
 			if (sig.name[0:4] == 'LFP2'):
 				channel = sig.channel_index
 				if (channel % 96) in lfp_channels:
 					channel_name = channel + 96
-					lfp_stim[channel_name] = np.ravel(sig)
+					lfp_stim[channel_name] = np.array(sig)
 
 
 	print "Finished loading TDT data."
@@ -415,10 +422,11 @@ else:
 	#t_window = [0.5,0.5,0.5]
 	event_indices = np.vstack([lfp_center_states,lfp_before_reward_states]).T
 	t_window = [0.5,0.5]
+	'''
 	print "Computing LFP features."
 	lfp_features = computePowerFeatures(lfp, lfp_samprate, bands, event_indices, t_window)
 	sp.io.savemat(pf_filename,lfp_features)
-
+	'''
 	phys_features = dict()
 	phys_features['ibi_reg_mean'] = ibi_reg_mean
 	phys_features['ibi_stress_mean'] = ibi_stress_mean
@@ -436,15 +444,18 @@ else:
 	event_indices_stim = np.vstack([lfp_center_states_stim,lfp_before_reward_states_stim]).T
 	t_window = [0.5,0.5]
 	
+	'''
 	print "Computing LFP features."
 	lfp_features_stim = computePowerFeatures(lfp_stim, lfp_samprate, bands, event_indices_stim, t_window)
 	sp.io.savemat(pf_filename_stim,lfp_features_stim)
+	'''
 
 	phys_features_stim = dict()
 	phys_features_stim['ibi_stress_mean_stim'] = ibi_stress_mean_stim
 	phys_features_stim['pupil_stress_mean_stim'] = pupil_stress_mean_stim
 	sp.io.savemat(phys_filename_stim,phys_features_stim)
 
+"""
 ibi_mean = np.append(np.array(ibi_reg_mean), np.array(ibi_stress_mean))
 pupil_mean = np.append(np.array(pupil_reg_mean), np.array(pupil_stress_mean))
 
@@ -628,3 +639,4 @@ model_glm = sm.Logit(y_successful,x_successful)
 fit_glm = model_glm.fit()
 print fit_glm.summary()
 '''
+"""
