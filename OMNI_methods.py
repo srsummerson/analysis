@@ -1797,7 +1797,7 @@ def AnalyzeOnlinePowerComputations_stimvsnostim(session, f_low, f_high):
 	# Load data and pull out information into arrays
 	mat = sp.io.loadmat(session, squeeze_me = True)
 	data = mat['session']
-	behavior = np.ravel(data['behavior'])[0]			# behavior matrix, each row represents a trial, each column the timing of each event
+	behavior = np.ravel(data['behavior'])[0]			# behavior matrix, each column represents a trial, each row the timing of each event
 	betaF = np.ravel(data['betaF'])[0] 					# FFT bins used for beta calculation
 	ctrl = np.ravel(data['ctrl'])[0]					# control channel signal
 	endFFT = np.ravel(data['endFFT'])[0]				# indices of the last sample of each computed FFT
@@ -1816,16 +1816,37 @@ def AnalyzeOnlinePowerComputations_stimvsnostim(session, f_low, f_high):
 	rtInd = np.ravel(data['rtInd'])[0]					# indices of trial times (index into centerHoldAll) for reaction times
 	rt = np.ravel(data['rt'])[0]						# reaction times
 
+	stim_start = trains[:,0]
+	stim_end = trains[0,1]
+
 	# Find time samples corresponding to reaction time computations for successful trials
 	rt_inds = np.array([ind for ind in range(rtInd[-1]+1) if (ind in rtInd)&(ind in trialSuccess)])  # trial indices of successful trials with computed RTs
 	rt_all = np.zeros(len(centerHoldAll))
 	rt_all[rtInd] = rt 																				# Array of RTs for all trials (successful and unsuccessful), with zeros where it was not computed
 	rt_succ = rt_all[rt_inds]
 	
-	num_succ_trials = behavior.shape[0]
-	begin_hold_times = np.array([behavior[ind,0] for ind in range(num_succ_trials) if trialSuccess[ind] in rt_inds])
-	go_cue_times = np.array([behavior[ind,2] for ind in range(num_succ_trials) if trialSuccess[ind] in rt_inds])
+	num_succ_trials = behavior.shape[1]
+	begin_hold_times = np.array([behavior[0,ind] for ind in range(num_succ_trials) if trialSuccess[ind] in rt_inds])
+	go_cue_times = np.array([behavior[2,ind] for ind in range(num_succ_trials) if trialSuccess[ind] in rt_inds])
 	
+	# Find indices of trials that stimulation occurred during the center hold
+	ind_during_center_on = []
+	ind_not_during_center_on = []
+
+	for val in range(len(begin_hold_times)):
+		# find closest stim to hold time
+		stim_index = np.argmin(np.abs(stim_start - begin_hold_times[val]))
+		# find time relative to hold time: positive is after, negative is before
+		time_after_hold = stim_start[stim_index] - begin_hold_times[val]
+		time_before_go_cue = stim_start[stim_index] - go_cue_times[val]
+		is_during_center = (time_after_hold > -0.067)&(time_before_go_cue < 0)
+
+		# build lists of indices for if stim occured when peripheral was shown or not
+		if is_during_center:
+			ind_during_center_on.append(val)
+		else:
+			ind_not_during_center_on.append(val)
+
 	# Find average RT
 	avg_rt = np.nanmean(rt_succ)
 
@@ -1833,20 +1854,20 @@ def AnalyzeOnlinePowerComputations_stimvsnostim(session, f_low, f_high):
 	beta_power = np.sqrt(np.sum(omniSpec[:, betaF[0]:betaF[1]],1))	# power is in lsb/sqrt(Hz)
 	beta_power = 0.0954*beta_power 									# convert to uV/sqrt(Hz) 
 	avg_beta = np.nanmean(beta_power)
-	beta_per_trial = np.zeros(len(rtInd))
+	beta_per_trial = np.zeros(len(rt_inds))
 
 	# Compute power in band indicated by [f_low, f_high]
 	bandf = np.floor(np.array([f_low, f_high])*512./1000) + 1		# find which frequency indices correspond to this band
 	band_power = np.sqrt(np.sum(omniSpec[:, bandf[0]:bandf[1]],1))	# power is in lsb/sqrt(Hz)
 	band_power = 0.0954*band_power 									# covert to uV/sqrt(Hz)
 	avg_band_power = np.nanmean(band_power)
-	band_power_per_trial = np.zeros(len(rtInd))
+	band_power_per_trial = np.zeros(len(rt_inds))
 
 	# Find beta power computation that is closest to beginning of trial
 	# Note: Hold is 400 - 600 ms in duration
 	for i, trial_ind in enumerate(rt_inds):
 		power_index = np.argmin(np.abs(endFFT - begin_hold_times[i]))
-		if endFFT[power_index] > rt_times[i]:
+		if endFFT[power_index] > begin_hold_times[i]:
 			# if closest computation is after trial started, look one computation (256 ms) ahead
 			beta_per_trial[i] = beta_power[power_index + 1]
 			band_power_per_trial[i] = band_power[power_index + 1]
@@ -1855,97 +1876,126 @@ def AnalyzeOnlinePowerComputations_stimvsnostim(session, f_low, f_high):
 			beta_per_trial[i] = beta_power[power_index + 2]
 			band_power_per_trial[i] = band_power[power_index + 2]
 
-	# NEED TO SEPARATE TRIAL TYPES: STIM DURING HOLD VERSUS NOT
+	# NEED TO SEPARATE TRIAL TYPES: STIM DURING CENTER HOLD VERSUS NOT
+	beta_per_trial_stim_hold = beta_per_trial[ind_during_center_on]
+	beta_per_trial_nostim_hold = beta_per_trial[ind_not_during_center_on]
+	band_power_per_trial_stim_hold = band_power_per_trial[ind_during_center_on]
+	band_power_per_trial_nostim_hold = band_power_per_trial[ind_not_during_center_on]
+	rt_stim_hold = rt_succ[ind_during_center_on]
+	rt_nostim_hold = rt_succ[ind_not_during_center_on]
 
-	return rt, avg_rt, beta_per_trial, avg_beta, band_power_per_trial, avg_band_power
+	return rt_succ, beta_per_trial, avg_beta, band_power_per_trial, avg_band_power, beta_per_trial_stim_hold, beta_per_trial_nostim_hold, band_power_per_trial_stim_hold, band_power_per_trial_nostim_hold, rt_stim_hold, rt_nostim_hold
 
-def AnalyzeOnlinePowerComputations_AcrossSessions_stimsvsnostim(sessions, f_low, f_high):
+def AnalyzeOnlinePowerComputations_AcrossSessions_stimvsnostim(sessions, f_low, f_high):
 	'''
-	Aggragate analysis from AnalyzeOnlinePowerComputations across sessions.
+	Aggragate analysis from AnalyzeOnlinePowerComputations_stimvsnostim across sessions.
 
 	Input:
 	- sessions: list of sessionX.mat files created by Andy
 	'''
 	rt_all = np.array([])
-	norm_rt_all = np.array([])
 	beta_per_trial_all = np.array([])
-	norm_beta_per_trial_all = np.array([])
 	band_power_per_trial_all = np.array([])
-	norm_band_power_per_trial_all = np.array([])
+	
+	beta_per_trial_stim_hold_all = np.array([])
+	beta_per_trial_nostim_hold_all = np.array([])
+	band_power_per_trial_stim_hold_all = np.array([])
+	band_power_per_trial_nostim_hold_all = np.array([])
 
-	band_power_per_trial_all_good = np.array([])
-	rt_all_good = np.array([])
+	rt_stim_hold_all = np.array([])
+	rt_nostim_hold_all = np.array([])
 
 	for session in sessions:
-		rt, avg_rt, beta_per_trial, avg_beta, band_power_per_trial, avg_band_power = AnalyzeOnlinePowerComputations(session, f_low, f_high)
-		rt_all = np.append(rt_all, rt)
-		norm_rt_all = np.append(norm_rt_all, rt/avg_rt)
+		rt_succ, beta_per_trial, avg_beta, band_power_per_trial, avg_band_power, \
+			beta_per_trial_stim_hold, beta_per_trial_nostim_hold, band_power_per_trial_stim_hold, \
+			band_power_per_trial_nostim_hold, rt_stim_hold, rt_nostim_hold = AnalyzeOnlinePowerComputations_stimvsnostim(session, f_low, f_high)
+		rt_all = np.append(rt_all, rt_succ)
 		beta_per_trial_all = np.append(beta_per_trial_all, beta_per_trial)
 		band_power_per_trial_all = np.append(band_power_per_trial_all, band_power_per_trial)
-		good_band_power = np.ravel(np.nonzero(np.less(band_power_per_trial,50))) 			# indices of non-spurious power computations (threshold of 50 is for high-gamma)
-		band_power_per_trial_all_good = np.append(band_power_per_trial_all_good, band_power_per_trial[good_band_power])
-		rt_all_good = np.append(rt_all_good, rt[good_band_power])
+		beta_per_trial_stim_hold_all = np.append(beta_per_trial_stim_hold_all, beta_per_trial_stim_hold)
+		beta_per_trial_nostim_hold_all = np.append(beta_per_trial_nostim_hold_all, beta_per_trial_nostim_hold)
+		band_power_per_trial_stim_hold_all = np.append(band_power_per_trial_stim_hold_all, band_power_per_trial_stim_hold)
+		band_power_per_trial_nostim_hold_all = np.append(band_power_per_trial_nostim_hold_all, band_power_per_trial_nostim_hold)
+		rt_stim_hold_all = np.append(rt_stim_hold_all, rt_stim_hold)
+		rt_nostim_hold_all = np.append(rt_nostim_hold_all, rt_nostim_hold)
 		# Powers normalized by within session average power in the designated band
-		norm_beta_per_trial_all = np.append(norm_beta_per_trial_all, beta_per_trial/avg_beta)
-		norm_band_power_per_trial_all = np.append(norm_band_power_per_trial_all, band_power_per_trial/avg_band_power)
+		#norm_beta_per_trial_all = np.append(norm_beta_per_trial_all, beta_per_trial/avg_beta)
+		#norm_band_power_per_trial_all = np.append(norm_band_power_per_trial_all, band_power_per_trial/avg_band_power)
 
 	r, p = sp.stats.pearsonr(rt_all, beta_per_trial_all)
-	r_norm, p_norm = sp.stats.pearsonr(rt_all, norm_beta_per_trial_all)
 	r_band, p_band = sp.stats.pearsonr(rt_all, band_power_per_trial_all)
-	r_norm_band, p_norm_band = sp.stats.pearsonr(rt_all, norm_band_power_per_trial_all)
 
-	r_band_good, p_band_good = sp.stats.pearsonr(rt_all_good, band_power_per_trial_all_good)
+	r_beta_stim, p_beta_stim = sp.stats.pearsonr(rt_stim_hold_all, beta_per_trial_stim_hold_all)
+	r_band_stim, p_band_stim = sp.stats.pearsonr(rt_stim_hold_all, band_power_per_trial_stim_hold_all)
 
+	r_beta_nostim, p_beta_nostim = sp.stats.pearsonr(rt_nostim_hold_all, beta_per_trial_nostim_hold_all)
+	r_band_nostim, p_band_nostim = sp.stats.pearsonr(rt_nostim_hold_all, band_power_per_trial_nostim_hold_all)
+
+	
 	print "\n All Sessions Together:"
 	print "Correlation - RT with Beta (not normalized): %f (p = %f)" % (r, p)
-	print "Correlation - RT with Beta (normalized): %f (p = %f)" % (r_norm, p_norm)
 	print "Correlation - RT with [%d,%d] (not normalized): %f (p = %f)" % (f_low,f_high, r_band, p_band)
-	print "Correlation - RT with [%d,%d] (normalized): %f (p = %f)" % (f_low,f_high,r_norm_band, p_norm_band)
-	print "\n Correlation - RT with [%d,%d] (not normalized, thresholded): %f (p = %f)" % (f_low,f_high, r_band_good, p_band_good)
+	print "Correlation - RT with Beta (stim during Center Hold): %f (p = %f)" % (r_beta_stim, p_beta_stim)
+	print "Correlation - RT with [%d,%d] (stim during Center Hold): %f (p = %f)" % (f_low,f_high, r_band_stim, p_band_stim)
+	print "Correlation - RT with Beta (no stim during Center Hold): %f (p = %f)" % (r_beta_nostim, p_beta_nostim)
+	print "Correlation - RT with [%d,%d] (no stim during Center Hold): %f (p = %f)" % (f_low,f_high, r_band_nostim, p_band_nostim)
 
 	m, b = np.polyfit(rt_all, beta_per_trial_all,1)
-	m_norm, b_norm = np.polyfit(rt_all, norm_beta_per_trial_all,1)
 	m_band, b_band = np.polyfit(rt_all, band_power_per_trial_all,1)
-	m_norm_band, b_norm_band = np.polyfit(rt_all, norm_band_power_per_trial_all,1)
-
-	m_band_good, b_band_good = np.polyfit(rt_all_good, band_power_per_trial_all_good,1)
+	m_beta_stim, b_beta_stim = np.polyfit(rt_stim_hold_all, beta_per_trial_stim_hold_all,1)
+	m_band_stim, b_band_stim = np.polyfit(rt_stim_hold_all, band_power_per_trial_stim_hold_all,1)
+	m_beta_nostim, b_beta_nostim = np.polyfit(rt_nostim_hold_all, beta_per_trial_nostim_hold_all,1)
+	m_band_nostim, b_band_nostim = np.polyfit(rt_nostim_hold_all, band_power_per_trial_nostim_hold_all,1)
+	
 
 	plt.figure(0)
-	plt.subplot(2,2,1)
+	plt.subplot(2,3,1)
 	plt.plot(rt_all,beta_per_trial_all,'.')
 	plt.plot(rt_all, m*rt_all + b, '-')
 	plt.xlabel('Reaction Time (s)')
 	plt.ylabel('Beta Power (uv/' + r'$\sqrt{Hz}$' + ')')
-	plt.text(0.5, 110, r'$\rho$' + '= %.2f (p = %.2f)' % (r,p))
+	plt.title('All Trials')
+	plt.text(0.6, 70, r'$\rho$' + ' = %.3f (p = %.3f)' % (r,p))
 
-	plt.subplot(2,2,2)
-	plt.plot(rt_all,norm_beta_per_trial_all,'.')
-	plt.plot(rt_all, m_norm*rt_all + b_norm, '-')
-	plt.xlabel('Reaction Time (s)')
-	plt.ylabel('Normalized Beta Power')
-	plt.text(0.5, 2, r'$\rho$' + '= %.2f (p = %.2f)' % (r_norm,p_norm))
-
-	plt.subplot(2,2,3)
+	plt.subplot(2,3,4)
 	plt.plot(rt_all,band_power_per_trial_all,'.')
 	plt.plot(rt_all, m_band*rt_all + b_band, '-')
 	plt.xlabel('Reaction Time (s)')
 	plt.ylabel('Power (uv/' + r'$\sqrt{Hz}$' + '): [%d,%d] Hz' % (f_low,f_high))
-	plt.text(0.5, 210, r'$\rho$' + '= %.2f (p = %.2f)' % (r_band,p_band))
+	plt.title('All Trials')
+	plt.text(0.6, 16, r'$\rho$' + ' = %.3f (p = %.3f)' % (r_band,p_band))
 
-	plt.subplot(2,2,4)
-	plt.plot(rt_all,norm_band_power_per_trial_all,'.')
-	plt.plot(rt_all, m_norm_band*rt_all + b_norm_band, '-')
+	plt.subplot(2,3,2)
+	plt.plot(rt_stim_hold_all,beta_per_trial_stim_hold_all,'.')
+	plt.plot(rt_stim_hold_all, m_beta_stim*rt_stim_hold_all + b_beta_stim, '-')
 	plt.xlabel('Reaction Time (s)')
-	plt.ylabel('Normalized Band Power: [%d,%d] Hz' % (f_low,f_high))
-	plt.text(0.5, 3.5, r'$\rho$' + '= %.2f (p = %.2f)' % (r_norm_band,p_norm_band))
+	plt.ylabel('Beta Power (uv/' + r'$\sqrt{Hz}$' + ')')
+	plt.title('Stim during Hold')
+	plt.text(0.45, 70, r'$\rho$' + ' = %.3f (p = %.3f)' % (r_beta_stim,p_beta_stim))
 
-	plt.figure(1)
-	plt.plot(rt_all_good,band_power_per_trial_all_good,'.')
-	plt.plot(rt_all_good, m_band_good*rt_all_good + b_band_good, '-')
+	plt.subplot(2,3,5)
+	plt.plot(rt_stim_hold_all,band_power_per_trial_stim_hold_all,'.')
+	plt.plot(rt_stim_hold_all, m_band_stim*rt_stim_hold_all + b_band_stim, '-')
 	plt.xlabel('Reaction Time (s)')
 	plt.ylabel('Power (uv/' + r'$\sqrt{Hz}$' + '): [%d,%d] Hz' % (f_low,f_high))
-	plt.text(0.5, 17, r'$\rho$' + '= %.2f (p = %.2f)' % (r_band_good,p_band_good))
-	plt.title('Thresholded Power Values ( < 50 uV /' + r'$\sqrt{Hz}$' + ')')
+	plt.title('Stim during Hold')
+	plt.text(0.45, 14, r'$\rho$' + ' = %.3f (p = %.3f)' % (r_band_stim,p_band_stim))
+
+	plt.subplot(2,3,3)
+	plt.plot(rt_nostim_hold_all,beta_per_trial_nostim_hold_all,'.')
+	plt.plot(rt_nostim_hold_all, m_beta_nostim*rt_nostim_hold_all + b_beta_nostim, '-')
+	plt.xlabel('Reaction Time (s)')
+	plt.ylabel('Beta Power (uv/' + r'$\sqrt{Hz}$' + ')')
+	plt.title('No Stim during Hold')
+	plt.text(0.6, 70, r'$\rho$' + ' = %.3f (p = %.3f)' % (r_beta_nostim,p_beta_nostim))
+
+	plt.subplot(2,3,6)
+	plt.plot(rt_nostim_hold_all,band_power_per_trial_nostim_hold_all,'.')
+	plt.plot(rt_nostim_hold_all, m_band_nostim*rt_nostim_hold_all + b_band_nostim, '-')
+	plt.xlabel('Reaction Time (s)')
+	plt.ylabel('Power (uv/' + r'$\sqrt{Hz}$' + '): [%d,%d] Hz' % (f_low,f_high))
+	plt.title('No Stim during Hold')
+	plt.text(0.6, 16, r'$\rho$' + ' = %.3f (p = %.3f)' % (r_band_nostim,p_band_nostim))
 
 	plt.show()
 
