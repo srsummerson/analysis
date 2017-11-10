@@ -1,5 +1,4 @@
 import sklearn
-from sklearn import linear_model
 from sklearn.linear_model import LogisticRegression
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import scale
@@ -20,12 +19,16 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import statsmodels.api as sm
+import pandas as pd
+from sklearn import datasets, linear_model
+from scipy import stats
 
 #### 
 # For 4/18, GridSearch said that best estimator was with 19 PCs and 4 best original components
 
 ## Want to do this with power features only, all neural features, and neural features + physiology
 
+"""
 power_feature_filename = 'Mario20160712_b1_PowerFeatures.mat'
 coherence_feature_filename = 'Mario20160712_b1_CoherenceFeatures.mat'
 hdf_location = 'mari20160712_03_te2333.hdf'
@@ -35,7 +38,7 @@ power_feature_filename_stim = 'Mario20160712_b2_PowerFeatures.mat'
 coherence_feature_filename_stim = 'Mario20160712_b2_CoherenceFeatures.mat'
 hdf_location_stim = 'mari20160712_07_te2337.hdf'
 phys_filename_stim = 'Mario20160712_b2_PhysFeatures.mat'
-
+"""
 
 def TrialClassificationWithPhysiology(phys_filename, trial_types, plot_results = False):
 	
@@ -130,7 +133,7 @@ def TrialClassificationWithPhysiology(phys_filename, trial_types, plot_results =
 
 	return ibi, pupil
 
-def SelectionAndClassification_PowerFeatures(hdf_location, power_feature_filename, var_threshold = 10**-10, num_k_best = 3):
+def SelectionAndClassification_PowerFeatures(hdf_location, phys_filename, power_feature_filename, var_threshold = 10**-10, num_k_best = 3):
 	# Read in behavioral data
 	BlockAB_behavior = StressBehavior(hdf_location)
 	# Get classification of trial types
@@ -249,7 +252,7 @@ def SelectionAndClassification_PowerFeatures(hdf_location, power_feature_filenam
 	plt.subplot(num_conditions/3, num_conditions/3,cond + 2)
 	plt.pcolormesh(x,y,outline_layout,vmin=min_coef, vmax = max_coef)  # do log just to pull out smaller differences better
 	plt.colorbar()
-	plt.title('Regression Coefficients for Classification with Power Features')
+	plt.title('Correlation Coefficients for Pupil with Power Features')
 	plt.show()
 
 	feat_mat, chosen_feat, chosen_feat_80per_var = SelectionAndClassification(trial_types, feat_mat, num_k_best)
@@ -632,6 +635,112 @@ def ComparePowerWithStim(power_feature_filename_stim, hdf_location_stim,chosen_p
 	plt.show()
 
 	return power_feat_mat_stim, trial_types_stim
+
+def SelectionAndClassification_PowerAndPhysFeatures(hdf_location, phys_filename, power_feature_filename, var_threshold = 10**-10, plot_output = False):
+	# Read in behavioral data
+	BlockAB_behavior = StressBehavior(hdf_location)
+	# Get classification of trial types
+	trial_types = np.ravel(BlockAB_behavior.stress_type[BlockAB_behavior.state_time[BlockAB_behavior.ind_check_reward_states]])
+	BlockAB_stress_trial_inds = np.ravel(np.nonzero(trial_types==1))
+	BlockAB_reg_trial_inds = np.ravel(np.nonzero(trial_types==0))
+
+	# Load physiology data
+	ibi, pupil = TrialClassificationWithPhysiology(phys_filename, trial_types)
+
+	# Load neural power features
+	power_mat = dict()
+	sp.io.loadmat(power_feature_filename, power_mat)
+	power_feat_keys = [key for key in power_mat.keys() if key[0]!='_']
+	num_chan, num_conditions = power_mat[power_feat_keys[0]].shape
+	num_trials = len(power_feat_keys)
+	power_feat_mat = np.zeros([num_trials,num_chan*num_conditions])
+	# Creat power feature matrix
+	for i, key in enumerate(power_feat_keys):
+		power_feat_mat[i,:] = power_mat[key].flatten()
+
+	# create power label matrix: assumes there are 3 time events and 4 frequency bands
+	all_channels = np.arange(0,161,dtype = int)					# channels 1 - 160
+	lfp_channels = np.delete(all_channels, [0, 1, 129, 131, 145])		# channels 129, 131, and 145 are open
+	power_labels = np.chararray([num_chan, num_conditions], itemsize = 13)
+	for i, chan in enumerate(lfp_channels):
+		power_labels[i,0] = 'chan'+str(chan)+'_T1_B1'
+		power_labels[i,1] = 'chan'+str(chan)+'_T1_B2'
+		power_labels[i,2] = 'chan'+str(chan)+'_T1_B3'
+		power_labels[i,3] = 'chan'+str(chan)+'_T1_B4'
+		power_labels[i,4] = 'chan'+str(chan)+'_T2_B1'
+		power_labels[i,5] = 'chan'+str(chan)+'_T2_B2'
+		power_labels[i,6] = 'chan'+str(chan)+'_T2_B3'
+		power_labels[i,7] = 'chan'+str(chan)+'_T2_B4'
+		power_labels[i,8] = 'chan'+str(chan)+'_T3_B1'
+		power_labels[i,9] = 'chan'+str(chan)+'_T3_B2'
+		power_labels[i,10] = 'chan'+str(chan)+'_T3_B3'
+		power_labels[i,11] = 'chan'+str(chan)+'_T3_B4'
+	power_labels = power_labels.flatten()
+
+	# remove low-variance features
+	sel = VarianceThreshold(threshold=var_threshold)
+	feat_mat = sel.fit_transform(power_feat_mat)
+	chosen_power_feat = np.ravel(np.nonzero(sel.get_support()))
+
+	# Make sure each column has zero mean
+	power_feat_mat = power_feat_mat - np.tile(np.nanmean(power_feat_mat, axis = 0), (num_trials,1))
+	# fully z-score data
+	power_feat_mat = power_feat_mat/np.tile(np.nanstd(power_feat_mat, axis = 0), (num_trials, 1))
+	power_feat_mat = np.hstack((power_feat_mat, ibi))
+	power_feat_mat = np.hstack((power_feat_mat, pupil))
+
+	# Use sklearn LogisticRegression with power features only
+	logistic = linear_model.LogisticRegression()
+	logistic.fit(power_feat_mat, trial_types)
+	predictions = logistic.predict(power_feat_mat)
+	accuracy = 1 - np.sum(np.abs(predictions - trial_types))/len(predictions)
+	#print "Accuracy is ", accuracy
+
+	# Use statsmodels
+	'''
+	try:
+		x = power_feat_mat
+		y = trial_types
+		x = np.hstack((x, ibi))
+		x = np.hstack((x, pupil))
+		x = np.hstack((x, np.ones([power_feat_mat.shape[0],1])))
+		model_glm = sm.GLM(y,x, family = sm.families.Binomial())
+		fit_glm = model_glm.fit()
+		print "Success"
+	except:
+		pass
+	'''
+	coef = np.zeros(num_chan*num_conditions)
+	coef[chosen_power_feat] = logistic.coef_.ravel()[chosen_power_feat]
+	if plot_output:
+		# pull out coefficients by channel for each condition and plot
+		# Set up matrix for plotting peak powers
+		dx, dy = 1, 1
+		y, x = np.mgrid[slice(0,15,dy), slice(0,14,dx)]
+		
+		min_coef = np.nanmin(coef)
+		max_coef = np.nanmax(coef)
+		plt.figure()
+		for cond in range(num_conditions):
+			power_array = np.zeros(len(all_channels))     # dummy array where entries corresponding to real channels will be updated
+			for i, chan in enumerate(lfp_channels):
+				power_array[chan] = coef[i*num_conditions + cond]
+			power_layout = ElectrodeGridMat(power_array)
+			plt.subplot(num_conditions/3, num_conditions/3,cond+1)
+			#plt.pcolormesh(x,y,power_layout,vmin=10**-7, vmax = 10**-4)  # do log just to pull out smaller differences better
+			plt.pcolormesh(x,y,power_layout, vmin=min_coef, vmax = max_coef)  # do log just to pull out smaller differences better
+			plt.title('condition %i' % (cond + 1))
+			#plt.colorbar()
+		outline_array = np.ones(len(all_channels)) 		# dummy array for orienting values
+		outline_layout = ElectrodeGridMat(outline_array)
+		plt.subplot(num_conditions/3, num_conditions/3,cond + 2)
+		plt.pcolormesh(x,y,outline_layout,vmin=min_coef, vmax = max_coef)  # do log just to pull out smaller differences better
+		plt.colorbar()
+		plt.title('Regression Coefficients for Classification with Power Features')
+		plt.show()
+
+	return chosen_power_feat, power_feat_mat, coef, trial_types, power_labels, logistic, accuracy
+
 
 #chosen_power_feat, power_feat_mat, trial_types,power_labels, chosen_feat_80per_var = SelectionAndClassification_PowerFeatures(hdf_location, power_feature_filename, var_threshold = 10**-10, num_k_best = 20)
 #powerandcoherence_feat_mat, powerandcoherence_chosen_feat, powerandcoherence_chosen_feat_labels, powerandcoherence_chosen_feat_labels_80pervar,feat_labels = SelectionAndClassification_PowerAndCoherenceFeatures(hdf_location, power_feature_filename, coherence_feature_filename, num_k_best = 20)

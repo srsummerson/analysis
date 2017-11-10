@@ -1,6 +1,7 @@
 import numpy as np
 import scipy as sp
 from scipy import stats
+import statsmodels.api as sm
 from scipy import io
 from scipy import signal
 import re
@@ -1922,6 +1923,7 @@ def AnalyzeOnlinePowerComputations_AcrossSessions_stimvsnostim(sessions, f_low, 
 		#norm_beta_per_trial_all = np.append(norm_beta_per_trial_all, beta_per_trial/avg_beta)
 		#norm_band_power_per_trial_all = np.append(norm_band_power_per_trial_all, band_power_per_trial/avg_band_power)
 
+	# Find correlations
 	r, p = sp.stats.pearsonr(rt_all, beta_per_trial_all)
 	r_band, p_band = sp.stats.pearsonr(rt_all, band_power_per_trial_all)
 
@@ -1940,6 +1942,25 @@ def AnalyzeOnlinePowerComputations_AcrossSessions_stimvsnostim(sessions, f_low, 
 	print "Correlation - RT with Beta (no stim during Center Hold): %f (p = %f)" % (r_beta_nostim, p_beta_nostim)
 	print "Correlation - RT with [%d,%d] (no stim during Center Hold): %f (p = %f)" % (f_low,f_high, r_band_nostim, p_band_nostim)
 
+	# Do linear regression for all trials
+	x = beta_per_trial_all
+	x.reshape(len(x),1)
+	print x.shape
+	#x = np.transpose(x)
+	#x = np.hstack((x, np.ones([len(beta_per_trial_all),1]))) 	# use this in place of add_constant which doesn't work when constant Q values are used
+	x = sm.add_constant(x, prepend=False)
+	y = rt_all
+
+	print "\n Regression for RT"
+	model_glm = sm.OLS(y,x)
+	fit_glm = model_glm.fit()
+	beta_reg = fit_glm.params[0]
+	const_reg = fit_glm.params[1]
+	y_fit = beta_reg*beta_per_trial_all + const_reg
+	y_err = np.nanmean((y_fit - y)**2)
+	print fit_glm.summary()
+
+	# Find linear fits for plotting
 	m, b = np.polyfit(rt_all, beta_per_trial_all,1)
 	m_band, b_band = np.polyfit(rt_all, band_power_per_trial_all,1)
 	m_beta_stim, b_beta_stim = np.polyfit(rt_stim_hold_all, beta_per_trial_stim_hold_all,1)
@@ -1999,4 +2020,4 @@ def AnalyzeOnlinePowerComputations_AcrossSessions_stimvsnostim(sessions, f_low, 
 
 	plt.show()
 
-	return
+	return beta_reg, const_reg, y, y_fit, y_err
