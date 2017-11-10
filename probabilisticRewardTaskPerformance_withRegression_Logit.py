@@ -96,13 +96,13 @@ hdf_list = ['\papa20150211_11.hdf',
 """
 hdf_list_stim = ['\luig20160204_15_te1382.hdf','\luig20160208_07_te1401.hdf','\luig20160212_08_te1429.hdf','\luig20160217_06_te1451.hdf',
                 '\luig20160229_11_te1565.hdf','\luig20160301_07_te1572.hdf','\luig20160301_09_te1574.hdf', '\luig20160311_08_te1709.hdf',
-                '\luig20160313_07_te1722.hdf', '\luig20160315_14_te1739.hdf']
-hdf_list_stim = ['\luig20160204_15_te1382.hdf','\luig20160208_07_te1401.hdf','\luig20160212_08_te1429.hdf','\luig20160217_06_te1451.hdf',
-                '\luig20160229_11_te1565.hdf','\luig20160301_09_te1574.hdf', '\luig20160311_08_te1709.hdf',
-                '\luig20160313_07_te1722.hdf', '\luig20160315_14_te1739.hdf']
+                '\luig20160313_07_te1722.hdf', '\luig20160315_14_te1739.hdf','\luig20160305_18_te1609.hdf', '\luig20160318_12_te1778.hdf', '\luig20160330_06_te1904.hdf', '\luig20160330_11_te1909.hdf']
+#hdf_list_stim = ['\luig20160204_15_te1382.hdf','\luig20160208_07_te1401.hdf','\luig20160212_08_te1429.hdf','\luig20160217_06_te1451.hdf',
+#                '\luig20160229_11_te1565.hdf','\luig20160301_09_te1574.hdf', '\luig20160311_08_te1709.hdf',
+#                '\luig20160313_07_te1722.hdf', '\luig20160315_14_te1739.hdf']
 hdf_list_sham = ['\luig20160213_05_te1434.hdf','\luig20160219_04_te1473.hdf','\luig20160221_05_te1478.hdf', '\luig20160305_26_te1617.hdf', \
                  '\luig20160306_11_te1628.hdf', '\luig20160307_13_te1641.hdf', '\luig20160310_16_te1695.hdf','\luig20160319_23_te1801.hdf', \
-                 '\luig20160320_07_te1809.hdf', '\luig20160322_08_te1826.hdf']
+                 '\luig20160320_07_te1809.hdf', '\luig20160322_08_te1826.hdf', '\luig20160328_13_te1878.hdf', '\luig20160329_18_te1898.hdf']
 hdf_list_hv = ['\luig20160218_10_te1469.hdf','\luig20160223_11_te1508.hdf','\luig20160224_15_te1523.hdf', \
                 '\luig20160303_11_te1591.hdf', '\luig20160308_06_te1647.hdf','\luig20160309_25_te1672.hdf']
 #hdf_list_hv = ['\luig20160218_10_te1469.hdf','\luig20160223_11_te1508.hdf', \
@@ -1898,6 +1898,8 @@ plt.bar(index[2:],adjusted_gamma_means,width/2,color='y')
 plt.ylabel('avg gamma')
 plt.xticks(index,('Sham','Regular','Q Additive','Q Multiplicative','P Additive','P Multiplicative'))
 """
+print stim_prob_choose_low
+print sham_prob_choose_low
 plt.show()
 
 prob_choose_low_mean = (np.mean(stim_prob_choose_low), np.mean(sham_prob_choose_low))

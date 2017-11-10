@@ -1,6 +1,7 @@
 import numpy as np
 import scipy as sp
 from scipy import stats
+import statsmodels.api as sm
 from scipy import io
 from scipy import signal
 import re
@@ -789,6 +790,7 @@ def get_OMNI_inds_hold_center(hdf_filename, syncHDF_file, tdt_timepoint, omni_ti
 	state_time = table.root.task_msgs[:]['time']
 	ind_reward = np.ravel(np.nonzero(state == 'reward'))
 	ind_hold_center = ind_reward - 7
+	ind_all_hold_center = np.ravel(np.nonzero(state == 'hold_center'))
 	ind_peripheral_on = ind_reward - 6
 	ind_go_cue = ind_reward - 3
 	ind_hold_peripheral = ind_reward - 2
@@ -833,6 +835,33 @@ def get_OMNI_inds_hold_center(hdf_filename, syncHDF_file, tdt_timepoint, omni_ti
 			lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
 
 	lfp_state_row_ind_beginhold = lfp_state_row_ind
+
+	# Get indices for all trials beginning of hold
+	state_row_ind = state_time[ind_all_hold_center]		# gives the hdf row number sampled at 60 Hz
+	state_row_ind_beginhold = state_row_ind
+	lfp_state_row_ind = np.zeros(state_row_ind.size)
+
+	for i in range(len(state_row_ind)):
+		hdf_index = np.argmin(np.abs(hdf_rows - state_row_ind[i]))
+		if np.abs(hdf_rows[hdf_index] - state_row_ind[i])==0:
+			lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
+		elif hdf_rows[hdf_index] > state_row_ind[i]:
+			hdf_row_diff = hdf_rows[hdf_index] - hdf_rows[hdf_index -1]  # distance of the interval of the two closest hdf_row_numbers
+			m = (lfp_dio_sample_num[hdf_index]-lfp_dio_sample_num[hdf_index - 1])/hdf_row_diff
+			b = lfp_dio_sample_num[hdf_index-1] - m*hdf_rows[hdf_index-1]
+			lfp_state_row_ind[i] = int(m*state_row_ind[i] + b)
+		elif (hdf_rows[hdf_index] < state_row_ind[i])&(hdf_index + 1 < len(hdf_rows)):
+			hdf_row_diff = hdf_rows[hdf_index + 1] - hdf_rows[hdf_index]
+			if (hdf_row_diff > 0):
+				m = (lfp_dio_sample_num[hdf_index + 1] - lfp_dio_sample_num[hdf_index])/hdf_row_diff
+				b = lfp_dio_sample_num[hdf_index] - m*hdf_rows[hdf_index]
+				lfp_state_row_ind[i] = int(m*state_row_ind[i] + b)
+			else:
+				lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
+		else:
+			lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
+
+	lfp_state_row_ind_beginhold_all = lfp_state_row_ind
 
 	# Repeat for peripheral target appearing
 	state_row_ind = state_time[ind_peripheral_on]
@@ -1003,6 +1032,7 @@ def get_OMNI_inds_hold_center(hdf_filename, syncHDF_file, tdt_timepoint, omni_ti
 	b = omni_timepoint - m*tdt_timepoint
 
 	omni_inds_beginhold = np.rint(m*lfp_state_row_ind_beginhold + b) 	# make sure that indices are integer values
+	omni_inds_beginhold_all = np.rint(m*lfp_state_row_ind_beginhold_all + b)
 	omni_inds_peripheralon = np.rint(m*lfp_state_row_ind_peripheralon + b)
 	omni_inds_endhold = np.rint(m*lfp_state_row_ind_endhold + b)
 	omni_inds_peripheralhold = np.rint(m*lfp_state_row_ind_beginhold_peripheral + b)
@@ -1010,7 +1040,7 @@ def get_OMNI_inds_hold_center(hdf_filename, syncHDF_file, tdt_timepoint, omni_ti
 	omni_inds_reward = np.rint(m*lfp_state_row_ind_reward + b)
 	omni_inds_reward_end = np.rint(m*lfp_state_row_ind_reward_end + b)
 
-	return omni_inds_beginhold, omni_inds_peripheralon,omni_inds_endhold, omni_inds_peripheralhold, omni_inds_endhold_peripheral, omni_inds_reward, omni_inds_reward_end 
+	return omni_inds_beginhold, omni_inds_beginhold_all, omni_inds_peripheralon,omni_inds_endhold, omni_inds_peripheralhold, omni_inds_endhold_peripheral, omni_inds_reward, omni_inds_reward_end 
 
 def ClosedLoopReactionTimeAnalysis(hdf_filename, task_events_mat_filename, stim_filename, thres, lower_rt, upper_rt, method):
 	'''
@@ -1104,7 +1134,7 @@ def ClosedLoopReactionTimeAnalysis(hdf_filename, task_events_mat_filename, stim_
 	rt_stim_not_during_hold = rt_good_trials[ind_not_during_periph_on]										# all trials except when stim is during any time in the hold
 
 
-	return rt_stim_during_periph, rt_stim_not_during_periph, rt_stim_during_center, rt_stim_not_during_hold, time_after_periph, time_before_go_cue,rt_good_trials, ind_no_stim_trial
+	return rt_stim_during_periph, rt_stim_not_during_periph, rt_stim_during_center, rt_stim_not_during_hold, time_after_periph, time_before_go_cue,rt_good_trials, ind_no_stim_trial, good_trial_inds
 
 def ClosedLoopReactionTimeAnalysis_MultipleSessions(hdf_filename, task_events_mat_filename, stim_filename, thres,lower_rt, upper_rt, method):
 	'''
@@ -1128,6 +1158,8 @@ def ClosedLoopReactionTimeAnalysis_MultipleSessions(hdf_filename, task_events_ma
 	time_before_go_cue = np.array([])
 	rt_good_trials = np.array([])
 	ind_no_stim_trial = np.array([])
+	num_trials_per_session = np.array([])
+	inds_good_trials = np.array([])
 
 	for k in range(num_sessions):
 		output = ClosedLoopReactionTimeAnalysis(hdf_filename[k], task_events_mat_filename[k], stim_filename[k], thres,lower_rt, upper_rt, method)
@@ -1139,6 +1171,8 @@ def ClosedLoopReactionTimeAnalysis_MultipleSessions(hdf_filename, task_events_ma
 		time_before_go_cue = np.append(time_before_go_cue, output[5])
 		rt_good_trials = np.append(rt_good_trials, output[6])
 		ind_no_stim_trial = np.append(ind_no_stim_trial, output[7])
+		inds_good_trials = np.append(inds_good_trials, output[8])
+		num_trials_per_session = np.append(num_trials_per_session, len(output[6]))
 
 	print "Number of good trials:", len(rt_good_trials)
 		
@@ -1361,7 +1395,7 @@ def ClosedLoopReactionTimeAnalysis_MultipleSessions(hdf_filename, task_events_ma
   	#### add: find trials completely without stimulation to compare with
 	return RT_binned, bin_centers, RT_binned_before_gocue, bin_centers_before_gocue
 	'''
-	return
+	return rt_good_trials, num_trials_per_session, inds_good_trials
 
 def rt_lognormal_fit(rt):
 	s, loc, scale = stats.lognorm.fit(rt, floc = 0)
@@ -1584,3 +1618,406 @@ def findStimStartAndStop(omni_hdf):
 	sp.io.savemat(filename, stims)
 
 	return trains
+
+def AnalyzeOnlinePowerComputations(session, f_low, f_high):
+	'''
+	Method to extract online computed power recorded using OMNI and relate it to task variables. Outputs
+	reaction time and beta power information, as well as power computed in a band specified by [f_low, f_high].
+
+	Input: 
+	- session: .mat filename for .mat file generated by Andy's CompileSessionX code.
+	- f_low: float representing the lower cutoff frequency of a window of interest (Hz)
+	- f_high: float representing the higher cutoff frequency of a window of interest (Hz)
+	'''
+	
+	# Load data and pull out information into arrays
+	mat = sp.io.loadmat(session, squeeze_me = True)
+	data = mat['session']
+	behavior = np.ravel(data['behavior'])[0]			# behavior matrix, each row represents a trial, each column the timing of each event
+	betaF = np.ravel(data['betaF'])[0] 					# FFT bins used for beta calculation
+	ctrl = np.ravel(data['ctrl'])[0]					# control channel signal
+	endFFT = np.ravel(data['endFFT'])[0]				# indices of the last sample of each computed FFT
+	threshPower = np.ravel(data['threshPower'])[0]		# power threshold used for closed loop
+	threshDeriv = np.ravel(data['threshDeriv'])[0]		# power derivative threshold for closed loop
+	NFFT = np.ravel(data['NFFT'])[0]					# FFT size
+	omniSpec = np.ravel(data['omniSpec'])[0]			# compiled online computed power spectrums (endFFT contains timing info)
+	stim = np.ravel(data['stim'])[0]					# stim channel signal
+	stimFlags = np.ravel(data['stimFlags'])[0]			# stim flags (0 = no stim, 1 = stim)
+	stimEvents = np.ravel(data['stimEvents'])[0]		# indices of beginning and end of each stim pulse
+	stimIdx = np.ravel(data['stimIdx'])[0]				# indices of all stim flags
+	t = np.ravel(data['t'])[0]							# time vector
+	trains = np.ravel(data['trains'])[0]				# indices of beginning and end of each stim pulse train
+	trialSuccess = np.ravel(data['trialSuccess'])[0]	# indices of the successful trials
+	centerHoldAll = np.ravel(data['centerHoldAll'])[0]  # center hold for ALL (successful and unsuccessful) trials
+	rtInd = np.ravel(data['rtInd'])[0]					# indices of trial times (index into centerHoldAll) for reaction times
+	rt = np.ravel(data['rt'])[0]						# reaction times
+
+	# Find time samples corresponding to reaction time computations
+	rt_times = centerHoldAll[rtInd]
+
+	# Find average RT
+	avg_rt = np.nanmean(rt)
+
+	# Compute beta power from spectral data saved
+	beta_power = np.sqrt(np.sum(omniSpec[:, betaF[0]:betaF[1]],1))	# power is in lsb/sqrt(Hz)
+	beta_power = 0.0954*beta_power 									# convert to uV/sqrt(Hz) 
+	avg_beta = np.nanmean(beta_power)
+	beta_per_trial = np.zeros(len(rtInd))
+
+	# Compute power in band indicated by [f_low, f_high]
+	bandf = np.floor(np.array([f_low, f_high])*512./1000) + 1		# find which frequency indices correspond to this band
+	band_power = np.sqrt(np.sum(omniSpec[:, bandf[0]:bandf[1]],1))	# power is in lsb/sqrt(Hz)
+	band_power = 0.0954*band_power 									# covert to uV/sqrt(Hz)
+	avg_band_power = np.nanmean(band_power)
+	band_power_per_trial = np.zeros(len(rtInd))
+
+	# Find beta power computation that is closest to beginning of trial
+	# Note: Hold is 400 - 600 ms in duration
+	for i, trial_ind in enumerate(rtInd):
+		power_index = np.argmin(np.abs(endFFT - rt_times[i]))
+		if endFFT[power_index] > rt_times[i]:
+			# if closest computation is after trial started, look one computation (256 ms) ahead
+			beta_per_trial[i] = beta_power[power_index + 1]
+			band_power_per_trial[i] = band_power[power_index + 1]
+		else:
+			# if closest computation is just before trial starts, look two computations (512 ms) ahead
+			beta_per_trial[i] = beta_power[power_index + 2]
+			band_power_per_trial[i] = band_power[power_index + 2]
+
+	r, p = sp.stats.pearsonr(rt, beta_per_trial)
+	print session[17:-4]
+	print "Correlation (not normalized): %f (p = %f)" % (r, p)
+
+	return rt, avg_rt, beta_per_trial, avg_beta, band_power_per_trial, avg_band_power
+
+def AnalyzeOnlinePowerComputations_AcrossSessions(sessions, f_low, f_high):
+	'''
+	Aggragate analysis from AnalyzeOnlinePowerComputations across sessions.
+
+	Input:
+	- sessions: list of sessionX.mat files created by Andy
+	'''
+	rt_all = np.array([])
+	norm_rt_all = np.array([])
+	beta_per_trial_all = np.array([])
+	norm_beta_per_trial_all = np.array([])
+	band_power_per_trial_all = np.array([])
+	norm_band_power_per_trial_all = np.array([])
+
+	band_power_per_trial_all_good = np.array([])
+	rt_all_good = np.array([])
+
+	for session in sessions:
+		rt, avg_rt, beta_per_trial, avg_beta, band_power_per_trial, avg_band_power = AnalyzeOnlinePowerComputations(session, f_low, f_high)
+		rt_all = np.append(rt_all, rt)
+		norm_rt_all = np.append(norm_rt_all, rt/avg_rt)
+		beta_per_trial_all = np.append(beta_per_trial_all, beta_per_trial)
+		band_power_per_trial_all = np.append(band_power_per_trial_all, band_power_per_trial)
+		good_band_power = np.ravel(np.nonzero(np.less(band_power_per_trial,50))) 			# indices of non-spurious power computations (threshold of 50 is for high-gamma)
+		band_power_per_trial_all_good = np.append(band_power_per_trial_all_good, band_power_per_trial[good_band_power])
+		rt_all_good = np.append(rt_all_good, rt[good_band_power])
+		# Powers normalized by within session average power in the designated band
+		norm_beta_per_trial_all = np.append(norm_beta_per_trial_all, beta_per_trial/avg_beta)
+		norm_band_power_per_trial_all = np.append(norm_band_power_per_trial_all, band_power_per_trial/avg_band_power)
+
+	r, p = sp.stats.pearsonr(rt_all, beta_per_trial_all)
+	r_norm, p_norm = sp.stats.pearsonr(rt_all, norm_beta_per_trial_all)
+	r_band, p_band = sp.stats.pearsonr(rt_all, band_power_per_trial_all)
+	r_norm_band, p_norm_band = sp.stats.pearsonr(rt_all, norm_band_power_per_trial_all)
+
+	r_band_good, p_band_good = sp.stats.pearsonr(rt_all_good, band_power_per_trial_all_good)
+
+	print "\n All Sessions Together:"
+	print "Correlation - RT with Beta (not normalized): %f (p = %f)" % (r, p)
+	print "Correlation - RT with Beta (normalized): %f (p = %f)" % (r_norm, p_norm)
+	print "Correlation - RT with [%d,%d] (not normalized): %f (p = %f)" % (f_low,f_high, r_band, p_band)
+	print "Correlation - RT with [%d,%d] (normalized): %f (p = %f)" % (f_low,f_high,r_norm_band, p_norm_band)
+	print "\n Correlation - RT with [%d,%d] (not normalized, thresholded): %f (p = %f)" % (f_low,f_high, r_band_good, p_band_good)
+
+	m, b = np.polyfit(rt_all, beta_per_trial_all,1)
+	m_norm, b_norm = np.polyfit(rt_all, norm_beta_per_trial_all,1)
+	m_band, b_band = np.polyfit(rt_all, band_power_per_trial_all,1)
+	m_norm_band, b_norm_band = np.polyfit(rt_all, norm_band_power_per_trial_all,1)
+
+	m_band_good, b_band_good = np.polyfit(rt_all_good, band_power_per_trial_all_good,1)
+
+	plt.figure(0)
+	plt.subplot(2,2,1)
+	plt.plot(rt_all,beta_per_trial_all,'.')
+	plt.plot(rt_all, m*rt_all + b, '-')
+	plt.xlabel('Reaction Time (s)')
+	plt.ylabel('Beta Power (uv/' + r'$\sqrt{Hz}$' + ')')
+	plt.text(0.5, 110, r'$\rho$' + '= %.2f (p = %.2f)' % (r,p))
+
+	plt.subplot(2,2,2)
+	plt.plot(rt_all,norm_beta_per_trial_all,'.')
+	plt.plot(rt_all, m_norm*rt_all + b_norm, '-')
+	plt.xlabel('Reaction Time (s)')
+	plt.ylabel('Normalized Beta Power')
+	plt.text(0.5, 2, r'$\rho$' + '= %.2f (p = %.2f)' % (r_norm,p_norm))
+
+	plt.subplot(2,2,3)
+	plt.plot(rt_all,band_power_per_trial_all,'.')
+	plt.plot(rt_all, m_band*rt_all + b_band, '-')
+	plt.xlabel('Reaction Time (s)')
+	plt.ylabel('Power (uv/' + r'$\sqrt{Hz}$' + '): [%d,%d] Hz' % (f_low,f_high))
+	plt.text(0.5, 210, r'$\rho$' + '= %.2f (p = %.2f)' % (r_band,p_band))
+
+	plt.subplot(2,2,4)
+	plt.plot(rt_all,norm_band_power_per_trial_all,'.')
+	plt.plot(rt_all, m_norm_band*rt_all + b_norm_band, '-')
+	plt.xlabel('Reaction Time (s)')
+	plt.ylabel('Normalized Band Power: [%d,%d] Hz' % (f_low,f_high))
+	plt.text(0.5, 3.5, r'$\rho$' + '= %.2f (p = %.2f)' % (r_norm_band,p_norm_band))
+
+	plt.figure(1)
+	plt.plot(rt_all_good,band_power_per_trial_all_good,'.')
+	plt.plot(rt_all_good, m_band_good*rt_all_good + b_band_good, '-')
+	plt.xlabel('Reaction Time (s)')
+	plt.ylabel('Power (uv/' + r'$\sqrt{Hz}$' + '): [%d,%d] Hz' % (f_low,f_high))
+	plt.text(0.5, 17, r'$\rho$' + '= %.2f (p = %.2f)' % (r_band_good,p_band_good))
+	plt.title('Thresholded Power Values ( < 50 uV /' + r'$\sqrt{Hz}$' + ')')
+
+	plt.show()
+
+	return
+
+def AnalyzeOnlinePowerComputations_stimvsnostim(session, f_low, f_high):
+	'''
+	Method to extract online computed power recorded using OMNI and relate it to task variables. Outputs
+	reaction time and beta power information, as well as power computed in a band specified by [f_low, f_high].
+	Trials are divided into times when stim occurs during the hold and when it does not. Only considers successful
+	trials.
+
+	Input: 
+	- session: .mat filename for .mat file generated by Andy's CompileSessionX code.
+	- f_low: float representing the lower cutoff frequency of a window of interest (Hz)
+	- f_high: float representing the higher cutoff frequency of a window of interest (Hz)
+	'''
+	
+	# Load data and pull out information into arrays
+	mat = sp.io.loadmat(session, squeeze_me = True)
+	data = mat['session']
+	behavior = np.ravel(data['behavior'])[0]			# behavior matrix, each column represents a trial, each row the timing of each event
+	betaF = np.ravel(data['betaF'])[0] 					# FFT bins used for beta calculation
+	ctrl = np.ravel(data['ctrl'])[0]					# control channel signal
+	endFFT = np.ravel(data['endFFT'])[0]				# indices of the last sample of each computed FFT
+	threshPower = np.ravel(data['threshPower'])[0]		# power threshold used for closed loop
+	threshDeriv = np.ravel(data['threshDeriv'])[0]		# power derivative threshold for closed loop
+	NFFT = np.ravel(data['NFFT'])[0]					# FFT size
+	omniSpec = np.ravel(data['omniSpec'])[0]			# compiled online computed power spectrums (endFFT contains timing info)
+	stim = np.ravel(data['stim'])[0]					# stim channel signal
+	stimFlags = np.ravel(data['stimFlags'])[0]			# stim flags (0 = no stim, 1 = stim)
+	stimEvents = np.ravel(data['stimEvents'])[0]		# indices of beginning and end of each stim pulse
+	stimIdx = np.ravel(data['stimIdx'])[0]				# indices of all stim flags
+	t = np.ravel(data['t'])[0]							# time vector
+	trains = np.ravel(data['trains'])[0]				# indices of beginning and end of each stim pulse train
+	trialSuccess = np.ravel(data['trialSuccess'])[0]	# indices of the successful trials
+	centerHoldAll = np.ravel(data['centerHoldAll'])[0]  # center hold for ALL (successful and unsuccessful) trials
+	rtInd = np.ravel(data['rtInd'])[0]					# indices of trial times (index into centerHoldAll) for reaction times
+	rt = np.ravel(data['rt'])[0]						# reaction times
+
+	stim_start = trains[:,0]
+	stim_end = trains[0,1]
+
+	# Find time samples corresponding to reaction time computations for successful trials
+	rt_inds = np.array([ind for ind in range(rtInd[-1]+1) if (ind in rtInd)&(ind in trialSuccess)])  # trial indices of successful trials with computed RTs
+	rt_all = np.zeros(len(centerHoldAll))
+	rt_all[rtInd] = rt 																				# Array of RTs for all trials (successful and unsuccessful), with zeros where it was not computed
+	rt_succ = rt_all[rt_inds]
+	
+	num_succ_trials = behavior.shape[1]
+	begin_hold_times = np.array([behavior[0,ind] for ind in range(num_succ_trials) if trialSuccess[ind] in rt_inds])
+	go_cue_times = np.array([behavior[2,ind] for ind in range(num_succ_trials) if trialSuccess[ind] in rt_inds])
+	
+	# Find indices of trials that stimulation occurred during the center hold
+	ind_during_center_on = []
+	ind_not_during_center_on = []
+
+	for val in range(len(begin_hold_times)):
+		# find closest stim to hold time
+		stim_index = np.argmin(np.abs(stim_start - begin_hold_times[val]))
+		# find time relative to hold time: positive is after, negative is before
+		time_after_hold = stim_start[stim_index] - begin_hold_times[val]
+		time_before_go_cue = stim_start[stim_index] - go_cue_times[val]
+		is_during_center = (time_after_hold > -0.067)&(time_before_go_cue < 0)
+
+		# build lists of indices for if stim occured when peripheral was shown or not
+		if is_during_center:
+			ind_during_center_on.append(val)
+		else:
+			ind_not_during_center_on.append(val)
+
+	# Find average RT
+	avg_rt = np.nanmean(rt_succ)
+
+	# Compute beta power from spectral data saved
+	beta_power = np.sqrt(np.sum(omniSpec[:, betaF[0]:betaF[1]],1))	# power is in lsb/sqrt(Hz)
+	beta_power = 0.0954*beta_power 									# convert to uV/sqrt(Hz) 
+	avg_beta = np.nanmean(beta_power)
+	beta_per_trial = np.zeros(len(rt_inds))
+
+	# Compute power in band indicated by [f_low, f_high]
+	bandf = np.floor(np.array([f_low, f_high])*512./1000) + 1		# find which frequency indices correspond to this band
+	band_power = np.sqrt(np.sum(omniSpec[:, bandf[0]:bandf[1]],1))	# power is in lsb/sqrt(Hz)
+	band_power = 0.0954*band_power 									# covert to uV/sqrt(Hz)
+	avg_band_power = np.nanmean(band_power)
+	band_power_per_trial = np.zeros(len(rt_inds))
+
+	# Find beta power computation that is closest to beginning of trial
+	# Note: Hold is 400 - 600 ms in duration
+	for i, trial_ind in enumerate(rt_inds):
+		power_index = np.argmin(np.abs(endFFT - begin_hold_times[i]))
+		if endFFT[power_index] > begin_hold_times[i]:
+			# if closest computation is after trial started, look one computation (256 ms) ahead
+			beta_per_trial[i] = beta_power[power_index + 1]
+			band_power_per_trial[i] = band_power[power_index + 1]
+		else:
+			# if closest computation is just before trial starts, look two computations (512 ms) ahead
+			beta_per_trial[i] = beta_power[power_index + 2]
+			band_power_per_trial[i] = band_power[power_index + 2]
+
+	# NEED TO SEPARATE TRIAL TYPES: STIM DURING CENTER HOLD VERSUS NOT
+	beta_per_trial_stim_hold = beta_per_trial[ind_during_center_on]
+	beta_per_trial_nostim_hold = beta_per_trial[ind_not_during_center_on]
+	band_power_per_trial_stim_hold = band_power_per_trial[ind_during_center_on]
+	band_power_per_trial_nostim_hold = band_power_per_trial[ind_not_during_center_on]
+	rt_stim_hold = rt_succ[ind_during_center_on]
+	rt_nostim_hold = rt_succ[ind_not_during_center_on]
+
+	return rt_succ, beta_per_trial, avg_beta, band_power_per_trial, avg_band_power, beta_per_trial_stim_hold, beta_per_trial_nostim_hold, band_power_per_trial_stim_hold, band_power_per_trial_nostim_hold, rt_stim_hold, rt_nostim_hold
+
+def AnalyzeOnlinePowerComputations_AcrossSessions_stimvsnostim(sessions, f_low, f_high):
+	'''
+	Aggragate analysis from AnalyzeOnlinePowerComputations_stimvsnostim across sessions.
+
+	Input:
+	- sessions: list of sessionX.mat files created by Andy
+	'''
+	rt_all = np.array([])
+	beta_per_trial_all = np.array([])
+	band_power_per_trial_all = np.array([])
+	
+	beta_per_trial_stim_hold_all = np.array([])
+	beta_per_trial_nostim_hold_all = np.array([])
+	band_power_per_trial_stim_hold_all = np.array([])
+	band_power_per_trial_nostim_hold_all = np.array([])
+
+	rt_stim_hold_all = np.array([])
+	rt_nostim_hold_all = np.array([])
+
+	for session in sessions:
+		rt_succ, beta_per_trial, avg_beta, band_power_per_trial, avg_band_power, \
+			beta_per_trial_stim_hold, beta_per_trial_nostim_hold, band_power_per_trial_stim_hold, \
+			band_power_per_trial_nostim_hold, rt_stim_hold, rt_nostim_hold = AnalyzeOnlinePowerComputations_stimvsnostim(session, f_low, f_high)
+		rt_all = np.append(rt_all, rt_succ)
+		beta_per_trial_all = np.append(beta_per_trial_all, beta_per_trial)
+		band_power_per_trial_all = np.append(band_power_per_trial_all, band_power_per_trial)
+		beta_per_trial_stim_hold_all = np.append(beta_per_trial_stim_hold_all, beta_per_trial_stim_hold)
+		beta_per_trial_nostim_hold_all = np.append(beta_per_trial_nostim_hold_all, beta_per_trial_nostim_hold)
+		band_power_per_trial_stim_hold_all = np.append(band_power_per_trial_stim_hold_all, band_power_per_trial_stim_hold)
+		band_power_per_trial_nostim_hold_all = np.append(band_power_per_trial_nostim_hold_all, band_power_per_trial_nostim_hold)
+		rt_stim_hold_all = np.append(rt_stim_hold_all, rt_stim_hold)
+		rt_nostim_hold_all = np.append(rt_nostim_hold_all, rt_nostim_hold)
+		# Powers normalized by within session average power in the designated band
+		#norm_beta_per_trial_all = np.append(norm_beta_per_trial_all, beta_per_trial/avg_beta)
+		#norm_band_power_per_trial_all = np.append(norm_band_power_per_trial_all, band_power_per_trial/avg_band_power)
+
+	# Find correlations
+	r, p = sp.stats.pearsonr(rt_all, beta_per_trial_all)
+	r_band, p_band = sp.stats.pearsonr(rt_all, band_power_per_trial_all)
+
+	r_beta_stim, p_beta_stim = sp.stats.pearsonr(rt_stim_hold_all, beta_per_trial_stim_hold_all)
+	r_band_stim, p_band_stim = sp.stats.pearsonr(rt_stim_hold_all, band_power_per_trial_stim_hold_all)
+
+	r_beta_nostim, p_beta_nostim = sp.stats.pearsonr(rt_nostim_hold_all, beta_per_trial_nostim_hold_all)
+	r_band_nostim, p_band_nostim = sp.stats.pearsonr(rt_nostim_hold_all, band_power_per_trial_nostim_hold_all)
+
+	
+	print "\n All Sessions Together:"
+	print "Correlation - RT with Beta (not normalized): %f (p = %f)" % (r, p)
+	print "Correlation - RT with [%d,%d] (not normalized): %f (p = %f)" % (f_low,f_high, r_band, p_band)
+	print "Correlation - RT with Beta (stim during Center Hold): %f (p = %f)" % (r_beta_stim, p_beta_stim)
+	print "Correlation - RT with [%d,%d] (stim during Center Hold): %f (p = %f)" % (f_low,f_high, r_band_stim, p_band_stim)
+	print "Correlation - RT with Beta (no stim during Center Hold): %f (p = %f)" % (r_beta_nostim, p_beta_nostim)
+	print "Correlation - RT with [%d,%d] (no stim during Center Hold): %f (p = %f)" % (f_low,f_high, r_band_nostim, p_band_nostim)
+
+	# Do linear regression for all trials
+	x = beta_per_trial_all
+	x.reshape(len(x),1)
+	print x.shape
+	#x = np.transpose(x)
+	#x = np.hstack((x, np.ones([len(beta_per_trial_all),1]))) 	# use this in place of add_constant which doesn't work when constant Q values are used
+	x = sm.add_constant(x, prepend=False)
+	y = rt_all
+
+	print "\n Regression for RT"
+	model_glm = sm.OLS(y,x)
+	fit_glm = model_glm.fit()
+	beta_reg = fit_glm.params[0]
+	const_reg = fit_glm.params[1]
+	y_fit = beta_reg*beta_per_trial_all + const_reg
+	y_err = np.nanmean((y_fit - y)**2)
+	print fit_glm.summary()
+
+	# Find linear fits for plotting
+	m, b = np.polyfit(rt_all, beta_per_trial_all,1)
+	m_band, b_band = np.polyfit(rt_all, band_power_per_trial_all,1)
+	m_beta_stim, b_beta_stim = np.polyfit(rt_stim_hold_all, beta_per_trial_stim_hold_all,1)
+	m_band_stim, b_band_stim = np.polyfit(rt_stim_hold_all, band_power_per_trial_stim_hold_all,1)
+	m_beta_nostim, b_beta_nostim = np.polyfit(rt_nostim_hold_all, beta_per_trial_nostim_hold_all,1)
+	m_band_nostim, b_band_nostim = np.polyfit(rt_nostim_hold_all, band_power_per_trial_nostim_hold_all,1)
+	
+
+	plt.figure(0)
+	plt.subplot(2,3,1)
+	plt.plot(rt_all,beta_per_trial_all,'.')
+	plt.plot(rt_all, m*rt_all + b, '-')
+	plt.xlabel('Reaction Time (s)')
+	plt.ylabel('Beta Power (uv/' + r'$\sqrt{Hz}$' + ')')
+	plt.title('All Trials')
+	plt.text(0.6, 70, r'$\rho$' + ' = %.3f (p = %.3f)' % (r,p))
+
+	plt.subplot(2,3,4)
+	plt.plot(rt_all,band_power_per_trial_all,'.')
+	plt.plot(rt_all, m_band*rt_all + b_band, '-')
+	plt.xlabel('Reaction Time (s)')
+	plt.ylabel('Power (uv/' + r'$\sqrt{Hz}$' + '): [%d,%d] Hz' % (f_low,f_high))
+	plt.title('All Trials')
+	plt.text(0.6, 16, r'$\rho$' + ' = %.3f (p = %.3f)' % (r_band,p_band))
+
+	plt.subplot(2,3,2)
+	plt.plot(rt_stim_hold_all,beta_per_trial_stim_hold_all,'.')
+	plt.plot(rt_stim_hold_all, m_beta_stim*rt_stim_hold_all + b_beta_stim, '-')
+	plt.xlabel('Reaction Time (s)')
+	plt.ylabel('Beta Power (uv/' + r'$\sqrt{Hz}$' + ')')
+	plt.title('Stim during Hold')
+	plt.text(0.45, 70, r'$\rho$' + ' = %.3f (p = %.3f)' % (r_beta_stim,p_beta_stim))
+
+	plt.subplot(2,3,5)
+	plt.plot(rt_stim_hold_all,band_power_per_trial_stim_hold_all,'.')
+	plt.plot(rt_stim_hold_all, m_band_stim*rt_stim_hold_all + b_band_stim, '-')
+	plt.xlabel('Reaction Time (s)')
+	plt.ylabel('Power (uv/' + r'$\sqrt{Hz}$' + '): [%d,%d] Hz' % (f_low,f_high))
+	plt.title('Stim during Hold')
+	plt.text(0.45, 14, r'$\rho$' + ' = %.3f (p = %.3f)' % (r_band_stim,p_band_stim))
+
+	plt.subplot(2,3,3)
+	plt.plot(rt_nostim_hold_all,beta_per_trial_nostim_hold_all,'.')
+	plt.plot(rt_nostim_hold_all, m_beta_nostim*rt_nostim_hold_all + b_beta_nostim, '-')
+	plt.xlabel('Reaction Time (s)')
+	plt.ylabel('Beta Power (uv/' + r'$\sqrt{Hz}$' + ')')
+	plt.title('No Stim during Hold')
+	plt.text(0.6, 70, r'$\rho$' + ' = %.3f (p = %.3f)' % (r_beta_nostim,p_beta_nostim))
+
+	plt.subplot(2,3,6)
+	plt.plot(rt_nostim_hold_all,band_power_per_trial_nostim_hold_all,'.')
+	plt.plot(rt_nostim_hold_all, m_band_nostim*rt_nostim_hold_all + b_band_nostim, '-')
+	plt.xlabel('Reaction Time (s)')
+	plt.ylabel('Power (uv/' + r'$\sqrt{Hz}$' + '): [%d,%d] Hz' % (f_low,f_high))
+	plt.title('No Stim during Hold')
+	plt.text(0.6, 16, r'$\rho$' + ' = %.3f (p = %.3f)' % (r_band_nostim,p_band_nostim))
+
+	plt.show()
+
+	return beta_reg, const_reg, y, y_fit, y_err

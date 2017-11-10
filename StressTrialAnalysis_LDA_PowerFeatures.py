@@ -33,19 +33,18 @@ from pybrain.structure.modules import SoftmaxLayer, TanhLayer
 from pybrain.datasets import SupervisedDataSet
 
 
-hdf_filename = 'mari20161026_04_te2634.hdf'
+hdf_filename = 'mari20160517_07_te2097.hdf'
 hdf_filename_stim = ''
-filename = 'Mario20161026'
-filename2 = 'Mario20161026'
+filename = 'Mario20160517'
+filename2 = 'Mario20160517'
 block_num = 1
 block_num_stim = 2
 print filename
 TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
 #TDT_tank = '/home/srsummerson/storage/tdt/'+filename
-hdf_location = '/storage/rawdata/hdf/'+hdf_filename
-hdf_location_stim = '/storage/rawdata/hdf/'+hdf_filename_stim
-#hdf_location = hdffilename
-pf_location = '/home/srsummerson/storage/PowerFeatures/'
+hdf_location = '/backup/subnetsrig/storage/rawdata/hdf/'+hdf_filename
+#hdf_location_stim = '/backup/subnetsrig/storage/rawdata/hdf/'+hdf_filename_stim
+pf_location = '/storage/PowerFeatures/'
 pf_filename = pf_location + filename+'_b'+str(block_num)+'_PowerFeatures.mat'
 pf_filename_coherence = pf_location + filename+'_b'+str(block_num)+'_CoherenceFeatures.mat'
 pf_filename_stim = pf_location + filename+'_b'+str(block_num_stim)+'_PowerFeatures.mat'
@@ -241,13 +240,17 @@ else:
 	lfp_features = computePowerFeatures(lfp, lfp_samprate, bands, event_indices, t_window)
 	elapsed = (time.time() - t)/60.
 	print "Finished LFP power features: took %f minutes." % (elapsed)
+	'''
 	print "Computing LFP coherence features."
 	t = time.time()
 	lfp_coherence_features = computeAllCoherenceFeatures(lfp, lfp_samprate, bands, event_indices, t_window)
 	elapsed = (time.time() - t)/60.
 	print "Finished LFP coherence features: took %f minutes." % (elapsed)
+	'''
 	sp.io.savemat(pf_filename,lfp_features)
+	'''
 	sp.io.savemat(pf_filename_coherence,lfp_coherence_features)
+	'''
 
 	phys_features = dict()
 	phys_features['ibi_reg_mean'] = ibi_reg_mean
@@ -270,19 +273,24 @@ else:
 		lfp_features_stim = computePowerFeatures(lfp_stim, lfp_samprate, bands, event_indices_stim, t_window)
 		elapsed = (time.time() - t)/60.
 		print "Finished stim LFP power features: took %f minutes." % (elapsed)
+		'''
 		print "Computing stim LFP coherence features."
 		t = time.time()
 		lfp_coherence_features_stim = computeAllCoherenceFeatures(lfp_stim, lfp_samprate, bands, event_indices_stim, t_window)
 		elapsed = (time.time() - t)/60.
 		print "Finished stim LFP coherence features: took %f minutes." % (elapsed)
+		'''
 		sp.io.savemat(pf_filename_stim,lfp_features_stim)
+		'''
 		sp.io.savemat(pf_filename_stim_coherence,lfp_coherence_features_stim)
+		'''
 
 		phys_features_stim = dict()
 		phys_features_stim['ibi_stress_mean_stim'] = ibi_stress_mean_stim
 		phys_features_stim['pupil_stress_mean_stim'] = pupil_stress_mean_stim
 		sp.io.savemat(phys_filename_stim,phys_features_stim)
-
+		
+"""
 ibi_mean = np.append(np.array(ibi_reg_mean), np.array(ibi_stress_mean))
 pupil_mean = np.append(np.array(pupil_reg_mean), np.array(pupil_stress_mean))
 
@@ -328,7 +336,7 @@ y_successful_reg = np.zeros(len(ibi_reg_mean))
 y_successful_stress = np.ones(len(ibi_stress_mean))
 y_successful = np.append(y_successful_reg,y_successful_stress)
 
-
+"""
 '''
 print "LDA using Power Features:"
 clf_all = LinearDiscriminantAnalysis(solver='eigen', shrinkage = 'auto')
@@ -340,6 +348,7 @@ print "Avg CV score:", scores.mean()
 '''
 Using ANN to predict classes.
 '''
+"""
 print "Artificial Neural Network with Power Features:"
 # Create a dummy dataset with pybrain
 
@@ -414,19 +423,21 @@ trnresult = percentError(trainer.testOnClassData(), trndata['class'])
 tstresult = percentError(trainer.testOnClassData(dataset = tstdata), tstdata['class'])
 if hdf_filename_stim != '':
 	valresult = percentError(trainer.testOnClassData(dataset = valdata), valdata['class'])
-
+"""
 # trndata_data = trndata['input']
 '''
 print 'LDA Analysis:'
 print "\n CV (10-fold) scores:", scores
 print "\n Avg CV score:", scores.mean()
 '''
+"""
 print '\n\n ANN Analysis:'
 print "\n epoch: %4d" % trainer.totalepochs
 print "\n train error: %5.2f%%" % trnresult
 print "\n test error: %5.2f%%" % tstresult
 if hdf_filename_stim != '':
 	print "\n stim trial rate of reg classification: %5.2f%%" % valresult
+"""
 '''
 orig_std = sys.stdout
 f = file(pf_location + filename + '.txt', 'w')
@@ -445,6 +456,7 @@ print "\n stim trial rate of reg classification: %5.2f%%" % valresult
 sys.stdout = orig_std
 f.close()
 '''
+"""
 plt.figure()
 plt.plot(xrange(num_epochs),epoch_error,'b',label='Training Error')
 plt.plot(xrange(num_epochs),epoch_tst_error,'r',label='Test set Error')
@@ -452,7 +464,7 @@ plt.xlabel('Num Epochs')
 plt.ylabel('Percent Error')
 plt.legend()
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_ANNPerformance.svg')
-
+"""
 '''
 x_successful = sm.add_constant(X_successful,prepend='False')
 

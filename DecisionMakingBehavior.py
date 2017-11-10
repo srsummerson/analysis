@@ -3148,10 +3148,9 @@ def TwoTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_fi
 	smooth_psth = [smooth_psth_l, smooth_psth_h]
 	return reg_psth, smooth_psth, all_raster_l, all_raster_h
 
-def TwoTargetTask_BinnedSpikeRates_AllChannels(hdf_files, syncHDF_files, spike_files, align_to, t_before, t_after, t_resolution, t_overlap):
+def TwoTargetTask_RegressFiringRates_Value(hdf_files, syncHDF_files, spike_files, channel, sc, t_before, t_after, t_resolution, t_overlap, smoothed, trial_start,trial_end):
 	'''
-	This method computes the binned spike rates for all channels aligned to a specified task event. Bins may be overlapping
-	in time.
+	This method regresses the firing rate of all units as a function of value over time. 
 
 	Inputs:
 	- hdf_files: list of N hdf_files corresponding to the behavior in the three target task
@@ -3163,62 +3162,202 @@ def TwoTargetTask_BinnedSpikeRates_AllChannels(hdf_files, syncHDF_files, spike_f
 					If spike data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
 					epoch of recording but not the second, the hdf_files and syncHDF_files will both have 2 file names, and the 
 					spike_files entry should be of the form [[spike_file1.csv, spike_file2.csv], ''].
-	- align_to: integer in range [1,2] that indicates whether we align the (1) picture onset, a.k. center-hold or (2) check_reward.
-	- t_before: float representing the time before (seconds) the align_to point that should be used to compute binned spike rates
-	- t_after: float representing the time after (seconds) the align_to point that should be used to compute binned spike rates
-	- t_resolution: the bin widths for the time bins, in seconds
-	- t_overlap: the overmount of time consecutive time bins should overlap in seconds, must be less than t_resolution
-
-	Outputs:
-	- binned_rates: 
-	- binned_rates_zscored:
-	'''
-
-
-	num_files = len(hdf_files)
-	trials_per_file = np.zeros(num_files)
-	num_successful_trials = np.zeros(num_files)
-
-	# Define timing parameters for PSTHs
-	t_resolution = 0.1 		# 100 ms time bins
-	num_bins = len(np.arange(-t_before, t_after, t_resolution)) - 1
-
-	# Define arrays to save psth for each trial
-	binned_rates = np.array([])
+	- channel: integer value indicating what channel will be used to regress activity
+	- t_before: time before (s) the picture onset that should be included when computing the firing rate. t_before = 0 indicates
+					that we only look from the time of onset forward when considering the window of activity.
+	- t_after: time after (s) the picture onset that should be included when computing the firing rate.
+	- smoothed: boolean indicating whether to use smoothed firing rates (True) or not (False)
+	- trial_start: integer indicating at which trial to start for the analysis
+	- trial_end: integer indicating at which trial to end for the analysis
 
 	'''
-	Get data for each set of files
+	# 1. Load behavior data and pull out trial indices for the designated trial case
+	cb = ChoiceBehavior_TwoTargets_Stimulation(hdf_files, 100, 100)
+	total_trials = cb.num_successful_trials
+	trial_end = trial_end*(trial_end < total_trials) + total_trials*(trial_end >= total_trials)
+	#ind_trial_case = np.array([ind for ind in range(total_trials) if np.array_equal(targets_on[ind],trial_case)])
+	
+
+	# 2. Get firing rates from units on indicated channel around time of target presentation on all trials. 
+	psth = TwoTargetTask_FiringRates_OverTime(hdf_files, syncHDF_files, spike_files, channel, sc, t_before, t_after, t_resolution, t_overlap)
+	num_timebins = psth.shape[1]
+
+	# 3. Get Q-values, chosen targets, and rewards
+	Q_low, Q_high = TwoTargetTask_Qvalues(hdf_files, 0.2, 1, 0, total_trials-1)
+
+	# 4. Do regression for each time bin.
+	#    Current regression uses Q-values and constant.
+	beta_Q_low = np.zeros(num_timebins)
+	beta_Q_high = np.zeros(num_timebins)
+	p_Q_low = np.zeros(num_timebins)
+	p_Q_high = np.zeros(num_timebins)
+	for k in range(num_timebins):
+		unit_data = psth[:,k]
+		#trial_inds = np.array([index for index in ind_trial_case if unit_data[index]!=0], dtype = int)
+
+		# look at all trial types within Blocks A and B
+		trial_inds = np.array([index for index in range(trial_start,trial_end) if unit_data[index]!=0], dtype = int)
+		x = np.vstack((Q_low[trial_inds], Q_high[trial_inds]))
+		x = np.transpose(x)
+		x = np.hstack((x, np.ones([len(trial_inds),1]))) 	# use this in place of add_constant which doesn't work when constant Q values are used
+		#x = sm.add_constant(x, prepend=False)
+		y = unit_data[trial_inds]
+		#y = y/np.max(y)  # normalize y
+
+		print "Regression for timebin ", k
+		model_glm = sm.OLS(y,x)
+		fit_glm = model_glm.fit()
+		beta_Q_low[k] = fit_glm.params[0]
+		beta_Q_high[k] = fit_glm.params[1]
+		p_Q_low[k] = fit_glm.pvalues[0]
+		p_Q_high[k] = fit_glm.pvalues[1]
+		#print fit_glm.summary()
+	Q_low_sig = np.ravel(np.nonzero(np.less(p_Q_low,0.05)))
+	Q_high_sig = np.ravel(np.nonzero(np.less(p_Q_high, 0.05)))
+	beta_Q_low_sig = np.zeros(len(beta_Q_low))
+	beta_Q_low_sig = None
+	beta_Q_low_sig[Q_low_sig] = beta_Q_low[Q_low_sig]
+	beta_Q_high_sig = np.zeros(len(beta_Q_high))
+	beta_Q_high_sig = None
+	beta_Q_high_sig[Q_high_sig] = beta_Q_high[Q_high_sig]
+
+	time_values = np.arange(-t_before,t_after,float(t_after + t_before)/num_timebins)
+
+	plt.figure()
+	ax = plt.subplot(111)
+	plt.plot(time_values, beta_Q_low, 'r', alpha = 0.2)
+	plt.plot(time_values, beta_Q_low_sig, 'r', label = 'LV')
+	plt.plot(time_values, beta_Q_high, 'b', alpha = 0.2)
+	plt.plot(time_values, beta_Q_high_sig, 'b', label = 'HV')
+	plt.xlabel('Time from Center Hold (s) ')
+	plt.ylabel('Beta coefficient')
+	ax.get_yaxis().set_tick_params(direction='out')
+	ax.get_xaxis().set_tick_params(direction='out')
+	ax.get_xaxis().tick_bottom()
+	ax.get_yaxis().tick_left()
+	plt.legend()
+	plt.show()
+
+	return time_values, beta_Q_low, beta_Q_high, p_Q_low, p_Q_high, fit_glm
+
+def ThreeTargetTask_DecodeChoice_LogisticRegression(hdf_files, syncHDF_files, spike_files, t_before, t_after, align_to, bin_size, bin_overlap):
 	'''
-	for i in range(num_files):
-		# Load behavior data
-		cb = ChoiceBehavior_TwoTargets(hdf_files[i])
-		num_successful_trials[i] = len(cb.ind_check_reward_states)
-		target_options, target_chosen, rewarded_choice = cb.TrialOptionsAndChoice()
+	This method performs logistic regression of the subject's choice on free-choice trials where the LV and MV are presented
+	together. Only free-choice trials, where there is a choice to decode, are considered. 
 
-		# Find times corresponding to center holds of successful trials
-		ind_hold_center = cb.ind_check_reward_states - 4
-		ind_check_reward = cb.ind_check_reward_states
-		if align_to == 1:
-			inds = ind_hold_center
-		elif align_to == 2:
-			inds = ind_check_reward
+	Inputs:
+	- hdf_files: list of N hdf_files corresponding to the behavior in the three target task
+	- syncHDF_files: list of N syncHDF_files that containes the syncing DIO data for the corresponding hdf_file and it's
+					TDT recording. If TDT data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, syncHDF_files should have the form [syncHDF_file1.mat, '']
+	- spike_files: list of N tuples of spike_files, where each entry is a list of 2 spike files, one corresponding to spike
+					data from the first 96 channels and the other corresponding to the spike data from the last 64 channels.
+					If spike data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, the hdf_files and syncHDF_files will both have 2 file names, and the 
+					spike_files entry should be of the form [[spike_file1.csv, spike_file2.csv], ''].
+	- t_before: time before (s) the align_to point that should be included when computing the firing rate. t_before = 0 indicates
+					that we only look from the time of align_to forward when considering the window of activity.
+	- t_after: time after (s) the align_to point that should be included when computing the firing rate.
+	- align_to: string, either 'hold_center' or 'check_reward', indicating what time point in the task we're aligned to
+	- bin_size: float representing the size of the spike bins (s)
+	- bin_overlap: float representing the amount that bins overlap (s)
 
-		# Load spike data: 
+	Output:
+
+	'''
+	# Get session information for plot
+	str_ind = hdf_files[0].index('201')  	# search for beginning of year in string (used 201 to accomodate both 2016 and 2017)
+	sess_name = 'Mario' + hdf_files[0][str_ind:str_ind + 8]
+	print sess_name
+	# Define variables
+	choices = np.array([])
+	num_trials = np.zeros(len(hdf_files))
+	all_fr_smooth = dict()
+ 
+	for i, hdf_file in enumerate(hdf_files):
+		print "Open HDF file number %f" % (i + 1)
+		# 1. Load behavior data and pull out trial indices for the designated trial case
+		print "Loading behavior"
+		cb_block = ChoiceBehavior_ThreeTargets(hdf_file)
+		num_trials[i] = cb_block.num_successful_trials
+		print "Getting choice information"
+		targets_on, chosen_target, rewards, instructed_or_freechoice = cb_block.GetChoicesAndRewards()
+		ind_fc_LVMV = np.array([ind for ind in range(int(num_trials[i])) if np.array_equal(targets_on[ind],[1,1,0])])
+		chosen_target_fc_LVMV = chosen_target[ind_fc_LVMV]
+		choices = np.append(choices, chosen_target_fc_LVMV)
+
+		ind_hold_center = cb_block.ind_check_reward_states - 4
+		ind_check_reward = cb_block.ind_check_reward_states
+		if align_to == 'hold_center':
+			inds = ind_hold_center[ind_fc_LVMV]
+		else:
+			inds = ind_check_reward[ind_fc_LVMV]
+
+		print "Getting spike data"
+		# 2. Get all spike data
 		if (spike_files[i] != ''):
 			# Find lfp sample numbers corresponding to these times and the sampling frequency of the lfp data
-			lfp_state_row_ind, lfp_freq = cb.get_state_TDT_LFPvalues(inds, syncHDF_files[i])
+			lfp_state_row_ind, lfp_freq = cb_block.get_state_TDT_LFPvalues(inds, syncHDF_files[i])
 			# Convert lfp sample numbers to times in seconds
 			times_row_ind = lfp_state_row_ind/float(lfp_freq)
 
-			# Load spike data
-			spike1 = OfflineSorted_CSVFile(spike_files[i][0])
-			spike2 = OfflineSorted_CSVFile(spike_files[i][1])
-			spike1_good_channels = spike1.good_channels
-			spike2_good_channels = spike2.good_channels
+			# Load spike data and find all sort codes associated with good channels
+			unit_counter = 0
+			if spike_files[i][0] != '':
+				spike1 = OfflineSorted_CSVFile(spike_files[i][0])
+				spike1_good_channels = spike1.good_channels
+				for chann in spike1_good_channels:
+					sc_chan = spike1.find_chan_sc(chann)
+					for j, sc in enumerate(sc_chan):
+						psth = spike1.compute_sliding_psth(chann,sc,inds,t_before,t_after,bin_size, bin_overlap)
+						# unit keys, array is trials x timepoints
+						unit_name = str(chann) + '_' + str(sc)
+						if unit_name in all_fr_smooth.keys():
+							all_fr_smooth[str(chann) + '_' + str(sc)] = np.vstack([all_fr_smooth[str(chann) + '_' + str(sc)], psth])
+						else:
+							all_fr_smooth[str(chann) + '_' + str(sc)] = psth
+			
+			if spike_files[i][1] != '':
+				spike2 = OfflineSorted_CSVFile(spike_files[i][1])
+				spike2_good_channels = spike2.good_channels
+				for chann in spike2_good_channels:
+					sc_chan = spike2.find_chan_sc(chann)
+					for j, sc in enumerate(sc_chan):
+						psth = spike2.compute_sliding_psth(chann,sc,inds,t_before,t_after,bin_size, bin_overlap)
+						# unit keys, array is trials x timepoints
+						unit_name = str(chann+96) + '_' + str(sc)
+						if unit_name in all_fr_smooth.keys():
+							all_fr_smooth[str(chann+96) + '_' + str(sc)] = np.vstack([all_fr_smooth[str(chann+96) + '_' + str(sc)], psth])
+						else:
+							all_fr_smooth[str(chann+96) + '_' + str(sc)] = psth
 
-			for chann in spike1_good_channels:
-				# find sort codes, then computing sliding psth
-				output = spike1.compute_sliding_psth(chann,sc,times_align,t_before,t_after,t_resolution, t_overlap)
-				
+	print "Reformatting spike data"		
+	# 3. Re-format spike data into 3-dim array of units x trials x timepoints
+	num_keys = np.shape(all_fr_smooth.keys())[0]
+	num_time_bins = psth.shape[1]
+	all_trials = len(choices)
+	fr_mat = np.zeros([num_keys, all_trials,num_time_bins])
 
-	return
+	for k, entry in enumerate(all_fr_smooth.keys()):
+		fr_mat[k,:,:] = all_fr_smooth[entry]
+	
+	print "Starting logistic regression"
+	# 4. Do logistic regression for each timepoint
+	for l in range(num_time_bins)[1:]:
+		# 3. Create firing rate matrix with size units x trials for each time point
+		x = fr_mat[:,:,l]
+		# switch to trials x units
+		x = np.transpose(x)
+		x = np.hstack((x, np.ones([all_trials,1]))) 	
+		
+		# 4. Do regression for each bin 
+		y = choices
+		print np.sum(x,1)
+
+		print "Regression for bin ", l
+		#model_glm = sm.OLS(y,x, family = sm.families.Binomial())
+		model_glm = sm.GLM(y,x, family = sm.families.Binomial())
+		fit_glm = model_glm.fit()
+		print fit_glm.summary()
+
+	return choices

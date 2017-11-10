@@ -184,7 +184,6 @@ class OfflineSorted_CSVFile():
 				time points
 		'''
 		psth_length = int(np.rint((t_before + t_after - t_overlap)/(t_resolution - t_overlap)))
-		print psth_length
 		num_timepoints = len(times_align)
 		psth = np.zeros((num_timepoints, psth_length))
 		
@@ -203,6 +202,8 @@ class OfflineSorted_CSVFile():
 			for k in range(psth_length):
 				data_window = np.ravel(np.greater(data, t_start + k*t_overlap)&np.less(data, t_start + k*t_overlap + t_resolution))
 				psth[i,k] = np.sum(data_window)/t_resolution
+
+			#smooth_psth[i,:] = filters.convolve1d(psth[i,:], b/b.sum())
 			
 		return psth
 
