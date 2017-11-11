@@ -436,12 +436,13 @@ def computePowerFeatures(lfp_data, Fs, power_bands, event_indices, t_window):
 
 	for trial in range(0,N):
 		events = event_indices[trial,:]  # should be array of length M
+		events = np.array([int(ind) for ind in events])
 		trial_powers = np.zeros([len(channels),M*len(power_bands)])
 		for j, chann in enumerate(channels):
 			chann_data = lfp_data[chann]
 			feat_counter = 0
 			for i,ind in enumerate(events):
-				data = chann_data[ind:ind + times[trial,i]]
+				data = chann_data[ind:ind + int(times[trial,i])]
 				data = np.ravel(data)
 				f, t, Sxx = signal.spectrogram(data, fs = Fs, nperseg = NFFT, noverlap=noverlap)  # units are V**2/Hz
 				Sxx = np.sqrt(Sxx)		# units are V/sqrt(Hz)

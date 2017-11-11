@@ -230,6 +230,8 @@ def getIBIandPuilDilation(pulse_data, pulse_ind,samples_pulse, pulse_samprate,pu
 	pupil_std = []
 	all_ibi = []
 	all_pupil = []
+	pulse_ind = np.array([int(ind) for ind in pulse_ind])
+	pupil_ind = np.array([int(ind) for ind in pupil_ind])
 	for i in range(0,len(pulse_ind)):
 		pulse_snippet = pulse_data[pulse_ind[i]:pulse_ind[i]+samples_pulse[i]]
 		ibi_snippet = findIBIs(pulse_snippet,pulse_samprate)
@@ -261,7 +263,7 @@ def getIBIandPuilDilation(pulse_data, pulse_ind,samples_pulse, pulse_samprate,pu
 		pupil_snippet = pupil_snippet[pupil_snippet_range]
 		pupil_snippet_mean = np.nanmean(pupil_snippet)
 		pupil_snippet_std = np.nanstd(pupil_snippet)
-		window = np.floor(pupil_samprate/10) # sample window equal to ~100 ms
+		window = int(np.floor(pupil_samprate/10)) # sample window equal to ~100 ms
 		#pupil_snippet = (pupil_snippet[0:window]- pupil_snippet_mean)/float(pupil_snippet_std)
 		pupil_snippet = pupil_snippet[0:window]
 		all_pupil += pupil_snippet.tolist()

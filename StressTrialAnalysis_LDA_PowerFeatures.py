@@ -33,17 +33,17 @@ from pybrain.structure.modules import SoftmaxLayer, TanhLayer
 from pybrain.datasets import SupervisedDataSet
 
 
-hdf_filename = 'mari20160517_07_te2097.hdf'
-hdf_filename_stim = ''
-filename = 'Mario20160517'
-filename2 = 'Mario20160517'
+hdf_filename = 'mari20160707_02_te2314.hdf'
+hdf_filename_stim = 'mari20160707_03_te2315.hdf'
+filename = 'Mario20160707'
+filename2 = 'Mario20160707'
 block_num = 1
 block_num_stim = 2
 print filename
 TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
 #TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 hdf_location = '/backup/subnetsrig/storage/rawdata/hdf/'+hdf_filename
-#hdf_location_stim = '/backup/subnetsrig/storage/rawdata/hdf/'+hdf_filename_stim
+hdf_location_stim = '/backup/subnetsrig/storage/rawdata/hdf/'+hdf_filename_stim
 pf_location = '/storage/PowerFeatures/'
 pf_filename = pf_location + filename+'_b'+str(block_num)+'_PowerFeatures.mat'
 pf_filename_coherence = pf_location + filename+'_b'+str(block_num)+'_CoherenceFeatures.mat'
@@ -106,7 +106,8 @@ else:
 	print "Loading syncing data."
 
 	hdf_times = dict()
-	mat_filename = '/home/srsummerson/storage/syncHDF/' + filename+'_b'+str(block_num)+'_syncHDF.mat'
+	mat_filename = '/backup/subnetsrig/storage/syncHDF/' + filename+'_b'+str(block_num)+'_syncHDF.mat'
+	#mat_filename = '/home/srsummerson/storage/syncHDF/' + filename+'_b'+str(block_num)+'_syncHDF.mat'
 	#sp.io.loadmat('/home/srsummerson/storage/syncHDF/'+mat_filename,hdf_times)
 	lfp_ind_hold_center_states_reg_trials = BlockAB_behavior.get_state_TDT_LFPvalues(BlockAB_behavior.ind_check_reward_states[BlockAB_reg_trial_inds] - 4,mat_filename)
 	lfp_ind_hold_center_states_stress_trials = BlockAB_behavior.get_state_TDT_LFPvalues(BlockAB_behavior.ind_check_reward_states[BlockAB_stress_trial_inds] - 4,mat_filename)
@@ -148,39 +149,39 @@ else:
 		# Get Pulse and Pupil Data
 		for sig in bl.segments[block_num-1].analogsignals:
 			if (sig.name == 'PupD 1'):
-				pupil_data = np.ravel(sig)
+				pupil_data = np.array(sig)
 				pupil_samprate = sig.sampling_rate.item()
 			if (sig.name == 'HrtR 1'):
-				pulse_data = np.ravel(sig)
+				pulse_data = np.array(sig)
 				pulse_samprate = sig.sampling_rate.item()
 			if (sig.name[0:4] == 'LFP1'):
 				channel = sig.channel_index
 				if (channel in lfp_channels)&(channel < 97):
 					lfp_samprate = sig.sampling_rate.item()
-					lfp[channel] = np.ravel(sig)
+					lfp[channel] = np.array(sig)
 			if (sig.name[0:4] == 'LFP2'):
 				channel = sig.channel_index
 				if (channel + 96) in lfp_channels:
 					channel_name = channel + 96
-					lfp[channel_name] = np.ravel(sig)
+					lfp[channel_name] = np.array(sig)
 		if hdf_filename_stim != '':
 			for sig in bl.segments[block_num_stim-1].analogsignals:
 				if (sig.name == 'PupD 1'):
-					pupil_data_stim = np.ravel(sig)
+					pupil_data_stim = np.array(sig)
 					pupil_samprate_stim = sig.sampling_rate.item()
 				if (sig.name == 'HrtR 1'):
-					pulse_data_stim = np.ravel(sig)
+					pulse_data_stim = np.array(sig)
 					pulse_samprate_stim = sig.sampling_rate.item()
 				if (sig.name[0:4] == 'LFP1'):
 					channel = sig.channel_index
 					if (channel in lfp_channels)&(channel < 97):
 						lfp_samprate_stim = sig.sampling_rate.item()
-						lfp_stim[channel] = np.ravel(sig)
+						lfp_stim[channel] = np.array(sig)
 				if (sig.name[0:4] == 'LFP2'):
 					channel = sig.channel_index
 					if (channel + 96) in lfp_channels:
 						channel_name = channel + 96
-						lfp_stim[channel_name] = np.ravel(sig)
+						lfp_stim[channel_name] = np.array(sig)
 
 
 	print "Finished loading TDT data."
