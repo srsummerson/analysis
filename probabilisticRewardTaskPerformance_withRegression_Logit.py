@@ -96,7 +96,7 @@ hdf_list = ['\papa20150211_11.hdf',
 """
 hdf_list_stim = ['\luig20160204_15_te1382.hdf','\luig20160208_07_te1401.hdf','\luig20160212_08_te1429.hdf','\luig20160217_06_te1451.hdf',
                 '\luig20160229_11_te1565.hdf','\luig20160301_07_te1572.hdf','\luig20160301_09_te1574.hdf', '\luig20160311_08_te1709.hdf',
-                '\luig20160313_07_te1722.hdf', '\luig20160315_14_te1739.hdf','\luig20160305_18_te1609.hdf', '\luig20160318_12_te1778.hdf', '\luig20160330_06_te1904.hdf', '\luig20160330_11_te1909.hdf']
+                '\luig20160313_07_te1722.hdf', '\luig20160315_14_te1739.hdf', '\luig20160318_12_te1778.hdf', '\luig20160330_06_te1904.hdf']
 #hdf_list_stim = ['\luig20160204_15_te1382.hdf','\luig20160208_07_te1401.hdf','\luig20160212_08_te1429.hdf','\luig20160217_06_te1451.hdf',
 #                '\luig20160229_11_te1565.hdf','\luig20160301_09_te1574.hdf', '\luig20160311_08_te1709.hdf',
 #                '\luig20160313_07_te1722.hdf', '\luig20160315_14_te1739.hdf']
