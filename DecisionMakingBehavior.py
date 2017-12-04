@@ -1,10 +1,12 @@
 import numpy as np 
 import scipy as sp
 from scipy import stats
+from statsmodels.formula.api import ols
 from scipy.interpolate import spline
 from scipy import signal
 from scipy.ndimage import filters
 import scipy.optimize as op
+from statsmodels.stats.anova import anova_lm
 import statsmodels.api as sm
 import pandas as pd
 from scipy import io
@@ -20,7 +22,9 @@ from PulseMonitorData import findIBIs
 from offlineSortedSpikeAnalysis import OfflineSorted_CSVFile
 from logLikelihoodRLPerformance import logLikelihoodRLPerformance, RLPerformance
 
-
+cd_units = [1, 3, 4, 17, 18, 20, 40, 41, 54, 56, 57, 63, 64, 72, 75, 81, 83, 88, 89, 96, 100, 112, 114, 126, 130, 140, 143, 146, 156, 157, 159]
+acc_units = [5, 6, 19, 22, 30, 39, 42, 43, 55, 58, 59, 69, 74, 77, 85, 90, 91, 102, 105, 121, 128]	
+dir = "C:/Users/Samantha Summerson/Dropbox/Carmena Lab/Mario/spike_data/"			
 
 def trial_sliding_avg(trial_array, num_trials_slide):
 
@@ -1694,8 +1698,10 @@ def ThreeTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_fil
 		ind_hold_center = cb_block.ind_check_reward_states - 4
 		ind_picture_onset = cb_block.ind_check_reward_states - 5
 		
-		# Load spike data: 
-		if (spike_files[i] != ''):
+		# Load spike data:
+		if (spike_files[i] == ['']):
+			print 'no data'
+		elif ((channel < 97) and spike_files[i][0] != '') or ((channel > 96) and (spike_files[i][1] != '')):
 			# Find lfp sample numbers corresponding to these times and the sampling frequency of the lfp data
 			lfp_state_row_ind, lfp_freq = cb_block.get_state_TDT_LFPvalues(ind_picture_onset, syncHDF_files[i])
 			# Convert lfp sample numbers to times in seconds
@@ -1713,6 +1719,8 @@ def ThreeTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_fil
 			# designated window.
 			sc_chan = spike.find_chan_sc(channel)
 			num_units[i] = len(sc_chan)
+			all_fr = np.array([])
+			all_fr_smooth = np.array([])
 			for j, sc in enumerate(sc_chan):
 				sc_fr = spike.compute_window_fr(channel,sc,times_row_ind,t_before,t_after)
 				sc_fr_smooth = spike.compute_window_fr_smooth(channel,sc,times_row_ind,t_before,t_after)
@@ -2140,6 +2148,15 @@ def ThreeTargetTask_RegressedFiringRatesWithValue_PictureOnset(hdf_files, syncHD
 	# Get session information for plot
 	str_ind = hdf_files[0].index('201')  	# search for beginning of year in string (used 201 to accomodate both 2016 and 2017)
 	sess_name = 'Mario' + hdf_files[0][str_ind:str_ind + 8]
+	if syncHDF_files[0]!='':
+		str_ind = syncHDF_files[0].index('201')
+		session_name = 'Mario' + syncHDF_files[0][str_ind:str_ind + 11]
+	elif syncHDF_files[1]!='':
+		str_ind = syncHDF_files[1].index('201')
+		session_name = 'Mario' + syncHDF_files[0][str_ind:str_ind + 11]
+	else:
+		session_name = 'Unknown'
+	
 
 	# 1. Load behavior data and pull out trial indices for the designated trial case
 	cb = ChoiceBehavior_ThreeTargets_Stimulation(hdf_files, 150, 100)
@@ -2198,6 +2215,7 @@ def ThreeTargetTask_RegressedFiringRatesWithValue_PictureOnset(hdf_files, syncHD
 
 		# look at all trial types within Blocks A 
 		trial_inds = np.array([index for index in range(50,150) if unit_data[index]!=0], dtype = int)
+		#trial_inds = np.array([index for index in range(50,150)], dtype = int)
 		x = np.vstack((Q_low[trial_inds], Q_mid[trial_inds], Q_high[trial_inds]))
 		x = np.vstack((x, rt[trial_inds], mt[trial_inds], chosen_target[trial_inds], rewards[trial_inds]))
 		# include which targets were shown
@@ -2207,65 +2225,87 @@ def ThreeTargetTask_RegressedFiringRatesWithValue_PictureOnset(hdf_files, syncHD
 		#x = sm.add_constant(x, prepend=False)
 		print x.shape
 		y = unit_data[trial_inds]
+		# z-score y
+		y_zscore = stats.zscore(y)
 		print y.shape
 		#y = y/np.max(y)  # normalize y
 
-		print "Regression for unit ", k
-		model_glm = sm.OLS(y,x)
-		fit_glm = model_glm.fit()
-		print fit_glm.summary()
+		try:
+			print "Regression for unit ", k
+			model_glm = sm.OLS(y_zscore,x)
+			fit_glm = model_glm.fit()
+			print fit_glm.summary()
 
-		regress_coef = fit_glm.params[1] 		# The regression coefficient for Qmid is the second parameter
-		regress_intercept = y[0] - regress_coef*Q_mid[trial_inds[0]]
+			regress_coef = fit_glm.params[1] 		# The regression coefficient for Qmid is the second parameter
+			regress_intercept = y[0] - regress_coef*Q_mid[trial_inds[0]]
 
-		# Get linear regression fit for just Q_mid
-		Q_mid_min = np.amin(Q_mid[trial_inds])
-		Q_mid_max = np.amax(Q_mid[trial_inds])
-		x_lin = np.linspace(Q_mid_min, Q_mid_max, num = len(trial_inds), endpoint = True)
+			# Get linear regression fit for just Q_mid
+			Q_mid_min = np.amin(Q_mid[trial_inds])
+			Q_mid_max = np.amax(Q_mid[trial_inds])
+			x_lin = np.linspace(Q_mid_min, Q_mid_max, num = len(trial_inds), endpoint = True)
 
-		m,b = np.polyfit(x_lin, y, 1)
+			m,b = np.polyfit(x_lin, y, 1)
 
-		plt.figure(k)
-		plt.subplot(1,2,1)
-		plt.scatter(Q_mid[trial_inds],y, c= 'k', marker = 'o', label ='Learning Trials')
-		plt.plot(x_lin, m*x_lin + b, c = 'k')
-		plt.plot(Q_mid[trial_inds], regress_coef*Q_mid[trial_inds] + regress_intercept, c = 'y')
-		plt.xlabel('Q_mid')
-		plt.ylabel('Firing Rate (spk/s)')
-		plt.title(sess_name + ' - Channel %i - Unit %i' %(channel, k))
+			plt.figure(k)
+			plt.subplot(1,3,1)
+			plt.scatter(Q_mid[trial_inds],y, c= 'k', marker = 'o', label ='Learning Trials')
+			plt.plot(x_lin, m*x_lin + b, c = 'k')
+			#plt.plot(Q_mid[trial_inds], regress_coef*Q_mid[trial_inds] + regress_intercept, c = 'y')
+			plt.xlabel('Q_mid')
+			plt.ylabel('Firing Rate (spk/s)')
+			plt.title(sess_name + ' - Channel %i - Unit %i' %(channel, k))
 
-		# save Q and firing rate data
-		Q_learning = Q_mid[trial_inds]
-		FR_learning = y
+			# save Q and firing rate data
+			Q_learning = Q_mid[trial_inds]
+			FR_learning = y
+			Q_mid_BlockA = Q_mid[trial_inds]
 
-		max_fr = np.amax(y)
-		xlim_min = np.amin(Q_mid[trial_inds])
-		xlim_max = np.amax(Q_mid[trial_inds])
+			max_fr = np.amax(y)
+			xlim_min = np.amin(Q_mid[trial_inds])
+			xlim_max = np.amax(Q_mid[trial_inds])
 
-		# Get binned firing rates: average firing rate for each of num_bins equally populated action value bins
-		num_bins = 5
-		sorted_Qvals_inds = np.argsort(Q_mid[trial_inds])
-		pts_per_bin = len(trial_inds)/num_bins
-		reorg_Qvals = np.reshape(Q_mid[trial_inds][sorted_Qvals_inds[:pts_per_bin*num_bins]], (pts_per_bin, num_bins), order = 'F')
-		avg_Qvals = np.nanmean(reorg_Qvals, axis = 0)
+			data_filename = session_name + ' - Channel %i - Unit %i' %(channel, k)
+			data = dict()
+			data['regression_labels'] = ['Q_low', 'Q_mid', 'Q_high','RT', 'MT', 'Choice', 'Reward', 'Q_low_on', 'Q_mid_on', 'Q_high_on']
+			data['beta_values_blockA'] = fit_glm.params
+			data['pvalues_blockA'] = fit_glm.pvalues
+			data['rsquared_blockA'] = fit_glm.rsquared
+			data['Q_mid_early'] = Q_mid_BlockA
+			data['FR_early'] = FR_learning
+			sp.io.savemat( dir + 'picture_onset_fr/' + data_filename + '.mat', data)
 
-		reorg_FR = np.reshape(y[sorted_Qvals_inds[:pts_per_bin*num_bins]], (pts_per_bin, num_bins), order = 'F')
-		reorg_FR_BlockA = reorg_FR
-		avg_FR = np.nanmean(reorg_FR, axis = 0)
-		sem_FR = np.nanstd(reorg_FR, axis = 0)/np.sqrt(pts_per_bin)
 
-		plt.figure(k)
-		plt.subplot(1,2,2)
-		plt.errorbar(avg_Qvals, avg_FR, yerr = sem_FR, fmt = '--o', color = 'y', ecolor = 'y', label = 'Learning - Avg FR')
-		plt.legend()
+			# Get binned firing rates: average firing rate for each of num_bins equally populated action value bins
+			num_bins = 5
+			sorted_Qvals_inds = np.argsort(Q_mid[trial_inds])
+			pts_per_bin = len(trial_inds)/num_bins
+			reorg_Qvals = np.reshape(Q_mid[trial_inds][sorted_Qvals_inds[:pts_per_bin*num_bins]], (pts_per_bin, num_bins), order = 'F')
+			avg_Qvals = np.nanmean(reorg_Qvals, axis = 0)
+
+			reorg_FR = np.reshape(y[sorted_Qvals_inds[:pts_per_bin*num_bins]], (pts_per_bin, num_bins), order = 'F')
+			reorg_FR_BlockA = reorg_FR
+			avg_FR = np.nanmean(reorg_FR, axis = 0)
+			sem_FR = np.nanstd(reorg_FR, axis = 0)/np.sqrt(pts_per_bin)
+
+			# Save data for binning by bins of fixed size (rather than equally populated)
+			Q_range_min = np.min(Q_mid[trial_inds])
+			Q_range_max = np.max(Q_mid[trial_inds])
+			FR_BlockA = y
+			
+
+			plt.figure(k)
+			plt.subplot(1,3,2)
+			plt.errorbar(avg_Qvals, avg_FR, yerr = sem_FR, fmt = '--o', color = 'k', ecolor = 'k', label = 'Learning - Avg FR')
+			plt.legend()
+		except:
+			pass
 	
-	# 6. Do regression for each unit only on trials in Blocks A' with spike data saved.
-	for k in range(max_num_units):
 		unit_data = fr_mat[k,:]
 		#trial_inds = np.array([index for index in ind_trial_case if unit_data[index]!=0], dtype = int)
 
 		# look at all trial types within Blocks A and B
 		trial_inds = np.array([index for index in range(250,len(unit_data)) if unit_data[index]!=0], dtype = int)
+		#trial_inds = np.array([index for index in range(250,len(unit_data))], dtype = int)
 		x = np.vstack((Q_low[trial_inds], Q_mid[trial_inds], Q_high[trial_inds]))
 		x = np.vstack((x, rt[trial_inds], mt[trial_inds], chosen_target[trial_inds], rewards[trial_inds]))
 		# include which targets were shown
@@ -2275,67 +2315,140 @@ def ThreeTargetTask_RegressedFiringRatesWithValue_PictureOnset(hdf_files, syncHD
 		#x = sm.add_constant(x, prepend=False)
 		print x.shape
 		y = unit_data[trial_inds]
+		# z-score y
+		y_zscore = stats.zscore(y)
 		print y.shape
 		#y = y/np.max(y)  # normalize y
 
-		print "Regression for unit ", k
-		model_glm = sm.OLS(y,x)
-		fit_glm = model_glm.fit()
-		print fit_glm.summary()
+		try:
+			print "Regression for unit ", k
+			model_glm_late = sm.OLS(y_zscore,x)
+			fit_glm_late = model_glm_late.fit()
+			print fit_glm_late.summary()
 
-		regress_coef = fit_glm.params[1] 		# The regression coefficient for Qmid is the second parameter
-		regress_intercept = y[0] - regress_coef*Q_mid[trial_inds[0]]
+			regress_coef = fit_glm_late.params[1] 		# The regression coefficient for Qmid is the second parameter
+			regress_intercept = y[0] - regress_coef*Q_mid[trial_inds[0]]
 
-		# Get linear regression fit for just Q_mid
-		Q_mid_min = np.amin(Q_mid[trial_inds])
-		Q_mid_max = np.amax(Q_mid[trial_inds])
-		x_lin = np.linspace(Q_mid_min, Q_mid_max, num = len(trial_inds), endpoint = True)
+			# Get linear regression fit for just Q_mid
+			Q_mid_min = np.amin(Q_mid[trial_inds])
+			Q_mid_max = np.amax(Q_mid[trial_inds])
+			x_lin = np.linspace(Q_mid_min, Q_mid_max, num = len(trial_inds), endpoint = True)
 
-		m,b = np.polyfit(x_lin, y, 1)
+			m,b = np.polyfit(x_lin, y, 1)
 
-		max_fr_stim = np.amax(y)
-		fr_lim = np.maximum(max_fr, max_fr_stim)
+			max_fr_stim = np.amax(y)
+			fr_lim = np.maximum(max_fr, max_fr_stim)
 
-		plt.figure(k)
-		plt.subplot(1,2,1)
-		plt.scatter(Q_mid[trial_inds],y, c= 'c', label = 'Stimulation trials')
-		plt.plot(x_lin, m*x_lin + b, c = 'c')
-		plt.plot(Q_mid[trial_inds], regress_coef*Q_mid[trial_inds] + regress_intercept, c = 'g')
-		plt.ylim((0,1.1*fr_lim))
-		plt.xlim((0.9*xlim_min, 1.1*xlim_max))
-		plt.legend()
+			plt.figure(k)
+			plt.subplot(1,3,1)
+			plt.scatter(Q_mid[trial_inds],y, c= 'c', label = 'Stimulation trials')
+			plt.plot(x_lin, m*x_lin + b, c = 'c')
+			#plt.plot(Q_mid[trial_inds], regress_coef*Q_mid[trial_inds] + regress_intercept, c = 'g')
+			plt.ylim((0,1.1*fr_lim))
+			plt.xlim((0.9*xlim_min, 1.1*xlim_max))
+			plt.legend()
 
-		# save Q and firing rate data
-		Q_late = Q_mid[trial_inds]
-		FR_late = y
+			# save Q and firing rate data
+			Q_late = Q_mid[trial_inds]
+			FR_late = y
 
-		# Get binned firing rates: average firing rate for each of num_bins equally populated action value bins
-		sorted_Qvals_inds = np.argsort(Q_mid[trial_inds])
-		pts_per_bin = len(trial_inds)/num_bins
-		reorg_Qvals = np.reshape(Q_mid[trial_inds][sorted_Qvals_inds[:pts_per_bin*num_bins]], (pts_per_bin, num_bins), order = 'F')
-		avg_Qvals = np.nanmean(reorg_Qvals, axis = 0)
+			# Get binned firing rates: bins of fixed size
+			Q_range_min = np.min(np.min(Q_late), Q_range_min)
+			Q_range_max = np.max(np.max(Q_late), Q_range_max)
+			bins = np.arange(Q_range_min, Q_range_max + 0.5*(Q_range_max - Q_range_min)/5., (Q_range_max - Q_range_min)/5.)
+			hist_BlockA, bins = np.histogram(Q_mid_BlockA, bins)
+			hist_late, bins = np.histogram(Q_late, bins)
 
-		reorg_FR = np.reshape(y[sorted_Qvals_inds[:pts_per_bin*num_bins]], (pts_per_bin, num_bins), order = 'F')
-		avg_FR = np.nanmean(reorg_FR, axis = 0)
-		sem_FR = np.nanstd(reorg_FR, axis = 0)/np.sqrt(pts_per_bin)
+			sorted_Qvals_inds_BlockA = np.argsort(Q_mid_BlockA)
+			sorted_Qvals_inds_late = np.argsort(Q_late)
 
-		pval = np.zeros(num_bins)
-		for j in range(num_bins):
-			t, p = stats.ttest_ind(reorg_FR_BlockA[:,j], reorg_FR[:,j])
-			pval[j] = p
+			begin_BlockA = 0
+			begin_late = 0
+			dta_all = []
+			avg_FR_BlockA = np.zeros(5)
+			avg_FR_late = np.zeros(5)
+			sem_FR_BlockA = np.zeros(5)
+			sem_FR_late = np.zeros(5)
+			for j in range(len(hist_BlockA)):
+				data_BlockA = FR_BlockA[sorted_Qvals_inds_BlockA[begin_BlockA:begin_BlockA+hist_BlockA[j]]]
+				data_late = FR_late[sorted_Qvals_inds_late[begin_late:begin_late+hist_late[j]]]
+				begin_BlockA += hist_BlockA[j]
+				begin_late += hist_late[j]
 
-		plt.figure(k)
-		plt.subplot(1,2,2)
-		plt.errorbar(avg_Qvals, avg_FR, yerr = sem_FR/2., fmt = '--o', color = 'g', ecolor = 'g', label = 'Stim - Avg FR')
-		plt.ylim((0,1.1*fr_lim))
-		plt.xlim((0.9*xlim_min, 1.1*xlim_max))
-		plt.text(xlim_min,fr_lim,'P-values: %s' %(pval))
-		plt.legend()
+				avg_FR_BlockA[j] = np.nanmean(data_BlockA)
+				sem_FR_BlockA[j] = np.nanstd(data_BlockA)/np.sqrt(len(data_BlockA))
+				avg_FR_late[j] = np.nanmean(data_late)
+				sem_FR_late[j] = np.nanstd(data_late)/np.sqrt(len(data_late))
 
-	plt.show()
+				for item in data_BlockA:
+					dta_all += [(j,0,item)]
+
+				for item in data_late:
+					dta_all += [(j,1,item)]
+
+			dta_all = pd.DataFrame(dta_all, columns = ['Bin', 'Condition', 'FR'])
+			bin_centers = (bins[1:] + bins[:-1])/2.
+			print len(bin_centers)
+			print len(avg_FR_late)
+			
+			'''
+			formula = 'FR ~ C(Bin) + C(Condition) + C(Bin):C(Condition)'
+			model = ols(formula, dta_all).fit()
+			aov_table = anova_lm(model, typ=2)
+
+			print "Two-way ANOVA analysis"
+			print(aov_table)
+			'''
+
+			# Get binned firing rates: average firing rate for each of num_bins equally populated action value bins
+			sorted_Qvals_inds = np.argsort(Q_mid[trial_inds])
+			pts_per_bin = len(trial_inds)/num_bins
+			reorg_Qvals = np.reshape(Q_mid[trial_inds][sorted_Qvals_inds[:pts_per_bin*num_bins]], (pts_per_bin, num_bins), order = 'F')
+			avg_Qvals = np.nanmean(reorg_Qvals, axis = 0)
+
+			reorg_FR = np.reshape(y[sorted_Qvals_inds[:pts_per_bin*num_bins]], (pts_per_bin, num_bins), order = 'F')
+			avg_FR = np.nanmean(reorg_FR, axis = 0)
+			sem_FR = np.nanstd(reorg_FR, axis = 0)/np.sqrt(pts_per_bin)
+
+			plt.figure(k)
+			plt.subplot(1,3,2)
+			plt.errorbar(avg_Qvals, avg_FR, yerr = sem_FR/2., fmt = '--o', color = 'c', ecolor = 'c', label = 'Stim - Avg FR')
+			plt.ylim((0,1.1*fr_lim))
+			plt.xlim((0.9*Q_range_min, 1.1*Q_range_max))
+			plt.legend()
+
+			plt.figure(k)
+			plt.subplot(1,3,3)
+			plt.errorbar(bin_centers, avg_FR_BlockA, yerr = sem_FR_BlockA, fmt = '--o', color = 'k', ecolor = 'k', label = 'Learning - Avg FR')
+			plt.errorbar(bin_centers, avg_FR_late, yerr = sem_FR_late, fmt = '--o', color = 'c', ecolor = 'c', label = 'Stim - Avg FR')
+			plt.ylim((0,1.1*fr_lim))
+			plt.xlim((0.9*Q_range_min, 1.1*Q_range_max))
+			plt.legend()
+
+			# Save data
+			data_filename = session_name + ' - Channel %i - Unit %i' %(channel, k)
+			data = dict()
+			data['regression_labels'] = ['Q_low', 'Q_mid', 'Q_high','RT', 'MT', 'Choice', 'Reward', 'Q_low_on', 'Q_mid_on', 'Q_high_on']
+			data['beta_values_blockA'] = fit_glm.params
+			data['pvalues_blockA'] = fit_glm.pvalues
+			data['rsquared_blockA'] = fit_glm.rsquared
+			data['beta_values_blocksAB'] = fit_glm_late.params
+			data['pvalues_blocksAB'] = fit_glm_late.pvalues
+			data['rsquared_blocksAB'] = fit_glm_late.rsquared
+			data['Q_mid_early'] = Q_mid_BlockA
+			data['Q_mid_late'] = Q_late
+			data['FR_early'] = FR_BlockA
+			data['FR_late'] = FR_late
+			sp.io.savemat( dir + 'picture_onset_fr/' + data_filename + '.mat', data)
+		except:
+			pass
+
+	#plt.show()
 
 
-	return window_fr, window_fr_smooth, fr_mat, x, y, Q_low, Q_mid, Q_high, Q_learning, Q_late, FR_learning, FR_late
+	
+	#return window_fr, window_fr_smooth, fr_mat, x, y, Q_low, Q_mid, Q_high, Q_learning, Q_late, FR_learning, FR_late, fit_glm
+	return Q_low, Q_mid, Q_high
 
 def ThreeTargetTask_PeakFiringRatesWithValue_PictureOnset(hdf_files, syncHDF_files, spike_files, channel, t_before, t_after):
 	'''

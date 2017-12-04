@@ -82,7 +82,7 @@ class OfflineSorted_CSVFile():
 			sc_chan = np.unique(self.sort_code[unit_chan])
 			sc_chan = np.array([sc for sc in sc_chan if sc != 31])
 			if sc_chan.size == 0:
-				avg_firing_rates[chan] = np.nan
+				avg_firing_rates[chan] = np.array([np.nan])
 			else:
 				unit_rates = np.zeros(len(sc_chan))
 				for i, sc in enumerate(sc_chan):
