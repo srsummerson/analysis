@@ -94,6 +94,36 @@ class OfflineSorted_CSVFile():
 
 		return avg_firing_rates
 
+	def get_avg_firing_rates_range(self,channs, t_start, t_stop):
+		'''
+		Method that returns the average firing rates of the channels listed in channs over the time range defined
+		by t_start and t_stop.
+
+		Input:
+		- channs: list or array of channels (all integers)
+		- t_start: float representing time (s) at which to begin counting spikes
+		- t_stop: float representing time (s) at whic to stop counting spikes
+		'''
+		avg_firing_rates = dict()
+		for chan in channs:
+			# First find number of units recorded on this channel
+			unit_chan = np.ravel(np.nonzero(np.equal(self.channel, chan)))
+			sc_chan = np.unique(self.sort_code[unit_chan])
+			sc_chan = np.array([sc for sc in sc_chan if sc != 31])
+			if sc_chan.size == 0:
+				avg_firing_rates[chan] = np.array([np.nan])
+			else:
+				unit_rates = np.zeros(len(sc_chan))
+				for i, sc in enumerate(sc_chan):
+					sc_unit = np.ravel(np.nonzero(np.equal(self.sort_code[unit_chan], sc)))
+					data = self.times[unit_chan[sc_unit]]  	# times that this sort code on this channel was recorded
+					spikes = (data > t_start)&(data < t_stop)  	# find spikes in this window
+					unit_rates[i] = np.sum(spikes)/float(t_stop - t_start)		# count spikes and divide by window length
+				avg_firing_rates[chan] = unit_rates
+
+
+		return avg_firing_rates
+
 	def plot_avg_waveform(self,chann, sc):
 		'''
 		Method that plots the average waveform of the unit, as well as example traces.

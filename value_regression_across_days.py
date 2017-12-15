@@ -5,6 +5,11 @@ from os import listdir
 from scipy import io 
 import scipy as sp
 import matplotlib.pyplot as plt
+from scipy import stats
+import pandas as pd
+from statsmodels.formula.api import ols
+from statsmodels.stats.anova import anova_lm
+from statsmodels.stats.multicomp import pairwise_tukeyhsd
 
 # Define units of interest
 cd_units = [1, 3, 4, 17, 18, 20, 40, 41, 54, 56, 57, 63, 64, 72, 75, 81, 83, 88, 89, 96, 100, 112, 114, 126, 130, 140, 143, 146, 156, 157, 159]
@@ -95,11 +100,224 @@ spike_list_stim = [[[dir + 'Mario20161221_Block-1_eNe1_Offline.csv', dir + 'Mari
 			  ]
 spike_list = spike_list_sham + spike_list_stim
 
+
+def BinChangeInFiringRatesByValue(Q_early, Q_late, Q_bins, FR_early, FR_late):
+	'''
+	This method sorts FRs by their associated values and bins firing rates accordingly, in order to make a 
+	value versus FR curve where value is binned. 
+
+	Input:
+	- Q_early: list of arrays of Q-values, where each array corresponds to a particular unit and entry in the 
+				array corresponds to a trial. data is taken only from first 100 - 150 "early" trials.
+	- Q_late: list of arrays of Q-values, where each array corresponds to a particular unit and entry in the 
+				array corresponds to a trial. data is taken only starting from trial 200 or 250 ("late" trials).
+	- Q_bins: array defining bin edges for binning the Q-values
+	- FR_early: list of arrays of firing rates, where each array corresponds to a particular unit and entry in the
+				array corresponds to a trial. each entry in FR_early corresponds to an entry in Q_early.
+	- FR_late: list of arrays of firing rates, where each array corresponds to a particular unit and entry in the
+				array corresponds to a trial. each entry in FR_late corresponds to an entry in Q_late.
+	'''
+	num_units = len(Q_early)
+	num_bins = len(Q_bins) - 1
+	delta_FR = np.zeros((num_units,num_bins))
+	norm_delta_FR = np.zeros((num_units,num_bins))
+	total_nonnans_delta_FR = np.zeros(num_bins)
+	total_nonnans_norm_delta_FR = np.zeros(num_bins)
+	for i in range(num_units):
+		FR_e_means, bin_edges, binnumber = stats.binned_statistic(Q_early[i], FR_early[i], statistic= 'mean', bins = Q_bins)
+		FR_l_means, bin_edges, binnumber = stats.binned_statistic(Q_late[i], FR_late[i], statistic= 'mean', bins = Q_bins)
+		delta_FR[i,:] = FR_l_means - FR_e_means
+		norm_delta_FR[i,:] = delta_FR[i,:]/FR_e_means
+		total_nonnans_delta_FR += np.greater(np.abs(delta_FR[i,:]),0)
+		total_nonnans_norm_delta_FR += np.greater(np.abs(norm_delta_FR[i,:]), 0)
+	
+	avg_delta_FR = np.nanmean(delta_FR, axis = 0)
+	sem_delta_FR = np.nanstd(delta_FR, axis = 0)/np.sqrt(total_nonnans_delta_FR)
+	avg_norm_delta_FR = np.nanmean(norm_delta_FR, axis = 0)
+	sem_norm_delta_FR = np.nanstd(norm_delta_FR, axis = 0)/np.sqrt(total_nonnans_norm_delta_FR)
+
+	return Q_bins, delta_FR, norm_delta_FR, avg_delta_FR, sem_delta_FR, avg_norm_delta_FR, sem_norm_delta_FR
+
+def zscore_FR_together(FR_early, FR_late):
+	'''
+	Z-score corresponding arrays together.
+
+	Input:
+	- FR_early: list of arrays of firing rates, where each array corresponds to a particular unit and entry in the
+				array corresponds to a trial. each entry in FR_early corresponds to an entry in Q_early.
+	- FR_late: list of arrays of firing rates, where each array corresponds to a particular unit and entry in the
+				array corresponds to a trial. each entry in FR_late corresponds to an entry in Q_late.
+	Output:
+	- FR_early_zscore: same format as FR_early, but with entries z-scored using corresponding means and std from 
+				early and late arrays
+	- FR_late_zscore: same format as FR_late, but with entries z-scored using corresponding means and std from 
+				early and late arrays
+	'''
+	FR_early_zscore = []
+	FR_late_zscore = []
+	num_units = len(FR_early)
+	for i in range(num_units):
+		all_rates = np.append(FR_early[i], FR_late[i])
+		rate_mean = np.nanmean(all_rates)
+		rate_std = np.nanstd(all_rates)
+		FR_early_zscore += [(FR_early[i] - rate_mean)/float(rate_std)]
+		FR_late_zscore += [(FR_late[i] - rate_mean)/float(rate_std)]
+
+	return FR_early_zscore, FR_late_zscore
+
+def zscore_FR_separate(FR_late):
+	'''
+	Z-score corresponding arrays.
+
+	Input:
+	- FR_late: list of arrays of firing rates, where each array corresponds to a particular unit and entry in the
+				array corresponds to a trial. each entry in FR_late corresponds to an entry in Q_late.
+	Output:
+	- FR_late_zscore: same format as FR_late, but with entries z-scored using corresponding means and std from 
+				early and late arrays
+	'''
+	FR_late_zscore = []
+	num_units = len(FR_late)
+	for i in range(num_units):
+		all_rates = FR_late[i]
+		rate_mean = np.nanmean(all_rates)
+		rate_std = np.nanstd(all_rates)
+		FR_late_zscore += [(FR_late[i] - rate_mean)/float(rate_std)]
+
+	return FR_late_zscore
+
+def BinFiringRatesByValue(Q_early, Q_late, Q_bins, FR_early, FR_late):
+	'''
+	This method sorts FRs by their associated values and bins firing rates accordingly, in order to make a 
+	value versus FR curve where value is binned. 
+
+	Input:
+	- Q_early: list of arrays of Q-values, where each array corresponds to a particular unit and entry in the 
+				array corresponds to a trial. data is taken only from first 100 - 150 "early" trials.
+	- Q_late: list of arrays of Q-values, where each array corresponds to a particular unit and entry in the 
+				array corresponds to a trial. data is taken only starting from trial 200 or 250 ("late" trials).
+	- Q_bins: array defining bin edges for binning the Q-values
+	- FR_early: list of arrays of firing rates, where each array corresponds to a particular unit and entry in the
+				array corresponds to a trial. each entry in FR_early corresponds to an entry in Q_early.
+	- FR_late: list of arrays of firing rates, where each array corresponds to a particular unit and entry in the
+				array corresponds to a trial. each entry in FR_late corresponds to an entry in Q_late.
+	'''
+	num_units = len(Q_early)
+	num_bins = len(Q_bins) - 1
+	all_FR_early = np.array([])
+	all_FR_late = np.array([])
+
+	# add in z-scoring before flattening
+	FR_early_zscore, FR_late_zscore = zscore_FR_together(FR_early, FR_late)
+
+	all_FR_early = [item for sublist in FR_early_zscore for item in sublist]
+	all_FR_late = [item for sublist in FR_late_zscore for item in sublist]
+	all_Q_early = [item for sublist in Q_early for item in sublist]
+	all_Q_late = [item for sublist in Q_late for item in sublist]
+
+	FR_e_means, bin_edges, binnumber_e = stats.binned_statistic(all_Q_early, all_FR_early, statistic= 'mean', bins = Q_bins)
+	FR_l_means, bin_edges, binnumber_l = stats.binned_statistic(all_Q_late, all_FR_late, statistic= 'mean', bins = Q_bins)
+	
+	FR_e_sem = np.zeros(num_bins)
+	FR_l_sem = np.zeros(num_bins)
+
+	bin_FR_early_all = []
+	bin_FR_late_all = []
+
+	for i in range(1,num_bins+1):
+		bin_FR_early = [all_FR_early[ind] for ind in range(len(all_FR_early)) if binnumber_e[ind]==i]
+		bin_FR_late = [all_FR_late[ind] for ind in range(len(all_FR_late)) if binnumber_l[ind]==i]
+		FR_e_sem[i-1] = np.nanstd(bin_FR_early)/np.sqrt(len(bin_FR_early))
+		FR_l_sem[i-1] = np.nanstd(bin_FR_late)/np.sqrt(len(bin_FR_late))
+		bin_FR_early_all += [np.array(bin_FR_early)]
+		bin_FR_late_all += [np.array(bin_FR_late)]
+
+	return FR_e_means, FR_l_means, FR_e_sem, FR_l_sem, bin_FR_early_all, bin_FR_late_all
+
+def BinFiringRatesByValue_SepReg(Q_early, Q_late, Q_bins, FR_early, FR_late, beta_late):
+	'''
+	This method sorts FRs by their associated values and bins firing rates accordingly, in order to make a 
+	value versus FR curve where value is binned. 
+
+	Results are separated by units that had a positive beta coefficient relating to value and units that 
+	had a negative beta coefficient relating to value.
+
+	Input:
+	- Q_early: list of arrays of Q-values, where each array corresponds to a particular unit and entry in the 
+				array corresponds to a trial. data is taken only from first 100 - 150 "early" trials.
+	- Q_late: list of arrays of Q-values, where each array corresponds to a particular unit and entry in the 
+				array corresponds to a trial. data is taken only starting from trial 200 or 250 ("late" trials).
+	- Q_bins: array defining bin edges for binning the Q-values
+	- FR_early: list of arrays of firing rates, where each array corresponds to a particular unit and entry in the
+				array corresponds to a trial. each entry in FR_early corresponds to an entry in Q_early.
+	- FR_late: list of arrays of firing rates, where each array corresponds to a particular unit and entry in the
+				array corresponds to a trial. each entry in FR_late corresponds to an entry in Q_late.
+	'''
+	num_units = len(Q_early)
+	num_bins = len(Q_bins) - 1
+	all_FR_early = np.array([])
+	all_FR_late = np.array([])
+
+	# add in z-scoring before flattening
+	FR_early_zscore, FR_late_zscore = zscore_FR_together(FR_early, FR_late)
+	FR_late_zscore = zscore_FR_separate(FR_late)
+
+	all_FR_early_posreg = [item for i,sublist in enumerate(FR_early_zscore) for item in sublist if beta_late[i] > 0]
+	all_FR_late_posreg = [item for i,sublist in enumerate(FR_late_zscore) for item in sublist if beta_late[i] > 0]
+	all_Q_early_posreg = [item for i,sublist in enumerate(Q_early) for item in sublist if beta_late[i] > 0]
+	all_Q_late_posreg = [item for i,sublist in enumerate(Q_late) for item in sublist if beta_late[i] > 0]
+
+	all_FR_early_negreg = [item for i,sublist in enumerate(FR_early_zscore) for item in sublist if beta_late[i] < 0]
+	all_FR_late_negreg = [item for i,sublist in enumerate(FR_late_zscore) for item in sublist if beta_late[i] < 0]
+	all_Q_early_negreg = [item for i,sublist in enumerate(Q_early) for item in sublist if beta_late[i] < 0]
+	all_Q_late_negreg = [item for i,sublist in enumerate(Q_late) for item in sublist if beta_late[i] < 0]
+
+	FR_e_means_posreg, bin_edges, binnumber_e_posreg = stats.binned_statistic(all_Q_early_posreg, all_FR_early_posreg, statistic= 'mean', bins = Q_bins)
+	FR_l_means_posreg, bin_edges, binnumber_l_posreg = stats.binned_statistic(all_Q_late_posreg, all_FR_late_posreg, statistic= 'mean', bins = Q_bins)
+	
+	FR_e_means_negreg, bin_edges, binnumber_e_negreg = stats.binned_statistic(all_Q_early_negreg, all_FR_early_negreg, statistic= 'mean', bins = Q_bins)
+	FR_l_means_negreg, bin_edges, binnumber_l_negreg = stats.binned_statistic(all_Q_late_negreg, all_FR_late_negreg, statistic= 'mean', bins = Q_bins)
+	
+
+	FR_e_sem_posreg = np.zeros(num_bins)
+	FR_l_sem_posreg = np.zeros(num_bins)
+	FR_e_sem_negreg = np.zeros(num_bins)
+	FR_l_sem_negreg = np.zeros(num_bins)
+
+	bin_FR_early_posreg_all = []
+	bin_FR_late_posreg_all = []
+	bin_FR_early_negreg_all = []
+	bin_FR_late_negreg_all = []
+
+	for i in range(1,num_bins+1):
+		bin_FR_early_posreg = [all_FR_early_posreg[ind] for ind in range(len(all_FR_early_posreg)) if binnumber_e_posreg[ind]==i]
+		bin_FR_late_posreg = [all_FR_late_posreg[ind] for ind in range(len(all_FR_late_posreg)) if binnumber_l_posreg[ind]==i]
+		
+		FR_e_sem_posreg[i-1] = np.nanstd(bin_FR_early_posreg)/np.sqrt(len(bin_FR_early_posreg))
+		FR_l_sem_posreg[i-1] = np.nanstd(bin_FR_late_posreg)/np.sqrt(len(bin_FR_late_posreg))
+
+		bin_FR_early_negreg = [all_FR_early_negreg[ind] for ind in range(len(all_FR_early_negreg)) if binnumber_e_negreg[ind]==i]
+		bin_FR_late_negreg = [all_FR_late_negreg[ind] for ind in range(len(all_FR_late_negreg)) if binnumber_l_negreg[ind]==i]
+		
+		FR_e_sem_negreg[i-1] = np.nanstd(bin_FR_early_negreg)/np.sqrt(len(bin_FR_early_negreg))
+		FR_l_sem_negreg[i-1] = np.nanstd(bin_FR_late_negreg)/np.sqrt(len(bin_FR_late_negreg))
+
+		bin_FR_early_posreg_all += [np.array(bin_FR_early_posreg)]
+		bin_FR_late_posreg_all += [np.array(bin_FR_late_posreg)]
+		bin_FR_early_negreg_all += [np.array(bin_FR_early_negreg)]
+		bin_FR_late_negreg_all += [np.array(bin_FR_late_negreg)]
+
+	return FR_e_means_posreg, FR_e_means_negreg, FR_l_means_posreg, FR_l_means_negreg, FR_e_sem_posreg, FR_e_sem_negreg, FR_l_sem_posreg, FR_l_sem_negreg, \
+			bin_FR_early_posreg_all, bin_FR_late_posreg_all, bin_FR_early_negreg_all, bin_FR_late_negreg_all
+
+####### Start code
+
+
 # Define code parameters
 t_before = 0.
 t_after = 0.4
 smoothed = 1
-
+"""
 # Loop through sessions to compute regressions per session
 for j in range(len(hdf_list))[15:16]:
 	# Pull out the relevant session's data
@@ -132,7 +350,7 @@ for j in range(len(hdf_list))[15:16]:
 	for k,item in enumerate(good_units):
 		output = ThreeTargetTask_RegressedFiringRatesWithValue_PictureOnset(hdf_files, syncHDF_files, spike_files, item, t_before, t_after, smoothed)
 
-
+"""
 '''
 Average across all files
 '''
@@ -210,22 +428,48 @@ channels_blocksAB_acc = np.array([])
 
 stim_file = 0
 
-Q_late_mv_cd = np.array([])
-Q_early_mv_cd = np.array([])
-FR_late_mv_cd = np.array([])
-FR_early_mv_cd = np.array([])
-Q_late_other_cd = np.array([])
-Q_early_other_cd = np.array([])
-FR_late_other_cd = np.array([])
-FR_early_other_cd = np.array([])
-Q_late_mv_acc = np.array([])
-Q_early_mv_acc = np.array([])
-FR_late_mv_acc = np.array([])
-FR_early_mv_acc = np.array([])
-Q_late_other_acc = np.array([])
-Q_early_other_acc = np.array([])
-FR_late_other_acc = np.array([])
-FR_early_other_acc = np.array([])
+Q_late_mv_cd_sham = []
+Q_early_mv_cd_sham = []
+FR_late_mv_cd_sham = []
+FR_early_mv_cd_sham = []
+Q_late_other_cd_sham = []
+Q_early_other_cd_sham = []
+FR_late_other_cd_sham = []
+FR_early_other_cd_sham = []
+Q_late_mv_acc_sham = []
+Q_early_mv_acc_sham = []
+FR_late_mv_acc_sham = []
+FR_early_mv_acc_sham = []
+Q_late_other_acc_sham = []
+Q_early_other_acc_sham = []
+FR_late_other_acc_sham = []
+FR_early_other_acc_sham = []
+
+Q_late_mv_cd_stim = []
+Q_early_mv_cd_stim = []
+FR_late_mv_cd_stim = []
+FR_early_mv_cd_stim = []
+Q_late_other_cd_stim = []
+Q_early_other_cd_stim = []
+FR_late_other_cd_stim = []
+FR_early_other_cd_stim = []
+Q_late_mv_acc_stim = []
+Q_early_mv_acc_stim = []
+FR_late_mv_acc_stim = []
+FR_early_mv_acc_stim = []
+Q_late_other_acc_stim = []
+Q_early_other_acc_stim = []
+FR_late_other_acc_stim = []
+FR_early_other_acc_stim = []
+
+# recording beta values for mv coding units
+beta_late_mv_cd_stim = np.array([])
+beta_late_mv_acc_stim = np.array([])
+beta_late_mv_cd_sham = np.array([])
+beta_late_mv_acc_sham = np.array([])
+
+
+syncHDF_list_stim_flat = [item for sublist in syncHDF_list_stim for item in sublist]
 
 for filen in filenames:
 	data = dict()
@@ -234,12 +478,13 @@ for filen in filenames:
 	unit_ind = filen.index('Unit')
 	channel_num = float(filen[chan_ind + 8:unit_ind - 3])
 
-	sync_name = filen[:chan_ind-3] + '_syncHDF.mat'
-	if sync_name in syncHDF_list_stim:
+	sync_name = dir + filen[:chan_ind-3] + '_syncHDF.mat'
+	#print sync_name
+	if sync_name in syncHDF_list_stim_flat:
 		stim_file = 1
 	else:
 		stim_file = 0
-
+	#print stim_file
 	
 	regression_labels = data['regression_labels']
 
@@ -266,6 +511,10 @@ for filen in filenames:
 				LV_enc = 1
 			if val_check[1]==1 or val_check[4]==1:
 				MV_enc = 1
+				if val_check[1]==1:
+					beta_early_mv = sig_beta_blockA[1]
+				else:
+					beta_early_mv = sig_beta_blockA[8]
 			if val_check[2]==1 or val_check[5]==1:
 				HV_enc = 1
 
@@ -318,6 +567,10 @@ for filen in filenames:
 				LV_enc = 1
 			if val_check[1]==1 or val_check[4]==1:
 				MV_enc = 1
+				if val_check[1]==1:
+					beta_late_mv = sig_beta_blocksAB[1]
+				else:
+					beta_late_mv = sig_beta_blocksAB[8]
 			if val_check[2]==1 or val_check[5]==1:
 				HV_enc = 1
 
@@ -327,52 +580,116 @@ for filen in filenames:
 			FR_early = np.ravel(data['FR_early'])
 			if ((LV_enc==0) and (MV_enc==1) and (HV_enc==0)):
 				count_MV_blocksAB_cd += 1
-				Q_late_mv_cd = np.append(Q_late_mv_cd, Q_late)
-				Q_early_mv_cd = np.append(Q_early_mv_cd, Q_early)
-				FR_late_mv_cd = np.append(FR_late_mv_cd, FR_late)
-				FR_early_mv_cd = np.append(FR_early_mv_cd, FR_early)
+				if stim_file:
+					Q_late_mv_cd_stim += [Q_late]
+					Q_early_mv_cd_stim += [Q_early]
+					FR_late_mv_cd_stim += [FR_late]
+					FR_early_mv_cd_stim += [FR_early]
+					beta_late_mv_cd_stim = np.append(beta_late_mv_cd_stim, beta_late_mv)
+					#beta_early_mv_cd_stim = np.append(beta_early_mv_cd_stim, beta_early_mv)
+				else:
+					Q_late_mv_cd_sham += [Q_late]
+					Q_early_mv_cd_sham += [Q_early]
+					FR_late_mv_cd_sham += [FR_late]
+					FR_early_mv_cd_sham += [FR_early]
+					beta_late_mv_cd_sham = np.append(beta_late_mv_cd_sham, beta_late_mv)
+					#beta_early_mv_cd_sham = np.append(beta_early_mv_cd_sham, beta_early_mv)
 			elif ((LV_enc==1) and (MV_enc==0) and (HV_enc==0)):
 				count_LV_blocksAB_cd += 1
-				Q_late_other_cd = np.append(Q_late_other_cd, Q_late)
-				Q_early_other_cd = np.append(Q_early_other_cd, Q_early)
-				FR_late_other_cd = np.append(FR_late_other_cd, FR_late)
-				FR_early_other_cd = np.append(FR_early_other_cd, FR_early)
+				if stim_file:
+					Q_late_other_cd_stim += [Q_late]
+					Q_early_other_cd_stim += [Q_early]
+					FR_late_other_cd_stim += [FR_late]
+					FR_early_other_cd_stim += [FR_early]
+				else:
+					Q_late_other_cd_sham += [Q_late]
+					Q_early_other_cd_sham += [Q_early]
+					FR_late_other_cd_sham += [FR_late]
+					FR_early_other_cd_sham += [FR_early]
 			elif ((LV_enc==0) and (MV_enc==0) and (HV_enc==1)):
 				count_HV_blocksAB_cd += 1
-				Q_late_other_cd = np.append(Q_late_other_cd, Q_late)
-				Q_early_other_cd = np.append(Q_early_other_cd, Q_early)
-				FR_late_other_cd = np.append(FR_late_other_cd, FR_late)
-				FR_early_other_cd = np.append(FR_early_other_cd, FR_early)
+				if stim_file:
+					Q_late_other_cd_stim += [Q_late]
+					Q_early_other_cd_stim += [Q_early]
+					FR_late_other_cd_stim += [FR_late]
+					FR_early_other_cd_stim += [FR_early]
+				else:
+					Q_late_other_cd_sham += [Q_late]
+					Q_early_other_cd_sham += [Q_early]
+					FR_late_other_cd_sham += [FR_late]
+					FR_early_other_cd_sham += [FR_early]
 			elif ((LV_enc==1) and (MV_enc==1) and (HV_enc==0)):
 				count_LVMV_blocksAB_cd += 1
-				Q_late_mv_cd = np.append(Q_late_mv_cd, Q_late)
-				Q_early_mv_cd = np.append(Q_early_mv_cd, Q_early)
-				FR_late_mv_cd = np.append(FR_late_mv_cd, FR_late)
-				FR_early_mv_cd = np.append(FR_early_mv_cd, FR_early)
+				if stim_file:
+					Q_late_mv_cd_stim += [Q_late]
+					Q_early_mv_cd_stim += [Q_early]
+					FR_late_mv_cd_stim += [FR_late]
+					FR_early_mv_cd_stim += [FR_early]
+					beta_late_mv_cd_stim = np.append(beta_late_mv_cd_stim, beta_late_mv)
+					#beta_early_mv_cd_stim = np.append(beta_early_mv_cd_stim, beta_early_mv)
+				else:
+					Q_late_mv_cd_sham += [Q_late]
+					Q_early_mv_cd_sham += [Q_early]
+					FR_late_mv_cd_sham += [FR_late]
+					FR_early_mv_cd_sham += [FR_early]
+					beta_late_mv_cd_sham = np.append(beta_late_mv_cd_sham, beta_late_mv)
+					#beta_early_mv_cd_sham = np.append(beta_early_mv_cd_sham, beta_early_mv)
 			elif ((LV_enc==1) and (MV_enc==0) and (HV_enc==1)):
 				count_LVHV_blocksAB_cd += 1
-				Q_late_other_cd = np.append(Q_late_other_cd, Q_late)
-				Q_early_other_cd = np.append(Q_early_other_cd, Q_early)
-				FR_late_other_cd = np.append(FR_late_other_cd, FR_late)
-				FR_early_other_cd = np.append(FR_early_other_cd, FR_early)
+				if stim_file:
+					Q_late_other_cd_stim += [Q_late]
+					Q_early_other_cd_stim += [Q_early]
+					FR_late_other_cd_stim += [FR_late]
+					FR_early_other_cd_stim += [FR_early]
+				else:
+					Q_late_other_cd_sham += [Q_late]
+					Q_early_other_cd_sham += [Q_early]
+					FR_late_other_cd_sham += [FR_late]
+					FR_early_other_cd_sham += [FR_early]
 			elif ((LV_enc==0) and (MV_enc==1) and (HV_enc==1)):
 				count_MVHV_blocksAB_cd += 1
-				Q_late_mv_cd = np.append(Q_late_mv_cd, Q_late)
-				Q_early_mv_cd = np.append(Q_early_mv_cd, Q_early)
-				FR_late_mv_cd = np.append(FR_late_mv_cd, FR_late)
-				FR_early_mv_cd = np.append(FR_early_mv_cd, FR_early)
+				if stim_file:
+					Q_late_mv_cd_stim += [Q_late]
+					Q_early_mv_cd_stim += [Q_early]
+					FR_late_mv_cd_stim += [FR_late]
+					FR_early_mv_cd_stim += [FR_early]
+					beta_late_mv_cd_stim = np.append(beta_late_mv_cd_stim, beta_late_mv)
+					#beta_early_mv_cd_stim = np.append(beta_early_mv_cd_stim, beta_early_mv)
+				else:
+					Q_late_mv_cd_sham += [Q_late]
+					Q_early_mv_cd_sham += [Q_early]
+					FR_late_mv_cd_sham += [FR_late]
+					FR_early_mv_cd_sham += [FR_early]
+					beta_late_mv_cd_sham = np.append(beta_late_mv_cd_sham, beta_late_mv)
+					#beta_early_mv_cd_sham = np.append(beta_early_mv_cd_sham, beta_early_mv)
 			elif ((LV_enc==1) and (MV_enc==1) and (HV_enc==1)):
 				count_LVMVHV_blocksAB_cd += 1
-				Q_late_mv_cd = np.append(Q_late_mv_cd, Q_late)
-				Q_early_mv_cd = np.append(Q_early_mv_cd, Q_early)
-				FR_late_mv_cd = np.append(FR_late_mv_cd, FR_late)
-				FR_early_mv_cd = np.append(FR_early_mv_cd, FR_early)
+				if stim_file:
+					Q_late_mv_cd_stim += [Q_late]
+					Q_early_mv_cd_stim += [Q_early]
+					FR_late_mv_cd_stim += [FR_late]
+					FR_early_mv_cd_stim += [FR_early]
+					beta_late_mv_cd_stim = np.append(beta_late_mv_cd_stim, beta_late_mv)
+					#beta_early_mv_cd_stim = np.append(beta_early_mv_cd_stim, beta_early_mv)
+				else:
+					Q_late_mv_cd_sham += [Q_late]
+					Q_early_mv_cd_sham += [Q_early]
+					FR_late_mv_cd_sham += [FR_late]
+					FR_early_mv_cd_sham += [FR_early]
+					beta_late_mv_cd_sham = np.append(beta_late_mv_cd_sham, beta_late_mv)
+					#beta_early_mv_cd_sham = np.append(beta_early_mv_cd_sham, beta_early_mv)
 			else:
 				no_val_enc = 1
-				Q_late_other_cd = np.append(Q_late_other_cd, Q_late)
-				Q_early_other_cd = np.append(Q_early_other_cd, Q_early)
-				FR_late_other_cd = np.append(FR_late_other_cd, FR_late)
-				FR_early_other_cd = np.append(FR_early_other_cd, FR_early)
+				if stim_file:
+					Q_late_other_cd_stim += [Q_late]
+					Q_early_other_cd_stim += [Q_early]
+					FR_late_other_cd_stim += [FR_late]
+					FR_early_other_cd_stim += [FR_early]
+				else:
+					Q_late_other_cd_sham += [Q_late]
+					Q_early_other_cd_sham += [Q_early]
+					FR_late_other_cd_sham += [FR_late]
+					FR_early_other_cd_sham += [FR_early]
 
 			if no_val_enc:
 				max_beta = np.argmax(np.abs(sig_beta_blocksAB))
@@ -412,6 +729,10 @@ for filen in filenames:
 				LV_enc = 1
 			if val_check[1]==1 or val_check[4]==1:
 				MV_enc = 1
+				if val_check[1]==1:
+					beta_early_mv = sig_beta_blockA[1]
+				else:
+					beta_early_mv = sig_beta_blockA[8]
 			if val_check[2]==1 or val_check[5]==1:
 				HV_enc = 1
 
@@ -464,6 +785,10 @@ for filen in filenames:
 				LV_enc = 1
 			if val_check[1]==1 or val_check[4]==1:
 				MV_enc = 1
+				if val_check[1]==1:
+					beta_late_mv = sig_beta_blocksAB[1]
+				else:
+					beta_late_mv = sig_beta_blocksAB[8]
 			if val_check[2]==1 or val_check[5]==1:
 				HV_enc = 1
 
@@ -472,53 +797,117 @@ for filen in filenames:
 			Q_early = np.ravel(data['Q_mid_early'])
 			FR_early = np.ravel(data['FR_early'])
 			if ((LV_enc==0) and (MV_enc==1) and (HV_enc==0)):
-				count_MV_blocksAB_cd += 1
-				Q_late_mv_acc = np.append(Q_late_mv_acc, Q_late)
-				Q_early_mv_acc = np.append(Q_early_mv_acc, Q_early)
-				FR_late_mv_acc = np.append(FR_late_mv_acc, FR_late)
-				FR_early_mv_acc = np.append(FR_early_mv_acc, FR_early)
+				count_MV_blocksAB_acc += 1
+				if stim_file:
+					Q_late_mv_acc_stim += [Q_late]
+					Q_early_mv_acc_stim += [Q_early]
+					FR_late_mv_acc_stim += [FR_late]
+					FR_early_mv_acc_stim += [FR_early]
+					beta_late_mv_acc_stim = np.append(beta_late_mv_acc_stim, beta_late_mv)
+					#beta_early_mv_acc_stim = np.append(beta_early_mv_acc_stim, beta_early_mv)
+				else:
+					Q_late_mv_acc_sham += [Q_late]
+					Q_early_mv_acc_sham += [Q_early]
+					FR_late_mv_acc_sham += [FR_late]
+					FR_early_mv_acc_sham += [FR_early]
+					beta_late_mv_acc_sham = np.append(beta_late_mv_acc_sham, beta_late_mv)
+					#beta_early_mv_acc_sham = np.append(beta_early_mv_acc_sham, beta_early_mv)
 			elif ((LV_enc==1) and (MV_enc==0) and (HV_enc==0)):
-				count_LV_blocksAB_cd += 1
-				Q_late_other_acc = np.append(Q_late_other_acc, Q_late)
-				Q_early_other_acc = np.append(Q_early_other_acc, Q_early)
-				FR_late_other_acc = np.append(FR_late_other_acc, FR_late)
-				FR_early_other_acc = np.append(FR_early_other_acc, FR_early)
+				count_LV_blocksAB_acc += 1
+				if stim_file:
+					Q_late_other_acc_stim += [Q_late]
+					Q_early_other_acc_stim += [Q_early]
+					FR_late_other_acc_stim += [FR_late]
+					FR_early_other_acc_stim += [FR_early]
+				else:
+					Q_late_other_acc_sham += [Q_late]
+					Q_early_other_acc_sham += [Q_early]
+					FR_late_other_acc_sham += [FR_late]
+					FR_early_other_acc_sham += [FR_early]
 			elif ((LV_enc==0) and (MV_enc==0) and (HV_enc==1)):
-				count_HV_blocksAB_cd += 1
-				Q_late_other_acc = np.append(Q_late_other_acc, Q_late)
-				Q_early_other_acc = np.append(Q_early_other_acc, Q_early)
-				FR_late_other_acc = np.append(FR_late_other_acc, FR_late)
-				FR_early_other_acc = np.append(FR_early_other_acc, FR_early)
+				count_HV_blocksAB_acc += 1
+				if stim_file:
+					Q_late_other_acc_stim += [Q_late]
+					Q_early_other_acc_stim += [Q_early]
+					FR_late_other_acc_stim += [FR_late]
+					FR_early_other_acc_stim += [FR_early]
+				else:
+					Q_late_other_acc_sham += [Q_late]
+					Q_early_other_acc_sham += [Q_early]
+					FR_late_other_acc_sham += [FR_late]
+					FR_early_other_acc_sham += [FR_early]
 			elif ((LV_enc==1) and (MV_enc==1) and (HV_enc==0)):
-				count_LVMV_blocksAB_cd += 1
-				Q_late_mv_acc = np.append(Q_late_mv_acc, Q_late)
-				Q_early_mv_acc = np.append(Q_early_mv_acc, Q_early)
-				FR_late_mv_acc = np.append(FR_late_mv_acc, FR_late)
-				FR_early_mv_acc = np.append(FR_early_mv_acc, FR_early)
+				count_LVMV_blocksAB_acc += 1
+				if stim_file:
+					Q_late_mv_acc_stim += [Q_late]
+					Q_early_mv_acc_stim += [Q_early]
+					FR_late_mv_acc_stim += [FR_late]
+					FR_early_mv_acc_stim += [FR_early]
+					beta_late_mv_acc_stim = np.append(beta_late_mv_acc_stim, beta_late_mv)
+					#beta_early_mv_acc_stim = np.append(beta_early_mv_acc_stim, beta_early_mv)
+				else:
+					Q_late_mv_acc_sham += [Q_late]
+					Q_early_mv_acc_sham += [Q_early]
+					FR_late_mv_acc_sham += [FR_late]
+					FR_early_mv_acc_sham += [FR_early]
+					beta_late_mv_acc_sham = np.append(beta_late_mv_acc_sham, beta_late_mv)
+					#beta_early_mv_acc_sham = np.append(beta_early_mv_acc_sham, beta_early_mv)
 			elif ((LV_enc==1) and (MV_enc==0) and (HV_enc==1)):
-				count_LVHV_blocksAB_cd += 1
-				Q_late_other_acc = np.append(Q_late_other_acc, Q_late)
-				Q_early_other_acc = np.append(Q_early_other_acc, Q_early)
-				FR_late_other_acc = np.append(FR_late_other_acc, FR_late)
-				FR_early_other_acc = np.append(FR_early_other_acc, FR_early)
+				count_LVHV_blocksAB_acc += 1
+				if stim_file:
+					Q_late_other_acc_stim += [Q_late]
+					Q_early_other_acc_stim += [Q_early]
+					FR_late_other_acc_stim += [FR_late]
+					FR_early_other_acc_stim += [FR_early]
+				else:
+					Q_late_other_acc_sham += [Q_late]
+					Q_early_other_acc_sham += [Q_early]
+					FR_late_other_acc_sham += [FR_late]
+					FR_early_other_acc_sham += [FR_early]
 			elif ((LV_enc==0) and (MV_enc==1) and (HV_enc==1)):
-				count_MVHV_blocksAB_cd += 1
-				Q_late_mv_acc = np.append(Q_late_mv_acc, Q_late)
-				Q_early_mv_acc = np.append(Q_early_mv_acc, Q_early)
-				FR_late_mv_acc = np.append(FR_late_mv_acc, FR_late)
-				FR_early_mv_acc = np.append(FR_early_mv_acc, FR_early)
+				count_MVHV_blocksAB_acc += 1
+				if stim_file:
+					Q_late_mv_acc_stim += [Q_late]
+					Q_early_mv_acc_stim += [Q_early]
+					FR_late_mv_acc_stim += [FR_late]
+					FR_early_mv_acc_stim += [FR_early]
+					beta_late_mv_acc_stim = np.append(beta_late_mv_acc_stim, beta_late_mv)
+					#beta_early_mv_acc_stim = np.append(beta_early_mv_acc_stim, beta_early_mv)
+				else:
+					Q_late_mv_acc_sham += [Q_late]
+					Q_early_mv_acc_sham += [Q_early]
+					FR_late_mv_acc_sham += [FR_late]
+					FR_early_mv_acc_sham += [FR_early]
+					beta_late_mv_acc_sham = np.append(beta_late_mv_acc_sham, beta_late_mv)
+					#beta_early_mv_acc_sham = np.append(beta_early_mv_acc_sham, beta_early_mv)
 			elif ((LV_enc==1) and (MV_enc==1) and (HV_enc==1)):
-				count_LVMVHV_blocksAB_cd += 1
-				Q_late_mv_acc = np.append(Q_late_mv_acc, Q_late)
-				Q_early_mv_acc = np.append(Q_early_mv_acc, Q_early)
-				FR_late_mv_acc = np.append(FR_late_mv_acc, FR_late)
-				FR_early_mv_acc = np.append(FR_early_mv_acc, FR_early)
+				count_LVMVHV_blocksAB_acc += 1
+				if stim_file:
+					Q_late_mv_acc_stim += [Q_late]
+					Q_early_mv_acc_stim += [Q_early]
+					FR_late_mv_acc_stim += [FR_late]
+					FR_early_mv_acc_stim += [FR_early]
+					beta_late_mv_acc_stim = np.append(beta_late_mv_acc_stim, beta_late_mv)
+					#beta_early_mv_acc_stim = np.append(beta_early_mv_acc_stim, beta_early_mv)
+				else:
+					Q_late_mv_acc_sham += [Q_late]
+					Q_early_mv_acc_sham += [Q_early]
+					FR_late_mv_acc_sham += [FR_late]
+					FR_early_mv_acc_sham += [FR_early]
+					beta_late_mv_acc_sham = np.append(beta_late_mv_acc_sham, beta_late_mv)
+					#beta_early_mv_acc_sham = np.append(beta_early_mv_acc_sham, beta_early_mv)
 			else:
 				no_val_enc = 1
-				Q_late_other_acc = np.append(Q_late_other_acc, Q_late)
-				Q_early_other_acc = np.append(Q_early_other_acc, Q_early)
-				FR_late_other_acc = np.append(FR_late_other_acc, FR_late)
-				FR_early_other_acc = np.append(FR_early_other_acc, FR_early)
+				if stim_file:
+					Q_late_other_acc_stim += [Q_late]
+					Q_early_other_acc_stim += [Q_early]
+					FR_late_other_acc_stim += [FR_late]
+					FR_early_other_acc_stim += [FR_early]
+				else:
+					Q_late_other_acc_sham += [Q_late]
+					Q_early_other_acc_sham += [Q_early]
+					FR_late_other_acc_sham += [FR_late]
+					FR_early_other_acc_sham += [FR_early]
 
 			if no_val_enc:
 				max_beta = np.argmax(np.abs(sig_beta_blocksAB))
@@ -575,6 +964,10 @@ ind = np.arange(2)
 plt.figure()
 plt.bar(ind, avg_rsquared_cd, width, color = 'y', yerr = sem_rsquared_cd, label = 'Cd')
 plt.bar(ind+width, avg_rsquared_acc, width, color = 'g', yerr = sem_rsquared_acc, label = 'ACC')
+plt.text(ind[0]+0.1,0.35,'r2=%0.2f' % (avg_rsquared_cd[0]))
+plt.text(ind[1]+0.1,0.30,'r2=%0.2f' % (avg_rsquared_cd[1]))
+plt.text(ind[0]+0.1+width,0.30,'r2=%0.2f' % (avg_rsquared_acc[0]))
+plt.text(ind[1]+0.1+width,0.25,'r2=%0.2f' % (avg_rsquared_acc[1]))
 xticklabels = ['Block A', 'Blocks A and B']
 xticks = ind + width/2
 plt.xticks(xticks, xticklabels)
@@ -620,16 +1013,16 @@ fracs_blocksAB_acc = [all_value_blocksAB_acc/count_blocksAB_acc, count_rt_blocks
 plt.figure()
 plt.subplot(2,2,1)
 plt.pie(fracs_blockA_cd, labels = labels, autopct='%.2f%%', shadow = False)
-plt.title('Cd - Block A')
+plt.title('Cd - Block A - n = %0.f' % (count_blockA_cd))
 plt.subplot(2,2,2)
 plt.pie(fracs_blocksAB_cd, labels = labels, autopct='%.2f%%', shadow = False)
-plt.title('Cd - Blocks A and B')
+plt.title('Cd - Blocks A and B - n = %0.f' % (count_blocksAB_cd))
 plt.subplot(2,2,3)
 plt.pie(fracs_blockA_acc, labels = labels, autopct='%.2f%%', shadow = False)
-plt.title('ACC - Block A')
+plt.title('ACC - Block A - n = %0.f' % (count_blockA_acc))
 plt.subplot(2,2,4)
 plt.pie(fracs_blocksAB_acc, labels = labels, autopct='%.2f%%', shadow = False)
-plt.title('ACC - Blocks A and B')
+plt.title('ACC - Blocks A and B - n = %0.f' % (count_blocksAB_acc))
 plt.show()
 
 
@@ -667,6 +1060,7 @@ plt.show()
 # Change in firing rates: Q_mid_late, FR_late vs Q_mid_early_FR_late, with two-way ANOVA statistics, 
 # done separately for Cd and ACC, done separately for non-value coding units and then MV-value-coding only units 
 # do the above first, then re-run code with regression changed for first one done with (50,250)
+'''
 Q_late_mv_cd = np.array([])
 Q_early_mv_cd = np.array([])
 FR_late_mv_cd = np.array([])
@@ -683,11 +1077,489 @@ Q_late_other_acc = np.array([])
 Q_early_other_acc = np.array([])
 FR_late_other_acc = np.array([])
 FR_early_other_acc = np.array([])
+'''
 
-all_Q = Q_late_mv_cd + Q_early_mv_cd + Q_late_other_cd + Q_early_other_cd + \
-		Q_late_mv_acc + Q_early_mv_acc + Q_late_other_acc + Q_early_other_acc
-min_Q = np.min(all_Q)
-max_Q = np.max(all_Q)
-Q_bins = np.arange(min_Q, max_Q + (max_Q - min_Q)/10., 10)
+all_Q = Q_late_mv_cd_stim + Q_early_mv_cd_stim + Q_late_other_cd_stim + Q_early_other_cd_stim + \
+		Q_late_mv_acc_stim + Q_early_mv_acc_stim + Q_late_other_acc_stim + Q_early_other_acc_stim + \
+		Q_late_mv_cd_sham + Q_early_mv_cd_sham + Q_late_other_cd_sham + Q_early_other_cd_sham + \
+		Q_late_mv_acc_sham + Q_early_mv_acc_sham + Q_late_other_acc_sham + Q_early_other_acc_sham
+all_Q_flat = [item for sublist in all_Q for item in sublist]
+min_Q = np.min(all_Q_flat)
+max_Q = np.max(all_Q_flat)
+min_Q = 0.5
+max_Q = 0.7
+print min_Q, max_Q
+Q_bins = np.arange(min_Q, max_Q + (max_Q - min_Q)/6., (max_Q - min_Q)/6.)
+print Q_bins
 # bin Qs and sort FRs accordingly for all conditions
 
+# Cd - value coding - stim
+Q_bins_cd_mv_stim, delta_FR_cd_mv_stim, norm_delta_FR_cd_mv_stim, avg_delta_FR_cd_mv_stim, \
+	sem_delta_FR_cd_mv_stim, avg_norm_delta_FR_cd_mv_stim, sem_norm_delta_FR_cd_mv_stim = \
+	BinChangeInFiringRatesByValue(Q_early_mv_cd_stim, Q_late_mv_cd_stim, Q_bins, FR_early_mv_cd_stim, FR_late_mv_cd_stim)
+# Cd - value coding - sham
+Q_bins_cd_mv_sham, delta_FR_cd_mv_sham, norm_delta_FR_cd_mv_sham, avg_delta_FR_cd_mv_sham, \
+	sem_delta_FR_cd_mv_sham, avg_norm_delta_FR_cd_mv_sham, sem_norm_delta_FR_cd_mv_sham = \
+	BinChangeInFiringRatesByValue(Q_early_mv_cd_sham, Q_late_mv_cd_sham, Q_bins, FR_early_mv_cd_sham, FR_late_mv_cd_sham)
+# Cd - nonvalue coding - stim
+Q_bins_cd_other_stim, delta_FR_cd_other_stim, norm_delta_FR_cd_other_stim, avg_delta_FR_cd_other_stim, \
+	sem_delta_FR_cd_other_stim, avg_norm_delta_FR_cd_other_stim, sem_norm_delta_FR_cd_other_stim = \
+	BinChangeInFiringRatesByValue(Q_early_other_cd_stim, Q_late_other_cd_stim, Q_bins, FR_early_other_cd_stim, FR_late_other_cd_stim)
+# Cd - nonvalue coding - sham
+Q_bins_cd_other_sham, delta_FR_cd_other_sham, norm_delta_FR_cd_other_sham, avg_delta_FR_cd_other_sham, \
+	sem_delta_FR_cd_other_sham, avg_norm_delta_FR_cd_other_sham, sem_norm_delta_FR_cd_other_sham = \
+	BinChangeInFiringRatesByValue(Q_early_other_cd_sham, Q_late_other_cd_sham, Q_bins, FR_early_other_cd_sham, FR_late_other_cd_sham)
+
+# ACC - value coding - stim
+Q_bins_acc_mv_stim, delta_FR_acc_mv_stim, norm_delta_FR_acc_mv_stim, avg_delta_FR_acc_mv_stim, \
+	sem_delta_FR_acc_mv_stim, avg_norm_delta_FR_acc_mv_stim, sem_norm_delta_FR_acc_mv_stim = \
+	BinChangeInFiringRatesByValue(Q_early_mv_acc_stim, Q_late_mv_acc_stim, Q_bins, FR_early_mv_acc_stim, FR_late_mv_acc_stim)
+# ACC - value coding - sham
+Q_bins_acc_mv_sham, delta_FR_acc_mv_sham, norm_delta_FR_acc_mv_sham, avg_delta_FR_acc_mv_sham, \
+	sem_delta_FR_acc_mv_sham, avg_norm_delta_FR_acc_mv_sham, sem_norm_delta_FR_acc_mv_sham = \
+	BinChangeInFiringRatesByValue(Q_early_mv_acc_sham, Q_late_mv_acc_sham, Q_bins, FR_early_mv_acc_sham, FR_late_mv_acc_sham)
+# ACC - nonvalue coding - stim
+Q_bins_acc_other_stim, delta_FR_acc_other_stim, norm_delta_FR_acc_other_stim, avg_delta_FR_acc_other_stim, \
+	sem_delta_FR_acc_other_stim, avg_norm_delta_FR_acc_other_stim, sem_norm_delta_FR_acc_other_stim = \
+	BinChangeInFiringRatesByValue(Q_early_other_acc_stim, Q_late_other_acc_stim, Q_bins, FR_early_other_acc_stim, FR_late_other_acc_stim)
+# ACC - nonvalue coding - sham
+Q_bins_acc_other_sham, delta_FR_acc_other_sham, norm_delta_FR_acc_other_sham, avg_delta_FR_acc_other_sham, \
+	sem_delta_FR_acc_other_sham, avg_norm_delta_FR_acc_other_sham, sem_norm_delta_FR_acc_other_sham = \
+	BinChangeInFiringRatesByValue(Q_early_other_acc_sham, Q_late_other_acc_sham, Q_bins, FR_early_other_acc_sham, FR_late_other_acc_sham)
+
+
+# Plot Cd results
+Q_bin_centers = (Q_bins[1:] + Q_bins[:-1])/2.
+plt.figure()
+plt.subplot(2,2,1)
+plt.errorbar(Q_bin_centers, avg_delta_FR_cd_mv_stim, yerr = sem_delta_FR_cd_mv_stim, fmt = 'o', color = 'c', ecolor = 'c', label = 'Stim - value coding')
+plt.errorbar(Q_bin_centers, avg_delta_FR_cd_mv_sham, yerr = sem_delta_FR_cd_mv_sham, fmt = 'o', color = 'm', ecolor = 'm', label = 'Sham - value coding')
+plt.xlabel('MV Q-value')
+plt.ylabel("Delta FR (Block A' - Block A) (Hz)")
+plt.legend()
+plt.title('Value-coding Cd Units')
+
+plt.subplot(2,2,2)
+plt.errorbar(Q_bin_centers, avg_norm_delta_FR_cd_mv_stim, yerr = sem_norm_delta_FR_cd_mv_stim, fmt = 'o', color = 'c', ecolor = 'c', label = 'Stim - value coding')
+plt.errorbar(Q_bin_centers, avg_norm_delta_FR_cd_mv_sham, yerr = sem_norm_delta_FR_cd_mv_sham, fmt = 'o', color = 'm', ecolor = 'm', label = 'Sham - value coding')
+plt.xlabel('MV Q-value')
+plt.ylabel("Normalized Delta FR (Block A' - Block A) (A.U.)")
+plt.legend()
+plt.title('Value-coding Cd Units')
+
+plt.subplot(2,2,3)
+plt.errorbar(Q_bin_centers, avg_delta_FR_cd_other_stim, yerr = sem_delta_FR_cd_other_stim, fmt = 'o', color = 'c', ecolor = 'c', label = 'Stim - non value coding')
+plt.errorbar(Q_bin_centers, avg_delta_FR_cd_other_sham, yerr = sem_delta_FR_cd_other_sham, fmt = 'o', color = 'm', ecolor = 'm', label = 'Sham - non value coding')
+plt.xlabel('MV Q-value')
+plt.ylabel("Delta FR (Block A' - Block A) (Hz)")
+plt.legend()
+plt.title('Non-value-coding Cd Units')
+
+plt.subplot(2,2,4)
+plt.errorbar(Q_bin_centers, avg_norm_delta_FR_cd_other_stim, yerr = sem_norm_delta_FR_cd_other_stim, fmt = 'o', color = 'c', ecolor = 'c', label = 'Stim - non value coding')
+plt.errorbar(Q_bin_centers, avg_norm_delta_FR_cd_other_sham, yerr = sem_norm_delta_FR_cd_other_sham, fmt = 'o', color = 'm', ecolor = 'm', label = 'Sham - non value coding')
+plt.xlabel('MV Q-value')
+plt.ylabel("Normalized Delta FR (Block A' - Block A) (A.U.)")
+plt.legend()
+plt.title('Non-value-coding Cd Units')
+plt.show()
+
+# Plot ACC results
+plt.figure()
+plt.subplot(2,2,1)
+plt.errorbar(Q_bin_centers, avg_delta_FR_acc_mv_stim, yerr = sem_delta_FR_acc_mv_stim, fmt = 'o', color = 'c', ecolor = 'c', label = 'Stim - value coding')
+plt.errorbar(Q_bin_centers, avg_delta_FR_acc_mv_sham, yerr = sem_delta_FR_acc_mv_sham, fmt = 'o', color = 'm', ecolor = 'm', label = 'Sham - value coding')
+plt.xlabel('MV Q-value')
+plt.ylabel("Delta FR (Block A' - Block A) (Hz)")
+plt.legend()
+plt.title('Value-coding ACC Units')
+
+plt.subplot(2,2,2)
+plt.errorbar(Q_bin_centers, avg_norm_delta_FR_acc_mv_stim, yerr = sem_norm_delta_FR_acc_mv_stim, fmt = 'o', color = 'c', ecolor = 'c', label = 'Stim - value coding')
+plt.errorbar(Q_bin_centers, avg_norm_delta_FR_acc_mv_sham, yerr = sem_norm_delta_FR_acc_mv_sham, fmt = 'o', color = 'm', ecolor = 'm', label = 'Sham - value coding')
+plt.xlabel('MV Q-value')
+plt.ylabel("Normalized Delta FR (Block A' - Block A) (A.U.)")
+plt.legend()
+plt.title('Value-coding ACC Units')
+
+plt.subplot(2,2,3)
+plt.errorbar(Q_bin_centers, avg_delta_FR_acc_other_stim, yerr = sem_delta_FR_acc_other_stim, fmt = 'o', color = 'c', ecolor = 'c', label = 'Stim - non value coding')
+plt.errorbar(Q_bin_centers, avg_delta_FR_acc_other_sham, yerr = sem_delta_FR_acc_other_sham, fmt = 'o', color = 'm', ecolor = 'm', label = 'Sham - non value coding')
+plt.xlabel('MV Q-value')
+plt.ylabel("Delta FR (Block A' - Block A) (Hz)")
+plt.legend()
+plt.title('Non-value-coding ACC Units')
+
+plt.subplot(2,2,4)
+plt.errorbar(Q_bin_centers, avg_norm_delta_FR_acc_other_stim, yerr = sem_norm_delta_FR_acc_other_stim, fmt = 'o', color = 'c', ecolor = 'c', label = 'Stim - non value coding')
+plt.errorbar(Q_bin_centers, avg_norm_delta_FR_acc_other_sham, yerr = sem_norm_delta_FR_acc_other_sham, fmt = 'o', color = 'm', ecolor = 'm', label = 'Sham - non value coding')
+plt.xlabel('MV Q-value')
+plt.ylabel("Normalized Delta FR (Block A' - Block A) (A.U.)")
+plt.legend()
+plt.title('Non-value-coding ACC Units')
+plt.show()
+
+
+# Aggragating all data
+FR_e_means_cd_stim, FR_l_means_cd_stim, FR_e_sem_cd_stim, FR_l_sem_cd_stim, bin_FR_e_cd_stim, bin_FR_l_cd_stim = BinFiringRatesByValue(Q_early_mv_cd_stim, Q_late_mv_cd_stim, Q_bins, FR_early_mv_cd_stim, FR_late_mv_cd_stim)
+FR_e_means_cd_sham, FR_l_means_cd_sham, FR_e_sem_cd_sham, FR_l_sem_cd_sham, bin_FR_e_cd_sham, bin_FR_l_cd_sham = BinFiringRatesByValue(Q_early_mv_cd_sham, Q_late_mv_cd_sham, Q_bins, FR_early_mv_cd_sham, FR_late_mv_cd_sham)
+FR_e_means_acc_stim, FR_l_means_acc_stim, FR_e_sem_acc_stim, FR_l_sem_acc_stim, bin_FR_e_acc_stim, bin_FR_l_acc_stim = BinFiringRatesByValue(Q_early_mv_acc_stim, Q_late_mv_acc_stim, Q_bins, FR_early_mv_acc_stim, FR_late_mv_acc_stim)
+FR_e_means_acc_sham, FR_l_means_acc_sham, FR_e_sem_acc_sham, FR_l_sem_acc_sham, bin_FR_e_acc_sham, bin_FR_l_acc_sham = BinFiringRatesByValue(Q_early_mv_acc_sham, Q_late_mv_acc_sham, Q_bins, FR_early_mv_acc_sham, FR_late_mv_acc_sham)
+
+
+dta_cd = []
+for i in range(len(bin_FR_l_cd_stim)):
+	for data in bin_FR_l_cd_stim[i]:
+		dta_cd += [(1,i, data)]
+for i in range(len(bin_FR_l_cd_sham)):
+	for data in bin_FR_l_cd_sham[i]:
+		dta_cd += [(0,i, data)]
+dta_acc = []
+for i in range(len(bin_FR_l_acc_stim)):
+	for data in bin_FR_l_acc_stim[i]:
+		dta_acc += [(1,i, data)]
+for i in range(len(bin_FR_l_acc_sham)):
+	for data in bin_FR_l_acc_sham[i]:
+		dta_acc += [(0,i, data)]
+		
+dta_cd = pd.DataFrame(dta_cd, columns=['Stim_condition', 'Bin', 'fr'])
+dta_acc = pd.DataFrame(dta_acc, columns=['Stim_condition', 'Bin', 'fr'])
+
+formula = 'fr ~ C(Stim_condition) + C(Bin) + C(Stim_condition):C(Bin)'
+model = ols(formula, dta_cd).fit()
+aov_table = anova_lm(model, typ=2)
+model_acc = ols(formula, dta_acc).fit()
+aov_table_acc = anova_lm(model_acc, typ=2)
+
+plt.figure()
+plt.subplot(1,3,1)
+plt.errorbar(Q_bin_centers,FR_l_means_cd_stim,yerr=FR_l_sem_cd_stim,color = 'c', ecolor = 'c', fmt = 'o-', label='Stim -late')
+plt.errorbar(Q_bin_centers,FR_e_means_cd_stim,yerr=FR_e_sem_cd_stim,color = 'c', ecolor = 'c', fmt = 'o--', label='Stim -early')
+plt.xlabel('MV Q-value')
+plt.ylabel('Z-scored Firing Rate (A.U.)')
+plt.title('Cd - Stim - Firing Rate over Blocks')
+plt.legend()
+plt.subplot(1,3,2)
+plt.errorbar(Q_bin_centers,FR_l_means_cd_sham,yerr=FR_l_sem_cd_sham,color = 'm', ecolor = 'm', fmt = 'o-', label='Sham -late')
+plt.errorbar(Q_bin_centers,FR_e_means_cd_sham,yerr=FR_e_sem_cd_sham,color = 'm', ecolor = 'm', fmt = 'o--', label='Sham -early')
+plt.xlabel('MV Q-value')
+plt.ylabel('Z-scored Firing Rate (A.U.)')
+plt.title('Cd - Sham - Firing Rate over Blocks')
+plt.legend()
+plt.subplot(1,3,3)
+plt.errorbar(Q_bin_centers,FR_l_means_cd_sham,yerr=FR_l_sem_cd_sham,color = 'm', ecolor = 'm', fmt = 'o-', label='Sham -late')
+plt.errorbar(Q_bin_centers,FR_l_means_cd_stim,yerr=FR_l_sem_cd_stim,color = 'c', ecolor = 'c', fmt = 'o-', label='Stim -late')
+plt.xlabel('MV Q-value')
+plt.ylabel('Z-scored Firing Rate (A.U.)')
+plt.title("Cd - Stim vs Sham - Block A'")
+plt.legend()
+plt.show()
+
+plt.figure()
+plt.subplot(1,3,1)
+plt.errorbar(Q_bin_centers,FR_l_means_acc_stim,yerr=FR_l_sem_acc_stim,color = 'c', ecolor = 'c', fmt = 'o-', label='Stim -late')
+plt.errorbar(Q_bin_centers,FR_e_means_acc_stim,yerr=FR_e_sem_acc_stim,color = 'c', ecolor = 'c', fmt = 'o--', label='Stim -early')
+plt.xlabel('MV Q-value')
+plt.ylabel('Z-scored Firing Rate (A.U.)')
+plt.title('ACC - Stim - Firing Rate over Blocks')
+plt.legend()
+plt.subplot(1,3,2)
+plt.errorbar(Q_bin_centers,FR_l_means_acc_sham,yerr=FR_l_sem_acc_sham,color = 'm', ecolor = 'm', fmt = 'o-', label='Sham -late')
+plt.errorbar(Q_bin_centers,FR_e_means_acc_sham,yerr=FR_e_sem_acc_sham,color = 'm', ecolor = 'm', fmt = 'o--', label='Sham -early')
+plt.xlabel('MV Q-value')
+plt.ylabel('Z-scored Firing Rate (A.U.)')
+plt.title('ACC - Sham - Firing Rate over Blocks')
+plt.legend()
+plt.subplot(1,3,3)
+plt.errorbar(Q_bin_centers,FR_l_means_acc_sham,yerr=FR_l_sem_acc_sham,color = 'm', ecolor = 'm', fmt = 'o-', label='Sham -late')
+plt.errorbar(Q_bin_centers,FR_l_means_acc_stim,yerr=FR_l_sem_acc_stim,color = 'c', ecolor = 'c', fmt = 'o-', label='Stim -late')
+plt.xlabel('MV Q-value')
+plt.ylabel('Z-scored Firing Rate (A.U.)')
+plt.title("ACC - Stim vs Sham - Block A'")
+plt.legend()
+plt.show()
+
+# Aggragating all data but separating by units with positive and negative correlation with value
+FR_e_means_posreg_cd_stim, FR_e_means_negreg_cd_stim, FR_l_means_posreg_cd_stim, FR_l_means_negreg_cd_stim, FR_e_sem_posreg_cd_stim, \
+	FR_e_sem_negreg_cd_stim, FR_l_sem_posreg_cd_stim, FR_l_sem_negreg_cd_stim, \
+	bin_FR_e_posreg_cd_stim, bin_FR_l_posreg_cd_stim, bin_FR_e_negreg_cd_stim, bin_FR_l_negreg_cd_stim \
+	= BinFiringRatesByValue_SepReg(Q_early_mv_cd_stim, Q_late_mv_cd_stim, Q_bins, FR_early_mv_cd_stim, \
+		FR_late_mv_cd_stim, beta_late_mv_cd_stim)
+FR_e_means_posreg_cd_sham, FR_e_means_negreg_cd_sham, FR_l_means_posreg_cd_sham, FR_l_means_negreg_cd_sham, FR_e_sem_posreg_cd_sham, \
+	FR_e_sem_negreg_cd_sham, FR_l_sem_posreg_cd_sham, FR_l_sem_negreg_cd_sham, \
+	bin_FR_e_posreg_cd_sham, bin_FR_l_posreg_cd_sham, bin_FR_e_negreg_cd_sham, bin_FR_l_negreg_cd_sham \
+	 = BinFiringRatesByValue_SepReg(Q_early_mv_cd_sham, \
+		Q_late_mv_cd_sham, Q_bins, FR_early_mv_cd_sham, FR_late_mv_cd_sham, beta_late_mv_cd_sham)
+
+# Same for ACC
+FR_e_means_posreg_acc_stim, FR_e_means_negreg_acc_stim, FR_l_means_posreg_acc_stim, FR_l_means_negreg_acc_stim, FR_e_sem_posreg_acc_stim, \
+	FR_e_sem_negreg_acc_stim, FR_l_sem_posreg_acc_stim, FR_l_sem_negreg_acc_stim, \
+	bin_FR_e_posreg_acc_stim, bin_FR_l_posreg_acc_stim, bin_FR_e_negreg_acc_stim, bin_FR_l_negreg_acc_stim \
+	= BinFiringRatesByValue_SepReg(Q_early_mv_acc_stim, Q_late_mv_acc_stim, Q_bins, FR_early_mv_acc_stim, \
+		FR_late_mv_acc_stim, beta_late_mv_acc_stim)
+FR_e_means_posreg_acc_sham, FR_e_means_negreg_acc_sham, FR_l_means_posreg_acc_sham, FR_l_means_negreg_acc_sham, FR_e_sem_posreg_acc_sham, \
+	FR_e_sem_negreg_acc_sham, FR_l_sem_posreg_acc_sham, FR_l_sem_negreg_acc_sham, \
+	bin_FR_e_posreg_acc_sham, bin_FR_l_posreg_acc_sham, bin_FR_e_negreg_acc_sham, bin_FR_l_negreg_acc_sham \
+	 = BinFiringRatesByValue_SepReg(Q_early_mv_acc_sham, \
+		Q_late_mv_acc_sham, Q_bins, FR_early_mv_acc_sham, FR_late_mv_acc_sham, beta_late_mv_acc_sham)
+
+
+x_lin = np.linspace(min_Q, max_Q, num = len(FR_l_means_cd_sham), endpoint = True)
+m_cd_sham,b_cd_sham = np.polyfit(x_lin, FR_l_means_cd_sham, 1)
+m_cd_stim,b_cd_stim = np.polyfit(x_lin, FR_l_means_cd_stim, 1)
+m_posreg_cd_sham, b_posreg_cd_sham = np.polyfit(x_lin[1:], FR_l_means_posreg_cd_sham[1:], 1)
+m_posreg_cd_stim, b_posreg_cd_stim = np.polyfit(x_lin, FR_l_means_posreg_cd_stim, 1)
+m_negreg_cd_sham, b_negreg_cd_sham = np.polyfit(x_lin, FR_l_means_negreg_cd_sham, 1)
+m_negreg_cd_stim, b_negreg_cd_stim = np.polyfit(x_lin, FR_l_means_negreg_cd_stim, 1)
+
+m_acc_sham,b_acc_sham = np.polyfit(x_lin, FR_l_means_acc_sham, 1)
+m_acc_stim,b_acc_stim = np.polyfit(x_lin, FR_l_means_acc_stim, 1)
+m_posreg_acc_sham, b_posreg_acc_sham = np.polyfit(x_lin[1:], FR_l_means_posreg_acc_sham[1:], 1)
+m_posreg_acc_stim, b_posreg_acc_stim = np.polyfit(x_lin, FR_l_means_posreg_acc_stim, 1)
+m_negreg_acc_sham, b_negreg_acc_sham = np.polyfit(x_lin[1:], FR_l_means_negreg_acc_sham[1:], 1)
+m_negreg_acc_stim, b_negreg_acc_stim = np.polyfit(x_lin, FR_l_means_negreg_acc_stim, 1)
+
+
+dta_cd_posreg = []
+for i in range(len(bin_FR_l_posreg_cd_stim)):
+	for data in bin_FR_l_posreg_cd_stim[i]:
+		dta_cd_posreg += [(1,i, data)]
+for i in range(len(bin_FR_l_posreg_cd_sham)):
+	for data in bin_FR_l_posreg_cd_sham[i]:
+		dta_cd_posreg += [(0,i, data)]
+
+dta_cd_negreg = []
+for i in range(len(bin_FR_l_negreg_cd_stim)):
+	for data in bin_FR_l_negreg_cd_stim[i]:
+		dta_cd_negreg += [(1,i, data)]
+for i in range(len(bin_FR_l_negreg_cd_sham)):
+	for data in bin_FR_l_negreg_cd_sham[i]:
+		dta_cd_negreg += [(0,i, data)]
+
+dta_acc_posreg = []
+for i in range(len(bin_FR_l_posreg_acc_stim)):
+	for data in bin_FR_l_posreg_acc_stim[i]:
+		dta_acc_posreg += [(1,i, data)]
+for i in range(len(bin_FR_l_posreg_acc_sham)):
+	for data in bin_FR_l_posreg_acc_sham[i]:
+		dta_acc_posreg += [(0,i, data)]
+
+dta_acc_negreg = []
+for i in range(len(bin_FR_l_negreg_acc_stim)):
+	for data in bin_FR_l_negreg_acc_stim[i]:
+		dta_acc_negreg += [(1,i, data)]
+for i in range(len(bin_FR_l_negreg_acc_sham)):
+	for data in bin_FR_l_negreg_acc_sham[i]:
+		dta_acc_negreg += [(0,i, data)]
+
+dta_cd_posreg = pd.DataFrame(dta_cd_posreg, columns=['Stim_condition', 'Bin', 'fr'])
+dta_cd_negreg = pd.DataFrame(dta_cd_negreg, columns=['Stim_condition', 'Bin', 'fr'])
+dta_acc_posreg = pd.DataFrame(dta_acc_posreg, columns=['Stim_condition', 'Bin', 'fr'])
+dta_acc_negreg = pd.DataFrame(dta_acc_negreg, columns=['Stim_condition', 'Bin', 'fr'])
+
+formula = 'fr ~ C(Stim_condition) + C(Bin) + C(Stim_condition):C(Bin)'
+model_posreg = ols(formula, dta_cd_posreg).fit()
+model_negreg = ols(formula, dta_cd_negreg).fit()
+aov_table_posreg = anova_lm(model_posreg, typ=2)
+aov_table_negreg = anova_lm(model_negreg, typ=2)
+
+model_posreg_acc = ols(formula, dta_acc_posreg).fit()
+model_negreg_acc = ols(formula, dta_acc_negreg).fit()
+aov_table_posreg_acc = anova_lm(model_posreg_acc, typ=2)
+aov_table_negreg_acc = anova_lm(model_negreg_acc, typ=2)
+
+print "Two-way ANOVA analysis: Cd - late - Stim vs Sham"
+print(aov_table)
+print "Two-way ANOVA analysis: Cd - Pos Reg - Stim vs Sham"
+print(aov_table_posreg)
+print "Two-way ANOVA analysis: Cd - Neg Reg - Stim vs Sham"
+print(aov_table_negreg)
+
+print "Two-way ANOVA analysis: ACC - late - Stim vs Sham"
+print(aov_table_acc)
+print "Two-way ANOVA analysis: ACC - Pos Reg - Stim vs Sham"
+print(aov_table_posreg_acc)
+print "Two-way ANOVA analysis: ACC - Neg Reg - Stim vs Sham"
+print(aov_table_negreg_acc)
+
+res_stim = pairwise_tukeyhsd(dta_cd_posreg['fr'], dta_cd_posreg['Bin'],alpha=0.01)
+print res_stim
+
+plt.figure()
+plt.subplot(1,3,1)
+plt.errorbar(Q_bin_centers,FR_l_means_cd_sham,yerr=FR_l_sem_cd_sham,color = 'm', ecolor = 'm', fmt = 'o-', label='Sham -late')
+plt.errorbar(Q_bin_centers,FR_l_means_cd_stim,yerr=FR_l_sem_cd_stim,color = 'c', ecolor = 'c', fmt = 'o-', label='Stim -late')
+plt.plot(x_lin, m_cd_sham*x_lin + b_cd_sham, c = 'm')
+plt.plot(x_lin, m_cd_stim*x_lin + b_cd_stim, c = 'c')
+plt.xlabel('MV Q-value')
+plt.ylabel('Z-scored Firing Rate (A.U.)')
+plt.title("Cd - Stim vs Sham - Block A'")
+plt.ylim((-1,1.5))
+plt.xlim((Q_bins[0], Q_bins[-1]))
+plt.legend()
+plt.subplot(1,3,2)
+plt.errorbar(Q_bin_centers,FR_l_means_posreg_cd_sham,yerr=FR_l_sem_posreg_cd_sham,color = 'm', ecolor = 'm', fmt = 'o-', label='Sham -late')
+plt.errorbar(Q_bin_centers,FR_l_means_posreg_cd_stim,yerr=FR_l_sem_posreg_cd_stim,color = 'c', ecolor = 'c', fmt = 'o-', label='Stim -late')
+plt.plot(x_lin, m_posreg_cd_sham*x_lin + b_posreg_cd_sham, c = 'm')
+plt.plot(x_lin, m_posreg_cd_stim*x_lin + b_posreg_cd_stim, c = 'c')
+plt.xlabel('MV Q-value')
+plt.ylabel('Z-scored Firing Rate (A.U.)')
+plt.title("Cd - Stim vs Sham - Block A' - Postiive Beta")
+plt.ylim((-1,1.5))
+plt.xlim((Q_bins[0], Q_bins[-1]))
+plt.legend()
+plt.subplot(1,3,3)
+plt.errorbar(Q_bin_centers,FR_l_means_negreg_cd_sham,yerr=FR_l_sem_negreg_cd_sham,color = 'm', ecolor = 'm', fmt = 'o-', label='Sham -late')
+plt.errorbar(Q_bin_centers,FR_l_means_negreg_cd_stim,yerr=FR_l_sem_negreg_cd_stim,color = 'c', ecolor = 'c', fmt = 'o-', label='Stim -late')
+plt.plot(x_lin, m_negreg_cd_sham*x_lin + b_negreg_cd_sham, c = 'm')
+plt.plot(x_lin, m_negreg_cd_stim*x_lin + b_negreg_cd_stim, c = 'c')
+plt.xlabel('MV Q-value')
+plt.ylabel('Z-scored Firing Rate (A.U.)')
+plt.title("Cd - Stim vs Sham - Block A' - Negative Beta")
+plt.ylim((-1,1.5))
+plt.xlim((Q_bins[0], Q_bins[-1]))
+plt.legend()
+plt.show()
+
+plt.figure()
+plt.subplot(1,3,1)
+plt.errorbar(Q_bin_centers,FR_l_means_acc_sham,yerr=FR_l_sem_acc_sham,color = 'm', ecolor = 'm', fmt = 'o-', label='Sham -late')
+plt.errorbar(Q_bin_centers,FR_l_means_acc_stim,yerr=FR_l_sem_acc_stim,color = 'c', ecolor = 'c', fmt = 'o-', label='Stim -late')
+plt.plot(x_lin, m_acc_sham*x_lin + b_acc_sham, c = 'm')
+plt.plot(x_lin, m_acc_stim*x_lin + b_acc_stim, c = 'c')
+plt.xlabel('MV Q-value')
+plt.ylabel('Z-scored Firing Rate (A.U.)')
+plt.title("ACC - Stim vs Sham - Block A'")
+#plt.ylim((-1,1.5))
+plt.xlim((Q_bins[0], Q_bins[-1]))
+plt.legend()
+plt.subplot(1,3,2)
+plt.errorbar(Q_bin_centers,FR_l_means_posreg_acc_sham,yerr=FR_l_sem_posreg_acc_sham,color = 'm', ecolor = 'm', fmt = 'o-', label='Sham -late')
+plt.errorbar(Q_bin_centers,FR_l_means_posreg_acc_stim,yerr=FR_l_sem_posreg_acc_stim,color = 'c', ecolor = 'c', fmt = 'o-', label='Stim -late')
+plt.plot(x_lin, m_posreg_acc_sham*x_lin + b_posreg_acc_sham, c = 'm')
+plt.plot(x_lin, m_posreg_acc_stim*x_lin + b_posreg_acc_stim, c = 'c')
+plt.xlabel('MV Q-value')
+plt.ylabel('Z-scored Firing Rate (A.U.)')
+plt.title("ACC - Stim vs Sham - Block A' - Postiive Beta")
+#plt.ylim((-1,1.5))
+plt.xlim((Q_bins[0], Q_bins[-1]))
+plt.legend()
+plt.subplot(1,3,3)
+plt.errorbar(Q_bin_centers,FR_l_means_negreg_acc_sham,yerr=FR_l_sem_negreg_acc_sham,color = 'm', ecolor = 'm', fmt = 'o-', label='Sham -late')
+plt.errorbar(Q_bin_centers,FR_l_means_negreg_acc_stim,yerr=FR_l_sem_negreg_acc_stim,color = 'c', ecolor = 'c', fmt = 'o-', label='Stim -late')
+plt.plot(x_lin, m_negreg_acc_sham*x_lin + b_negreg_acc_sham, c = 'm')
+plt.plot(x_lin, m_negreg_acc_stim*x_lin + b_negreg_acc_stim, c = 'c')
+plt.xlabel('MV Q-value')
+plt.ylabel('Z-scored Firing Rate (A.U.)')
+plt.title("ACC - Stim vs Sham - Block A' - Negative Beta")
+#plt.ylim((-1,1.5))
+plt.xlim((Q_bins[0], Q_bins[-1]))
+plt.legend()
+plt.show()
+
+FR_late_mv_cd_stim_zscore = zscore_FR_separate(FR_late_mv_cd_stim)
+FR_late_mv_cd_sham_zscore = zscore_FR_separate(FR_late_mv_cd_sham)
+
+# Make scatter plots
+all_FR_cd_stim_posreg = [item for i,sublist in enumerate(FR_late_mv_cd_stim_zscore) for item in sublist if beta_late_mv_cd_stim[i] > 0]
+all_FR_cd_sham_posreg = [item for i,sublist in enumerate(FR_late_mv_cd_sham_zscore) for item in sublist if beta_late_mv_cd_sham[i] > 0]
+all_Q_cd_stim_posreg = [item for i,sublist in enumerate(Q_late_mv_cd_stim) for item in sublist if beta_late_mv_cd_stim[i] > 0]
+all_Q_cd_sham_posreg = [item for i,sublist in enumerate(Q_late_mv_cd_sham) for item in sublist if beta_late_mv_cd_sham[i] > 0]
+
+plt.figure()
+plt.scatter(all_Q_cd_stim_posreg, all_FR_cd_stim_posreg, c = 'c', marker = 'o')
+plt.scatter(all_Q_cd_sham_posreg, all_FR_cd_sham_posreg, c = 'm', marker = 'o')
+plt.xlim((Q_bins[0], Q_bins[-1]))
+plt.show()
+
+"""
+## firing rate differences
+FR_late_mv_cd_stim_mean = np.array([np.nanmean(item) for item in FR_late_mv_cd_stim])
+FR_early_mv_cd_stim_mean = np.array([np.nanmean(item) for item in FR_early_mv_cd_stim])
+FR_diff_mv_cd_stim = FR_late_mv_cd_stim_mean - FR_early_mv_cd_stim_mean
+
+FR_late_mv_cd_sham_mean = np.array([np.nanmean(item) for item in FR_late_mv_cd_sham])
+FR_early_mv_cd_sham_mean = np.array([np.nanmean(item) for item in FR_early_mv_cd_sham])
+FR_diff_mv_cd_sham = FR_late_mv_cd_sham_mean - FR_early_mv_cd_sham_mean
+
+FR_late_mv_acc_stim_mean = np.array([np.nanmean(item) for item in FR_late_mv_acc_stim])
+FR_early_mv_acc_stim_mean = np.array([np.nanmean(item) for item in FR_early_mv_acc_stim])
+FR_diff_mv_acc_stim = FR_late_mv_acc_stim_mean - FR_early_mv_acc_stim_mean
+
+FR_late_mv_acc_sham_mean = np.array([np.nanmean(item) for item in FR_late_mv_acc_sham])
+FR_early_mv_acc_sham_mean = np.array([np.nanmean(item) for item in FR_early_mv_acc_sham])
+FR_diff_mv_acc_sham = FR_late_mv_acc_sham_mean - FR_early_mv_acc_sham_mean
+
+FR_late_other_cd_stim_mean = np.array([np.nanmean(item) for item in FR_late_other_cd_stim])
+FR_early_other_cd_stim_mean = np.array([np.nanmean(item) for item in FR_early_other_cd_stim])
+FR_diff_other_cd_stim = FR_late_other_cd_stim_mean - FR_early_other_cd_stim_mean
+
+FR_late_other_cd_sham_mean = np.array([np.nanmean(item) for item in FR_late_other_cd_sham])
+FR_early_other_cd_sham_mean = np.array([np.nanmean(item) for item in FR_early_other_cd_sham])
+FR_diff_other_cd_sham = FR_late_other_cd_sham_mean - FR_early_other_cd_sham_mean
+
+FR_late_other_acc_stim_mean = np.array([np.nanmean(item) for item in FR_late_other_acc_stim])
+FR_early_other_acc_stim_mean = np.array([np.nanmean(item) for item in FR_early_other_acc_stim])
+FR_diff_other_acc_stim = FR_late_other_acc_stim_mean - FR_early_other_acc_stim_mean
+
+FR_late_other_acc_sham_mean = np.array([np.nanmean(item) for item in FR_late_other_acc_sham])
+FR_early_other_acc_sham_mean = np.array([np.nanmean(item) for item in FR_early_other_acc_sham])
+FR_diff_other_acc_sham = FR_late_other_acc_sham_mean - FR_early_other_acc_sham_mean
+
+FR_diff_cd_stim = np.append(FR_diff_mv_cd_stim, FR_diff_other_cd_stim)
+FR_diff_acc_stim = np.append(FR_diff_mv_acc_stim, FR_diff_other_acc_stim)
+FR_diff_cd_sham = np.append(FR_diff_mv_cd_sham, FR_diff_other_cd_sham)
+FR_diff_acc_sham = np.append(FR_diff_mv_acc_sham, FR_diff_other_acc_sham)
+
+FR_diff_stim = np.append(FR_diff_cd_stim, FR_diff_acc_stim)
+FR_diff_sham = np.append(FR_diff_cd_sham, FR_diff_acc_sham)
+
+avg_diff_cd_stim = np.nanmean(FR_diff_cd_stim)
+sem_diff_cd_stim = np.nanstd(FR_diff_cd_stim)/np.sqrt(len(FR_diff_cd_stim))
+avg_diff_acc_stim = np.nanmean(FR_diff_acc_stim)
+sem_diff_acc_stim = np.nanstd(FR_diff_acc_stim)/np.sqrt(len(FR_diff_acc_stim))
+avg_diff_cd_sham = np.nanmean(FR_diff_cd_sham)
+sem_diff_cd_sham = np.nanstd(FR_diff_cd_sham)/np.sqrt(len(FR_diff_cd_sham))
+avg_diff_acc_sham = np.nanmean(FR_diff_acc_sham)
+sem_diff_acc_sham = np.nanstd(FR_diff_acc_sham)/np.sqrt(len(FR_diff_acc_sham))
+
+t, p = stats.ttest_ind(FR_diff_cd_sham, FR_diff_acc_sham)
+print t, p
+
+avg_diff_cd = [avg_diff_cd_stim, avg_diff_cd_sham]
+avg_diff_acc = [avg_diff_acc_stim, avg_diff_acc_sham]
+sem_diff_cd = [sem_diff_cd_stim, sem_diff_cd_sham]
+sem_diff_acc = [sem_diff_acc_stim, sem_diff_acc_sham]
+
+avg_diff_stim = np.nanmean(FR_diff_stim)
+sem_diff_stim = np.nanstd(FR_diff_stim)/np.sqrt(len(FR_diff_stim))
+avg_diff_sham = np.nanmean(FR_diff_sham)
+sem_diff_sham = np.nanstd(FR_diff_sham)/np.sqrt(len(FR_diff_sham))
+
+avg_diff = [avg_diff_stim, avg_diff_sham]
+sem_diff = [sem_diff_stim, sem_diff_sham]
+
+ind = np.arange(2)
+plt.figure()
+plt.subplot(1,2,1)
+plt.bar(ind[1], avg_diff_cd[1], width, color = 'y', yerr = sem_diff_cd[1], label = 'Cd')
+plt.bar(ind[1]+width, avg_diff_acc[1], width, color = 'g', yerr = sem_diff_acc[1], label = 'ACC')
+xticklabels = ['Stim', 'Sham']
+xticks = ind + width/2
+plt.xticks(xticks, xticklabels)
+plt.xlabel('Condition')
+plt.ylabel('Change in Firing Rate (Hz)')
+plt.title('Change in FR between first and late block')
+plt.legend()
+
+plt.subplot(1,2,2)
+plt.bar(ind, avg_diff, width, color = 'y', yerr = sem_diff, label = 'Cd + ACC')
+xticklabels = ['Stim', 'Sham']
+xticks = ind + width/2
+plt.xticks(xticks, xticklabels)
+plt.xlabel('Condition')
+plt.ylabel('Change in Firing Rate (Hz)')
+plt.title('Change in FR between first and late block')
+plt.legend()
+plt.show()
+"""
