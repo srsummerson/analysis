@@ -3864,11 +3864,12 @@ def ThreeTargetTask_DecodeChoice_LogisticRegression(hdf_files, syncHDF_files, sp
 
 def Compare_QValue_Models_ThreeTarget(hdf_files):
 	'''
-	This method models the Q-values derived from two different Q-learning models and compares the results for data
+	This method models the Q-values derived from three different Q-learning models and compares the results for data
 	from a three-target task. The first model assumes that a fixed alpha and beta parameter pair are used for all 
 	contingencies, while the second model assumes that there are different learning rates and inverse temperatures
 	depending on what two of the three targets are presented. One major difference is that for the latter method, instructed trials are not used to update values since this
-	would require additional parameter choices.
+	would require additional parameter choices. The third model assumes that there is a separate learning rate for 
+	each stimulus, but the same inverse temperature.
 
 	Inputs:
 	- hdf_files: list of N hdf_files corresponding to the behavior in the three target task
@@ -3981,3 +3982,46 @@ def Compare_QValue_Models_ThreeTarget(hdf_files):
 	plt.show()
 
 	return BIC, BIC2, BIC3, np.mean(accuracy), np.mean(accuracy2), np.mean(accuracy3)
+
+def Compare_Qlearning_across_blocks(hdf_files):
+	'''
+	This method models the Q-values derived from the standard Q-learning model with a single alpha and
+	beta parameter for data from a three-target task. The first model is fit from data in Block A,
+	while the second model is fit with data from Block A', with initial Q-values taken from the end of Block A.
+	
+	Inputs:
+	- hdf_files: list of N hdf_files corresponding to the behavior in the three target task
+	'''
+
+	# Get session information for plot
+	str_ind = hdf_files[0].index('201')  	# search for beginning of year in string (used 201 to accomodate both 2016 and 2017)
+	sess_name = 'Mario' + hdf_files[0][str_ind:str_ind + 8]
+
+	# 1. Load behavior data and pull out trial indices for the designated trial case
+	cb = ChoiceBehavior_ThreeTargets_Stimulation(hdf_files, 150, 100)
+	total_trials = cb.num_successful_trials
+	
+	# 2. Get Q-values, chosen targets, and rewards
+	targets_on, chosen_target, rewards, instructed_or_freechoice = cb.GetChoicesAndRewards()
+	
+	# 3. Fit first model where there is a single alpha and beta used for all contingencies. Do for Block A.
+	# Find ML fit of alpha and beta
+	Q_initial = 0.5*np.ones(3)
+	nll = lambda *args: -loglikelihood_ThreeTargetTask_Qlearning(*args)
+	result = op.minimize(nll, [0.2, 1], args=(Q_initial, chosen_target[:150], rewards[:150], targets_on[:150], instructed_or_freechoice[:150]), bounds=[(0.01,1),(0.01,None)])
+	alpha_ml, beta_ml = result["x"]
+	# RL model fit for Q values
+	Q_low, Q_mid, Q_high, prob_choice_opt_lvmv, prob_choice_opt_lvhv, prob_choice_opt_mvhv, accuracy, log_likelihood = ThreeTargetTask_Qlearning([alpha_ml, beta_ml], Q_initial, chosen_target[:150], rewards[:150], targets_on[:150], instructed_or_freechoice[:150])
+	Q_chosen = Q_low*np.equal(chosen_target[:150],0) + Q_mid*np.equal(chosen_target[:150],1) + Q_high*np.equal(chosen_target[:150],2)
+	RPE = rewards[:150] - Q_chosen
+
+	#4. Re-fit model for Block A'.
+	Q_initial = np.array([Q_low[-1], Q_mid[-1], Q_high[-1]])
+	result = op.minimize(nll, [0.2, 1], args=(Q_initial, chosen_target[250:], rewards[250:], targets_on[250:], instructed_or_freechoice[250:]), bounds=[(0.01,1),(0.01,None)])
+	alpha_ml, beta_ml = result["x"]
+	# RL model fit for Q values
+	Q_low2, Q_mid2, Q_high2, prob_choice_opt_lvmv2, prob_choice_opt_lvhv2, prob_choice_opt_mvhv2, accuracy2, log_likelihood2 = ThreeTargetTask_Qlearning([alpha_ml, beta_ml], Q_initial, chosen_target[250:], rewards[250:], targets_on[250:], instructed_or_freechoice[250:])
+	Q_chosen = Q_low2*np.equal(chosen_target[250:],0) + Q_mid2*np.equal(chosen_target[250:],1) + Q_high2*np.equal(chosen_target[250:],2)
+	RPE2 = rewards[250:] - Q_chosen
+
+	return Q_mid, Q_mid2, RPE, RPE2

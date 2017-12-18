@@ -1,4 +1,4 @@
-from DecisionMakingBehavior import Compare_QValue_Models_ThreeTarget
+from DecisionMakingBehavior import Compare_QValue_Models_ThreeTarget, Compare_Qlearning_across_blocks
 import numpy as np 
 import scipy as sp 
 import matplotlib.pyplot as plt
@@ -37,6 +37,7 @@ hdf_list_stim = [[dir + 'mari20161221_03_te2800.hdf'], \
 			]
 
 hdf_list = hdf_list_sham + hdf_list_stim
+"""
 BIC_single_model = np.zeros(len(hdf_list))
 BIC_sep_model = np.zeros(len(hdf_list))
 BIC_ind_model = np.zeros(len(hdf_list))
@@ -78,50 +79,276 @@ plt.xlabel('Q-learning Model')
 plt.ylabel('Accuracy')
 plt.show()
 
-
+"""
 
 Q_early_sham = np.array([])
 Q_early_stim = np.array([])
 Q_late_sham = np.array([])
 Q_late_stim = np.array([])
+Q_early_sham_list = []
+Q_early_stim_list = []
+Q_late_sham_list = []
+Q_late_stim_list = []
 allQ = np.array([])
-for j in range(hdf_list):
+
+RPE_early_sham = np.array([])
+RPE_early_stim = np.array([])
+RPE_late_sham = np.array([])
+RPE_late_stim = np.array([])
+RPE_early_sham_list = []
+RPE_early_stim_list = []
+RPE_late_sham_list = []
+RPE_late_stim_list = []
+allRPE = np.array([])
+
+for j in range(len(hdf_list)):
 	hdf_files = hdf_list[j]
 	
-	Q_mid_block1, Q_mid_block3 = compare_Qlearning_across_blocks(hdf_files)
+	Q_mid_block1, Q_mid_block3, RPE, RPE3 = Compare_Qlearning_across_blocks(hdf_files)
 
 	if hdf_files in hdf_list_stim:
 		Q_early_stim = np.append(Q_early_stim, Q_mid_block1)
 		Q_late_stim = np.append(Q_late_stim, Q_mid_block3)
+		Q_early_stim_list += [Q_mid_block1.tolist()]
+		Q_late_stim_list += [Q_mid_block3.tolist()]
+
+		RPE_early_stim = np.append(RPE_early_stim, RPE)
+		RPE_late_stim = np.append(RPE_late_stim, RPE3)
+		RPE_early_stim_list += [RPE.tolist()]
+		RPE_late_stim_list += [RPE3.tolist()]
 	else:
 		Q_early_sham = np.append(Q_early_sham, Q_mid_block1)
 		Q_late_sham = np.append(Q_late_sham, Q_mid_block3)
+		Q_early_sham_list += [Q_mid_block1.tolist()]
+		Q_late_sham_list += [Q_mid_block3.tolist()]
+
+		RPE_early_sham = np.append(RPE_early_sham, RPE)
+		RPE_late_sham = np.append(RPE_late_sham, RPE3)
+		RPE_early_sham_list += [RPE.tolist()]
+		RPE_late_sham_list += [RPE3.tolist()]
 
 	allQ = np.append(allQ, Q_mid_block1)
 	allQ = np.append(allQ, Q_mid_block3)
+	allRPE = np.append(allRPE, RPE)
+	allRPE = np.append(allRPE, RPE3)
 
 minQ = np.min(allQ)
 maxQ = np.max(allQ)
 
+minRPE = np.min(allRPE)
+maxRPE = np.max(allRPE)
+
 num_bins = 20
 Q_bins = np.arange(minQ, maxQ, (maxQ - minQ)/num_bins)
-Q_bin_centers = (Q_bin_centers[1:] + Q_bin_centers[:-1])/2.
+Q_bin_centers = (Q_bins[1:] + Q_bins[:-1])/2.
 width = Q_bin_centers[1] - Q_bin_centers[0]
+
+RPE_bins = np.arange(minRPE, maxRPE, (maxRPE - minRPE)/num_bins)
+RPE_bin_centers = (RPE_bins[1:] + RPE_bins[:-1])/2.
+width_RPE = RPE_bin_centers[1] - RPE_bin_centers[0]
+
+## Bin aggragated value data
 
 hist_early_sham, bins = np.histogram(Q_early_sham, Q_bins)
 hist_late_sham, bins = np.histogram(Q_late_sham, Q_bins)
 hist_early_stim, bins = np.histogram(Q_early_stim, Q_bins)
 hist_late_stim, bins = np.histogram(Q_late_stim, Q_bins)
 
-hist_early_sham = hist_early_sham/np.sum(hist_early_sham)
-hist_late_sham = hist_late_sham/np.sum(hist_late_sham)
-hist_early_stim = hist_early_stim/np.sum(hist_early_stim)
-hist_late_stim = hist_late_stim/np.sum(hist_late_stim)
+hist_early_sham = hist_early_sham/float(np.sum(hist_early_sham))
+hist_late_sham = hist_late_sham/float(np.sum(hist_late_sham))
+hist_early_stim = hist_early_stim/float(np.sum(hist_early_stim))
+hist_late_stim = hist_late_stim/float(np.sum(hist_late_stim))
+
+chisq_early, p_early = stats.chisquare(hist_early_sham, hist_early_stim)
+chisq_late, p_late = stats.chisquare(hist_late_sham, hist_late_stim)
 
 plt.figure()
 plt.subplot(1,2,1)
-plt.barh(Q_bin_centers, -hist_early_sham, width, color = 'm')
-plt.barh(Q_bin_centers, hist_early_stim, width, color = 'c')
+plt.barh(Q_bin_centers, -hist_early_sham, width, color = 'm', label = 'Sham')
+plt.barh(Q_bin_centers, hist_early_stim, width, color = 'c', label = 'Stim')
 plt.xlabel('Frequency')
 plt.ylabel('Medium Value')
+plt.title('Block A')
+plt.text(-0.5, 0.8, 'p = %0.2f (Chi-square)' % (p_early))
+plt.xlim((-0.6,0.6))
+plt.legend()
+plt.subplot(1,2,2)
+plt.barh(Q_bin_centers, -hist_late_sham, width, color = 'm', label = 'Sham')
+plt.barh(Q_bin_centers, hist_late_stim, width, color = 'c', label = 'Stim')
+plt.xlabel('Frequency')
+plt.ylabel('Medium Value')
+plt.title("Block A'")
+plt.text(-0.5, 0.8, 'p = %0.2f (Chi-square)' % (p_late))
+plt.xlim((-0.6,0.6))
+plt.legend()
+plt.show()
+
+## Find average value distributions across sessions
+hist_early_sham_ind = np.array([])
+hist_early_stim_ind = np.array([])
+hist_late_sham_ind = np.array([])
+hist_late_stim_ind = np.array([])
+
+for j in range(len(hdf_list_sham)):
+	earlyQ = Q_early_sham_list[j]
+	lateQ = Q_late_sham_list[j]
+	hist_early_sham, bins = np.histogram(earlyQ, Q_bins)
+	hist_late_sham, bins = np.histogram(lateQ, Q_bins)
+	hist_early_sham = hist_early_sham/float(len(earlyQ))
+	hist_late_sham = hist_late_sham/float(len(lateQ))
+	if j==0:
+		hist_early_sham_ind = hist_early_sham
+		hist_late_sham_ind = hist_late_sham
+	else:
+		hist_early_sham_ind = np.vstack([hist_early_sham_ind, hist_early_sham])
+		hist_late_sham_ind = np.vstack([hist_late_sham_ind, hist_late_sham])
+	
+for j in range(len(hdf_list_stim)):
+	earlyQ = Q_early_stim_list[j]
+	lateQ = Q_late_stim_list[j]
+	hist_early_stim, bins = np.histogram(earlyQ, Q_bins)
+	hist_late_stim, bins = np.histogram(lateQ, Q_bins)
+	hist_early_stim = hist_early_stim/float(len(earlyQ))
+	hist_late_stim = hist_late_stim/float(len(lateQ))
+	if j==0:
+		hist_early_stim_ind = hist_early_stim
+		hist_late_stim_ind = hist_late_stim
+	else:
+		hist_early_stim_ind = np.vstack([hist_early_stim_ind, hist_early_stim])
+		hist_late_stim_ind = np.vstack([hist_late_stim_ind, hist_late_stim])
+
+hist_early_sham_ind_avg = np.nanmean(hist_early_sham_ind, axis = 0)
+hist_late_sham_ind_avg = np.nanmean(hist_late_sham_ind, axis = 0)
+hist_early_stim_ind_avg = np.nanmean(hist_early_stim_ind, axis = 0)
+hist_late_stim_ind_avg = np.nanmean(hist_late_stim_ind, axis = 0)
+hist_early_sham_ind_sem = np.nanstd(hist_early_sham_ind, axis = 0)/np.sqrt(len(hdf_list_sham))
+hist_late_sham_ind_sem = np.nanstd(hist_late_sham_ind, axis = 0)/np.sqrt(len(hdf_list_sham))
+hist_early_stim_ind_sem = np.nanstd(hist_early_stim_ind, axis = 0)/np.sqrt(len(hdf_list_stim))
+hist_late_stim_ind_sem = np.nanstd(hist_late_stim_ind, axis = 0)/np.sqrt(len(hdf_list_stim))
+
+chisq_early, p_early = stats.chisquare(hist_early_sham_ind_avg, hist_early_stim_ind_avg)
+chisq_late, p_late = stats.chisquare(hist_late_sham_ind_avg, hist_late_stim_ind_avg)
+
+plt.figure()
+plt.subplot(1,2,1)
+plt.barh(Q_bin_centers, -hist_early_sham_ind_avg, width, xerr = hist_early_sham_ind_sem,color = 'm', label = 'Sham')
+plt.barh(Q_bin_centers, hist_early_stim_ind_avg, width, xerr = hist_early_stim_ind_sem,color = 'c', label = 'Stim')
+plt.xlabel('Frequency')
+plt.ylabel('Medium Value')
+plt.title('Block A')
+plt.text(-0.5, 0.8, 'p = %0.2f (Chi-square)' % (p_early))
+plt.xlim((-0.6,0.6))
+plt.legend()
+plt.subplot(1,2,2)
+plt.barh(Q_bin_centers, -hist_late_sham_ind_avg, width, xerr = hist_late_sham_ind_sem, color = 'm', label = 'Sham')
+plt.barh(Q_bin_centers, hist_late_stim_ind_avg, width, xerr = hist_late_stim_ind_sem, color = 'c', label = 'Stim')
+plt.xlabel('Frequency')
+plt.ylabel('Medium Value')
+plt.title("Block A'")
+plt.text(-0.5, 0.8, 'p = %0.2f (Chi-square)' % (p_late))
+plt.xlim((-0.6,0.6))
+plt.legend()
+plt.show()
+
+## Bin aggragated RPE data 
+
+hist_early_sham_RPE, bins = np.histogram(RPE_early_sham, RPE_bins)
+hist_late_sham_RPE, bins = np.histogram(RPE_late_sham, RPE_bins)
+hist_early_stim_RPE, bins = np.histogram(RPE_early_stim, RPE_bins)
+hist_late_stim_RPE, bins = np.histogram(RPE_late_stim, RPE_bins)
+
+hist_early_sham_RPE = hist_early_sham_RPE/float(np.sum(hist_early_sham_RPE))
+hist_late_sham_RPE = hist_late_sham_RPE/float(np.sum(hist_late_sham_RPE))
+hist_early_stim_RPE = hist_early_stim_RPE/float(np.sum(hist_early_stim_RPE))
+hist_late_stim_RPE = hist_late_stim_RPE/float(np.sum(hist_late_stim_RPE))
+
+chisq_early, p_early_RPE = stats.chisquare(hist_early_sham_RPE, hist_early_stim_RPE)
+chisq_late, p_late_RPE = stats.chisquare(hist_late_sham_RPE, hist_late_stim_RPE)
+
+plt.figure()
+plt.subplot(1,2,1)
+plt.barh(RPE_bin_centers, -hist_early_sham_RPE, width_RPE, color = 'm', label = 'Sham')
+plt.barh(RPE_bin_centers, hist_early_stim_RPE, width_RPE, color = 'c', label = 'Stim')
+plt.xlabel('Frequency')
+plt.ylabel('RPE')
+plt.title('Block A')
+plt.text(-0.5, 0.8, 'p = %0.2f (Chi-square)' % (p_early_RPE))
+plt.xlim((-0.6,0.6))
+plt.legend()
+plt.subplot(1,2,2)
+plt.barh(RPE_bin_centers, -hist_late_sham_RPE, width_RPE, color = 'm', label = 'Sham')
+plt.barh(RPE_bin_centers, hist_late_stim_RPE, width_RPE, color = 'c', label = 'Stim')
+plt.xlabel('Frequency')
+plt.ylabel('RPE')
+plt.title("Block A'")
+plt.text(-0.5, 0.8, 'p = %0.2f (Chi-square)' % (p_late_RPE))
+plt.xlim((-0.6,0.6))
+plt.legend()
+plt.show()
+
+## Find average value distributions across sessions
+hist_early_sham_ind_RPE = np.array([])
+hist_early_stim_ind_RPE = np.array([])
+hist_late_sham_ind_RPE = np.array([])
+hist_late_stim_ind_RPE = np.array([])
+
+for j in range(len(hdf_list_sham)):
+	earlyRPE = RPE_early_sham_list[j]
+	lateRPE = RPE_late_sham_list[j]
+	hist_early_sham_RPE, bins = np.histogram(earlyRPE, RPE_bins)
+	hist_late_sham_RPE, bins = np.histogram(lateRPE, RPE_bins)
+	hist_early_sham_RPE = hist_early_sham_RPE/float(len(earlyRPE))
+	hist_late_sham_RPE = hist_late_sham_RPE/float(len(lateRPE))
+	if j==0:
+		hist_early_sham_ind_RPE = hist_early_sham_RPE
+		hist_late_sham_ind_RPE = hist_late_sham_RPE
+	else:
+		hist_early_sham_ind_RPE = np.vstack([hist_early_sham_ind_RPE, hist_early_sham_RPE])
+		hist_late_sham_ind_RPE = np.vstack([hist_late_sham_ind_RPE, hist_late_sham_RPE])
+	
+for j in range(len(hdf_list_stim)):
+	earlyRPE = RPE_early_stim_list[j]
+	lateRPE = RPE_late_stim_list[j]
+	hist_early_stim_RPE, bins = np.histogram(earlyRPE, RPE_bins)
+	hist_late_stim_RPE, bins = np.histogram(lateRPE, RPE_bins)
+	hist_early_stim_RPE = hist_early_stim_RPE/float(len(earlyRPE))
+	hist_late_stim_RPE = hist_late_stim_RPE/float(len(lateRPE))
+	if j==0:
+		hist_early_stim_ind_RPE = hist_early_stim_RPE
+		hist_late_stim_ind_RPE = hist_late_stim_RPE
+	else:
+		hist_early_stim_ind_RPE = np.vstack([hist_early_stim_ind_RPE, hist_early_stim_RPE])
+		hist_late_stim_ind_RPE = np.vstack([hist_late_stim_ind_RPE, hist_late_stim_RPE])
+
+hist_early_sham_ind_avg_RPE = np.nanmean(hist_early_sham_ind_RPE, axis = 0)
+hist_late_sham_ind_avg_RPE = np.nanmean(hist_late_sham_ind_RPE, axis = 0)
+hist_early_stim_ind_avg_RPE = np.nanmean(hist_early_stim_ind_RPE, axis = 0)
+hist_late_stim_ind_avg_RPE = np.nanmean(hist_late_stim_ind_RPE, axis = 0)
+hist_early_sham_ind_sem_RPE = np.nanstd(hist_early_sham_ind_RPE, axis = 0)/np.sqrt(len(hdf_list_sham))
+hist_late_sham_ind_sem_RPE = np.nanstd(hist_late_sham_ind_RPE, axis = 0)/np.sqrt(len(hdf_list_sham))
+hist_early_stim_ind_sem_RPE = np.nanstd(hist_early_stim_ind_RPE, axis = 0)/np.sqrt(len(hdf_list_stim))
+hist_late_stim_ind_sem_RPE = np.nanstd(hist_late_stim_ind_RPE, axis = 0)/np.sqrt(len(hdf_list_stim))
+
+chisq_early, p_early_RPE = stats.chisquare(hist_early_sham_ind_avg_RPE, hist_early_stim_ind_avg_RPE)
+chisq_late, p_late_RPE = stats.chisquare(hist_late_sham_ind_avg_RPE, hist_late_stim_ind_avg_RPE)
+
+plt.figure()
+plt.subplot(1,2,1)
+plt.barh(RPE_bin_centers, -hist_early_sham_ind_avg, width_RPE, xerr = hist_early_sham_ind_sem,color = 'm', label = 'Sham')
+plt.barh(RPE_bin_centers, hist_early_stim_ind_avg, width_RPE, xerr = hist_early_stim_ind_sem,color = 'c', label = 'Stim')
+plt.xlabel('Frequency')
+plt.ylabel('RPE')
+plt.title('Block A')
+plt.text(-0.5, 0.8, 'p = %0.2f (Chi-square)' % (p_early_RPE))
+plt.xlim((-0.6,0.6))
+plt.legend()
+plt.subplot(1,2,2)
+plt.barh(RPE_bin_centers, -hist_late_sham_ind_avg_RPE, width_RPE, xerr = hist_late_sham_ind_sem_RPE, color = 'm', label = 'Sham')
+plt.barh(RPE_bin_centers, hist_late_stim_ind_avg_RPE, width_RPE, xerr = hist_late_stim_ind_sem_RPE, color = 'c', label = 'Stim')
+plt.xlabel('Frequency')
+plt.ylabel('RPE')
+plt.title("Block A'")
+plt.text(-0.5, 0.8, 'p = %0.2f (Chi-square)' % (p_late_RPE))
+plt.xlim((-0.6,0.6))
+plt.legend()
 plt.show()

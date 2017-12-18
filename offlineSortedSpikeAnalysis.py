@@ -104,7 +104,7 @@ class OfflineSorted_CSVFile():
 		- t_start: float representing time (s) at which to begin counting spikes
 		- t_stop: float representing time (s) at whic to stop counting spikes
 		'''
-		avg_firing_rates = dict()
+		avg_firing_rates = []
 		for chan in channs:
 			# First find number of units recorded on this channel
 			unit_chan = np.ravel(np.nonzero(np.equal(self.channel, chan)))
@@ -119,7 +119,7 @@ class OfflineSorted_CSVFile():
 					data = self.times[unit_chan[sc_unit]]  	# times that this sort code on this channel was recorded
 					spikes = (data > t_start)&(data < t_stop)  	# find spikes in this window
 					unit_rates[i] = np.sum(spikes)/float(t_stop - t_start)		# count spikes and divide by window length
-				avg_firing_rates[chan] = unit_rates
+				avg_firing_rates += [unit_rates]
 
 
 		return avg_firing_rates
@@ -420,3 +420,44 @@ class OfflineSorted_CSVFile():
 				counter += 1
 
 		return avg_psth, smooth_avg_psth, np.array(unit_list)
+
+def OfflineSorted_Spikes(csv_file):
+	'''
+	Class for converting spike data from CSV file of offline-sorted units recorded with TDT system
+	to .mat file with all spike data binned to 1 ms bins. Units are offline-sorted with OpenSorter and then 
+	exported to a CSV files using OpenBrowser. Each entry is separated by a comma and new rows are indicated 
+	with a return character. Only good channels are exported into the .mat file.
+	'''
+	filename = csv_file[:-4] + '.mat'
+	data = dict()
+
+	spikes = OfflineSorted_CSVFile(csv_file)
+	good_channels = spikes.good_channels
+
+	t_max = spikes.times[-1]
+	t_min = spikes.times[0]
+	t_bins = np.arange(t_min, t_max, 0.001)
+	t_bin_centers = (t_bins[1:] + t_bins[:-1])/2.
+	data['Time'] = t_bin_centers
+
+	for chan in good_channels:
+		# First find number of units recorded on this channel
+		unit_chan = np.ravel(np.nonzero(np.equal(spikes.channel, chan)))
+		sc_chan = np.unique(spikes.sort_code[unit_chan])
+		sc_chan = np.array([sc for sc in sc_chan if ((sc != 31) and (sc != 0))])
+		
+		unit_rates = np.zeros(len(sc_chan))
+		for i, sc in enumerate(sc_chan):
+			#unit_name = 'Ch' + str(chan) + '_' + str(sc)
+			sc_unit = np.ravel(np.nonzero(np.equal(spikes.sort_code[unit_chan], sc)))
+			sc_times = spikes.times[unit_chan[sc_unit]]  	# times that this sort code on this channel was recorded
+			hist_spikes, bins = np.histogram(sc_times, t_bins)
+			data['Ch' + str(chan) + '_' + str(sc)] = hist_spikes
+
+
+	sp.io.savemat(filename, data)
+
+	return
+
+
+
