@@ -334,8 +334,8 @@ chisq_late, p_late_RPE = stats.chisquare(hist_late_sham_ind_avg_RPE, hist_late_s
 
 plt.figure()
 plt.subplot(1,2,1)
-plt.barh(RPE_bin_centers, -hist_early_sham_ind_avg, width_RPE, xerr = hist_early_sham_ind_sem,color = 'm', label = 'Sham')
-plt.barh(RPE_bin_centers, hist_early_stim_ind_avg, width_RPE, xerr = hist_early_stim_ind_sem,color = 'c', label = 'Stim')
+plt.barh(RPE_bin_centers, -hist_early_sham_ind_avg_RPE, width_RPE, xerr = hist_early_sham_ind_sem,color = 'm', label = 'Sham')
+plt.barh(RPE_bin_centers, hist_early_stim_ind_avg_RPE, width_RPE, xerr = hist_early_stim_ind_sem,color = 'c', label = 'Stim')
 plt.xlabel('Frequency')
 plt.ylabel('RPE')
 plt.title('Block A')

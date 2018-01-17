@@ -421,43 +421,100 @@ class OfflineSorted_CSVFile():
 
 		return avg_psth, smooth_avg_psth, np.array(unit_list)
 
-def OfflineSorted_Spikes(csv_file):
+class OfflineSorted_Spikes():
 	'''
 	Class for converting spike data from CSV file of offline-sorted units recorded with TDT system
 	to .mat file with all spike data binned to 1 ms bins. Units are offline-sorted with OpenSorter and then 
 	exported to a CSV files using OpenBrowser. Each entry is separated by a comma and new rows are indicated 
 	with a return character. Only good channels are exported into the .mat file.
 	'''
-	filename = csv_file[:-4] + '.mat'
-	data = dict()
 
-	spikes = OfflineSorted_CSVFile(csv_file)
-	good_channels = spikes.good_channels
+	def __init__(self, csv_file):
+		self.filename =  csv_file
+		# Read offline sorted data into pandas dataframe. Note that first row in csv file contains the columns headers.
+		self.df = pd.read_csv(self.filename, sep=',', header = 0)
+		self.event = np.ravel(np.array(pd.DataFrame(self.df, columns = [u'EVENT'])))[0]
+		self.times = np.ravel(np.array(pd.DataFrame(self.df, columns = [u'TIME'])))
+		self.channel = np.ravel(np.array(pd.DataFrame(self.df, columns = [u'CHAN'])))
+		# Adjust the channel numbers if this is for channels 97 - 160 that are recorded on the second RZ2.
+		if self.event == 'eNe2':
+			self.channel += 96
+		self.sort_code = np.ravel(np.array(pd.DataFrame(self.df, columns = [u'SORT'])))
+		self.samp_rate = np.ravel(np.array(pd.DataFrame(self.df, columns = [u'Sampling_Freq'])))[0]
+		self.num_waveform_pts = np.ravel(np.array(pd.DataFrame(self.df, columns = [u'NumOfPoints'])))[0]
+		self.waveforms = np.array(pd.DataFrame(self.df, columns = [self.df.columns[-self.num_waveform_pts-1:-1]]))
+		self.sample_num = np.rint(self.times*self.samp_rate)
 
-	t_max = spikes.times[-1]
-	t_min = spikes.times[0]
-	t_bins = np.arange(t_min, t_max, 0.001)
-	t_bin_centers = (t_bins[1:] + t_bins[:-1])/2.
-	data['Time'] = t_bin_centers
+		# Find units with non-noisy recorded data. Recall that sort code 31 is for noise events. 
+		self.good_units = np.ravel(np.nonzero(np.less(self.sort_code, 31)))
+		self.good_channels = np.unique(self.channel[self.good_units])
 
-	for chan in good_channels:
-		# First find number of units recorded on this channel
-		unit_chan = np.ravel(np.nonzero(np.equal(spikes.channel, chan)))
-		sc_chan = np.unique(spikes.sort_code[unit_chan])
-		sc_chan = np.array([sc for sc in sc_chan if ((sc != 31) and (sc != 0))])
-		
-		unit_rates = np.zeros(len(sc_chan))
-		for i, sc in enumerate(sc_chan):
-			#unit_name = 'Ch' + str(chan) + '_' + str(sc)
-			sc_unit = np.ravel(np.nonzero(np.equal(spikes.sort_code[unit_chan], sc)))
-			sc_times = spikes.times[unit_chan[sc_unit]]  	# times that this sort code on this channel was recorded
-			hist_spikes, bins = np.histogram(sc_times, t_bins)
-			data['Ch' + str(chan) + '_' + str(sc)] = hist_spikes
+	def find_chan_sc(self, chan):
+		'''
+		Method that returns the sort codes for the indicated channel.
+		Input:
+			- chan: integer indicating which recording channel is in question
+		Output:
+			- sc_chan: array containing all sort codes for units on the channel chan
+		'''
 
+		unit_chan = np.ravel(np.nonzero(np.equal(self.channel, chan)))
+		sc_chan = np.unique(self.sort_code[unit_chan])
+		sc_chan = np.array([code for code in sc_chan if code != 31])
 
-	sp.io.savemat(filename, data)
+		return sc_chan
 
-	return
+	def find_unit_sc(self,channs):
+		'''
+		Method that returns the unit sort codes for the channels in channs.
+
+		Input: 
+		- channs: array containing integer values corresponding to channel numbers
+
+		Output:
+		- sc: dictionary containing an entry for each channel in channs. Each entry contains an array corresponding
+				to the sort codes found for that channel.
+		'''
+		sc = dict()
+		total_units = 0
+		for chan in channs:
+			# First find number of units recorded on this channel
+			sc_chan = self.find_chan_sc(chan)
+			total_units += len(sc_chan)
+			sc[chan] = sc_chan
+		return sc, total_units
+	
+	def bin_data(self):
+		data = dict()
+		good_channels = self.good_channels
+
+		t_max = self.times[-1]
+		t_min = self.times[0]
+		t_bins = np.arange(t_min, t_max, 0.001)
+		t_bin_centers = (t_bins[1:] + t_bins[:-1])/2.
+		X = t_bin_centers
+
+		unit_labels = ['Time']
+
+		for chan in good_channels:
+			# First find number of units recorded on this channel
+			unit_chan = np.ravel(np.nonzero(np.equal(self.channel, chan)))
+			sc_chan = np.unique(self.sort_code[unit_chan])
+			sc_chan = np.array([sc for sc in sc_chan if ((sc != 31) and (sc != 0))])
+			
+			unit_rates = np.zeros(len(sc_chan))
+			for i, sc in enumerate(sc_chan):
+				#unit_name = 'Ch' + str(chan) + '_' + str(sc)
+				sc_unit = np.ravel(np.nonzero(np.equal(self.sort_code[unit_chan], sc)))
+				sc_times = self.times[unit_chan[sc_unit]]  	# times that this sort code on this channel was recorded
+				hist_spikes, bins = np.histogram(sc_times, t_bins)
+				unit_labels += ['Ch' + str(chan) + '_' + str(sc)]
+				X = np.vstack([X, hist_spikes])
+
+		return X, unit_labels
+	
+
+	
 
 
 
