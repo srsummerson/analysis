@@ -144,11 +144,13 @@ class OfflineSorted_PlxFile():
 			plt.xlabel('Peak-to-Trough Values (uV)')
 			plt.ylabel('Fraction of Units')
 			plt.title('All Waveforms')
+			plt.ylim((0,0.25))
 			plt.subplot(122)
 			plt.plot(bins_avg_center, hist_avg)
 			plt.xlabel('Peak-to-Trough Values (uV)')
 			plt.ylabel('Fraction of Units')
 			plt.title('Mean Waveforms')
+			plt.ylim((0,0.25))
 
 			plt_filename = self.filename[:-4] + '_PeakAmpHistogram.svg'
 			plt.savefig(plt_filename)
