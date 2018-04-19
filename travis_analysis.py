@@ -235,7 +235,7 @@ class OfflineSorted_PlxFile():
 	    		if count==0:
 	    			all_events = hist_fr
 	    		else:
-	    			all_events = np.vstack(all_events, hist_fr)
+	    			all_events = np.vstack([all_events, hist_fr])
 
 	    		plt.figure(1)
 	    		plt.subplot(121)
