@@ -189,7 +189,7 @@ class OfflineSorted_PlxFile():
 	    plt.figure()
 	    plt.subplot(121)
 	    for ith, trial in enumerate(event_times_list):
-	    	plt.vlines(trial, .5, 1.5, color=color)
+	    	plt.vlines(trial, .5, 1.5, color='k')
 	    #plt.ylim(.5, len(event_times_list) + .5)
 	    plt.subplot(122)
 	    plt.plot(bin_centers,smooth_hist)
