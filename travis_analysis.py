@@ -130,9 +130,9 @@ class OfflineSorted_PlxFile():
 				peaks = np.append(peaks, p2p)
 				avg_peaks = np.append(avg_peaks, avg_p2p)
 
-		hist_all, bins_all = np.histogram(peaks, bins = 10)
+		hist_all, bins_all = np.histogram(peaks, bins = 12)
 		hist_all = hist_all/float(len(peaks))
-		hist_avg, bins_avg = np.histogram(avg_peaks, bins = 10)
+		hist_avg, bins_avg = np.histogram(avg_peaks, bins = 12)
 		hist_avg = hist_avg/float(len(avg_peaks))
 
 		if plot_data:
