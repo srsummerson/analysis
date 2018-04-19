@@ -303,7 +303,7 @@ class OfflineSorted_PlxFile():
 			fig = plt.figure()
 			ax1 = fig.add_subplot(111)
 			cmap = cm.get_cmap('jet', 30)
-			cax = ax1.imshow(corr_mat, interpolation="nearest", cmap=cmap)
+			cax = ax1.imshow(corr_mat, interpolation="nearest", cmap=cmap, vmin = 0.0, vmax = 1.0)
 			ax1.grid(True)
 			plt.title('Firing Rate Correlation')
 			labels=[str(chan) for chan in self.good_channels]
