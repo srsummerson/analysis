@@ -224,7 +224,7 @@ class OfflineSorted_PlxFile():
 	    count = 0
 	    all_events = np.array([])
 	    bins = np.arange(self.spikes['ts'][0], self.spikes['ts'][-1], t_resolution)
-	    cmap = mpl.cm.autumn
+	    cmap = mpl.cm.hsv
 
 	    for chan in self.good_channels:
 	    	sc_chan = self.find_chan_sc(chan)
