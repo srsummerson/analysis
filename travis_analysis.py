@@ -7,6 +7,7 @@ from scipy import stats
 import matplotlib as mpl
 from matplotlib import pyplot as plt
 from matplotlib import cm as cm
+import matplotlib as mpl
 from scipy import signal
 from scipy.ndimage import filters
 from scipy.interpolate import spline
@@ -223,6 +224,7 @@ class OfflineSorted_PlxFile():
 	    count = 0
 	    all_events = np.array([])
 	    bins = np.arange(self.spikes['ts'][0], self.spikes['ts'][-1], t_resolution)
+	    cmap = mpl.cm.autumn
 
 	    for chan in self.good_channels:
 	    	sc_chan = self.find_chan_sc(chan)
@@ -238,9 +240,9 @@ class OfflineSorted_PlxFile():
 	    			all_events = np.vstack([all_events, hist_fr])
 
 	    		plt.figure(1)
-	    		plt.subplot(121)
+	    		plt.subplot(211)
 	    		for ith, trial in enumerate(event_times_list):
-	    			plt.vlines(trial, count + .5, count + 1.3, color='k')
+	    			plt.vlines(trial, count + .5, count + 1.3, color=cmap(i/float(len(30))))
 	    		count += 1
 
 	    #print all_events.shape		
@@ -250,11 +252,11 @@ class OfflineSorted_PlxFile():
 	    smooth_hist = filters.convolve1d(all_hist_fr, b/b.sum())
 	    bin_centers = (abins[1:] + abins[:-1])/2.
 
-	    plt.subplot(121)
+	    plt.subplot(211)
 	    plt.xlabel('Time (s)')
 	    plt.xlim((0,60))
 	    #plt.ylim(.5, len(event_times_list) + .5)
-	    plt.subplot(122)
+	    plt.subplot(212)
 	    plt.plot(bin_centers,smooth_hist)
 	    plt.xlabel('Time (s)')
 	    plt.ylabel('Avg Firing Rate (Hz)')
