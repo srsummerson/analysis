@@ -294,8 +294,9 @@ class OfflineSorted_PlxFile():
 				else:
 					hist_all = np.vstack([hist_all, hist_fr])
 		# 2. Correlate binned spike data across all channels.
-		corr_mat = hist_all.corr()
 		print corr_mat.shape
+		#corr_mat = hist_all.corr()
+		corr_mat = np.corrcoef(hist_all)
 
 		if plot_data:
 			fig = plt.figure()
