@@ -325,9 +325,9 @@ class OfflineSorted_PlxFile():
 			plt.title('Firing Rate Correlation')
 			#labels=[str(chan) for chan in self.good_channels]
 			ax1.set_xticklabels(labels,fontsize=6)
-			ax1.set_xticks(range(len(labels)),fontsize=6)
+			ax1.set_xticks(range(len(labels)))
 			ax1.set_yticklabels(labels,fontsize=6)
-			ax1.set_yticks(range(len(labels)),fontsize=6)
+			ax1.set_yticks(range(len(labels)))
 			# Add colorbar, make sure to specify tick locations to match desired ticklabels
 			fig.colorbar(cax, ticks=[.5,.6,.7,.8,.9,1])
 
