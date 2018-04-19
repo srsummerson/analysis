@@ -280,10 +280,12 @@ class OfflineSorted_PlxFile():
 
 		# 1. Bin all firing activity and build array of binned data
 		count = 0
-		bins = np.arange(self.spikes['ts'][0], self.spikes['ts'][-1], t_resolution) 
+		bins = np.arange(self.spikes['ts'][0], self.spikes['ts'][-1], t_resolution)
+		labels = [] 
 		for chan in self.good_channels:
 			sc_chan = self.find_chan_sc(chan)
 			for sc in sc_chan:
+				labels += ['Chan_' + str(chan) + '_Unit_' + str(sc)]
 				inds, = np.nonzero((self.spikes['chan'] == chan) * (self.spikes['unit'] == sc))
 				event_times_list = self.spikes['ts'][inds]
 				hist, bins = np.histogram(event_times_list, bins = bins)
@@ -300,17 +302,32 @@ class OfflineSorted_PlxFile():
 		print corr_mat.shape
 
 		if plot_data:
-			fig = plt.figure()
+			fig = plt.figure(1)
 			ax1 = fig.add_subplot(111)
 			cmap = cm.get_cmap('jet', 30)
 			cax = ax1.imshow(corr_mat, interpolation="nearest", cmap=cmap, vmin = 0.0, vmax = 1.0)
 			ax1.grid(True)
 			plt.title('Firing Rate Correlation')
-			labels=[str(chan) for chan in self.good_channels]
+			#labels=[str(chan) for chan in self.good_channels]
 			ax1.set_xticklabels(labels,fontsize=6)
 			ax1.set_yticklabels(labels,fontsize=6)
 			# Add colorbar, make sure to specify tick locations to match desired ticklabels
-			fig.colorbar(cax, ticks=[.75,.8,.85,.90,.95,1])
+			fig.colorbar(cax, ticks=[0,.1,.2,.3,.4,.5,.6,.7,.8,.9,1])
+
+			plt_filename = self.filename[:-4] + '_FiringRateCorrelation.svg'
+			plt.savefig(plt_filename)
+
+			fig = plt.figure(2)
+			ax1 = fig.add_subplot(111)
+			cmap = cm.get_cmap('jet', 30)
+			cax = ax1.imshow(corr_mat, interpolation="nearest", cmap=cmap, vmin = 0.5, vmax = 1.0)
+			ax1.grid(True)
+			plt.title('Firing Rate Correlation')
+			#labels=[str(chan) for chan in self.good_channels]
+			ax1.set_xticklabels(labels,fontsize=6)
+			ax1.set_yticklabels(labels,fontsize=6)
+			# Add colorbar, make sure to specify tick locations to match desired ticklabels
+			fig.colorbar(cax, ticks=[.5,.6,.7,.8,.9,1])
 
 			plt_filename = self.filename[:-4] + '_FiringRateCorrelation.svg'
 			plt.savefig(plt_filename)
