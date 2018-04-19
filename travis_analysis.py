@@ -86,13 +86,13 @@ class OfflineSorted_PlxFile():
 		time = np.arange(0,32./40000., 1./40000)
 		plt.figure()
 		plt.plot(time, mean_waveform, 'b')
-		plt.fill_between(time, mean_waveform - std_waveform, mean_waveform + std_waveform, color = 'b', alpha = 0.5)
+		plt.fill_between(time, mean_waveform - std_waveform, mean_waveform + std_waveform, color = 'b', alpha = 0.5, linewidth=0.0)
 		plt.title('Channel %i - Unit %i' % (chan, sc))
 		plt.xlabel('Time (s)')
 		plt.ylabel('Voltage (uV)')
 		plt_filename = self.filename[:-4] + '_Chan_' + str(chan) + '_Unit_' + str(sc) + '.svg'
 		plt.savefig(plt_filename)
-		plt.close('all')
+		plt.close()
 
 		return sc_waveform, mean_waveform, std_waveform
 
