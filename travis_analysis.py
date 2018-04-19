@@ -230,19 +230,25 @@ class OfflineSorted_PlxFile():
 
 	    		inds, = np.nonzero((self.spikes['chan'] == chan) * (self.spikes['unit'] == sc))
 	    		event_times_list = self.spikes['ts'][inds]
-	    		all_events = np.append(all_events, event_times_list)
+	    		hist, abins = np.histogram(event_times_list, bins = bins)
+	    		hist_fr = hist/t_resolution
+	    		if count==0:
+	    			all_events = hist_fr
+	    		else:
+	    			all_events = np.vstack(all_events, hist_fr)
 
 	    		plt.figure(1)
 	    		plt.subplot(121)
 	    		for ith, trial in enumerate(event_times_list):
-	    			plt.vlines(trial, count + .5, count + 1.5, color='k')
+	    			plt.vlines(trial, count + .5, count + 1.3, color='k')
 	    		count += 1
 
-	    hist, bins = np.histogram(all_events, bins = bins)
-	    hist_fr = hist/t_resolution
+	    print all_events.shape		
+	    all_hist_fr = np.mean(all_events, axis = 0)
+	    print len(all_hist_fr)
 	    #smooth_hist = np.convolve(hist_fr, boxcar_window, mode='same')/boxcar_length
-	    smooth_hist = filters.convolve1d(hist_fr, b/b.sum())
-	    bin_centers = (bins[1:] + bins[:-1])/2.
+	    smooth_hist = filters.convolve1d(all_hist_fr, b/b.sum())
+	    bin_centers = (abins[1:] + abins[:-1])/2.
 
 	    plt.subplot(121)
 	    plt.xlabel('Time (s)')
