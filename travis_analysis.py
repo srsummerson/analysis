@@ -44,7 +44,6 @@ class OfflineSorted_PlxFile():
 
 		return sc_chan
 
-
 	def get_avg_firing_rates(self,channs):
 		'''
 		Method that returns the average firing rates of the channels listed in channs. Average is computed 
@@ -69,7 +68,7 @@ class OfflineSorted_PlxFile():
 
 		return avg_firing_rates
 
-	def get_waveform_data(self, chan, sc, plot_data = True):
+	def get_waveform_data(self, chan, sc, plot_data):
 		'''
 		Method that returns length 32 array containing the average and standard deviation of the spike waveform on
 		the indicated channel with the indicated sort code. Note that default sampling rate for spike data is 40K Hz.
@@ -79,13 +78,13 @@ class OfflineSorted_PlxFile():
 		- sc: integer indicating sort code
 		- plot data : Boolean, indicate if data plot should be saved
 		'''
-        inds, = np.nonzero((self.spikes['chan'] == chan) * (self.spikes['unit'] == sc))
-        sc_waveform = self.waveforms[inds]
+		inds, = np.nonzero((self.spikes['chan'] == chan) * (self.spikes['unit'] == sc))
+		sc_waveform = self.waveforms[inds]
 		mean_waveform = np.mean(sc_waveform, axis = 0) 		# array of size 32
 		std_waveform = np.std(sc_waveform, axis = 0)
 
 		# Plot waveform
-		if plot_data:
+		if plot_data==True:
 			time = np.arange(0,32./40000., 1./40000)
 			fig = plt.figure()
 			plt.plot(time, mean_waveform, 'b')
@@ -173,30 +172,30 @@ class OfflineSorted_PlxFile():
 	    """
 	    ax = plt.gca()
 	    boxcar_length = 4.
-		boxcar_window = signal.boxcar(boxcar_length)  # 2 bins before, 2 bins after for boxcar smoothing
-		b = signal.gaussian(39, 0.6)
+	    boxcar_window = signal.boxcar(boxcar_length)  # 2 bins before, 2 bins after for boxcar smoothing
+	    b = signal.gaussian(39, 0.6)
 
 	    inds, = np.nonzero((self.spikes['chan'] == chan) * (self.spikes['unit'] == sc))
-        event_times_list = self.spikes[inds]
+	    event_times_list = self.spikes[inds]
 
-        bins = np.arange(self.spikes['ts'][0], self.spikes['ts'][-1], t_resolution)
+	    bins = np.arange(self.spikes['ts'][0], self.spikes['ts'][-1], t_resolution)
 
-        hist, bins = np.histogram(event_times_list, bins = bins)
-		hist_fr = hist/t_resolution
-		#smooth_hist = np.convolve(hist_fr, boxcar_window, mode='same')/boxcar_length
-		smooth_hist = filters.convolve1d(hist_fr, b/b.sum())
+	    hist, bins = np.histogram(event_times_list, bins = bins)
+	    hist_fr = hist/t_resolution
+	    #smooth_hist = np.convolve(hist_fr, boxcar_window, mode='same')/boxcar_length
+	    smooth_hist = filters.convolve1d(hist_fr, b/b.sum())
 
 	    for ith, trial in enumerate(event_times_list):
-	        plt.vlines(trial, ith + .5, ith + 1.5, color=color)
+	    	plt.vlines(trial, ith + .5, ith + 1.5, color=color)
 	    plt.ylim(.5, len(event_times_list) + .5)
 	    plt.plot(bins,smooth_hist)
 
 	    plt_filename = self.filename[:-4] + '_Chan_' + str(chan) + '_Unit_' + str(sc) + '_Raster.svg'
-		plt.savefig(plt_filename)
-		plt.close()
-	   
-		return ax
+	    plt.savefig(plt_filename)
+	    plt.close()
 
+	    return ax
+	
 	def spike_rate_correlation(self, t_resolution, plot_data = True):
 		"""
 		Computes correlation of spike rates across channels.
@@ -216,33 +215,33 @@ class OfflineSorted_PlxFile():
 			sc_chan = self.find_chan_sc(chan)
 			for sc in sc_chan:
 				inds, = np.nonzero((self.spikes['chan'] == chan) * (self.spikes['unit'] == sc))
-        		event_times_list = self.spikes[inds]
-        		hist, bins = np.histogram(event_times_list, bins = bins)
+				event_times_list = self.spikes[inds]
+				hist, bins = np.histogram(event_times_list, bins = bins)
 				hist_fr = hist/t_resolution
 				if count == 0:
 					hist_all = hist_fr
 					count += 1
 				else:
 					hist_all = np.vstack([hist_all, hist_fr])
-
 		# 2. Correlate binned spike data across all channels.
 		corr_mat = hist_all.corr()
 
 		if plot_data:
 			fig = plt.figure()
-		    ax1 = fig.add_subplot(111)
-		    cmap = cm.get_cmap('jet', 30)
-		    cax = ax1.imshow(corr_mat, interpolation="nearest", cmap=cmap)
-		    ax1.grid(True)
-		    plt.title('Firing Rate Correlation')
-		    labels=[str(chan) for chan in self.good_channels]
-	    	ax1.set_xticklabels(labels,fontsize=6)
-	    	ax1.set_yticklabels(labels,fontsize=6)
-		    # Add colorbar, make sure to specify tick locations to match desired ticklabels
-		    fig.colorbar(cax, ticks=[.75,.8,.85,.90,.95,1])
-		    
-		    plt_filename = self.filename[:-4] + '_FiringRateCorrelation.svg'
+			ax1 = fig.add_subplot(111)
+			cmap = cm.get_cmap('jet', 30)
+			cax = ax1.imshow(corr_mat, interpolation="nearest", cmap=cmap)
+			ax1.grid(True)
+			plt.title('Firing Rate Correlation')
+			labels=[str(chan) for chan in self.good_channels]
+			ax1.set_xticklabels(labels,fontsize=6)
+			ax1.set_yticklabels(labels,fontsize=6)
+			# Add colorbar, make sure to specify tick locations to match desired ticklabels
+			fig.colorbar(cax, ticks=[.75,.8,.85,.90,.95,1])
+
+			plt_filename = self.filename[:-4] + '_FiringRateCorrelation.svg'
 			plt.savefig(plt_filename)
 			plt.close()
 
 		return corr_mat
+
