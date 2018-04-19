@@ -243,20 +243,22 @@ class OfflineSorted_PlxFile():
 	    			plt.vlines(trial, count + .5, count + 1.3, color='k')
 	    		count += 1
 
-	    print all_events.shape		
+	    #print all_events.shape		
 	    all_hist_fr = np.mean(all_events, axis = 0)
-	    print len(all_hist_fr)
+	    #print len(all_hist_fr)
 	    #smooth_hist = np.convolve(hist_fr, boxcar_window, mode='same')/boxcar_length
 	    smooth_hist = filters.convolve1d(all_hist_fr, b/b.sum())
 	    bin_centers = (abins[1:] + abins[:-1])/2.
 
 	    plt.subplot(121)
 	    plt.xlabel('Time (s)')
+	    plt.xlim((0,60))
 	    #plt.ylim(.5, len(event_times_list) + .5)
 	    plt.subplot(122)
 	    plt.plot(bin_centers,smooth_hist)
 	    plt.xlabel('Time (s)')
-	    plt.ylabel('Instantaneous Firing Rate (Hz)')
+	    plt.ylabel('Avg Firing Rate (Hz)')
+	    plt.xlim((0,60))
 
 	    plt_filename = self.filename[:-4] + '_Raster.svg'
 	    plt.savefig(plt_filename)
