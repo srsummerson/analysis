@@ -68,7 +68,7 @@ class OfflineSorted_PlxFile():
 
 		return avg_firing_rates
 
-	def get_waveform_data(self, chan, sc, plot_data):
+	def get_waveform_data(self, chan, sc):
 		'''
 		Method that returns length 32 array containing the average and standard deviation of the spike waveform on
 		the indicated channel with the indicated sort code. Note that default sampling rate for spike data is 40K Hz.
@@ -83,18 +83,16 @@ class OfflineSorted_PlxFile():
 		mean_waveform = np.mean(sc_waveform, axis = 0) 		# array of size 32
 		std_waveform = np.std(sc_waveform, axis = 0)
 
-		# Plot waveform
-		if plot_data==True:
-			time = np.arange(0,32./40000., 1./40000)
-			fig = plt.figure()
-			plt.plot(time, mean_waveform, 'b')
-			plt.fill_between(time, mean_waveform - std_waveform, mean_waveform + std_waveform, color = 'b', alpha = 0.5)
-			plt.title('Channel %i - Unit %i' % (chan, sc))
-			plt.xlabel('Time (s)')
-			plt.ylabel('Voltage (uV)')
-			plt_filename = self.filename[:-4] + '_Chan_' + str(chan) + '_Unit_' + str(sc) + '.svg'
-			plt.savefig(plt_filename)
-			plt.close('all')
+		time = np.arange(0,32./40000., 1./40000)
+		plt.figure()
+		plt.plot(time, mean_waveform, 'b')
+		plt.fill_between(time, mean_waveform - std_waveform, mean_waveform + std_waveform, color = 'b', alpha = 0.5)
+		plt.title('Channel %i - Unit %i' % (chan, sc))
+		plt.xlabel('Time (s)')
+		plt.ylabel('Voltage (uV)')
+		plt_filename = self.filename[:-4] + '_Chan_' + str(chan) + '_Unit_' + str(sc) + '.svg'
+		plt.savefig(plt_filename)
+		plt.close('all')
 
 		return sc_waveform, mean_waveform, std_waveform
 
