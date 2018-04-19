@@ -285,7 +285,7 @@ class OfflineSorted_PlxFile():
 			sc_chan = self.find_chan_sc(chan)
 			for sc in sc_chan:
 				inds, = np.nonzero((self.spikes['chan'] == chan) * (self.spikes['unit'] == sc))
-				event_times_list = self.spikes[inds]
+				event_times_list = self.spikes['ts'][inds]
 				hist, bins = np.histogram(event_times_list, bins = bins)
 				hist_fr = hist/t_resolution
 				if count == 0:
@@ -295,6 +295,7 @@ class OfflineSorted_PlxFile():
 					hist_all = np.vstack([hist_all, hist_fr])
 		# 2. Correlate binned spike data across all channels.
 		corr_mat = hist_all.corr()
+		print corr_mat.shape
 
 		if plot_data:
 			fig = plt.figure()
