@@ -221,7 +221,7 @@ class OfflineSorted_PlxFile():
 	    b = signal.gaussian(39, 0.6)
 
 	    count = 0
-	    all_events = np.array()
+	    all_events = np.array([])
 	    bins = np.arange(self.spikes['ts'][0], self.spikes['ts'][-1], t_resolution)
 
 	    for chan in self.good_channels:
