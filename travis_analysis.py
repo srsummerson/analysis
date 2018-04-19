@@ -176,7 +176,7 @@ class OfflineSorted_PlxFile():
 	    b = signal.gaussian(39, 0.6)
 
 	    inds, = np.nonzero((self.spikes['chan'] == chan) * (self.spikes['unit'] == sc))
-	    event_times_list = self.spikes[inds]
+	    event_times_list = self.spikes['ts'][inds]
 
 	    bins = np.arange(self.spikes['ts'][0], self.spikes['ts'][-1], t_resolution)
 
@@ -184,11 +184,15 @@ class OfflineSorted_PlxFile():
 	    hist_fr = hist/t_resolution
 	    #smooth_hist = np.convolve(hist_fr, boxcar_window, mode='same')/boxcar_length
 	    smooth_hist = filters.convolve1d(hist_fr, b/b.sum())
+	    bin_centers = (bins[1:] + bins[:-1])/2.
 
+	    plt.figure()
+	    plt.subplot(121)
 	    for ith, trial in enumerate(event_times_list):
-	    	plt.vlines(trial, ith + .5, ith + 1.5, color=color)
-	    plt.ylim(.5, len(event_times_list) + .5)
-	    plt.plot(bins,smooth_hist)
+	    	plt.vlines(trial, .5, 1.5, color=color)
+	    #plt.ylim(.5, len(event_times_list) + .5)
+	    plt.subplot(122)
+	    plt.plot(bin_centers,smooth_hist)
 
 	    plt_filename = self.filename[:-4] + '_Chan_' + str(chan) + '_Unit_' + str(sc) + '_Raster.svg'
 	    plt.savefig(plt_filename)
