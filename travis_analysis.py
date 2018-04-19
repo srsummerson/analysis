@@ -190,11 +190,69 @@ class OfflineSorted_PlxFile():
 	    plt.subplot(121)
 	    for ith, trial in enumerate(event_times_list):
 	    	plt.vlines(trial, .5, 1.5, color='k')
+	    plt.xlabel('Time (s)')
 	    #plt.ylim(.5, len(event_times_list) + .5)
 	    plt.subplot(122)
 	    plt.plot(bin_centers,smooth_hist)
+	    plt.xlabel('Time (s)')
+	    plt.ylabel('Instantaneous Firing Rate (Hz)')
 
 	    plt_filename = self.filename[:-4] + '_Chan_' + str(chan) + '_Unit_' + str(sc) + '_Raster.svg'
+	    plt.savefig(plt_filename)
+	    plt.close()
+
+	    return ax
+
+	def all_channels_raster_with_spike_hist(self, t_resolution):
+	    """
+	    Creates a raster plot where each row is a different channel with a corresponding smoothed histogram of total
+	    spiking activity.
+	    Parameters
+	    ----------
+		t_resolution : int, the size of the time bins in terms of seconds, i.e. 0.1 = 100 ms and 1  = 1 s
+
+	    Returns
+	    -------
+	    ax : an axis containing the raster plot
+	    """
+	    ax = plt.gca()
+	    boxcar_length = 4
+	    boxcar_window = signal.boxcar(boxcar_length)  # 2 bins before, 2 bins after for boxcar smoothing
+	    b = signal.gaussian(39, 0.6)
+
+	    count = 0
+	    all_events = np.array()
+	    bins = np.arange(self.spikes['ts'][0], self.spikes['ts'][-1], t_resolution)
+
+	    for chan in self.good_channels:
+	    	sc_chan = self.find_chan_sc(chan)
+	    	for sc in sc_chan:
+
+	    		inds, = np.nonzero((self.spikes['chan'] == chan) * (self.spikes['unit'] == sc))
+	    		event_times_list = self.spikes['ts'][inds]
+	    		all_events = np.append(all_events, event_times_list)
+
+	    		plt.figure(1)
+	    		plt.subplot(121)
+	    		for ith, trial in enumerate(event_times_list):
+	    			plt.vlines(trial, count + .5, count + 1.5, color='k')
+	    		count += 1
+
+	    hist, bins = np.histogram(all_events, bins = bins)
+	    hist_fr = hist/t_resolution
+	    #smooth_hist = np.convolve(hist_fr, boxcar_window, mode='same')/boxcar_length
+	    smooth_hist = filters.convolve1d(hist_fr, b/b.sum())
+	    bin_centers = (bins[1:] + bins[:-1])/2.
+
+	    plt.subplot(121)
+	    plt.xlabel('Time (s)')
+	    #plt.ylim(.5, len(event_times_list) + .5)
+	    plt.subplot(122)
+	    plt.plot(bin_centers,smooth_hist)
+	    plt.xlabel('Time (s)')
+	    plt.ylabel('Instantaneous Firing Rate (Hz)')
+
+	    plt_filename = self.filename[:-4] + '_Raster.svg'
 	    plt.savefig(plt_filename)
 	    plt.close()
 
