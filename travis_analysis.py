@@ -171,7 +171,7 @@ class OfflineSorted_PlxFile():
 	    ax : an axis containing the raster plot
 	    """
 	    ax = plt.gca()
-	    boxcar_length = 4.
+	    boxcar_length = 4
 	    boxcar_window = signal.boxcar(boxcar_length)  # 2 bins before, 2 bins after for boxcar smoothing
 	    b = signal.gaussian(39, 0.6)
 
