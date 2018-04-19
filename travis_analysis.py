@@ -329,7 +329,7 @@ class OfflineSorted_PlxFile():
 			# Add colorbar, make sure to specify tick locations to match desired ticklabels
 			fig.colorbar(cax, ticks=[.5,.6,.7,.8,.9,1])
 
-			plt_filename = self.filename[:-4] + '_FiringRateCorrelation.svg'
+			plt_filename = self.filename[:-4] + '_FiringRateCorrelation2.svg'
 			plt.savefig(plt_filename)
 			plt.close()
 
