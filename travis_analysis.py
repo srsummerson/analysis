@@ -242,7 +242,7 @@ class OfflineSorted_PlxFile():
 	    		plt.figure(1)
 	    		plt.subplot(211)
 	    		for ith, trial in enumerate(event_times_list):
-	    			plt.vlines(trial, count + .5, count + 1.3, color=cmap(count/float(len(30))))
+	    			plt.vlines(trial, count + .5, count + 1.3, color=cmap(count/30.))
 	    		count += 1
 
 	    #print all_events.shape		
