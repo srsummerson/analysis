@@ -20,7 +20,7 @@ class OfflineSorted_PlxFile():
 	def __init__(self, plx_file):
 		self.filename =  plx_file
 		# Read offline sorted data
-		self.plx = plexfile.openFile('filename.plx')
+		self.plx = plexfile.openFile(self.filename)
 		self.spikes = self.plx.spikes[:].data  # Extract spike times and channel info. Format is (time, chan, unit).
 		self.waveforms = self.plex.spikes[:].waveforms
 		self.times = np.array([entry[0] for entry in self.spikes]) 
