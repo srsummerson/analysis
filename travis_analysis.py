@@ -83,6 +83,7 @@ class OfflineSorted_PlxFile():
 		sc_waveform = self.waveforms[inds]
 		mean_waveform = np.mean(sc_waveform, axis = 0) 		# array of size 32
 		std_waveform = np.std(sc_waveform, axis = 0)
+		vrms = np.sqrt(np.mean(np.square(mean_waveform)))
 
 		time = np.arange(0,32./40000., 1./40000)
 		plt.figure()
@@ -90,9 +91,10 @@ class OfflineSorted_PlxFile():
 		plt.fill_between(time, mean_waveform - std_waveform, mean_waveform + std_waveform, color = 'b', alpha = 0.5, linewidth=0.0)
 		plt.title('Channel %i - Unit %i' % (chan, sc))
 		plt.xlabel('Time (s)')
-		plt.ylabel('Voltage (uV)')
+		plt.ylabel('Voltage (' + r'$\mu$' + 'V)')
 		plt_filename = self.filename[:-4] + '_Chan_' + str(chan) + '_Unit_' + str(sc) + '.svg'
 		plt.savefig(plt_filename)
+		plt.text(time[-8],mean_waveform[20],r'$V_{rms}=$' + '%f' % (vrms))
 		plt.close()
 
 		return sc_waveform, mean_waveform, std_waveform
