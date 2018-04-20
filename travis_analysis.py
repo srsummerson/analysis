@@ -92,9 +92,10 @@ class OfflineSorted_PlxFile():
 		plt.title('Channel %i - Unit %i' % (chan, sc))
 		plt.xlabel('Time (s)')
 		plt.ylabel('Voltage (' + r'$\mu$' + 'V)')
+		plt.text(time[-8],mean_waveform[20],'$V_{rms}=$ %f' % (vrms))
 		plt_filename = self.filename[:-4] + '_Chan_' + str(chan) + '_Unit_' + str(sc) + '.svg'
 		plt.savefig(plt_filename)
-		plt.text(time[-8],mean_waveform[20],r'$V_{rms}=$' + '%f' % (vrms))
+		
 		plt.close()
 
 		return sc_waveform, mean_waveform, std_waveform
@@ -140,15 +141,17 @@ class OfflineSorted_PlxFile():
 		if plot_data:
 			bins_all_center = (bins_all[1:] + bins_all[:-1])/2.
 			bins_avg_center = (bins_avg[1:] + bins_avg[:-1])/2.
+			width_all = bins_all[1] - bins_all[0]
+			width_avg = bins_avg[1] - bins_avg[0]
 			fig = plt.figure()
 			plt.subplot(121)
-			plt.bar(bins_all_center, hist_all)
+			plt.bar(bins_all_center, hist_all, width_all)
 			plt.xlabel('Peak-to-Trough Values ($\mu$V)')
 			plt.ylabel('Fraction of Units')
 			plt.title('All Waveforms')
 			plt.ylim((0,0.25))
 			plt.subplot(122)
-			plt.bar(bins_avg_center, hist_avg)
+			plt.bar(bins_avg_center, hist_avg, width_avg)
 			plt.xlabel('Peak-to-Trough Values ($\mu$V)')
 			plt.ylabel('Fraction of Units')
 			plt.title('Mean Waveforms')
