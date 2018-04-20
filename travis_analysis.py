@@ -133,9 +133,11 @@ class OfflineSorted_PlxFile():
 				peaks = np.append(peaks, p2p)
 				avg_peaks = np.append(avg_peaks, avg_p2p)
 
-		hist_all, bins_all = np.histogram(peaks, bins = 12)
+		bins_all = np.arange(50,130,10)
+
+		hist_all, bins_all = np.histogram(peaks, bins = bins_all)
 		hist_all = hist_all/float(len(peaks))
-		hist_avg, bins_avg = np.histogram(avg_peaks, bins = 12)
+		hist_avg, bins_avg = np.histogram(avg_peaks, bins = bins_all)
 		hist_avg = hist_avg/float(len(avg_peaks))
 
 		if plot_data:
@@ -143,19 +145,21 @@ class OfflineSorted_PlxFile():
 			bins_avg_center = (bins_avg[1:] + bins_avg[:-1])/2.
 			width_all = bins_all[1] - bins_all[0]
 			width_avg = bins_avg[1] - bins_avg[0]
+			print width_all
+			print width_avg
 			fig = plt.figure()
 			plt.subplot(121)
 			plt.bar(bins_all_center, hist_all, width_all)
 			plt.xlabel('Peak-to-Trough Values ($\mu$V)')
 			plt.ylabel('Fraction of Units')
 			plt.title('All Waveforms')
-			plt.ylim((0,0.25))
+			plt.ylim((0,0.3))
 			plt.subplot(122)
 			plt.bar(bins_avg_center, hist_avg, width_avg)
 			plt.xlabel('Peak-to-Trough Values ($\mu$V)')
 			plt.ylabel('Fraction of Units')
 			plt.title('Mean Waveforms')
-			plt.ylim((0,0.25))
+			plt.ylim((0,0.3))
 
 			plt_filename = self.filename[:-4] + '_PeakAmpHistogram.svg'
 			plt.savefig(plt_filename)
