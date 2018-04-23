@@ -166,7 +166,7 @@ class OfflineSorted_PlxFile():
 			plt.close()
 
 
-		return hist_all, bins_all, hist_avg, bins_avg
+		return hist_all, bins_all, hist_avg, bins_avg, avg_peaks
 
 	def raster_with_spike_hist(self, chan, sc, t_resolution):
 	    """
