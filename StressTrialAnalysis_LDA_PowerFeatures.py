@@ -32,11 +32,15 @@ from pybrain.supervised.trainers import BackpropTrainer
 from pybrain.structure.modules import SoftmaxLayer, TanhLayer
 from pybrain.datasets import SupervisedDataSet
 
+"""
+Need to check lfp_center_states
+"""
 
-hdf_filename = 'mari20160707_02_te2314.hdf'
-hdf_filename_stim = 'mari20160707_03_te2315.hdf'
-filename = 'Mario20160707'
-filename2 = 'Mario20160707'
+
+hdf_filename = 'mari20160401_03_te1912.hdf'
+hdf_filename_stim = ''
+filename = 'Mario20160401'
+filename2 = 'Mario20160401'
 block_num = 1
 block_num_stim = 2
 print filename
