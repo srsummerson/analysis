@@ -669,18 +669,23 @@ def averagedPSD(data, Fs, cutoff, len_windows, num_wins, notch):
 	filtered_data = lowpassFilterData(filtered_data, Fs, cutoff) 	# low-pass filter
 
 	for i in range(num_wins):
+		print "Window number: %i" % (i)
 		if i==0:
 			freq, Pxx = signal.welch(filtered_data[i*len_windows:(i+1)*len_windows], Fs, nperseg=512, noverlap=256)
+			Pxx_nonorm = Pxx
 			Pxx = Pxx/np.sum(Pxx)
-			print Pxx.shape
+			#print Pxx.shape
 		else:
 			freq, Pxx_den = signal.welch(filtered_data[i*len_windows:(i+1)*len_windows], Fs, nperseg=512, noverlap=256)
+			Pxx_nonorm = np.vstack([Pxx_nonorm, Pxx_den])
 			Pxx_den = Pxx_den/np.sum(Pxx_den)
-			print Pxx_den.shape
+			#print Pxx_den.shape
 			Pxx = np.vstack([Pxx, Pxx_den])
 
 	freq_cutoff = np.sum(np.less(freq,cutoff))
 	Pxx_avg = np.nanmean(Pxx[:,:freq_cutoff+1], axis = 0)
 	Pxx_sem = np.nanstd(Pxx[:,:freq_cutoff+1], axis = 0)
+	Pxx_nonorm_avg = np.nanmean(Pxx_nonorm[:,:freq_cutoff+1], axis = 0)
+	Pxx_nonorm_sem = np.nanstd(Pxx_nonorm[:,:freq_cutoff+1], axis = 0)
 
-	return freq[:freq_cutoff+1], Pxx_avg, Pxx_sem
+	return freq[:freq_cutoff+1], Pxx_avg, Pxx_sem, Pxx_nonorm_avg, Pxx_nonorm_sem

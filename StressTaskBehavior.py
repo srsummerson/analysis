@@ -8,6 +8,7 @@ from matplotlib import pyplot as plt
 from rt_calc import get_rt_change_deriv
 from neo import io
 from PulseMonitorData import findIBIs
+from offlineSortedSpikeAnalysis import OfflineSorted_CSVFile
 
 
 
@@ -41,6 +42,7 @@ class StressBehavior():
 		self.ind_hold_center_states = np.ravel(np.nonzero(self.state == 'hold_center'))
 		self.ind_target_states = np.ravel(np.nonzero(self.state == 'target'))
 		self.ind_check_reward_states = np.ravel(np.nonzero(self.state == 'check_reward'))
+		self.ind_reward_states = np.ravel(np.nonzero(self.state == 'reward'))
 		#self.trial_type = np.ravel(trial_type[state_time[ind_center_states]])
 		#self.stress_type = np.ravel(stress_type[state_time[ind_center_states]])
 		
@@ -91,7 +93,7 @@ class StressBehavior():
 			else:
 				lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
 
-		return lfp_state_row_ind
+		return lfp_state_row_ind, dio_freq
 
 	'''
 	Sliding average of number of successful trials/min, sliding average of probability of selecting better option, raster plots showing each of these (do for all blocks of task)
@@ -416,6 +418,166 @@ class StressBehavior():
 
 		return 
 
+class StressBehavior_withSpikes(StressBehavior):
+
+	def compute_value_PSTH(self, syncHDF_file, spike_file, chann, sc):
+		'''
+		Computes the raw and smooth PSTH of spike data around two times: (1) center hold and (2) reward.
+		Average PSTHs are then plotted with error bars.
+
+		Inputs:
+		- syncHDF_file: str, file address of .mat sync file to synchronize TDT and hdf files
+		- spike_file: str, file address of .csv file with offline-sorted spike data
+		- chann: int, value of channel of interest
+		- sc: int, sort code on the indicated channel
+
+		'''
+		# get indices of relevant events
+		ind_picture_onset = self.ind_check_reward_states - 4  # -4: 'hold_center', -2: 'hold_targetH/L'
+		lfp_state_row_ind, lfp_freq = self.get_state_TDT_LFPvalues(ind_picture_onset,syncHDF_file)
+		times_align = lfp_state_row_ind/float(lfp_freq)
+
+		ind_reward = self.ind_check_reward_states  # -4: 'hold_center', -2: 'hold_targetH/L'
+		lfp_state_row_ind_reward, lfp_freq = self.get_state_TDT_LFPvalues(ind_reward,syncHDF_file)
+		times_align_reward = lfp_state_row_ind_reward/float(lfp_freq)
+
+		center_hold_dur = (self.state_time[self.ind_check_reward_states[0]-3] - self.state_time[self.ind_check_reward_states[0]-4])/60.
+		reward_dur = (self.state_time[self.ind_reward_states[0]+1] - self.state_time[self.ind_reward_states[0]])/60.
+
+		# divide trials up by choices for LV and HV options
+		chooseH = np.ravel(np.nonzero(self.state[self.ind_check_reward_states-2] == 'hold_targetH'))
+		chooseL = np.ravel(np.nonzero(self.state[self.ind_check_reward_states-2] == 'hold_targetL'))
+
+		# set basic parameters for computing PSTH
+		t_before = 2.0 		# seconds
+		t_after = 2.0		# seconds
+		t_resolution = 0.05	# seconds
+		t = np.arange(-t_before,t_after-t_resolution,t_resolution)
+		spk = OfflineSorted_CSVFile(spike_file)
+
+		# compute PSTHs for time around center hold
+		psth, smooth_psth = spk.compute_psth(chann,sc,times_align,t_before,t_after,t_resolution)
+
+		psth_H, smooth_psth_H = spk.compute_psth(chann,sc,times_align[chooseH],t_before,t_after,t_resolution)
+		psth_L, smooth_psth_L = spk.compute_psth(chann,sc,times_align[chooseL],t_before,t_after,t_resolution)
+
+		avg_psth = np.nanmean(psth, axis=0)
+		sem_psth = np.nanstd(psth,axis=0)/np.sqrt(psth.shape[0])
+		avg_smooth_psth = np.nanmean(smooth_psth, axis=0)
+		sem_smooth_psth = np.nanstd(smooth_psth,axis=0)/np.sqrt(smooth_psth.shape[0])
+
+		avg_psth_H = np.nanmean(psth_H, axis=0)
+		sem_psth_H = np.nanstd(psth_H,axis=0)/np.sqrt(psth_H.shape[0])
+		avg_smooth_psth_H = np.nanmean(smooth_psth_H, axis=0)
+		sem_smooth_psth_H = np.nanstd(smooth_psth_H,axis=0)/np.sqrt(smooth_psth_H.shape[0])
+
+		avg_psth_L = np.nanmean(psth_L, axis=0)
+		sem_psth_L = np.nanstd(psth_L,axis=0)/np.sqrt(psth_L.shape[0])
+		avg_smooth_psth_L = np.nanmean(smooth_psth_L, axis=0)
+		sem_smooth_psth_L = np.nanstd(smooth_psth_L,axis=0)/np.sqrt(smooth_psth_L.shape[0])
+
+		# compute PSTHs for time around reward
+		psth_reward, smooth_psth_reward = spk.compute_psth(chann,sc,times_align_reward,t_before,t_after,t_resolution)
+
+		psth_H_reward, smooth_psth_H_reward = spk.compute_psth(chann,sc,times_align_reward[chooseH],t_before,t_after,t_resolution)
+		psth_L_reward, smooth_psth_L_reward = spk.compute_psth(chann,sc,times_align_reward[chooseL],t_before,t_after,t_resolution)
+
+		avg_psth_reward = np.nanmean(psth_reward, axis=0)
+		sem_psth_reward = np.nanstd(psth_reward,axis=0)/np.sqrt(psth_reward.shape[0])
+		avg_smooth_psth_reward = np.nanmean(smooth_psth_reward, axis=0)
+		sem_smooth_psth_reward = np.nanstd(smooth_psth_reward,axis=0)/np.sqrt(smooth_psth_reward.shape[0])
+
+		avg_psth_H_reward = np.nanmean(psth_H_reward, axis=0)
+		sem_psth_H_reward = np.nanstd(psth_H_reward,axis=0)/np.sqrt(psth_H_reward.shape[0])
+		avg_smooth_psth_H_reward = np.nanmean(smooth_psth_H_reward, axis=0)
+		sem_smooth_psth_H_reward = np.nanstd(smooth_psth_H_reward,axis=0)/np.sqrt(smooth_psth_H_reward.shape[0])
+
+		avg_psth_L_reward = np.nanmean(psth_L_reward, axis=0)
+		sem_psth_L_reward = np.nanstd(psth_L_reward,axis=0)/np.sqrt(psth_L_reward.shape[0])
+		avg_smooth_psth_L_reward = np.nanmean(smooth_psth_L_reward, axis=0)
+		sem_smooth_psth_L_reward = np.nanstd(smooth_psth_L_reward,axis=0)/np.sqrt(smooth_psth_L_reward.shape[0])
+
+
+		# make plots for around time of center hold
+		top = 6
+		bottom = 0
+		plt.figure(1)
+		plt.subplot(131)
+		plt.plot(t,avg_psth,'b',label='Raw PSTH')
+		plt.plot(t,avg_smooth_psth,'r',label='Smooth PSTH')
+		plt.fill_between(t, avg_psth - sem_psth, avg_psth + sem_psth, color = 'b', alpha = 0.5)
+		plt.fill_between(t, avg_smooth_psth - sem_smooth_psth, avg_smooth_psth + sem_smooth_psth, color = 'r', alpha = 0.5)
+		plt.xlabel('Time (s)')
+		plt.ylabel('Firing Rate (Hz)')
+		plt.title('PSTH for Channel %f - Unit %f' % (chann, sc))
+		plt.text(0,top - (top*0.05),'Center\n Hold',horizontalalignment='center')
+		plt.text(center_hold_dur,top - (top*0.05), 'End\n Hold',horizontalalignment='center')
+		plt.ylim((bottom,top))
+
+		plt.subplot(132)
+		plt.plot(t,avg_psth_H,'b',label='Raw PSTH')
+		plt.plot(t,avg_smooth_psth_H,'r',label='Smooth PSTH')
+		plt.fill_between(t, avg_psth_H - sem_psth_H, avg_psth_H + sem_psth_H, color = 'b', alpha = 0.5)
+		plt.fill_between(t, avg_smooth_psth_H - sem_smooth_psth_H, avg_smooth_psth_H + sem_smooth_psth_H, color = 'r', alpha = 0.5)
+		plt.xlabel('Time (s)')
+		plt.ylabel('Firing Rate (Hz)')
+		plt.title('HV Choices: PSTH for Channel %f - Unit %f' % (chann, sc))
+		plt.text(0,top - (top*0.05),'Center\n Hold',horizontalalignment='center')
+		plt.text(center_hold_dur,top - (top*0.05), 'End\n Hold',horizontalalignment='center')
+		plt.ylim((bottom,top))
+
+		plt.subplot(133)
+		plt.plot(t,avg_psth_L,'b',label='Raw PSTH')
+		plt.plot(t,avg_smooth_psth_L,'r',label='Smooth PSTH')
+		plt.fill_between(t, avg_psth_L - sem_psth_L, avg_psth_L + sem_psth_L, color = 'b', alpha = 0.5)
+		plt.fill_between(t, avg_smooth_psth_L - sem_smooth_psth_L, avg_smooth_psth_L + sem_smooth_psth_L, color = 'r', alpha = 0.5)
+		plt.xlabel('Time (s)')
+		plt.ylabel('Firing Rate (Hz)')
+		plt.title('LV Choices: PSTH for Channel %f - Unit %f' % (chann, sc))
+		plt.text(0,top - (top*0.05),'Center\n Hold',horizontalalignment='center')
+		plt.text(center_hold_dur,top - (top*0.05), 'End\n Hold',horizontalalignment='center')
+		plt.ylim((bottom,top))
+
+		# make plots for PSTH around reward
+		plt.figure(2)
+		plt.subplot(131)
+		plt.plot(t,avg_psth_reward,'b',label='Raw PSTH')
+		plt.plot(t,avg_smooth_psth_reward,'r',label='Smooth PSTH')
+		plt.fill_between(t, avg_psth_reward - sem_psth_reward, avg_psth_reward + sem_psth_reward, color = 'b', alpha = 0.5)
+		plt.fill_between(t, avg_smooth_psth_reward - sem_smooth_psth_reward, avg_smooth_psth_reward + sem_smooth_psth_reward, color = 'r', alpha = 0.5)
+		plt.xlabel('Time (s)')
+		plt.ylabel('Firing Rate (Hz)')
+		plt.title('PSTH for Channel %f - Unit %f' % (chann, sc))
+		plt.text(0,top - (top*0.05),'Reward',horizontalalignment='center')
+		plt.text(reward_dur,top - (top*0.05), 'End\n Reward',horizontalalignment='center')
+		plt.ylim((bottom,top))
+
+		plt.subplot(132)
+		plt.plot(t,avg_psth_H_reward,'b',label='Raw PSTH')
+		plt.plot(t,avg_smooth_psth_H_reward,'r',label='Smooth PSTH')
+		plt.fill_between(t, avg_psth_H_reward - sem_psth_H_reward, avg_psth_H_reward + sem_psth_H_reward, color = 'b', alpha = 0.5)
+		plt.fill_between(t, avg_smooth_psth_H_reward - sem_smooth_psth_H_reward, avg_smooth_psth_H_reward + sem_smooth_psth_H_reward, color = 'r', alpha = 0.5)
+		plt.xlabel('Time (s)')
+		plt.ylabel('Firing Rate (Hz)')
+		plt.title('HV Choices: PSTH for Channel %f - Unit %f' % (chann, sc))
+		plt.text(0,top - (top*0.05),'Reward',horizontalalignment='center')
+		plt.text(reward_dur,top - (top*0.05), 'End\n Reward',horizontalalignment='center')
+		plt.ylim((bottom,top))
+
+		plt.subplot(133)
+		plt.plot(t,avg_psth_L_reward,'b',label='Raw PSTH')
+		plt.plot(t,avg_smooth_psth_L_reward,'r',label='Smooth PSTH')
+		plt.fill_between(t, avg_psth_L_reward - sem_psth_L_reward, avg_psth_L_reward + sem_psth_L_reward, color = 'b', alpha = 0.5)
+		plt.fill_between(t, avg_smooth_psth_L_reward - sem_smooth_psth_L_reward, avg_smooth_psth_L_reward + sem_smooth_psth_L_reward, color = 'r', alpha = 0.5)
+		plt.xlabel('Time (s)')
+		plt.ylabel('Firing Rate (Hz)')
+		plt.title('LV Choices: PSTH for Channel %f - Unit %f' % (chann, sc))
+		plt.text(0,top - (top*0.05),'Reward',horizontalalignment='center')
+		plt.text(reward_dur,top - (top*0.05), 'End\n Reward',horizontalalignment='center')
+		plt.ylim((bottom,top))
+		plt.show()
+		
+		return psth, smooth_psth, psth_reward, smooth_psth_reward, t
 
 class TDTNeuralData():
 	'''

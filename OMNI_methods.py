@@ -1162,6 +1162,7 @@ def ClosedLoopReactionTimeAnalysis_MultipleSessions(hdf_filename, task_events_ma
 	inds_good_trials = np.array([])
 
 	for k in range(num_sessions):
+		print hdf_filename[k], task_events_mat_filename[k], stim_filename[k]
 		output = ClosedLoopReactionTimeAnalysis(hdf_filename[k], task_events_mat_filename[k], stim_filename[k], thres,lower_rt, upper_rt, method)
 		rt_stim_during_periph = np.append(rt_stim_during_periph, output[0])
 		rt_stim_not_during_periph = np.append(rt_stim_not_during_periph, output[1])
@@ -1205,6 +1206,8 @@ def ClosedLoopReactionTimeAnalysis_MultipleSessions(hdf_filename, task_events_ma
 
 	# mann-whitney
 	stat_periph_nothold, mw_p_periph_nothold = stats.mannwhitneyu(rt_stim_during_center, rt_stim_not_during_hold)
+	print "Num stim during hold: %i" % (len(all_stim_in_hold))
+	print "Num no stim during hold: %i" % (len(rt_stim_not_during_hold))
 	stat_periph_notperiph, mw_p_periph_notperiph = stats.mannwhitneyu(rt_stim_during_periph, rt_stim_not_during_periph)
 
 	# kruskal-wallis h-test
@@ -1395,7 +1398,7 @@ def ClosedLoopReactionTimeAnalysis_MultipleSessions(hdf_filename, task_events_ma
   	#### add: find trials completely without stimulation to compare with
 	return RT_binned, bin_centers, RT_binned_before_gocue, bin_centers_before_gocue
 	'''
-	return rt_good_trials, num_trials_per_session, inds_good_trials
+	return rt_good_trials, num_trials_per_session, inds_good_trials, all_stim_in_hold, rt_stim_not_during_hold, rt_stim_during_center
 
 def rt_lognormal_fit(rt):
 	s, loc, scale = stats.lognorm.fit(rt, floc = 0)
@@ -1562,10 +1565,14 @@ def comparePSD(TDT_tank, omni_mat, TDT_channel_list, omni_channel_list, cutoff, 
 	num_pairs = np.min([len(TDT_channel_list), len(omni_channel_list)])
 	tdt_keys = tdt_lfp.keys()
 	for i in range(num_pairs):
+		print "Channel %i" % (i)
 		tdt_data = tdt_lfp[tdt_keys[i]]
+		tdt_data = (10**6)*tdt_data 		# convert to uV from V
 		omni_data = omni_lfp[:,i]
-		freq_tdt, Pxx_avg_tdt, Pxx_sem_tdt = averagedPSD(tdt_data, Fs, cutoff, int(len_windows*Fs), num_wins, notch = True)
-		freq_omni, Pxx_avg_omni, Pxx_sem_omni = averagedPSD(omni_data, omni_fs, cutoff, int(len_windows*omni_fs), num_wins, notch = False)
+		print "TDT computation"
+		freq_tdt, Pxx_avg_tdt, Pxx_sem_tdt, Pxx_avg_tdt_nonorm, Pxx_sem_tdt_nonorm = averagedPSD(tdt_data, Fs, cutoff, int(len_windows*Fs), num_wins, notch = False)
+		print "OMNI computation"
+		freq_omni, Pxx_avg_omni, Pxx_sem_omni, Pxx_avg_omni_nonorm, Pxx_sem_omni_nonorm = averagedPSD(omni_data, omni_fs, cutoff, int(len_windows*omni_fs), num_wins, notch = False)
 
 		plt.figure()
 		spl = plt.subplot(111)
@@ -1574,9 +1581,24 @@ def comparePSD(TDT_tank, omni_mat, TDT_channel_list, omni_channel_list, cutoff, 
 		spl.plot(freq_omni, Pxx_avg_omni, 'r', label = 'OMNI')
 		spl.fill_between(freq_omni, Pxx_avg_omni - Pxx_sem_omni, Pxx_avg_omni + Pxx_sem_omni, facecolor = 'red', alpha = 0.5)
 		spl.set_yscale('log')
-		spl.set_xscale('log')
+		#spl.set_xscale('log')
 		plt.xlabel('Frequency (Hz)')
 		plt.ylabel('Normalized PSD')
+		spl.grid(True)
+		plt.legend()
+		plt.xlim((-1,cutoff))
+		plt.title('TDT Channel %i' %(tdt_keys[i]))
+
+		plt.figure()
+		spl = plt.subplot(111)
+		spl.plot(freq_tdt, Pxx_avg_tdt_nonorm, 'b', label = 'TDT')
+		spl.fill_between(freq_tdt, Pxx_avg_tdt_nonorm - Pxx_sem_tdt_nonorm, Pxx_avg_tdt_nonorm + Pxx_sem_tdt_nonorm, facecolor = 'blue', alpha = 0.5)
+		spl.plot(freq_omni, Pxx_avg_omni_nonorm, 'r', label = 'OMNI')
+		spl.fill_between(freq_omni, Pxx_avg_omni_nonorm - Pxx_sem_omni_nonorm, Pxx_avg_omni_nonorm + Pxx_sem_omni_nonorm, facecolor = 'red', alpha = 0.5)
+		spl.set_yscale('log')
+		#spl.set_xscale('log')
+		plt.xlabel('Frequency (Hz)')
+		plt.ylabel('PSD (V^2/Hz)')
 		spl.grid(True)
 		plt.legend()
 		plt.xlim((-1,cutoff))

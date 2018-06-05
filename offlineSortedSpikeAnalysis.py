@@ -33,7 +33,7 @@ class OfflineSorted_CSVFile():
 		self.sample_num = np.rint(self.times*self.samp_rate)
 
 		# Find units with non-noisy recorded data. Recall that sort code 31 is for noise events. 
-		self.good_units = np.ravel(np.nonzero(np.less(self.sort_code, 31)))
+		self.good_units = np.ravel(np.nonzero(np.logical_and(np.greater(self.sort_code, 0),np.less(self.sort_code, 31))))
 		self.good_channels = np.unique(self.channel[self.good_units])
 
 	def find_chan_sc(self, chan):
@@ -47,7 +47,7 @@ class OfflineSorted_CSVFile():
 
 		unit_chan = np.ravel(np.nonzero(np.equal(self.channel, chan)))
 		sc_chan = np.unique(self.sort_code[unit_chan])
-		sc_chan = np.array([code for code in sc_chan if code != 31])
+		sc_chan = np.array([code for code in sc_chan if (code != 31)&(code!=0)])
 
 		return sc_chan
 
@@ -80,7 +80,7 @@ class OfflineSorted_CSVFile():
 			# First find number of units recorded on this channel
 			unit_chan = np.ravel(np.nonzero(np.equal(self.channel, chan)))
 			sc_chan = np.unique(self.sort_code[unit_chan])
-			sc_chan = np.array([sc for sc in sc_chan if sc != 31])
+			sc_chan = np.array([sc for sc in sc_chan if (sc != 31)&(sc!=0)])
 			if sc_chan.size == 0:
 				avg_firing_rates[chan] = np.array([np.nan])
 			else:
@@ -109,7 +109,7 @@ class OfflineSorted_CSVFile():
 			# First find number of units recorded on this channel
 			unit_chan = np.ravel(np.nonzero(np.equal(self.channel, chan)))
 			sc_chan = np.unique(self.sort_code[unit_chan])
-			sc_chan = np.array([sc for sc in sc_chan if sc != 31])
+			sc_chan = np.array([sc for sc in sc_chan if (sc != 31)&(sc != 0)])
 			if sc_chan.size == 0:
 				avg_firing_rates[chan] = np.array([np.nan])
 			else:
@@ -175,11 +175,11 @@ class OfflineSorted_CSVFile():
 		psth_length = int(np.rint((t_before + t_after)/t_resolution))
 		num_timepoints = len(times_align)
 		psth = np.zeros((num_timepoints, psth_length-1))
-		smooth_psth = psth
+		smooth_psth = np.zeros(psth.shape)
 
-		boxcar_length = 4.
+		boxcar_length = 5.
 		boxcar_window = signal.boxcar(boxcar_length)  # 2 bins before, 2 bins after for boxcar smoothing
-		b = signal.gaussian(39, 0.6)
+		b = signal.gaussian(39, 1)
 		
 		unit_chan = np.ravel(np.nonzero(np.equal(self.channel, chann)))
 		sc_unit = np.ravel(np.nonzero(np.equal(self.sort_code[unit_chan], sc)))
@@ -220,7 +220,7 @@ class OfflineSorted_CSVFile():
 
 		boxcar_length = 4.
 		boxcar_window = signal.boxcar(boxcar_length)  # 2 bins before, 2 bins after for boxcar smoothing
-		b = signal.gaussian(39, 0.6)
+		b = signal.gaussian(39, 1)
 		
 		unit_chan = np.ravel(np.nonzero(np.equal(self.channel, chann)))
 		sc_unit = np.ravel(np.nonzero(np.equal(self.sort_code[unit_chan], sc)))
