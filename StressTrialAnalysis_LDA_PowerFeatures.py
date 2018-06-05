@@ -200,6 +200,7 @@ else:
 	samples_pupil_successful_stress = 0.1*pupil_samprate*np.ones(len(BlockAB_stress_trial_inds))  # look at first 100 ms
 	samples_pupil_successful_stress = np.array([int(val) for val in samples_pulse_successful_stress])
 
+	print "Number of stress trials:", len(lfp_ind_hold_center_states_stress_trials)
 	ibi_stress_mean, ibi_stress_std, pupil_stress_mean, pupil_stress_std, nbins_ibi_stress, ibi_stress_hist, nbins_pupil_stress, pupil_stress_hist = getIBIandPuilDilation(pulse_data, lfp_ind_hold_center_states_stress_trials,samples_pulse_successful_stress, pulse_samprate,pupil_data, lfp_ind_hold_center_states_stress_trials,samples_pupil_successful_stress,pupil_samprate)
 
 	# Find IBIs and pupil data for all successful regular trials.
