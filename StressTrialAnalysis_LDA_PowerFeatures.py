@@ -37,11 +37,11 @@ Need to check lfp_center_states
 """
 
 
-hdf_filename = 'mari20160401_06_te1915.hdf'
+hdf_filename = 'mari20160401_03_te1912.hdf'
 hdf_filename_stim = ''
 filename = 'Mario20160401'
 filename2 = 'Mario20160401'
-block_num = 2
+block_num = 1
 block_num_stim = 2
 print filename
 TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
@@ -115,8 +115,8 @@ else:
 	mat_filename = '/backup/subnetsrig/storage/syncHDF/' + filename+'_b'+str(block_num)+'_syncHDF.mat'
 	#mat_filename = '/home/srsummerson/storage/syncHDF/' + filename+'_b'+str(block_num)+'_syncHDF.mat'
 	#sp.io.loadmat('/home/srsummerson/storage/syncHDF/'+mat_filename,hdf_times)
-	lfp_ind_hold_center_states_reg_trials = BlockAB_behavior.get_state_TDT_LFPvalues(BlockAB_behavior.ind_check_reward_states[BlockAB_reg_trial_inds] - 4,mat_filename)[0]
-	lfp_ind_hold_center_states_stress_trials = BlockAB_behavior.get_state_TDT_LFPvalues(BlockAB_behavior.ind_check_reward_states[BlockAB_stress_trial_inds] - 4,mat_filename)[0]
+	lfp_ind_hold_center_states_reg_trials = BlockAB_behavior.get_state_TDT_LFPvalues(BlockAB_behavior.ind_check_reward_states[BlockAB_reg_trial_inds] - 3,mat_filename)[0]      	# aligns to end of hold
+	lfp_ind_hold_center_states_stress_trials = BlockAB_behavior.get_state_TDT_LFPvalues(BlockAB_behavior.ind_check_reward_states[BlockAB_stress_trial_inds] - 3,mat_filename)[0]
 	print "Number of stress trials:", len(lfp_ind_hold_center_states_stress_trials)
 
 
@@ -132,7 +132,7 @@ else:
 		hdf_times_stim = dict()
 		mat_filename_stim = filename+'_b'+str(block_num_stim)+'_syncHDF.mat'
 		#sp.io.loadmat('/home/srsummerson/storage/syncHDF/'+mat_filename_stim,hdf_times_stim)
-		lfp_ind_hold_center_states_stim_trials = BlockCB_behavior.get_state_TDT_LFPvalues(BlockCB_behavior.ind_check_reward_states[BlockCB_stress_trial_inds] - 4,mat_filename)[0]
+		lfp_ind_hold_center_states_stim_trials = BlockCB_behavior.get_state_TDT_LFPvalues(BlockCB_behavior.ind_check_reward_states[BlockCB_stress_trial_inds] - 3,mat_filename)[0]  # aligns to end of hold
 		lfp_ind_check_reward_states_stim_trials = BlockCB_behavior.get_state_TDT_LFPvalues(BlockCB_behavior.ind_check_reward_states[BlockCB_stress_trial_inds],mat_filename)[0]
 
 	print "Loading TDT data."
