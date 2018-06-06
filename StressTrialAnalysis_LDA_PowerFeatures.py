@@ -37,11 +37,11 @@ Need to check lfp_center_states
 """
 
 
-hdf_filename = 'mari20160402_03_te1922.hdf'
+hdf_filename = 'mari20160402_04_te1923.hdf'
 hdf_filename_stim = ''
 filename = 'Mario20160402'
 filename2 = 'Mario20160402'
-block_num = 1
+block_num = 2
 block_num_stim = 2
 print filename
 TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
