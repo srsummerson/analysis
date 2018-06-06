@@ -103,6 +103,8 @@ else:
 	BlockAB_stress_trial_inds = np.ravel(np.nonzero(trial_types==1))
 	BlockAB_reg_trial_inds = np.ravel(np.nonzero(trial_types==0))
 
+	print "Number of stress trials:", len(BlockAB_stress_trial_inds)
+
 	if hdf_filename_stim != '':
 		trial_types = np.ravel(BlockCB_behavior.stress_type[BlockCB_behavior.state_time[BlockCB_behavior.ind_check_reward_states]])
 		BlockCB_stress_trial_inds = np.ravel(np.nonzero(trial_types==1))
@@ -115,6 +117,8 @@ else:
 	#sp.io.loadmat('/home/srsummerson/storage/syncHDF/'+mat_filename,hdf_times)
 	lfp_ind_hold_center_states_reg_trials = BlockAB_behavior.get_state_TDT_LFPvalues(BlockAB_behavior.ind_check_reward_states[BlockAB_reg_trial_inds] - 4,mat_filename)
 	lfp_ind_hold_center_states_stress_trials = BlockAB_behavior.get_state_TDT_LFPvalues(BlockAB_behavior.ind_check_reward_states[BlockAB_stress_trial_inds] - 4,mat_filename)
+	print "Number of stress trials:", len(lfp_ind_hold_center_states_stress_trials)
+
 
 	# NOTE: peripheral hold
 	lfp_ind_hold_target_states_reg_trials = BlockAB_behavior.get_state_TDT_LFPvalues(BlockAB_behavior.ind_check_reward_states[BlockAB_reg_trial_inds] - 2,mat_filename)
