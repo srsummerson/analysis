@@ -37,10 +37,10 @@ Need to check lfp_center_states
 """
 
 
-hdf_filename = 'mari20160405_04_te1934.hdf'
+hdf_filename = 'mari20160406_03_te1944.hdf'
 hdf_filename_stim = ''
-filename = 'Mario20160405'
-filename2 = 'Mario20160405'
+filename = 'Mario20160406'
+filename2 = 'Mario20160406'
 block_num = 1
 block_num_stim = 2
 print filename
