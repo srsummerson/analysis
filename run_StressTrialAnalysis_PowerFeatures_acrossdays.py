@@ -62,11 +62,6 @@ for k in range(start_session_num, last_session_num+1):
 		block_num_stim = block_num
 
 	print hdf_filename
-	print hdf_filename_stim
-	print filename
-	print filename2
-	print block_num
-	print block_num_stim
-	#StressTrialAnalysis_ComputePowerFeatures(hdf_filename, hdf_filename_stim, filename, filename2, block_num, block_num_stim)
+	StressTrialAnalysis_ComputePowerFeatures(hdf_filename, hdf_filename_stim, filename, filename2, block_num, block_num_stim)
 
 
