@@ -22,6 +22,7 @@ from sklearn.metrics import roc_curve, auc
 from sklearn.cross_validation import cross_val_score
 import os.path
 import time
+import gc
 
 from StressTaskBehavior import StressBehavior
 
@@ -304,6 +305,7 @@ def StressTrialAnalysis_ComputePowerFeatures(hdf_filename, hdf_filename_stim, fi
 		del bl
 		del lfp
 		del lfp_stim
+		gc.collect()
 	
 	return		
 	"""
