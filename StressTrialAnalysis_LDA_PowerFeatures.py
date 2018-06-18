@@ -301,11 +301,6 @@ def StressTrialAnalysis_ComputePowerFeatures(hdf_filename, hdf_filename_stim, fi
 			phys_features_stim['ibi_stress_mean_stim'] = ibi_stress_mean_stim
 			phys_features_stim['pupil_stress_mean_stim'] = pupil_stress_mean_stim
 			sp.io.savemat(phys_filename_stim,phys_features_stim)
-
-		del bl
-		del lfp
-		del lfp_stim
-		gc.collect()
 	
 	return		
 	"""

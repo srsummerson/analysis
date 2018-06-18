@@ -41,7 +41,7 @@ session_renumber = np.array([(var1[n-1] if np.isnan(var1[n]) else var1[n]) for n
 sessions, len_sessions = np.unique(session_renumber, return_counts = True) 		# extract session numbers
 
 start_session_num = 20
-last_session_num = 21
+last_session_num = 20
 
 for k in range(start_session_num, last_session_num+1):
 	curr_session = k
