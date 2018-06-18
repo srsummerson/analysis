@@ -22,7 +22,6 @@ from sklearn.metrics import roc_curve, auc
 from sklearn.cross_validation import cross_val_score
 import os.path
 import time
-import gc
 
 from StressTaskBehavior import StressBehavior
 
