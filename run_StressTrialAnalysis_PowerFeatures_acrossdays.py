@@ -28,7 +28,7 @@ from StressTaskBehavior import StressBehavior
 from StressTrialAnalysis_LDA_PowerFeatures import StressTrialAnalysis_ComputePowerFeatures
 
 behavior_sheet = 'Mario_Behavior_Log.xlsx'
-session_type_sheet = 4
+session_type_sheet = 6
 
 xls = pd.ExcelFile(behavior_sheet)
 sheetX = xls.parse(session_type_sheet)
@@ -40,8 +40,8 @@ session_renumber = np.zeros(len(var1))
 session_renumber = np.array([(var1[n-1] if np.isnan(var1[n]) else var1[n]) for n in range(len(var1))])
 sessions, len_sessions = np.unique(session_renumber, return_counts = True) 		# extract session numbers
 
-start_session_num = 16
-last_session_num = 16
+start_session_num = 1
+last_session_num = 1
 
 for k in range(start_session_num, last_session_num+1):
 	curr_session = k
