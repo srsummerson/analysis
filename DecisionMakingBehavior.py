@@ -2058,9 +2058,12 @@ def ThreeTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_fil
 
 	return num_trials, num_units, window_fr, window_fr_smooth
 
-def ThreeTargetTask_FiringRates_DifferenceBetweenBlocks(hdf_files, syncHDF_files, spike_files, channel):
+def MultiTargetTask_FiringRates_DifferenceBetweenBlocks(hdf_files, syncHDF_files, spike_files, num_targets, channel):
 	'''
-	This method returns the firing rate difference between Blocks A' and A.
+	This method returns the baseline firing rate difference between Blocks A' and A for the given indicated channel, 
+	as well as the baseline firing rate for Block A in case this data is used for normalization. Firing rates are returned
+	for all units on the indicated channel. This method can be used for both the 2-target task and the 3-target task,
+	with the number of target indicated as an input.
 
 	Inputs:
 	- hdf_files: list of N hdf_files corresponding to the behavior in the three target task
@@ -2072,18 +2075,26 @@ def ThreeTargetTask_FiringRates_DifferenceBetweenBlocks(hdf_files, syncHDF_files
 					If spike data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
 					epoch of recording but not the second, the hdf_files and syncHDF_files will both have 2 file names, and the 
 					spike_files entry should be of the form [[spike_file1.csv, spike_file2.csv], ''].
+	- num_targets: integer, either 2 or 3, indicating whether this analysis is for the 2-target task or 3-target task
 	- channel: integer value indicating what channel will be used to compute activity
 	
 	Output:
 	- window_fr: dictionary with elements indexed such that the index matches the corresponding set of hdf_files. Each
 					dictionary element contains a matrix of size (num units)x(1) with elements corresponding
 					to the average firing rate difference over the two blocks.
+	- window_fr_blockA: dictionary with elements indexed such that the index matches the corresponding set of hdf_files. Each
+					dictionary element contains a matrix of size (num units)x(1) with elements corresponding
+					to the average firing rate in the first block, in case it's used for normalization.
 	'''
 	num_trials = np.zeros(len(hdf_files))
 	num_units = np.zeros(len(hdf_files))
 	window_fr = dict()
+	window_fr_blockA = dict()
 	for i, hdf_file in enumerate(hdf_files):
-		cb_block = ChoiceBehavior_ThreeTargets(hdf_file)
+		if num_targets==3:
+			cb_block = ChoiceBehavior_ThreeTargets(hdf_file)
+		elif num_targets==2:
+			cb_block = ChoiceBehavior_TwoTargets(hdf_file)
 		num_trials[i] = cb_block.num_successful_trials
 		ind_hold_center = cb_block.ind_check_reward_states - 4
 		ind_picture_onset = cb_block.ind_check_reward_states - 5
@@ -2111,18 +2122,25 @@ def ThreeTargetTask_FiringRates_DifferenceBetweenBlocks(hdf_files, syncHDF_files
 			num_units[i] = len(sc_chan)
 			all_fr = np.array([])
 			for j, sc in enumerate(sc_chan):
-				sc_fr_blockA = spike.get_avg_firing_rates_range(channel, times_row_ind[0], times_row_ind[149])
-				sc_fr_blockAprime = spike.get_avg_firing_rates_range(channel, times_row_ind[249], times_row_ind[-1])
+				if num_targets==3:
+					sc_fr_blockA = spike.get_avg_firing_rates_range(channel, times_row_ind[0], times_row_ind[149])
+					sc_fr_blockAprime = spike.get_avg_firing_rates_range(channel, times_row_ind[249], times_row_ind[-1])
+				elif num_targets==2:
+					sc_fr_blockA = spike.get_avg_firing_rates_range(channel, times_row_ind[0], times_row_ind[99])
+					sc_fr_blockAprime = spike.get_avg_firing_rates_range(channel, times_row_ind[199], times_row_ind[-1])
 				fr_diff = sc_fr_blockAprime - sc_fr_blockA
 				if j == 0:
 					all_fr = fr_diff
+					all_fr_blockA = sc_fr_blockA
 				else:
 					all_fr = np.vstack([all_fr, fr_diff])
+					all_fr_blockA = np.vstack([all_fr_blockA, sc_fr_blockA])
 
 			# Save matrix of firing rates for units on channel from trials during hdf_file as dictionary element
 			window_fr[i] = all_fr
+			window_fr_blockA[i] = all_fr_blockA
 
-	return window_fr
+	return window_fr, window_fr_blockA
 
 def TwoTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files, channel, t_before, t_after):
 	'''
