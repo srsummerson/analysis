@@ -2079,23 +2079,25 @@ def MultiTargetTask_FiringRates_DifferenceBetweenBlocks(hdf_files, syncHDF_files
 	- channel: integer value indicating what channel will be used to compute activity
 	
 	Output:
-	- window_fr: dictionary with elements indexed such that the index matches the corresponding set of hdf_files. Each
-					dictionary element contains a matrix of size (num units)x(1) with elements corresponding
+	- avg_fr_diff: array, size (num units)x(1) with elements corresponding
 					to the average firing rate difference over the two blocks.
-	- window_fr_blockA: dictionary with elements indexed such that the index matches the corresponding set of hdf_files. Each
-					dictionary element contains a matrix of size (num units)x(1) with elements corresponding
-					to the average firing rate in the first block, in case it's used for normalization.
+	- avg_fr_blockA: array, size (num units)x(1) with elements corresponding
+					to the average firing rate in the first block, in case it's used for normalization
+	- avg_fr_blockAprime: array, size (num_units)x(1) with elements corresponding
+					to the average firing rate in Block A' block
 	'''
 	num_trials = np.zeros(len(hdf_files))
 	num_units = np.zeros(len(hdf_files))
 	window_fr = dict()
 	window_fr_blockA = dict()
+	window_fr_blockAprime = dict()
 	for i, hdf_file in enumerate(hdf_files):
 		if num_targets==3:
 			cb_block = ChoiceBehavior_ThreeTargets(hdf_file)
 		elif num_targets==2:
 			cb_block = ChoiceBehavior_TwoTargets(hdf_file)
 		num_trials[i] = cb_block.num_successful_trials
+		total_num_trials = np.sum(num_trials)
 		ind_hold_center = cb_block.ind_check_reward_states - 4
 		ind_picture_onset = cb_block.ind_check_reward_states - 5
 		
@@ -2118,29 +2120,47 @@ def MultiTargetTask_FiringRates_DifferenceBetweenBlocks(hdf_files, syncHDF_files
 
 			# Get matrix that is (Num units on channel)x(num trials in hdf_file) containing the firing rates during the
 			# designated window.
+
 			sc_chan = spike.find_chan_sc(channel)
-			num_units[i] = len(sc_chan)
-			all_fr = np.array([])
-			for j, sc in enumerate(sc_chan):
-				if num_targets==3:
-					sc_fr_blockA = spike.get_avg_firing_rates_range(channel, times_row_ind[0], times_row_ind[149])
-					sc_fr_blockAprime = spike.get_avg_firing_rates_range(channel, times_row_ind[249], times_row_ind[-1])
-				elif num_targets==2:
-					sc_fr_blockA = spike.get_avg_firing_rates_range(channel, times_row_ind[0], times_row_ind[99])
-					sc_fr_blockAprime = spike.get_avg_firing_rates_range(channel, times_row_ind[199], times_row_ind[-1])
-				fr_diff = sc_fr_blockAprime - sc_fr_blockA
-				if j == 0:
-					all_fr = fr_diff
-					all_fr_blockA = sc_fr_blockA
-				else:
-					all_fr = np.vstack([all_fr, fr_diff])
-					all_fr_blockA = np.vstack([all_fr_blockA, sc_fr_blockA])
+			num_units = len(sc_chan)
+			
+			if num_targets==3:
+				trial_targ1 = 149
+				trial_targ2 = 249
+			else:
+				trial_targ1 = 99
+				trial_targ2 = 199
+			
+			sc_fr_blockA = np.full(num_units, np.nan)
+			sc_fr_blockAprime = np.full(num_units, np.nan)
 
-			# Save matrix of firing rates for units on channel from trials during hdf_file as dictionary element
-			window_fr[i] = all_fr
-			window_fr_blockA[i] = all_fr_blockA
+			if i==0&(num_trials[i]>trial_targ2):
+				sc_fr_blockA = spike.get_avg_firing_rates_range(channel, times_row_ind[0], times_row_ind[trial_targ1])
+				sc_fr_blockAprime = spike.get_avg_firing_rates_range(channel, times_row_ind[trial_targ2], times_row_ind[-1])
+			if i==0&(num_trials[i]<=trial_targ2):
+				sc_fr_blockA = spike.get_avg_firing_rates_range(channel, times_row_ind[0], times_row_ind[np.min([trial_targ1,num_trials[i]])])
+				#sc_fr_blockAprime = spike.get_avg_firing_rates_range(channel, times_row_ind[249], times_row_ind[-1])
+			if i>0&(total_num_trials>trial_targ2)&(total_num_trials - num_trials[i] <trial_targ1):
+				sc_fr_blockA = spike.get_avg_firing_rates_range(channel, times_row_ind[0], times_row_ind[np.min([num_trials[i], trial_targ1 - total_num_trials + num_trials[i]])])
+				sc_fr_blockAprime = spike.get_avg_firing_rates_range(channel, times_row_ind[trial_targ2 - total_num_trials + num_trials[i]], times_row_ind[-1])
+			if i>0&(total_num_trials>trial_targ2)&(total_num_trials - num_trials[i] > trial_targ1):
+				sc_fr_blockAprime = spike.get_avg_firing_rates_range(channel, times_row_ind[trial_targ2 - total_num_trials + num_trials[i]], times_row_ind[-1])
+			if i>0&(total_num_trials < trial_targ2)&(total_num_trials - num_trials[i] <trial_targ1):
+				sc_fr_blockA = spike.get_avg_firing_rates_range(channel, times_row_ind[0], times_row_ind[np.min([num_trials[i], trial_targ1 - total_num_trials + num_trials[i]])])
 
-	return window_fr, window_fr_blockA
+			# Save dictionary containing lists of firing rates for units on channel from trials during hdf_file
+			if i==0:
+				window_fr_blockA = np.array(sc_fr_blockA)
+				window_fr_blockAprime = np.array(sc_fr_blockAprime)
+			else:
+				window_fr_blockA = np.vstack([window_fr_blockA, np.array(sc_fr_blockA)])
+				window_fr_blockAprime = np.vstack([window_fr_blockAprime, np.array(sc_fr_blockAprime)])
+
+	avg_fr_blockA = np.nanmean(window_fr_blockA,axis = 0)
+	avg_fr_blockAprime = np.nanmean(window_fr_blockAprime,axis=0)
+	avg_fr_diff = avg_fr_blockAprime - avg_fr_blockA
+
+	return avg_fr_diff, avg_fr_blockA, avg_fr_blockAprime
 
 def TwoTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files, channel, t_before, t_after):
 	'''
