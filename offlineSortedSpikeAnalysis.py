@@ -103,23 +103,27 @@ class OfflineSorted_CSVFile():
 		- channs: list or array of channels (all integers)
 		- t_start: float representing time (s) at which to begin counting spikes
 		- t_stop: float representing time (s) at whic to stop counting spikes
+		Output:
+		- avg_firing_rates: list, average firing rates for all units on reported channel
 		'''
 		avg_firing_rates = []
-		for chan in channs:
+		for k, chan in enumerate(channs):
 			# First find number of units recorded on this channel
 			unit_chan = np.ravel(np.nonzero(np.equal(self.channel, chan)))
 			sc_chan = np.unique(self.sort_code[unit_chan])
 			sc_chan = np.array([sc for sc in sc_chan if (sc != 31)&(sc != 0)])
-			if sc_chan.size == 0:
-				avg_firing_rates[chan] = np.array([np.nan])
-			else:
+			if sc_chan.size > 0:
 				unit_rates = np.zeros(len(sc_chan))
 				for i, sc in enumerate(sc_chan):
 					sc_unit = np.ravel(np.nonzero(np.equal(self.sort_code[unit_chan], sc)))
 					data = self.times[unit_chan[sc_unit]]  	# times that this sort code on this channel was recorded
 					spikes = (data > t_start)&(data < t_stop)  	# find spikes in this window
 					unit_rates[i] = np.sum(spikes)/float(t_stop - t_start)		# count spikes and divide by window length
-				avg_firing_rates += [unit_rates]
+				if k==0:
+					avg_firing_rates = unit_rates
+				else:
+					avg_firing_rates = np.hstack([avg_firing_rates, unit_rates])
+				#avg_firing_rates += [unit_rates]
 
 
 		return avg_firing_rates

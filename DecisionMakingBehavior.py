@@ -2135,18 +2135,18 @@ def MultiTargetTask_FiringRates_DifferenceBetweenBlocks(hdf_files, syncHDF_files
 			sc_fr_blockAprime = np.full(num_units, np.nan)
 
 			if i==0&(num_trials[i]>trial_targ2):
-				sc_fr_blockA = spike.get_avg_firing_rates_range(channel, times_row_ind[0], times_row_ind[trial_targ1])
-				sc_fr_blockAprime = spike.get_avg_firing_rates_range(channel, times_row_ind[trial_targ2], times_row_ind[-1])
+				sc_fr_blockA = spike.get_avg_firing_rates_range([channel], times_row_ind[0], times_row_ind[trial_targ1])
+				sc_fr_blockAprime = spike.get_avg_firing_rates_range([channel], times_row_ind[trial_targ2], times_row_ind[-1])
 			if i==0&(num_trials[i]<=trial_targ2):
-				sc_fr_blockA = spike.get_avg_firing_rates_range(channel, times_row_ind[0], times_row_ind[np.min([trial_targ1,num_trials[i]])])
+				sc_fr_blockA = spike.get_avg_firing_rates_range([channel], times_row_ind[0], times_row_ind[np.min([trial_targ1,num_trials[i]])])
 				#sc_fr_blockAprime = spike.get_avg_firing_rates_range(channel, times_row_ind[249], times_row_ind[-1])
 			if i>0&(total_num_trials>trial_targ2)&(total_num_trials - num_trials[i] <trial_targ1):
-				sc_fr_blockA = spike.get_avg_firing_rates_range(channel, times_row_ind[0], times_row_ind[np.min([num_trials[i], trial_targ1 - total_num_trials + num_trials[i]])])
-				sc_fr_blockAprime = spike.get_avg_firing_rates_range(channel, times_row_ind[trial_targ2 - total_num_trials + num_trials[i]], times_row_ind[-1])
+				sc_fr_blockA = spike.get_avg_firing_rates_range([channel], times_row_ind[0], times_row_ind[np.min([num_trials[i], trial_targ1 - total_num_trials + num_trials[i]])])
+				sc_fr_blockAprime = spike.get_avg_firing_rates_range([channel], times_row_ind[trial_targ2 - total_num_trials + num_trials[i]], times_row_ind[-1])
 			if i>0&(total_num_trials>trial_targ2)&(total_num_trials - num_trials[i] > trial_targ1):
-				sc_fr_blockAprime = spike.get_avg_firing_rates_range(channel, times_row_ind[trial_targ2 - total_num_trials + num_trials[i]], times_row_ind[-1])
+				sc_fr_blockAprime = spike.get_avg_firing_rates_range([channel], times_row_ind[trial_targ2 - total_num_trials + num_trials[i]], times_row_ind[-1])
 			if i>0&(total_num_trials < trial_targ2)&(total_num_trials - num_trials[i] <trial_targ1):
-				sc_fr_blockA = spike.get_avg_firing_rates_range(channel, times_row_ind[0], times_row_ind[np.min([num_trials[i], trial_targ1 - total_num_trials + num_trials[i]])])
+				sc_fr_blockA = spike.get_avg_firing_rates_range([channel], times_row_ind[0], times_row_ind[np.min([num_trials[i], trial_targ1 - total_num_trials + num_trials[i]])])
 
 			# Save dictionary containing lists of firing rates for units on channel from trials during hdf_file
 			if i==0:
@@ -2158,6 +2158,170 @@ def MultiTargetTask_FiringRates_DifferenceBetweenBlocks(hdf_files, syncHDF_files
 
 	avg_fr_blockA = np.nanmean(window_fr_blockA,axis = 0)
 	avg_fr_blockAprime = np.nanmean(window_fr_blockAprime,axis=0)
+	avg_fr_diff = avg_fr_blockAprime - avg_fr_blockA
+
+	return avg_fr_diff, avg_fr_blockA, avg_fr_blockAprime
+
+def MultiTargetTask_FiringRates_DifferenceBetweenBlocks_multichan(hdf_files, syncHDF_files, spike_files, num_targets, channels):
+	'''
+	SAME AS ABOVE METHOD BUT FOR MUTLIPLE CHANNELS AT THE SAME TIME.
+	This method returns the baseline firing rate difference between Blocks A' and A for the given indicated channel, 
+	as well as the baseline firing rate for Block A in case this data is used for normalization. Firing rates are returned
+	for all units on the indicated channel. This method can be used for both the 2-target task and the 3-target task,
+	with the number of target indicated as an input.
+
+	Inputs:
+	- hdf_files: list of N hdf_files corresponding to the behavior in the three target task
+	- syncHDF_files: list of N syncHDF_files that containes the syncing DIO data for the corresponding hdf_file and it's
+					TDT recording. If TDT data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, syncHDF_files should have the form [syncHDF_file1.mat, '']
+	- spike_files: list of N tuples of spike_files, where each entry is a list of 2 spike files, one corresponding to spike
+					data from the first 96 channels and the other corresponding to the spike data from the last 64 channels.
+					If spike data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, the hdf_files and syncHDF_files will both have 2 file names, and the 
+					spike_files entry should be of the form [[spike_file1.csv, spike_file2.csv], ''].
+	- num_targets: integer, either 2 or 3, indicating whether this analysis is for the 2-target task or 3-target task
+	- channels: list or array, integer values indicating what channels will be used to compute activity
+	
+	Output:
+	- avg_fr_diff: array, size (num units)x(1) with elements corresponding
+					to the average firing rate difference over the two blocks.
+	- avg_fr_blockA: array, size (num units)x(1) with elements corresponding
+					to the average firing rate in the first block, in case it's used for normalization
+	- avg_fr_blockAprime: array, size (num_units)x(1) with elements corresponding
+					to the average firing rate in Block A' block
+	'''
+	num_trials = np.zeros(len(hdf_files))
+	num_units = np.zeros(len(hdf_files))
+	window_fr_blockA_lowchannels = dict()
+	window_fr_blockAprime_lowchannels = dict()
+	window_fr_blockA_highchannels = dict()
+	window_fr_blockAprime_highchannels = dict()
+	avg_fr_blockA = dict()
+	avg_fr_blockAprime = dict()
+	avg_fr_diff = dict()
+
+	low_channels = [chann for chann in channels if chann < 97]
+	high_channels = [chann for chann in channels if chann > 96]
+
+	for i, hdf_file in enumerate(hdf_files):
+		if num_targets==3:
+			cb_block = ChoiceBehavior_ThreeTargets(hdf_file)
+		elif num_targets==2:
+			cb_block = ChoiceBehavior_TwoTargets(hdf_file)
+		num_trials[i] = cb_block.num_successful_trials
+		total_num_trials = np.sum(num_trials)
+		ind_hold_center = cb_block.ind_check_reward_states - 4
+		ind_picture_onset = cb_block.ind_check_reward_states - 5
+
+		print "Num trials in this file: %i" % (num_trials[i])
+		print "Num trials all together: %i" % (total_num_trials)
+		
+		# Load spike data:
+		if (spike_files[i] == ['']):
+			print 'no data'
+		else:
+			# Find lfp sample numbers corresponding to these times and the sampling frequency of the lfp data
+			lfp_state_row_ind, lfp_freq = cb_block.get_state_TDT_LFPvalues(ind_picture_onset, syncHDF_files[i])
+			# Convert lfp sample numbers to times in seconds
+			times_row_ind = lfp_state_row_ind/float(lfp_freq)
+			# Define how trials should be split across blocks
+			if num_targets==3:
+				trial_targ1 = 149
+				trial_targ2 = 249
+			else:
+				trial_targ1 = 99
+				trial_targ2 = 199
+
+			print "Trials needed in Block A: %i" % (trial_targ1)
+			print "Trials needed in Block A prime: %i" % (trial_targ2)
+
+			# Load spike data for first 96 channels and find average firing rates
+			if spike_files[i][0] != '':
+				spike1 = OfflineSorted_CSVFile(spike_files[i][0])
+				sc, total_units_low = spike1.find_unit_sc(low_channels)
+
+				# Get matrix that is (Num units on channel)x(num trials in hdf_file) containing the firing rates during the
+				# designated window.
+				sc_fr_blockA = np.full(total_units_low, np.nan)
+				sc_fr_blockAprime = np.full(total_units_low, np.nan)
+
+				# Compute firing rates for each block. Cases divide up computation over the files the data is spread across.
+				# Output of get_avg_firing_rates_range method is a dictionary with keys equal to the channel numbers and 
+				# entries as an array of firing rate for each unit on the channel.
+				if i==0 and (num_trials[i]>trial_targ2):
+					print "Case 1 for file %i" % (i)
+					sc_fr_blockA = spike1.get_avg_firing_rates_range(low_channels, times_row_ind[0], times_row_ind[trial_targ1])
+					sc_fr_blockAprime = spike1.get_avg_firing_rates_range(low_channels, times_row_ind[trial_targ2], times_row_ind[-1])
+				if i==0 and (num_trials[i]<=trial_targ2):
+					print "Case 2 for file %i" % (i)
+					sc_fr_blockA = spike1.get_avg_firing_rates_range(low_channels, times_row_ind[0], times_row_ind[np.min([trial_targ1,num_trials[i]-1])])
+					#sc_fr_blockAprime = spike.get_avg_firing_rates_range(channel, times_row_ind[249], times_row_ind[-1])
+				if i>0 and (total_num_trials>trial_targ2) and ((total_num_trials - num_trials[i]) < trial_targ1):
+					print total_num_trials - num_trials[i], trial_targ1
+					print "Case 3 for file %i" % (i)
+					sc_fr_blockA = spike1.get_avg_firing_rates_range(low_channels, times_row_ind[0], times_row_ind[np.min([num_trials[i], trial_targ1 - total_num_trials + num_trials[i]])])
+					sc_fr_blockAprime = spike1.get_avg_firing_rates_range(low_channels, times_row_ind[trial_targ2 - total_num_trials + num_trials[i]], times_row_ind[-1])
+				if i>0 and (total_num_trials>trial_targ2) and ((total_num_trials - num_trials[i]) > trial_targ1):
+					print "Case 4 for file %i" % (i)
+					print np.max([0, trial_targ2 - total_num_trials + num_trials[i]])
+					sc_fr_blockAprime = spike1.get_avg_firing_rates_range(low_channels, times_row_ind[np.max([0, trial_targ2 - total_num_trials + num_trials[i]])], times_row_ind[-1])
+				if i>0 and (total_num_trials < trial_targ2) and ((total_num_trials - num_trials[i]) <trial_targ1):
+					print "Case 5 for file %i" % (i)
+					sc_fr_blockA = spike1.get_avg_firing_rates_range(low_channels, times_row_ind[0], times_row_ind[np.min([num_trials[i], trial_targ1 - total_num_trials + num_trials[i]])])
+
+				# Combine lists of spike rates across files. Change everything to long arrays.
+				if i==0:
+					print sc_fr_blockA
+					window_fr_blockA_lowchannels = sc_fr_blockA
+					window_fr_blockAprime_lowchannels = sc_fr_blockAprime
+				else:
+					window_fr_blockA_lowchannels = np.concatenate([window_fr_blockA_lowchannels, sc_fr_blockA])
+					window_fr_blockAprime_lowchannels = np.concatenate([window_fr_blockAprime_lowchannels, sc_fr_blockAprime])
+			else:
+				window_fr_blockA_lowchannels = np.array([])
+				window_fr_blockAprime_lowchannels = np.array([])
+
+			# Load spike data for last 60 channels and find average firing rates
+			if spike_files[i][1] != '':
+				spike2 = OfflineSorted_CSVFile(spike_files[i][1])
+				sc, total_units_high = spike2.find_unit_sc(high_channels)
+				# Get matrix that is (Num units on channel)x(num trials in hdf_file) containing the firing rates during the
+				# designated window.
+				sc_fr_blockA = np.full(total_units_high, np.nan)
+				sc_fr_blockAprime = np.full(total_units_high, np.nan)
+
+				# Compute firing rates for each block. Cases divide up computation over the files the data is spread across.
+				# Output of get_avg_firing_rates_range method is a list containing firing rates for all units on all 
+				# indicated channels. Entries in list are arrays.
+				if i==0 and (num_trials[i]>trial_targ2):
+					sc_fr_blockA = spike2.get_avg_firing_rates_range(high_channels, times_row_ind[0], times_row_ind[trial_targ1])
+					sc_fr_blockAprime = spike2.get_avg_firing_rates_range(high_channels, times_row_ind[trial_targ2], times_row_ind[-1])
+				if i==0 and (num_trials[i]<=trial_targ2):
+					sc_fr_blockA = spike2.get_avg_firing_rates_range(high_channels, times_row_ind[0], times_row_ind[np.min([trial_targ1,num_trials[i]-1])])
+					#sc_fr_blockAprime = spike.get_avg_firing_rates_range(channel, times_row_ind[249], times_row_ind[-1])
+				if i>0 and (total_num_trials>trial_targ2) and ((total_num_trials - num_trials[i]) <trial_targ1):
+					sc_fr_blockA = spike2.get_avg_firing_rates_range(high_channels, times_row_ind[0], times_row_ind[np.min([num_trials[i], trial_targ1 - total_num_trials + num_trials[i]])])
+					sc_fr_blockAprime = spike2.get_avg_firing_rates_range(high_channels, times_row_ind[trial_targ2 - total_num_trials + num_trials[i]], times_row_ind[-1])
+				if i>0 and (total_num_trials>trial_targ2) and ((total_num_trials - num_trials[i]) > trial_targ1):
+					sc_fr_blockAprime = spike2.get_avg_firing_rates_range(high_channels, times_row_ind[np.max([0, trial_targ2 - total_num_trials + num_trials[i]])], times_row_ind[-1])
+				if i>0 and (total_num_trials < trial_targ2) and ((total_num_trials - num_trials[i]) <trial_targ1):
+					sc_fr_blockA = spike2.get_avg_firing_rates_range(high_channels, times_row_ind[0], times_row_ind[np.min([num_trials[i], trial_targ1 - total_num_trials + num_trials[i]])])
+
+				# Combine lists of spike rates across files. Change everything to long arrays.
+				if i==0:
+					print sc_fr_blockA
+					window_fr_blockA_highchannels = sc_fr_blockA
+					window_fr_blockAprime_highchannels = sc_fr_blockAprime
+				else:
+					window_fr_blockA_highchannels = np.concatenate([window_fr_blockA_highchannels, sc_fr_blockA])
+					window_fr_blockAprime_highchannels = np.concatenate([window_fr_blockAprime_highchannels, sc_fr_blockAprime])
+			else:
+				window_fr_blockA_highchannels = np.array([])
+				window_fr_blockAprime_highchannels = np.array([])
+	
+	avg_fr_blockA = np.concatenate([window_fr_blockA_lowchannels, window_fr_blockA_highchannels])
+	avg_fr_blockAprime = np.concatenate([window_fr_blockAprime_lowchannels, window_fr_blockAprime_highchannels])
 	avg_fr_diff = avg_fr_blockAprime - avg_fr_blockA
 
 	return avg_fr_diff, avg_fr_blockA, avg_fr_blockAprime
