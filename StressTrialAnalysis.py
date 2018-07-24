@@ -24,8 +24,8 @@ ibi/pd covariance with faded out markers for trials not included (i.e. not well 
 
 
 # Set up code for particular day and block
-hdf_filename = 'mari20160711_02_te2327.hdf'
-filename = 'Mario20160711'
+hdf_filename = 'mari20180723_03_te963.hdf'
+filename = 'Mario20180723'
 #TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 hdf_location = '/storage/rawdata/hdf/'+hdf_filename
@@ -33,7 +33,7 @@ hdf_location = '/storage/rawdata/hdf/'+hdf_filename
 block_num = 1
 stim_freq = 100
 
-lfp1_channels = [13, 14, 15, 16, 29, 30]
+lfp1_channels = [13, 14, 29, 30]
 lfp1_channels = [13]
 #bands = [[1,8],[8,12],[12,30],[30,55],[65,100]]
 bands = [[12,30]]
