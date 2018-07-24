@@ -5,7 +5,7 @@ from neo import io
 
 
 
-filename = 'Mario20161028'
+filename = 'Mario20180723'
 TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
 #TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 #TDT_tank = './' + filename
