@@ -11,8 +11,9 @@ import matplotlib.pyplot as plt
 from basicAnalysis import plot_cov_ellipse
 from csv_processing import get_csv_data_singlechannel
 from probabilisticRewardTaskPerformance import FreeChoiceBehavior_withStressTrials
+from CenterOutAnalysis import CenterOut_withStressTrials
 from spectralAnalysis import TrialAveragedPSD
-from rt_calc import compute_rt_per_trial_StressTask
+from rt_calc import compute_rt_per_trial_StressTask, compute_rt_per_trial_CenterOutStressTask
 from sklearn.cluster import KMeans
 
 
@@ -44,10 +45,12 @@ Load behavior data
 '''
 ## self.target_index = 1 for instructed, 2 for free choice
 ## self.stress_trial =1 for stress trial, 0 for regular trial
-state_time, ind_center_states, ind_check_reward_states, all_instructed_or_freechoice, all_stress_or_not, successful_stress_or_not,trial_success, target, reward = FreeChoiceBehavior_withStressTrials(hdf_location)
+#state_time, ind_center_states, ind_check_reward_states, all_instructed_or_freechoice, all_stress_or_not, successful_stress_or_not,trial_success, target, reward = FreeChoiceBehavior_withStressTrials(hdf_location)
+state_time, ind_wait_states, ind_reward_states, all_stress_or_not, successful_stress_or_not = CenterOut_withStressTrials(hdf_location)
+
 
 # Get reaction times for successful trials
-reaction_time, total_vel, stress_indicator = compute_rt_per_trial_StressTask(hdf_location)
+reaction_time, total_vel, stress_indicator = compute_rt_per_trial_CenterOutStressTask(hdf_location)
 
 # Reaction time hists for successful stress versus regular trials
 rt_stress_ind = np.ravel(np.nonzero(stress_indicator))
@@ -80,8 +83,13 @@ plt.legend()
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_StressTaskReactionTimes.svg')
 
 # Total number of trials
-num_trials = ind_center_states.size
+num_trials = ind_wait_states.size
 total_states = state_time.size
+
+'''
+STOPPED HERE
+
+'''
 
 # Number of successful stress trials
 tot_successful_stress = np.logical_and(trial_success,all_stress_or_not)
