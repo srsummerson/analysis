@@ -1,5 +1,6 @@
 import numpy as np
 from neo import io
+import scipy as sp
 
 def running_mean(x, N):
 	cumsum = np.nancumsum(np.insert(x, 0, 0)) 
