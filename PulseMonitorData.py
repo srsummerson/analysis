@@ -1,6 +1,10 @@
 import numpy as np
 from neo import io
 
+def running_mean(x, N):
+	cumsum = np.nancumsum(np.insert(x, 0, 0)) 
+	return (cumsum[N:] - cumsum[:-N]) / N 
+
 def findIBIs(pulse,sampling_rate):
 	'''
 	Method determines the times of the heart pulses and returns an array of inter-beat interval lengths
@@ -291,4 +295,76 @@ def getIBIandPuilDilation(pulse_data, pulse_ind,samples_pulse, pulse_samprate,pu
 	return ibi_mean, ibi_std, pupil_mean, pupil_std, nbins_ibi, ibi_hist, nbins_pupil, pupil_hist
 
 
+def TimeSeriesIBIandPupilDilation(pulse_data, pulse_sr, eyetracker_data, eyetracker_sr, avg_len, syncHDF_file):
+	'''
+	This method takes in raw data from the eyetracker and pulse sensor. Eyetracker data is cleaned to 
+	removal intervals of blinking. Pulse data is processed to translated from raw voltage signal into
+	series of inter-beat interval (IBI) measurements. Output is the cleaned/processed data, as well as
+	smoothed time series data computed as a sliding time average based on the avg_len parameter.
+
+	Input:
+	- pulse_data: array, float values corresponding to raw data from pulse sensor recorded in TDT system
+	- pulse_sr: float, sampling rate of pulse sensor data in samples/sec
+	- eyetracker_data: array, float values corresponding to raw data of horizontal pupil diameter determined
+					by the ISCAN eyetracker and recorded in the TDT system
+	- eyetracker_sr: float, sampling rate of eyetracker data in samples/sec
+	- avg_len: float, value in samples that data should be averaged over. overlap of time bins by default
+					will be time_avg_len/2.
+	- syndHDF_file: string, name of syncHDF .mat file that is used to determine the beginning and end of the 
+					useful recording pulse and eyetracker data
+
+	Output:
+	- computedIBIs: array, all IBI values taken from pulse_data over the duration of the recording
+	- avg_computedIBIs: array, time-averaged IBI values where number of samples in average is based on avg_len
+	- pupil_data: array, eyetracker_data with periods of blinking replaced with nans
+	- avg_pupil_data: array, time-average values from pupil_Data where number of samples in average is based on avg_len
+	- data_dur: float, value in seconds of the length of time the pupil and pulse data was taken from
+
+	'''
+
+	# Determine first and last sample that should be used based on syncHDF file
+	hdf_times = dict()
+	sp.io.loadmat(syncHDF_file, hdf_times)
+	dio_tdt_sample = np.ravel(hdf_times['tdt_samplenumber'])
+
+	samp_start = dio_tdt_sample[0]
+	samp_end = dio_tdt_sample[-1]
+	data_dur = (samp_end - samp_start)/pulse_sr 	# data duration in seconds
+
+	pulse = pulse_data[samp_start:samp_end]
+	eyetracker = eyetracker_data[samp_start:samp_end]
+
+	# Compute IBI from pulse data
+	computedIBIs = findIBIs(pulse,pulse_sr)
+	# Compute time-averaged IBI values
+	avg_computedIBIs = running_mean(computedIBIs, avg_len)
+
+	# Clean eyetracker data. Fill blink periods with NANs.
+	pupil_snippet = eyetracker_data[samp_start:samp_end]
+	pupil_snippet_range = range(0,len(pupil_snippet))
+	pupil_snippet_eyes_closed_range = []
+	eyes_closed = np.nonzero(np.less(pupil_snippet,-3.3))
+	eyes_closed = np.ravel(eyes_closed)
+	if len(eyes_closed) > 1:
+		find_blinks = eyes_closed[1:] - eyes_closed[:-1]
+		blink_inds = np.ravel(np.nonzero(np.not_equal(find_blinks,1)))
+		eyes_closed_ind = [eyes_closed[0]]
+		eyes_closed_ind += eyes_closed[blink_inds].tolist()
+		eyes_closed_ind += eyes_closed[blink_inds+1].tolist()
+		eyes_closed_ind += [eyes_closed[-1]]
+		eyes_closed_ind.sort()
+		
+		for i in np.arange(1,len(eyes_closed_ind),2):
+			rm_range = range(np.nanmax(eyes_closed_ind[i-1]-20,0),np.minimum(eyes_closed_ind[i] + 20,len(pupil_snippet)-1))
+			rm_indices = [pupil_snippet_range.index(rm_range[ind]) for ind in range(0,len(rm_range)) if (rm_range[ind] in pupil_snippet_range)]
+			pupil_snippet_eyes_closed_range += rm_indices
+			#pupil_snippet_range = np.delete(pupil_snippet_range,rm_indices)
+			#pupil_snippet_range = pupil_snippet_range.tolist()
+	#pupil_snippet = pupil_snippet[pupil_snippet_range]
+	pupil_data = np.array([pupil_snippet[i] if i not in pupil_snippet_eyes_closed_range else np.nan for i in range(len(pupil_snippet))])
+
+	# Compute time-average pupil diameter values.
+	avg_pupil_data = running_mean(pupil_data, avg_len)
+
+	return computedIBIs, avg_computedIBIs, pupil_data, avg_pupil_data, data_dur
 
