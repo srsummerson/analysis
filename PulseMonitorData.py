@@ -330,7 +330,7 @@ def TimeSeriesIBIandPupilDilation(pulse_data, pulse_sr, eyetracker_data, eyetrac
 
 	'''
 
-	avg_len = float(avg_len)
+	avg_len = int(avg_len)
 	# Determine first and last sample that should be used based on syncHDF file
 	hdf_times = dict()
 	sp.io.loadmat(syncHDF_file, hdf_times)
