@@ -6,6 +6,13 @@ def running_mean(x, N):
 	cumsum = np.nancumsum(np.insert(x, 0, 0)) 
 	return (cumsum[N:] - cumsum[:-N]) / N 
 
+def sliding_mean(x, N):
+	'''
+	Assumes windows slide N/2 samples each time
+	'''
+
+	return
+
 def findIBIs(pulse,sampling_rate):
 	'''
 	Method determines the times of the heart pulses and returns an array of inter-beat interval lengths
@@ -323,6 +330,7 @@ def TimeSeriesIBIandPupilDilation(pulse_data, pulse_sr, eyetracker_data, eyetrac
 
 	'''
 
+	avg_len = float(avg_len)
 	# Determine first and last sample that should be used based on syncHDF file
 	hdf_times = dict()
 	sp.io.loadmat(syncHDF_file, hdf_times)
@@ -339,9 +347,10 @@ def TimeSeriesIBIandPupilDilation(pulse_data, pulse_sr, eyetracker_data, eyetrac
 	computedIBIs = findIBIs(pulse,pulse_sr)
 	# Compute time-averaged IBI values
 	avg_computedIBIs = running_mean(computedIBIs, avg_len)
+	#avg_computedIBIs = np.convolve(computedIBIs, np.ones((avg_len,))/avg_len, mode = 'valid')
 
 	# Clean eyetracker data. Fill blink periods with NANs.
-	pupil_snippet = eyetracker_data[samp_start:samp_end]
+	pupil_snippet = eyetracker
 	pupil_snippet_range = range(0,len(pupil_snippet))
 	pupil_snippet_eyes_closed_range = []
 	eyes_closed = np.nonzero(np.less(pupil_snippet,-3.3))
@@ -357,8 +366,9 @@ def TimeSeriesIBIandPupilDilation(pulse_data, pulse_sr, eyetracker_data, eyetrac
 		
 		for i in np.arange(1,len(eyes_closed_ind),2):
 			rm_range = range(np.nanmax(eyes_closed_ind[i-1]-20,0),np.minimum(eyes_closed_ind[i] + 20,len(pupil_snippet)-1))
-			rm_indices = [pupil_snippet_range.index(rm_range[ind]) for ind in range(0,len(rm_range)) if (rm_range[ind] in pupil_snippet_range)]
-			pupil_snippet_eyes_closed_range += rm_indices
+			#rm_indices = [pupil_snippet_range.index(rm_range[ind]) for ind in range(0,len(rm_range)) if (rm_range[ind] in pupil_snippet_range)]
+			#pupil_snippet_eyes_closed_range += rm_indices
+			pupil_snippet_eyes_closed_range += rm_range
 			#pupil_snippet_range = np.delete(pupil_snippet_range,rm_indices)
 			#pupil_snippet_range = pupil_snippet_range.tolist()
 	#pupil_snippet = pupil_snippet[pupil_snippet_range]
@@ -366,6 +376,7 @@ def TimeSeriesIBIandPupilDilation(pulse_data, pulse_sr, eyetracker_data, eyetrac
 
 	# Compute time-average pupil diameter values.
 	avg_pupil_data = running_mean(pupil_data, avg_len)
+	#avg_pupil_data = np.convolve(pupil_data, np.ones((avg_len,))/avg_len, mode = 'valid')
 
 	return computedIBIs, avg_computedIBIs, pupil_data, avg_pupil_data, data_dur
 
