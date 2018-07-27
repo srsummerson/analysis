@@ -375,7 +375,7 @@ def TimeSeriesIBIandPupilDilation(pulse_data, pulse_sr, eyetracker_data, eyetrac
 	pupil_data = np.array([pupil_snippet[i] if i not in pupil_snippet_eyes_closed_range else np.nan for i in range(len(pupil_snippet))])
 
 	# Compute time-average pupil diameter values.
-	avg_pupil_data = running_mean(pupil_data, avg_len)
+	avg_pupil_data = running_mean(pupil_data, avg_len*50)
 	#avg_pupil_data = np.convolve(pupil_data, np.ones((avg_len,))/avg_len, mode = 'valid')
 
 	return computedIBIs, avg_computedIBIs, pupil_data, avg_pupil_data, data_dur
