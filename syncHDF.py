@@ -5,7 +5,7 @@ from neo import io
 
 
 
-filename = 'Mario20180724-3'
+filename = 'Mario20180727'
 #TDT_tank = '/backup/subnetsrig/storage/tdt/'+filename
 TDT_tank = '/home/srsummerson/storage/tdt/'+filename
 #TDT_tank = './' + filename
@@ -17,6 +17,7 @@ bl = r.read_block(lazy=False,cascade=True)		# read data
 print "File read."
 
 for block_num in range(1,len(bl.segments)+1):
+	print "Block %i" % (block_num)
 	analogsig = bl.segments[block_num-1].analogsignals
 
 	# Create dictionary to store synchronization data
@@ -44,6 +45,7 @@ for block_num in range(1,len(bl.segments)+1):
 			DIOx4 = np.array(sig)
 			#DIOx4 = [sig[ind].item() for ind in range(0,sig.size)]
 			##DIOx4_times = sig.times
+
 
 	find_recording_start = np.ravel(np.nonzero(DIOx1))[0]
 	find_data_rows = np.logical_and(np.ravel(np.equal(DIOx3,13)),np.ravel(np.greater(DIOx2,0))) 	# samples when data corresponds to a row and strobe is on
