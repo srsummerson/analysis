@@ -244,6 +244,8 @@ def getIBIandPuilDilation(pulse_data, pulse_ind,samples_pulse, pulse_samprate,pu
 	all_pupil = []
 	pulse_ind = np.array([int(ind) for ind in pulse_ind])
 	pupil_ind = np.array([int(ind) for ind in pupil_ind])
+	samples_pulse = np.array([int(ind) for ind in samples_pulse])
+	samples_pupil = np.array([int(ind) for ind in samples_pupil])
 	for i in range(0,len(pulse_ind)):
 		pulse_snippet = pulse_data[pulse_ind[i]:pulse_ind[i]+samples_pulse[i]]
 		ibi_snippet = findIBIs(pulse_snippet,pulse_samprate)
