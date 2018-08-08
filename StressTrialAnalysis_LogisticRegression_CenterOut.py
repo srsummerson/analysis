@@ -98,10 +98,10 @@ else:
 		# Get Pulse and Pupil Data
 		for sig in bl.segments[block_num[j]-1].analogsignals:
 			if (sig.name == 'PupD 1'):
-				pupil_data[j] = np.ravel(sig)
+				pupil_data[j] = np.array(sig)
 				pupil_samprate = sig.sampling_rate.item()
 			if (sig.name == 'HrtR 1'):
-				pulse_data[j] = np.ravel(sig)
+				pulse_data[j] = np.array(sig)
 				pulse_samprate = sig.sampling_rate.item()
 
 
