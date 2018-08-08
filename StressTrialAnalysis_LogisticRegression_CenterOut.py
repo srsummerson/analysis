@@ -49,7 +49,7 @@ for i, hdf in enumerate(hdf_location):
 	Load behavior data, and syncing data for behavior and TDT recording.
 	''' 
 	sb = StressBehavior_CenterOut(hdf)
-	mat_filename = filename+'_b'+str(block_num[i])+'_syncHDF.mat'
+	mat_filename = filename[i]+'_b'+str(block_num[i])+'_syncHDF.mat'
 
 	if i ==0:
 		num_trials = np.array([len(sb.ind_reward_states)])
