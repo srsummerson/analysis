@@ -44,7 +44,7 @@ hdf_location = ['/storage/rawdata/hdf/'+hdf_name for hdf_name in hdf_filenames]
 '''
 Loop through files to extract TDT sample numbers relevant to data times of interest for the different trial types.
 '''
-for i, hdf in enumerate(hdf_filenames):
+for i, hdf in enumerate(hdf_location):
 	'''
 	Load behavior data, and syncing data for behavior and TDT recording.
 	''' 
