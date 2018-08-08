@@ -39,7 +39,7 @@ block_num = [1]
 #TDT_tank = ['/backup/subnetsrig/storage/tdt/'+name for name in filename]
 TDT_tank = ['/home/srsummerson/storage/tdt/'+name for name in filename]
 hdf_location = ['/storage/rawdata/hdf/'+hdf_name for hdf_name in hdf_filenames]
-
+mat_location = '/storage/syncHDF/'
 
 '''
 Loop through files to extract TDT sample numbers relevant to data times of interest for the different trial types.
@@ -50,6 +50,7 @@ for i, hdf in enumerate(hdf_location):
 	''' 
 	sb = StressBehavior_CenterOut(hdf)
 	mat_filename = filename[i]+'_b'+str(block_num[i])+'_syncHDF.mat'
+	mat_filename = mat_location + mat_filename
 
 	if i ==0:
 		num_trials = np.array([len(sb.ind_reward_states)])
