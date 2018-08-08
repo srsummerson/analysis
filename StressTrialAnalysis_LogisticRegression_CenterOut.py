@@ -56,13 +56,13 @@ for i, hdf in enumerate(hdf_location):
 		response_times = sb.trial_times
 		stress_type = sb.stress_type
 
-		tdt_ind_hold_center = sb.get_state_TDT_LFPvalues(sb.ind_hold_center_states,syncHDF_file)
+		tdt_ind_hold_center = sb.get_state_TDT_LFPvalues(sb.ind_hold_center_states,mat_filename)
 	else:
 		num_trials = np.append(num_trials, len(sb.ind_reward_states))
 		response_times = np.append(response_times, sb.trial_times)
 		stress_type = np.append(stress_type, sb.stress_type)
 
-		inds = sb.get_state_TDT_LFPvalues(sb.ind_hold_center_states,syncHDF_file)
+		inds = sb.get_state_TDT_LFPvalues(sb.ind_hold_center_states,mat_filename)
 		tdt_ind_hold_center = np.append(tdt_ind_hold_center, inds)
 
 	
