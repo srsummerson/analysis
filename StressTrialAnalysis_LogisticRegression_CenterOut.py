@@ -54,13 +54,13 @@ for i, hdf in enumerate(hdf_location):
 	if i ==0:
 		num_trials = np.array([len(sb.ind_reward_states)])
 		response_times = sb.trial_times
-		stress_type = sb.stress_type
+		stress_type = sb.stress_trial
 
 		tdt_ind_hold_center, tdt_sr = sb.get_state_TDT_LFPvalues(sb.ind_hold_center_states,mat_filename)
 	else:
 		num_trials = np.append(num_trials, len(sb.ind_reward_states))
 		response_times = np.append(response_times, sb.trial_times)
-		stress_type = np.append(stress_type, sb.stress_type)
+		stress_type = np.append(stress_type, sb.stress_trial)
 
 		inds, tdt_sr = sb.get_state_TDT_LFPvalues(sb.ind_hold_center_states,mat_filename)
 		tdt_ind_hold_center = np.append(tdt_ind_hold_center, inds)
@@ -118,8 +118,6 @@ ibi_reg_mean = np.array([])
 pupil_stress_mean = np.array([])
 pupil_reg_mean = np.array([])
 
-stress_type = np.append(np.zeros(100), np.ones(100)) # TEMPORARY FIX! np
-stress_type.astype(int) 
 
 for k in range(len(hdf_filenames)):
 	pulse_d = np.ravel(pulse_data[k])
