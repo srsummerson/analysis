@@ -22,7 +22,6 @@ from sklearn import metrics
 from sklearn.metrics import roc_curve, auc
 from sklearn.cross_validation import cross_val_score
 
-
 '''
 This is for computing the regression coefficients used in closed-loop stimulation during the center-out version of the stress task. This code should be run to compute
 these coefficients after Blocks A (regular trials) and B (stress trials) have been completed. First, syncHDF.py must be run in order to generate the syncHDF.mat file
@@ -32,8 +31,8 @@ The top three variables should be updated depending on the file name(s) for the 
 
 '''
 
-hdf_filenames = ['mari20180807_03_te1065.hdf']
-filename = ['Mario20180807']
+hdf_filenames = ['mari20180808_02_te1068.hdf']
+filename = ['Mario20180808-1']
 block_num = [1]
 
 #TDT_tank = ['/backup/subnetsrig/storage/tdt/'+name for name in filename]
@@ -119,6 +118,9 @@ ibi_reg_mean = np.array([])
 pupil_stress_mean = np.array([])
 pupil_reg_mean = np.array([])
 
+stress_type = np.append(np.zeros(100), np.ones(100)) # TEMPORARY FIX! np
+stress_type.astype(int) 
+
 for k in range(len(hdf_filenames)):
 	pulse_d = np.ravel(pulse_data[k])
 	 
@@ -131,15 +133,16 @@ for k in range(len(hdf_filenames)):
 	nsamples_pupil = samples_pupil[trial_start:trial_end]
 
 	ibi_mean, ibi_std, pupil_mean, pupil_std, nbins_ibi, ibi_hist, nbins_pupil, pupil_hist = getIBIandPuilDilation(pulse_d, pulse_ind,nsamples_pulse, pulse_samprate,pupil_d, pupil_ind,nsamples_pupil,pupil_samprate)
-	trial_start = trial_end
+	# trial_start = trial_end
 
 	ind_stress = np.ravel(np.nonzero(stress_type[trial_start:trial_end]))
-	ind_reg = np.ravel(np.nonzero(~stress_type[trial_start:trial_end]))
+	ind_reg = np.ravel(np.nonzero(stress_type[trial_start:trial_end]))
+	ibi_stress_mean = np.append(ibi_stress_mean, np.array(ibi_mean)[ind_stress])
+	ibi_reg_mean = np.append(ibi_reg_mean, np.array(ibi_mean)[ind_reg])
+	pupil_stress_mean = np.append(pupil_stress_mean, np.array(pupil_mean)[ind_stress])
+	pupil_reg_mean = np.append(pupil_reg_mean, np.array(pupil_mean)[ind_reg])
 
-	ibi_stress_mean = np.append(ibi_stress_mean, ibi_mean[ind_stress])
-	ibi_reg_mean = np.append(ibi_reg_mean, ibi_mean[ind_reg])
-	pupil_stress_mean = np.append(pupil_stress_mean, pupil_mean[ind_stress])
-	pupil_reg_mean = np.append(pupil_reg_mean, pupil_mean[ind_reg])
+	trial_start = trial_end # moved
 
 
 num_successful_stress = len(ibi_stress_mean)
@@ -203,8 +206,3 @@ cbar.ax.set_xticklabels(['Early', 'Late'])  # horizontal colorbar
 #plt.ylim((-0.05,1.05))
 #plt.xlim((-0.05,1.05))
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename[0]+'_b'+str(block_num[0])+'_IBIPupilCovariance.svg')
-
-
-
-
-

@@ -246,8 +246,12 @@ def getIBIandPuilDilation(pulse_data, pulse_ind,samples_pulse, pulse_samprate,pu
 	pupil_ind = np.array([int(ind) for ind in pupil_ind])
 	samples_pulse = np.array([int(ind) for ind in samples_pulse])
 	samples_pupil = np.array([int(ind) for ind in samples_pupil])
+
+	pulse_data_array = np.array(pulse_data)
+	pupil_data_array = np.array(pupil_data)
+
 	for i in range(0,len(pulse_ind)):
-		pulse_snippet = pulse_data[pulse_ind[i]:pulse_ind[i]+samples_pulse[i]]
+		pulse_snippet = pulse_data_array[pulse_ind[i]:pulse_ind[i]+samples_pulse[i]]
 		ibi_snippet = findIBIs(pulse_snippet,pulse_samprate)
 		all_ibi += ibi_snippet.tolist()
 		if np.isnan(np.nanmean(ibi_snippet)):
@@ -256,9 +260,9 @@ def getIBIandPuilDilation(pulse_data, pulse_ind,samples_pulse, pulse_samprate,pu
 			ibi_mean.append(np.nanmean(ibi_snippet))
 		ibi_std.append(np.nanstd(ibi_snippet))
 		
-		pupil_snippet = pupil_data[pupil_ind[i]:pupil_ind[i]+samples_pupil[i]]
+		pupil_snippet = pupil_data_array[pupil_ind[i]:pupil_ind[i]+samples_pupil[i]]
 		pupil_snippet_range = range(0,len(pupil_snippet))
-		eyes_closed = np.nonzero(np.less(pupil_snippet,-3.3))
+		eyes_closed = np.nonzero(np.less(np.array(pupil_snippet),-3.3))
 		eyes_closed = np.ravel(eyes_closed)
 		if len(eyes_closed) > 1:
 			find_blinks = eyes_closed[1:] - eyes_closed[:-1]
