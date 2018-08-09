@@ -274,7 +274,7 @@ def getIBIandPuilDilation(pulse_data, pulse_ind,samples_pulse, pulse_samprate,pu
 			eyes_closed_ind.sort()
 			
 			for i in np.arange(1,len(eyes_closed_ind),2):
-				rm_range = range(np.nanmax(eyes_closed_ind[i-1]-40,0),np.minimum(eyes_closed_ind[i] + 40,len(pupil_snippet)-1))
+				rm_range = range(np.nanmax(eyes_closed_ind[i-1]-60,0),np.minimum(eyes_closed_ind[i] + 60,len(pupil_snippet)-1))
 				rm_indices = [pupil_snippet_range.index(rm_range[ind]) for ind in range(0,len(rm_range)) if (rm_range[ind] in pupil_snippet_range)]
 				pupil_snippet_range = np.delete(pupil_snippet_range,rm_indices)
 				pupil_snippet_range = pupil_snippet_range.tolist()
