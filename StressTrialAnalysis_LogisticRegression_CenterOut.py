@@ -134,7 +134,7 @@ for k in range(len(hdf_filenames)):
 	# trial_start = trial_end
 
 	ind_stress = np.ravel(np.nonzero(stress_type[trial_start:trial_end]))
-	ind_reg = np.ravel(np.nonzero(stress_type[trial_start:trial_end]))
+	ind_reg = np.ravel(np.nonzero(stress_type[trial_start:trial_end]-1))
 	ibi_stress_mean = np.append(ibi_stress_mean, np.array(ibi_mean)[ind_stress])
 	ibi_reg_mean = np.append(ibi_reg_mean, np.array(ibi_mean)[ind_reg])
 	pupil_stress_mean = np.append(pupil_stress_mean, np.array(pupil_mean)[ind_stress])
@@ -160,6 +160,8 @@ x_successful = np.transpose(x_successful)
 x_successful = sm.add_constant(x_successful,prepend='False')
 
 print "Regression with successful trials"
+print "x1: IBI"
+print "x2: Pupil Dilation"
 model_glm = sm.Logit(y_successful,x_successful)
 fit_glm = model_glm.fit()
 print fit_glm.summary()
