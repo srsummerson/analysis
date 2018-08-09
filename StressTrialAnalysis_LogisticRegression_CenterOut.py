@@ -143,8 +143,8 @@ for k in range(len(hdf_filenames)):
 	trial_start = trial_end # moved
 
 # delete PD values less than 0
-pupil_stress_mean = np.array([val for val in ibi_stress_mean if val>0])
-pupil_reg_mean = np.array([val for val in ibi_reg_mean if val>0])
+pupil_stress_mean = np.array([val for val in ibi_stress_mean if (val>-3)])
+pupil_reg_mean = np.array([val for val in ibi_reg_mean if (val>-3)])
 
 num_successful_stress = len(ibi_stress_mean)
 num_successful_reg = len(ibi_reg_mean)
