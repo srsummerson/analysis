@@ -793,7 +793,7 @@ class StressBehavior_CenterOut():
 		self.ind_hold_center_states = np.ravel(np.nonzero(self.state == 'hold_center'))
 		self.ind_target_states = np.ravel(np.nonzero(self.state == 'target'))
 		self.ind_reward_states = np.ravel(np.nonzero(self.state == 'reward'))
-		self.stress_trial = np.ravel(self.stress_type[self.state_time[self.ind_hold_center_states]])
+		self.stress_trial = np.ravel(self.stress_type[self.state_time[self.ind_reward_states-4]])
 		
 		self.num_trials = self.ind_center_states.size
 		self.num_successful_trials = self.ind_reward_states.size
