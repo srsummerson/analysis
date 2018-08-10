@@ -31,9 +31,9 @@ The top three variables should be updated depending on the file name(s) for the 
 
 '''
 
-hdf_filenames = ['mari20180808_02_te1068.hdf']
-filename = ['Mario20180808-1']
-block_num = [1]
+hdf_filenames = ['mari20180809_04_te1074.hdf', 'mari20180809_07_te1077.hdf']
+filename = ['Mario20180809', 'Mario20180809']
+block_num = [1,2]
 
 #TDT_tank = ['/backup/subnetsrig/storage/tdt/'+name for name in filename]
 TDT_tank = ['/home/srsummerson/storage/tdt/'+name for name in filename]
@@ -83,10 +83,10 @@ if (len(TDT_tank)==1) or (TDT_tank[0]==TDT_tank[1]):
 		# Get Pulse and Pupil Data
 		for sig in bl.segments[block_num[j]-1].analogsignals:
 			if (sig.name == 'PupD 1'):
-				pupil_data[j] = np.ravel(sig)
+				pupil_data[j] = np.array(sig)
 				pupil_samprate = sig.sampling_rate.item()
 			if (sig.name == 'HrtR 1'):
-				pulse_data[j] = np.ravel(sig)
+				pulse_data[j] = np.array(sig)
 				pulse_samprate = sig.sampling_rate.item()
 else:
 	for j in range(len(block_num)):
@@ -130,6 +130,8 @@ for k in range(len(hdf_filenames)):
 	pupil_ind = tdt_ind_hold_center[trial_start:trial_end]
 	nsamples_pupil = samples_pupil[trial_start:trial_end]
 
+	print "Block %i" % (k)
+	print len(pulse_d)
 	ibi_mean, ibi_std, pupil_mean, pupil_std, nbins_ibi, ibi_hist, nbins_pupil, pupil_hist = getIBIandPuilDilation(pulse_d, pulse_ind,nsamples_pulse, pulse_samprate,pupil_d, pupil_ind,nsamples_pupil,pupil_samprate)
 	# trial_start = trial_end
 
@@ -143,14 +145,14 @@ for k in range(len(hdf_filenames)):
 	trial_start = trial_end # moved
 
 # delete PD values less than 0
-ibi_stress_mean = np.array([ibi_stress_mean[i] for i in range(len(ibi_stress_mean)) if (pupil_stress_mean[i] > -3)])
-ibi_reg_mean = np.array([ibi_reg_mean[i] for i in range(len(ibi_reg_mean)) if (pupil_reg_mean[i] > -3)])
-pupil_stress_mean = np.array([val for val in pupil_stress_mean if (val>-3)])
-pupil_reg_mean = np.array([val for val in pupil_reg_mean if (val>-3)])
+ibi_stress_mean_adj = np.array([ibi_stress_mean[i] for i in range(len(ibi_stress_mean)) if (pupil_stress_mean[i] > -3)and(~np.isnan(ibi_stress_mean[i]))])
+ibi_reg_mean_adj = np.array([ibi_reg_mean[i] for i in range(len(ibi_reg_mean)) if (pupil_reg_mean[i] > -3)and(~np.isnan(ibi_reg_mean[i]))])
+pupil_stress_mean_adj = np.array([pupil_stress_mean[i] for i in range(len(pupil_stress_mean)) if (pupil_stress_mean[i] > -3)and(~np.isnan(ibi_stress_mean[i]))])
+pupil_reg_mean_adj = np.array([pupil_reg_mean[i] for i in range(len(pupil_reg_mean)) if (pupil_reg_mean[i] > -3)and(~np.isnan(ibi_reg_mean[i]))])
 
 
-num_successful_stress = len(ibi_stress_mean)
-num_successful_reg = len(ibi_reg_mean)
+num_successful_stress = len(ibi_stress_mean_adj)
+num_successful_reg = len(ibi_reg_mean_adj)
 
 
 y_successful_stress = np.ones(num_successful_stress)
@@ -161,7 +163,7 @@ y_successful = np.append(y_successful_reg,y_successful_stress)
 Do regression as well: 0 = regular trial, 1 = stress trial
 '''
 
-x_successful = np.vstack((np.append(ibi_reg_mean, ibi_stress_mean), np.append(pupil_reg_mean, pupil_stress_mean)))
+x_successful = np.vstack((np.append(ibi_reg_mean_adj, ibi_stress_mean_adj), np.append(pupil_reg_mean_adj, pupil_stress_mean_adj)))
 x_successful = np.transpose(x_successful)
 x_successful = sm.add_constant(x_successful,prepend='False')
 
@@ -172,10 +174,10 @@ model_glm = sm.Logit(y_successful,x_successful)
 fit_glm = model_glm.fit()
 print fit_glm.summary()
 
-norm_ibi_stress_mean = ibi_stress_mean 
-norm_pupil_stress_mean = pupil_stress_mean 
-norm_ibi_reg_mean = ibi_reg_mean 
-norm_pupil_reg_mean = pupil_reg_mean 
+norm_ibi_stress_mean = ibi_stress_mean_adj 
+norm_pupil_stress_mean = pupil_stress_mean_adj 
+norm_ibi_reg_mean = ibi_reg_mean_adj
+norm_pupil_reg_mean = pupil_reg_mean_adj
 
 points_stress = np.array([norm_ibi_stress_mean,norm_pupil_stress_mean])
 points_reg = np.array([norm_ibi_reg_mean,norm_pupil_reg_mean])
@@ -188,11 +190,11 @@ cmap_stress = mpl.cm.autumn
 cmap_reg = mpl.cm.winter
 
 plt.figure()
-for i in range(0,len(ibi_stress_mean)):
+for i in range(0,len(ibi_stress_mean_adj)):
     #plt.plot(norm_ibi_stress_mean[i],norm_pupil_stress_mean[i],color=cmap_stress(i/float(len(ibi_stress_mean))),marker='o',markeredgecolor=None,markeredgewidth=0.0)
     plt.plot(norm_ibi_stress_mean[i],norm_pupil_stress_mean[i],color=cmap_stress(i/float(len(ibi_stress_mean))),marker='o')
 plot_cov_ellipse(cov_stress,mean_vec_stress,fc='r',ec='None',a=0.2)
-for i in range(0,len(ibi_reg_mean)):
+for i in range(0,len(ibi_reg_mean_adj)):
 	plt.plot(norm_ibi_reg_mean[i],norm_pupil_reg_mean[i],color=cmap_reg(i/float(len(ibi_reg_mean))),marker='o')
 plot_cov_ellipse(cov_reg,mean_vec_reg,fc='b',ec='None',a=0.2)
 #plt.legend()

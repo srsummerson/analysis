@@ -251,11 +251,14 @@ def getIBIandPuilDilation(pulse_data, pulse_ind,samples_pulse, pulse_samprate,pu
 	pupil_data_array = np.array(pupil_data)
 
 	for i in range(0,len(pulse_ind)):
+		print pulse_ind[i], samples_pulse[i]
 		pulse_snippet = pulse_data_array[pulse_ind[i]:pulse_ind[i]+samples_pulse[i]]
 		ibi_snippet = findIBIs(pulse_snippet,pulse_samprate)
 		all_ibi += ibi_snippet.tolist()
-		if np.isnan(np.nanmean(ibi_snippet)):
+		if np.isnan(np.nanmean(ibi_snippet))and(ibi_mean != []):
 			ibi_mean.append(ibi_mean[-1])   # repeat last measurement
+		elif np.isnan(np.nanmean(ibi_snippet))and(ibi_mean == []):
+			ibi_mean.append(np.nan)
 		else:
 			ibi_mean.append(np.nanmean(ibi_snippet))
 		ibi_std.append(np.nanstd(ibi_snippet))
@@ -285,8 +288,10 @@ def getIBIandPuilDilation(pulse_data, pulse_ind,samples_pulse, pulse_samprate,pu
 		#pupil_snippet = (pupil_snippet[0:window]- pupil_snippet_mean)/float(pupil_snippet_std)
 		pupil_snippet = pupil_snippet[0:window]
 		all_pupil += pupil_snippet.tolist()
-		if np.isnan(np.nanmean(pupil_snippet)):
+		if np.isnan(np.nanmean(pupil_snippet))and(pupil_mean != []):
 			pupil_mean.append(pupil_mean[-1])
+		elif np.isnan(np.nanmean(pupil_snippet))and(pupil_mean == []):
+			pupil_mean.append(-3.3)
 		else:
 			pupil_mean.append(np.nanmean(pupil_snippet))
 		pupil_std.append(np.nanstd(pupil_snippet))
