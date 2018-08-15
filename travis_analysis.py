@@ -12,6 +12,10 @@ from scipy import signal
 from scipy.ndimage import filters
 from scipy.interpolate import spline
 
+###
+### To add: individual waveforms to the averages, be able to indicate time window for raster, heat map
+###
+
 class OfflineSorted_PlxFile():
 	'''
 	Class for plexon file of offline-sorted units recorded with Plexon system. Units are offline-sorted with Plexon Offline Sorter
