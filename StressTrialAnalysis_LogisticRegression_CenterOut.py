@@ -31,8 +31,8 @@ The top three variables should be updated depending on the file name(s) for the 
 
 '''
 
-hdf_filenames = ['mari20180810_03_te1082.hdf']
-filename = ['Mario20180810']
+hdf_filenames = ['mari20180814_05_te1111.hdf']
+filename = ['Mario20180814']
 block_num = [1]
 
 #TDT_tank = ['/backup/subnetsrig/storage/tdt/'+name for name in filename]
