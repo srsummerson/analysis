@@ -13,7 +13,7 @@ from scipy.ndimage import filters
 from scipy.interpolate import spline
 
 ###
-### To add: individual waveforms to the averages, be able to indicate time window for raster, heat map
+### To add: heat map
 ###
 
 class OfflineSorted_PlxFile():
@@ -73,7 +73,7 @@ class OfflineSorted_PlxFile():
 
 		return avg_firing_rates
 
-	def get_waveform_data(self, chan, sc):
+	def get_waveform_data(self, chan, sc, waveform_inds):
 		'''
 		Method that returns length 32 array containing the average and standard deviation of the spike waveform on
 		the indicated channel with the indicated sort code. Note that default sampling rate for spike data is 40K Hz.
@@ -81,7 +81,7 @@ class OfflineSorted_PlxFile():
 		Input:
 		- chan: integer indicating channel number
 		- sc: integer indicating sort code
-		- plot data : Boolean, indicate if data plot should be saved
+		- waveform_inds : integer array, indices of waveforms to include in plot
 		'''
 		inds, = np.nonzero((self.spikes['chan'] == chan) * (self.spikes['unit'] == sc))
 		sc_waveform = self.waveforms[inds]
@@ -93,6 +93,8 @@ class OfflineSorted_PlxFile():
 		plt.figure()
 		plt.plot(time, mean_waveform, 'b')
 		plt.fill_between(time, mean_waveform - std_waveform, mean_waveform + std_waveform, color = 'b', alpha = 0.5, linewidth=0.0)
+		for ind in waveform_inds:
+			plt.plot(time, sc_waveform[ind,:])
 		plt.title('Channel %i - Unit %i' % (chan, sc))
 		plt.xlabel('Time (s)')
 		plt.ylabel('Voltage (' + r'$\mu$' + 'V)')
@@ -113,6 +115,63 @@ class OfflineSorted_PlxFile():
 		avg_p2p = np.mean(p2p)
 
 		return p2p, avg_p2p
+
+	def peak_amp_heatmap(self):
+
+		peaks = np.array([])
+		avg_peaks = np.array([])
+		chan_array = np.array([])
+		for chan in self.good_channels:
+			sc_chan = self.find_chan_sc(chan)
+			for sc in sc_chan:
+				chan_array = np.append(chan_array, chan)
+				p2p, avg_p2p = self.peak_to_peak_vals(chan, sc)
+				peaks = np.append(peaks, p2p)
+				avg_peaks = np.append(avg_peaks, avg_p2p)
+
+		'''
+		make mapping from channels to distance. deal with fact that some channels may have more than one entry because of 
+		multiple units on the channel.
+
+		power_mat = np.zeros([15,14])
+		power_mat[:,:] = np.nan 	# all entries initially nan until they are update with peak powers
+		channels = np.arange(1,161)
+
+		row_zero = np.array([31, 15, 29, 13, 27, 11, 25, 9])
+		row_one = np.array([32, 16, 30, 14, 28, 12, 26, 10])
+		row_two = np.array([24, 8, 22, 6, 20, 4, 18, 2, 23])
+		row_three = np.array([7, 21, 5, 19, 3, 17, 1, 63, 47])
+		row_four = np.array([61, 45, 59, 43, 57, 41, 64, 48, 62, 46])
+		row_five = np.array([60, 44, 58, 42, 56, 40, 54, 38, 52, 36])
+		row_six = np.array([50, 34, 55, 39, 53, 37, 51, 35, 49, 33, 95])
+		row_seven = np.array([79, 93, 77, 91, 75, 89, 73, 96, 80, 94, 78])
+		row_eight = np.array([92, 76, 90, 74, 88, 72, 86, 70, 84, 68, 82, 66])
+		row_nine = np.array([87, 71, 85, 69, 83, 67, 81, 65, 127, 111, 125, 109])
+		row_ten = np.array([123, 107, 121, 105, 128, 112, 126, 110, 124, 108, 122, 106, 120])
+		row_eleven = np.array([104, 118, 102, 116, 100, 114, 98, 119, 103, 117, 101, 115])
+		row_twelve = np.array([99, 113, 97, 159, 143, 157, 141, 155, 139, 153, 137, 160])
+		row_thirteen = np.array([144, 158, 142, 156, 140, 154, 138, 152, 136, 150, 134])
+		row_fourteen = np.array([148, 132, 146, 130, 151, 135, 149, 133, 147])
+
+		power_mat[0,0:8] = powers[row_zero-1]
+		power_mat[1,0:8] = powers[row_one-1]
+		power_mat[2,0:9] = powers[row_two-1]
+		power_mat[3,0:9] = powers[row_three-1]
+		power_mat[4,0:10] = powers[row_four-1]
+		power_mat[5,0:10] = powers[row_five-1]
+		power_mat[6,0:11] = powers[row_six-1]
+		power_mat[7,0:11] = powers[row_seven-1]
+		power_mat[8,0:12] = powers[row_eight-1]
+		power_mat[9,0:12] = powers[row_nine-1]
+		power_mat[10,0:13] = powers[row_ten-1]
+		power_mat[11,1:13] = powers[row_eleven-1]
+		power_mat[12,2:14] = powers[row_twelve-1]
+		power_mat[13,3:14] = powers[row_thirteen-1]
+		power_mat[14,4:13] = powers[row_fourteen-1]
+		'''
+
+
+		return
 
 	def peak_to_peak_hist(self, plot_data = True):
 		'''
@@ -219,13 +278,14 @@ class OfflineSorted_PlxFile():
 
 	    return ax
 
-	def all_channels_raster_with_spike_hist(self, t_resolution):
+	def all_channels_raster_with_spike_hist(self, t_resolution, t_window):
 	    """
 	    Creates a raster plot where each row is a different channel with a corresponding smoothed histogram of total
 	    spiking activity.
 	    Parameters
 	    ----------
 		t_resolution : int, the size of the time bins in terms of seconds, i.e. 0.1 = 100 ms and 1  = 1 s
+		t_window: integer array, size two array indicating values (in seconds) for window to plot
 
 	    Returns
 	    -------
@@ -269,13 +329,13 @@ class OfflineSorted_PlxFile():
 
 	    plt.subplot(211)
 	    plt.xlabel('Time (s)')
-	    plt.xlim((0,60))
+	    plt.xlim((t_window[0],t_window[1]))
 	    #plt.ylim(.5, len(event_times_list) + .5)
 	    plt.subplot(212)
 	    plt.plot(bin_centers,smooth_hist)
 	    plt.xlabel('Time (s)')
 	    plt.ylabel('Avg Firing Rate (Hz)')
-	    plt.xlim((0,60))
+	    plt.xlim((t_window[0],t_window[1]))
 
 	    plt_filename = self.filename[:-4] + '_Raster.svg'
 	    plt.savefig(plt_filename)
