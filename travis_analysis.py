@@ -102,7 +102,7 @@ class OfflineSorted_PlxFile():
 		plt.xlabel('Time (s)')
 		plt.ylabel('Voltage (' + r'$\mu$' + 'V)')
 		plt.text(time[-8],mean_waveform[20],'$V_{rms}=$ %f' % (vrms))
-		plt_filename = self.filename[:-4] + '_Chan_' + str(chan) + '_Unit_' + str(sc) + '.svg'
+		plt_filename = self.filename[:-4] + '_Chan_' + str(chan) + '_Unit_' + str(sc) + '_ExTraces.svg'
 		plt.savefig(plt_filename)
 		
 		plt.close()
