@@ -90,7 +90,7 @@ class OfflineSorted_PlxFile():
 		vrms = np.sqrt(np.mean(np.square(mean_waveform)))
 
 		cmap = mpl.cm.hsv
-		if sc==2
+		if sc==2:
 			cmap = mpl.cm.terrain
 		num_waveforms = float(len(waveform_inds))
 
