@@ -90,19 +90,23 @@ class OfflineSorted_PlxFile():
 		vrms = np.sqrt(np.mean(np.square(mean_waveform)))
 
 		cmap = mpl.cm.hsv
-		if sc==2:
+		if (sc==2)&(chan!=32):
 			cmap = mpl.cm.terrain
+		elif (sc==1)&(chan!=32):
+			cmap = mpl.cm.terrain
+		
 		num_waveforms = float(len(waveform_inds))
 
 		time = np.arange(0,32./40000., 1./40000)
 		plt.figure()
 		plt.plot(time, mean_waveform, 'k')
 		plt.fill_between(time, mean_waveform - std_waveform, mean_waveform + std_waveform, color = 'k', alpha = 0.5, linewidth=0.0)
-		for ind in waveform_inds:
-			plt.plot(time, sc_waveform[ind,:], color = cmap(ind/num_waveforms))
+		for i,ind in enumerate(waveform_inds):
+			plt.plot(time, sc_waveform[ind,:], color = cmap(i/num_waveforms))
 		plt.title('Channel %i - Unit %i' % (chan, sc))
 		plt.xlabel('Time (s)')
 		plt.ylabel('Voltage (' + r'$\mu$' + 'V)')
+		plt.ylim((-70,70))
 		plt.text(time[-8],mean_waveform[20],'$V_{rms}=$ %f' % (vrms))
 		plt_filename = self.filename[:-4] + '_Chan_' + str(chan) + '_Unit_' + str(sc) + '_ExTraces.svg'
 		plt.savefig(plt_filename)
