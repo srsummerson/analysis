@@ -75,7 +75,7 @@ class OfflineSorted_PlxFile():
 
 	def get_waveform_data(self, chan, sc, waveform_inds):
 		'''
-		Method that returns length 32 array containing the average and standard deviation of the spike waveform on
+		Method that returns length 32 arrays containing the average and standard deviation of the spike waveform on
 		the indicated channel with the indicated sort code. Note that default sampling rate for spike data is 40K Hz.
 
 		Input:
@@ -89,12 +89,15 @@ class OfflineSorted_PlxFile():
 		std_waveform = np.std(sc_waveform, axis = 0)
 		vrms = np.sqrt(np.mean(np.square(mean_waveform)))
 
+		cmap = mpl.cm.hsv
+		num_waveforms = float(len(waveform_inds))
+
 		time = np.arange(0,32./40000., 1./40000)
 		plt.figure()
-		plt.plot(time, mean_waveform, 'b')
-		plt.fill_between(time, mean_waveform - std_waveform, mean_waveform + std_waveform, color = 'b', alpha = 0.5, linewidth=0.0)
+		plt.plot(time, mean_waveform, 'k')
+		plt.fill_between(time, mean_waveform - std_waveform, mean_waveform + std_waveform, color = 'k', alpha = 0.5, linewidth=0.0)
 		for ind in waveform_inds:
-			plt.plot(time, sc_waveform[ind,:])
+			plt.plot(time, sc_waveform[ind,:], color = cmap(ind/num_waveforms))
 		plt.title('Channel %i - Unit %i' % (chan, sc))
 		plt.xlabel('Time (s)')
 		plt.ylabel('Voltage (' + r'$\mu$' + 'V)')
