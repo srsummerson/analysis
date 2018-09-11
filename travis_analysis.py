@@ -103,6 +103,7 @@ class OfflineSorted_PlxFile():
 		plt.fill_between(time, mean_waveform - std_waveform, mean_waveform + std_waveform, color = 'k', alpha = 0.5, linewidth=0.0)
 		for i,ind in enumerate(waveform_inds):
 			plt.plot(time, sc_waveform[ind,:], color = cmap(i/num_waveforms))
+		plt.plot(time, mean_waveform, color='k', linewidth = 2)
 		plt.title('Channel %i - Unit %i' % (chan, sc))
 		plt.xlabel('Time (s)')
 		plt.ylabel('Voltage (' + r'$\mu$' + 'V)')
