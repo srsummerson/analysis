@@ -92,9 +92,9 @@ class OfflineSorted_PlxFile():
 		cmap = mpl.cm.hsv
 		if (sc==2)&(chan!=32):
 			cmap = mpl.cm.terrain
-		elif (sc==1)&(chan!=32):
+		elif (sc==1)&(chan==32):
 			cmap = mpl.cm.terrain
-		
+
 		num_waveforms = float(len(waveform_inds))
 
 		time = np.arange(0,32./40000., 1./40000)
