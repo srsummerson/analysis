@@ -129,59 +129,39 @@ class OfflineSorted_PlxFile():
 	def peak_amp_heatmap(self):
 
 		peaks = np.array([])
-		avg_peaks = np.array([])
+		powers = np.zeros(32)
 		chan_array = np.array([])
 		for chan in self.good_channels:
 			sc_chan = self.find_chan_sc(chan)
+			avg_peaks = np.array([])
 			for sc in sc_chan:
 				chan_array = np.append(chan_array, chan)
 				p2p, avg_p2p = self.peak_to_peak_vals(chan, sc)
-				peaks = np.append(peaks, p2p)
+				#peaks = np.append(peaks, p2p)
 				avg_peaks = np.append(avg_peaks, avg_p2p)
+			powers[chan-1] = np.max(avg_peaks)
 
-		'''
-		make mapping from channels to distance. deal with fact that some channels may have more than one entry because of 
-		multiple units on the channel.
 
-		power_mat = np.zeros([15,14])
+		power_mat = np.zeros([6,6])
 		power_mat[:,:] = np.nan 	# all entries initially nan until they are update with peak powers
 		channels = np.arange(1,161)
 
-		row_zero = np.array([31, 15, 29, 13, 27, 11, 25, 9])
-		row_one = np.array([32, 16, 30, 14, 28, 12, 26, 10])
-		row_two = np.array([24, 8, 22, 6, 20, 4, 18, 2, 23])
-		row_three = np.array([7, 21, 5, 19, 3, 17, 1, 63, 47])
-		row_four = np.array([61, 45, 59, 43, 57, 41, 64, 48, 62, 46])
-		row_five = np.array([60, 44, 58, 42, 56, 40, 54, 38, 52, 36])
-		row_six = np.array([50, 34, 55, 39, 53, 37, 51, 35, 49, 33, 95])
-		row_seven = np.array([79, 93, 77, 91, 75, 89, 73, 96, 80, 94, 78])
-		row_eight = np.array([92, 76, 90, 74, 88, 72, 86, 70, 84, 68, 82, 66])
-		row_nine = np.array([87, 71, 85, 69, 83, 67, 81, 65, 127, 111, 125, 109])
-		row_ten = np.array([123, 107, 121, 105, 128, 112, 126, 110, 124, 108, 122, 106, 120])
-		row_eleven = np.array([104, 118, 102, 116, 100, 114, 98, 119, 103, 117, 101, 115])
-		row_twelve = np.array([99, 113, 97, 159, 143, 157, 141, 155, 139, 153, 137, 160])
-		row_thirteen = np.array([144, 158, 142, 156, 140, 154, 138, 152, 136, 150, 134])
-		row_fourteen = np.array([148, 132, 146, 130, 151, 135, 149, 133, 147])
+		row_zero = np.array([14, 15, 16, 17, 18, 19])
+		row_one = np.array([30, 31, 32, 2, 3, 4])
+		row_two = np.array([29, 13, 12, 1, 20, 5])
+		row_three = np.array([28, 11, 33, 21, 22, 6])
+		row_four = np.array([27, 26, 25, 33, 8, 7])
+		row_five = np.array([10, 9, 33, 33, 24, 23])
 
-		power_mat[0,0:8] = powers[row_zero-1]
-		power_mat[1,0:8] = powers[row_one-1]
-		power_mat[2,0:9] = powers[row_two-1]
-		power_mat[3,0:9] = powers[row_three-1]
-		power_mat[4,0:10] = powers[row_four-1]
-		power_mat[5,0:10] = powers[row_five-1]
-		power_mat[6,0:11] = powers[row_six-1]
-		power_mat[7,0:11] = powers[row_seven-1]
-		power_mat[8,0:12] = powers[row_eight-1]
-		power_mat[9,0:12] = powers[row_nine-1]
-		power_mat[10,0:13] = powers[row_ten-1]
-		power_mat[11,1:13] = powers[row_eleven-1]
-		power_mat[12,2:14] = powers[row_twelve-1]
-		power_mat[13,3:14] = powers[row_thirteen-1]
-		power_mat[14,4:13] = powers[row_fourteen-1]
-		'''
+		power_mat[0,:] = powers[row_zero-1]
+		power_mat[1,:] = powers[row_one-1]
+		power_mat[2,:] = powers[row_two-1]
+		power_mat[3,:] = powers[row_three-1]
+		power_mat[4,:] = powers[row_four-1]
+		power_mat[5,:0] = powers[row_five-1]
 
 
-		return
+		return power_mat
 
 	def peak_to_peak_hist(self, plot_data = True):
 		'''
