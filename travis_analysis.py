@@ -120,7 +120,7 @@ class OfflineSorted_PlxFile():
 		'''
 		Finds the peak-to-trough amplitude of each spike waveform and then computes the average.
 		'''
-		sc_waveform, mean_waveform, std_waveform = self.get_waveform_data(chan, sc)
+		sc_waveform, mean_waveform, std_waveform = self.get_waveform_data(chan, sc, range(50))
 		p2p = np.max(sc_waveform, axis = 1) - np.min(sc_waveform, axis = 1)
 		avg_p2p = np.mean(p2p)
 
