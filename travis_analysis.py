@@ -145,6 +145,8 @@ class OfflineSorted_PlxFile():
 
 		mpowers = np.append(mpowers, np.nan)
 		powers = np.append(powers, np.nan)  	# add fake 33rd entry as dummy entry for when filling out power matrix
+		mpowers[mpowers ==0] = np.nan
+		powers[powers ==0] = np.nan
 		print len(powers)
 		
 		power_mat = np.zeros([6,6])
