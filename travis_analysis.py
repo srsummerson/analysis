@@ -173,6 +173,7 @@ class OfflineSorted_PlxFile():
 		mpower_mat[4,:] = mpowers[row_four-1]
 		mpower_mat[5,:] = mpowers[row_five-1]
 
+		"""
 		if plot_data:
 			plt.figure()
 			cmap = cm.get_cmap('jet', 30)
@@ -205,6 +206,7 @@ class OfflineSorted_PlxFile():
 			plt_filename = self.filename[:-4] + '_SpikeAmplitudeHeatMap.svg'
 			plt.savefig(plt_filename)
 			plt.close()
+		"""
 
 		return powers, mpowers, power_mat, mpower_mat
 
