@@ -141,7 +141,7 @@ class OfflineSorted_PlxFile():
 				#peaks = np.append(peaks, p2p)
 				avg_peaks = np.append(avg_peaks, avg_p2p)
 			mpowers[chan-1] = np.max(avg_peaks)
-			powers[chan-1] = avg_peaks[0]
+			powers[chan-1] = avg_peaks[0]*(chan != 26) + avg_peaks[1]*(chan == 26)
 
 		mpowers = np.append(mpowers, np.nan)
 		powers = np.append(powers, np.nan)  	# add fake 33rd entry as dummy entry for when filling out power matrix
@@ -192,7 +192,7 @@ class OfflineSorted_PlxFile():
 		#fig.colorbar(cax, ticks=[0,.1,.2,.3,.4,.5,.6,.7,.8,.9,1])
 		plt.colorbar(cax)
 
-		"""
+		
 		plt.subplot(1,2,2)
 		cax2 = plt.imshow(mpower_mat, interpolation="nearest", cmap=cmap)
 		plt.grid(True)
@@ -205,7 +205,7 @@ class OfflineSorted_PlxFile():
 		# Add colorbar, make sure to specify tick locations to match desired ticklabels
 		#fig.colorbar(cax, ticks=[0,.1,.2,.3,.4,.5,.6,.7,.8,.9,1])
 		plt.colorbar(cax2)
-		"""
+		
 
 		plt_filename = self.filename[:-4] + '_SpikeAmplitudeHeatMap.svg'
 		print plt_filename
