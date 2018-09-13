@@ -174,12 +174,11 @@ class OfflineSorted_PlxFile():
 		mpower_mat[5,:] = mpowers[row_five-1]
 
 		if plot_data:
-			fig = plt.figure(1)
-			ax1 = fig.add_subplot(111)
+			plt.figure()
 			cmap = cm.get_cmap('jet', 30)
 			plt.subplot(1,2,1)
-			cax = ax1.imshow(power_mat, interpolation="nearest", cmap=cmap)
-			ax1.grid(True)
+			cax = plt.imshow(power_mat, interpolation="nearest", cmap=cmap)
+			plt.grid(True)
 			plt.title('Avg Spike Amplitude Per Channel - First Sorted Unit')
 			#labels=[str(chan) for chan in self.good_channels]
 			#ax1.set_xticklabels(labels,fontsize=6)
@@ -191,8 +190,8 @@ class OfflineSorted_PlxFile():
 			fig.colorbar(cax)
 
 			plt.subplot(1,2,2)
-			cax2 = ax2.imshow(mpower_mat, interpolation="nearest", cmap=cmap)
-			ax2.grid(True)
+			cax2 = plt.imshow(mpower_mat, interpolation="nearest", cmap=cmap)
+			plt.grid(True)
 			plt.title('Avg Spike Amplitude Per Channel - Max Amplitude Unit')
 			#labels=[str(chan) for chan in self.good_channels]
 			#ax1.set_xticklabels(labels,fontsize=6)
