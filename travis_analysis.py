@@ -140,7 +140,7 @@ class OfflineSorted_PlxFile():
 				p2p, avg_p2p = self.peak_to_peak_vals(chan, sc)
 				#peaks = np.append(peaks, p2p)
 				avg_peaks = np.append(avg_peaks, avg_p2p)
-			mpowers[chan-1] = np.max(avg_peaks)*(np.max(avg_peaks) > 0) + np.nan*(np.max(avg_peaks)==0)
+			mpowers[chan-1] = np.max(avg_peaks)
 			powers[chan-1] = avg_peaks[0]
 
 		mpowers = np.append(mpowers, np.nan)
