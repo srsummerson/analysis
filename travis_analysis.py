@@ -205,6 +205,7 @@ class OfflineSorted_PlxFile():
 
 			plt_filename = self.filename[:-4] + '_SpikeAmplitudeHeatMap.svg'
 			plt.savefig(plt_filename)
+			plt.close()
 
 		return powers, mpowers, power_mat, mpower_mat
 
