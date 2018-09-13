@@ -126,7 +126,7 @@ class OfflineSorted_PlxFile():
 
 		return p2p, avg_p2p
 
-	def peak_amp_heatmap(self, plot_data=True):
+	def peak_amp_heatmap(self):
 
 		peaks = np.array([])
 		mpowers = np.zeros(32) 	# array for max amplitude of any unit on channel
@@ -175,40 +175,43 @@ class OfflineSorted_PlxFile():
 		mpower_mat[4,:] = mpowers[row_four-1]
 		mpower_mat[5,:] = mpowers[row_five-1]
 
-		"""
-		if plot_data:
-			plt.figure()
-			cmap = cm.get_cmap('jet', 30)
-			plt.subplot(1,2,1)
-			cax = plt.imshow(power_mat, interpolation="nearest", cmap=cmap)
-			plt.grid(True)
-			plt.title('Avg Spike Amplitude Per Channel - First Sorted Unit')
-			#labels=[str(chan) for chan in self.good_channels]
-			#ax1.set_xticklabels(labels,fontsize=6)
-			#ax1.set_xticks(range(len(labels)))
-			#ax1.set_yticklabels(labels,fontsize=6)
-			#ax1.set_yticks(range(len(labels)))
-			# Add colorbar, make sure to specify tick locations to match desired ticklabels
-			#fig.colorbar(cax, ticks=[0,.1,.2,.3,.4,.5,.6,.7,.8,.9,1])
-			fig.colorbar(cax)
+		
+		
+		plt.figure()
+		cmap = cm.get_cmap('jet', 30)
+		plt.subplot(1,2,1)
+		cax = plt.imshow(power_mat, interpolation="nearest", cmap=cmap)
+		plt.grid(True)
+		plt.title('Avg Spike Amplitude Per Channel - First Sorted Unit')
+		#labels=[str(chan) for chan in self.good_channels]
+		#ax1.set_xticklabels(labels,fontsize=6)
+		#ax1.set_xticks(range(len(labels)))
+		#ax1.set_yticklabels(labels,fontsize=6)
+		#ax1.set_yticks(range(len(labels)))
+		# Add colorbar, make sure to specify tick locations to match desired ticklabels
+		#fig.colorbar(cax, ticks=[0,.1,.2,.3,.4,.5,.6,.7,.8,.9,1])
+		plt.colorbar(cax)
 
-			plt.subplot(1,2,2)
-			cax2 = plt.imshow(mpower_mat, interpolation="nearest", cmap=cmap)
-			plt.grid(True)
-			plt.title('Avg Spike Amplitude Per Channel - Max Amplitude Unit')
-			#labels=[str(chan) for chan in self.good_channels]
-			#ax1.set_xticklabels(labels,fontsize=6)
-			#ax1.set_xticks(range(len(labels)))
-			#ax1.set_yticklabels(labels,fontsize=6)
-			#ax1.set_yticks(range(len(labels)))
-			# Add colorbar, make sure to specify tick locations to match desired ticklabels
-			#fig.colorbar(cax, ticks=[0,.1,.2,.3,.4,.5,.6,.7,.8,.9,1])
-			fig.colorbar(cax2)
-
-			plt_filename = self.filename[:-4] + '_SpikeAmplitudeHeatMap.svg'
-			plt.savefig(plt_filename)
-			plt.close()
 		"""
+		plt.subplot(1,2,2)
+		cax2 = plt.imshow(mpower_mat, interpolation="nearest", cmap=cmap)
+		plt.grid(True)
+		plt.title('Avg Spike Amplitude Per Channel - Max Amplitude Unit')
+		#labels=[str(chan) for chan in self.good_channels]
+		#ax1.set_xticklabels(labels,fontsize=6)
+		#ax1.set_xticks(range(len(labels)))
+		#ax1.set_yticklabels(labels,fontsize=6)
+		#ax1.set_yticks(range(len(labels)))
+		# Add colorbar, make sure to specify tick locations to match desired ticklabels
+		#fig.colorbar(cax, ticks=[0,.1,.2,.3,.4,.5,.6,.7,.8,.9,1])
+		plt.colorbar(cax2)
+		"""
+
+		plt_filename = self.filename[:-4] + '_SpikeAmplitudeHeatMap.svg'
+		print plt_filename
+		plt.savefig(plt_filename)
+		plt.close()
+		
 
 		return powers, mpowers, power_mat, mpower_mat
 
