@@ -107,7 +107,7 @@ class OfflineSorted_PlxFile():
 		plt.title('Channel %i - Unit %i' % (chan, sc))
 		plt.xlabel('Time (s)')
 		plt.ylabel('Voltage (' + r'$\mu$' + 'V)')
-		plt.ylim((-70,70))
+		plt.ylim((-50,30))
 		plt.text(time[-8],mean_waveform[20],'$V_{rms}=$ %f' % (vrms))
 		plt_filename = self.filename[:-4] + '_Chan_' + str(chan) + '_Unit_' + str(sc) + '_ExTraces.svg'
 		plt.savefig(plt_filename)
@@ -141,13 +141,18 @@ class OfflineSorted_PlxFile():
 				#peaks = np.append(peaks, p2p)
 				avg_peaks = np.append(avg_peaks, avg_p2p)
 			mpowers[chan-1] = np.max(avg_peaks)
-			powers[chan-1] = avg_peaks[0]*(chan != 26) + avg_peaks[1]*(chan == 26)
+			powers[chan-1] = avg_peaks[0]
+			if (chan == 26)&(self.filename[:-4]=='Travis20180324-2-03'):
+				powers[chan-1] = avg_peaks[1]
 
 		mpowers = np.append(mpowers, np.nan)
 		powers = np.append(powers, np.nan)  	# add fake 33rd entry as dummy entry for when filling out power matrix
 		mpowers[mpowers ==0] = np.nan
 		powers[powers ==0] = np.nan
 		print len(powers)
+
+		# distances from position (2,1) for 2-03
+		# distances from position (2,2) for 7-02
 		
 		power_mat = np.zeros([6,6])
 		power_mat[:,:] = np.nan 	# all entries initially nan until they are update with peak powers
@@ -181,7 +186,7 @@ class OfflineSorted_PlxFile():
 		cmap = cm.get_cmap('jet', 30)
 		plt.subplot(1,2,1)
 		cax = plt.imshow(power_mat, interpolation="nearest", cmap=cmap)
-		plt.grid(True)
+		plt.grid(False)
 		plt.title('Avg Spike Amplitude Per Channel - First Sorted Unit')
 		#labels=[str(chan) for chan in self.good_channels]
 		#ax1.set_xticklabels(labels,fontsize=6)
@@ -195,7 +200,7 @@ class OfflineSorted_PlxFile():
 		
 		plt.subplot(1,2,2)
 		cax2 = plt.imshow(mpower_mat, interpolation="nearest", cmap=cmap)
-		plt.grid(True)
+		plt.grid(False)
 		plt.title('Avg Spike Amplitude Per Channel - Max Amplitude Unit')
 		#labels=[str(chan) for chan in self.good_channels]
 		#ax1.set_xticklabels(labels,fontsize=6)
@@ -238,7 +243,8 @@ class OfflineSorted_PlxFile():
 				peaks = np.append(peaks, p2p)
 				avg_peaks = np.append(avg_peaks, avg_p2p)
 
-		bins_all = np.arange(50,130,10)
+		#bins_all = np.arange(50,130,10)
+		bins_all = np.arange(30,130,10)
 
 		hist_all, bins_all = np.histogram(peaks, bins = bins_all)
 		hist_all = hist_all/float(len(peaks))
@@ -258,13 +264,13 @@ class OfflineSorted_PlxFile():
 			plt.xlabel('Peak-to-Trough Values ($\mu$V)')
 			plt.ylabel('Fraction of Units')
 			plt.title('All Waveforms')
-			plt.ylim((0,0.3))
+			#plt.ylim((0,0.3))
 			plt.subplot(122)
 			plt.bar(bins_avg_center, hist_avg, width_avg)
 			plt.xlabel('Peak-to-Trough Values ($\mu$V)')
 			plt.ylabel('Fraction of Units')
 			plt.title('Mean Waveforms')
-			plt.ylim((0,0.3))
+			#plt.ylim((0,0.3))
 
 			plt_filename = self.filename[:-4] + '_PeakAmpHistogram.svg'
 			plt.savefig(plt_filename)
@@ -385,7 +391,7 @@ class OfflineSorted_PlxFile():
 
 	    return ax
 	
-	def spike_rate_correlation(self, t_resolution, plot_data = True):
+	def spike_rate_correlation(self, t_resolution):
 		"""
 		Computes correlation of spike rates across channels.
 		Parameters
@@ -420,41 +426,44 @@ class OfflineSorted_PlxFile():
 		corr_mat = np.corrcoef(hist_all)
 		print corr_mat.shape
 
-		if plot_data:
-			fig = plt.figure(1)
-			ax1 = fig.add_subplot(111)
-			cmap = cm.get_cmap('jet', 30)
-			cax = ax1.imshow(corr_mat, interpolation="nearest", cmap=cmap, vmin = 0.0, vmax = 1.0)
-			ax1.grid(True)
-			plt.title('Firing Rate Correlation')
-			#labels=[str(chan) for chan in self.good_channels]
-			ax1.set_xticklabels(labels,fontsize=6)
-			ax1.set_xticks(range(len(labels)))
-			ax1.set_yticklabels(labels,fontsize=6)
-			ax1.set_yticks(range(len(labels)))
-			# Add colorbar, make sure to specify tick locations to match desired ticklabels
-			fig.colorbar(cax, ticks=[0,.1,.2,.3,.4,.5,.6,.7,.8,.9,1])
+		fig = plt.figure(1)
+		ax1 = fig.add_subplot(111)
+		cmap = cm.get_cmap('jet', 30)
+		cax = plt.imshow(corr_mat, interpolation="nearest", cmap=cmap, vmin = 0.0, vmax = 1.0)
+		plt.grid(False)
+		plt.title('Firing Rate Correlation')
+		#labels=[str(chan) for chan in self.good_channels]
+		ax1.set_xticklabels(labels,fontsize=6)
+		ax1.set_xticks(range(len(labels)))
+		ax1.set_yticklabels(labels,fontsize=6)
+		ax1.set_yticks(range(len(labels)))
+		# Add colorbar, make sure to specify tick locations to match desired ticklabels
+		plt.colorbar(cax, ticks=[0,.1,.2,.3,.4,.5,.6,.7,.8,.9,1])
 
-			plt_filename = self.filename[:-4] + '_FiringRateCorrelation.svg'
-			plt.savefig(plt_filename)
+		plt_filename = self.filename[:-4] + '_FiringRateCorrelation.svg'
+		plt.savefig(plt_filename)
+		
+		"""
+		fig2 = plt.figure()
+		ax2 = fig2.add_subplot(111)
+		
+		cmap = cm.get_cmap('jet', 30)
+		cax1 = plt.imshow(corr_mat, interpolation="nearest", cmap=cmap, vmin = 0.5, vmax = 1.0)
+		plt.grid(True)
+		plt.title('Firing Rate Correlation')
+		#labels=[str(chan) for chan in self.good_channels]
+		ax2.set_xticklabels(labels,fontsize=6)
+		ax2.set_xticks(range(len(labels)))
+		ax2.set_yticklabels(labels,fontsize=6)
+		ax2.set_yticks(range(len(labels)))
+		# Add colorbar, make sure to specify tick locations to match desired ticklabels
+		plt.colorbar(cax1, ticks=[.5,.6,.7,.8,.9,1])
 
-			fig = plt.figure(2)
-			ax1 = fig.add_subplot(111)
-			cmap = cm.get_cmap('jet', 30)
-			cax = ax1.imshow(corr_mat, interpolation="nearest", cmap=cmap, vmin = 0.5, vmax = 1.0)
-			ax1.grid(True)
-			plt.title('Firing Rate Correlation')
-			#labels=[str(chan) for chan in self.good_channels]
-			ax1.set_xticklabels(labels,fontsize=6)
-			ax1.set_xticks(range(len(labels)))
-			ax1.set_yticklabels(labels,fontsize=6)
-			ax1.set_yticks(range(len(labels)))
-			# Add colorbar, make sure to specify tick locations to match desired ticklabels
-			fig.colorbar(cax, ticks=[.5,.6,.7,.8,.9,1])
-
-			plt_filename = self.filename[:-4] + '_FiringRateCorrelation2.svg'
-			plt.savefig(plt_filename)
-			plt.close()
+		plt_filename = self.filename[:-4] + '_FiringRateCorrelation2.svg'
+		plt.savefig(plt_filename)
+		"""
+		plt.close()
+		
 
 		return corr_mat
 

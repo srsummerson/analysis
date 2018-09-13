@@ -3,6 +3,7 @@ import scipy as sp
 import matplotlib as mpl
 import tables
 import sys
+import csv
 import statsmodels.api as sm
 from neo import io
 from PulseMonitorData import findIBIs, getIBIandPuilDilation
@@ -24,8 +25,8 @@ from sklearn.cross_validation import cross_val_score
 
 #### still needs to be fixed - more samples in csv file than TDT neo reading
 
-hdf_filenames = ['mari20180814_05_te1111.hdf']
-filename = ['Mario20180814']
+hdf_filenames = ['mari20180902_03_te1223.hdf']
+filename = ['Mario20180902']
 block_num = [1]
 
 #TDT_tank = ['/backup/subnetsrig/storage/tdt/'+name for name in filename]
@@ -75,7 +76,7 @@ for j in range(len(block_num)):
 	f = open(PupD_filename[j], 'r')
 	reader = csv.reader(f)
 	data = list(reader)
-	datal = [j for i in data for j in i]
+	datal = [k for i in data for k in i]
 	pupil_data[j] = np.array([float(val) for val in datal])
 	#pupil_data[j] = get_csv_data_singlechannel(PupD_filename[j])
 	pupil_samprate = 3051.757813
@@ -83,7 +84,7 @@ for j in range(len(block_num)):
 	f = open(HrtR_filename[j], 'r')
 	reader = csv.reader(f)
 	data = list(reader)
-	datal = [j for i in data for j in i]
+	datal = [k for i in data for k in i]
 	pulse_data[j] = np.array([float(val) for val in datal])
 	#pulse_data[j] = get_csv_data_singlechannel(HrtR_filename[j])
 	pulse_samprate = 3051.757813
