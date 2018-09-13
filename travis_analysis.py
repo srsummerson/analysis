@@ -142,9 +142,11 @@ class OfflineSorted_PlxFile():
 			powers[chan-1] = np.max(avg_peaks)
 
 
+		powers = np.append(powers, np.nan)  	# add fake 33rd entry as dummy entry for when filling out power matrix
+		print len(powers)
+		
 		power_mat = np.zeros([6,6])
 		power_mat[:,:] = np.nan 	# all entries initially nan until they are update with peak powers
-		channels = np.arange(1,161)
 
 		row_zero = np.array([14, 15, 16, 17, 18, 19])
 		row_one = np.array([30, 31, 32, 2, 3, 4])
