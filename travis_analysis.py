@@ -126,10 +126,11 @@ class OfflineSorted_PlxFile():
 
 		return p2p, avg_p2p
 
-	def peak_amp_heatmap(self):
+	def peak_amp_heatmap(self, plot_data=True):
 
 		peaks = np.array([])
-		powers = np.zeros(32)
+		mpowers = np.zeros(32) 	# array for max amplitude of any unit on channel
+		powers = np.zeros(32) 	# array for amplitude of first sorted unit on channel
 		chan_array = np.array([])
 		for chan in self.good_channels:
 			sc_chan = self.find_chan_sc(chan)
@@ -139,14 +140,17 @@ class OfflineSorted_PlxFile():
 				p2p, avg_p2p = self.peak_to_peak_vals(chan, sc)
 				#peaks = np.append(peaks, p2p)
 				avg_peaks = np.append(avg_peaks, avg_p2p)
-			powers[chan-1] = np.max(avg_peaks)
+			mpowers[chan-1] = np.max(avg_peaks)*(np.max(avg_peaks) > 0) + np.nan*(np.max(avg_peaks)==0)
+			powers[chan-1] = avg_peaks[0]
 
-
+		mpowers = np.append(mpowers, np.nan)
 		powers = np.append(powers, np.nan)  	# add fake 33rd entry as dummy entry for when filling out power matrix
 		print len(powers)
 		
 		power_mat = np.zeros([6,6])
 		power_mat[:,:] = np.nan 	# all entries initially nan until they are update with peak powers
+		mpower_mat = np.zeros([6,6])
+		mpower_mat[:,:] = np.nan
 
 		row_zero = np.array([14, 15, 16, 17, 18, 19])
 		row_one = np.array([30, 31, 32, 2, 3, 4])
@@ -162,8 +166,47 @@ class OfflineSorted_PlxFile():
 		power_mat[4,:] = powers[row_four-1]
 		power_mat[5,:] = powers[row_five-1]
 
+		mpower_mat[0,:] = mpowers[row_zero-1]
+		mpower_mat[1,:] = mpowers[row_one-1]
+		mpower_mat[2,:] = mpowers[row_two-1]
+		mpower_mat[3,:] = mpowers[row_three-1]
+		mpower_mat[4,:] = mpowers[row_four-1]
+		mpower_mat[5,:] = mpowers[row_five-1]
 
-		return power_mat
+		if plot_data:
+			fig = plt.figure(1)
+			ax1 = fig.add_subplot(111)
+			cmap = cm.get_cmap('jet', 30)
+			plt.subplot(1,2,1)
+			cax = ax1.imshow(power_mat, interpolation="nearest", cmap=cmap)
+			ax1.grid(True)
+			plt.title('Avg Spike Amplitude Per Channel - First Sorted Unit')
+			#labels=[str(chan) for chan in self.good_channels]
+			#ax1.set_xticklabels(labels,fontsize=6)
+			#ax1.set_xticks(range(len(labels)))
+			#ax1.set_yticklabels(labels,fontsize=6)
+			#ax1.set_yticks(range(len(labels)))
+			# Add colorbar, make sure to specify tick locations to match desired ticklabels
+			#fig.colorbar(cax, ticks=[0,.1,.2,.3,.4,.5,.6,.7,.8,.9,1])
+			fig.colorbar(cax)
+
+			plt.subplot(1,2,2)
+			cax2 = ax2.imshow(mpower_mat, interpolation="nearest", cmap=cmap)
+			ax2.grid(True)
+			plt.title('Avg Spike Amplitude Per Channel - Max Amplitude Unit')
+			#labels=[str(chan) for chan in self.good_channels]
+			#ax1.set_xticklabels(labels,fontsize=6)
+			#ax1.set_xticks(range(len(labels)))
+			#ax1.set_yticklabels(labels,fontsize=6)
+			#ax1.set_yticks(range(len(labels)))
+			# Add colorbar, make sure to specify tick locations to match desired ticklabels
+			#fig.colorbar(cax, ticks=[0,.1,.2,.3,.4,.5,.6,.7,.8,.9,1])
+			fig.colorbar(cax2)
+
+			plt_filename = self.filename[:-4] + '_SpikeAmplitudeHeatMap.svg'
+			plt.savefig(plt_filename)
+
+		return powers, mpowers, power_mat, mpower_mat
 
 	def peak_to_peak_hist(self, plot_data = True):
 		'''
