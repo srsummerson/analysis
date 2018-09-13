@@ -160,7 +160,7 @@ class OfflineSorted_PlxFile():
 		power_mat[2,:] = powers[row_two-1]
 		power_mat[3,:] = powers[row_three-1]
 		power_mat[4,:] = powers[row_four-1]
-		power_mat[5,:0] = powers[row_five-1]
+		power_mat[5,:] = powers[row_five-1]
 
 
 		return power_mat
