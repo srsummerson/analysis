@@ -183,9 +183,9 @@ class OfflineSorted_PlxFile():
 		# distances from position (2,2) for 7-02
 
 		if self.filename[:-4] == 'Travis20180324-2-03':
-			ref_point = np.array([2,1])
+			ref_point = np.array([1,2])
 		else:
-			ref_point = np.array([2,2])
+			ref_point = np.array([2,5])
 
 		pitch = 38 		# microns
 
