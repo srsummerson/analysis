@@ -222,17 +222,18 @@ class OfflineSorted_PlxFile():
 		avg_mamps[-1] = np.nanmean(mamps_sorted[dist_inds[-1]:])
 
 		plt.figure()
-		plt.subplot(111)
+		plt.subplot(1,2,1)
 		plt.errorbar(dist_unique[1:], avg_amps[1:], yerr = sem_amps[1:], color = 'k', ecolor = 'k')
 		plt.xlabel('Distance (um)')
 		plt.ylabel('Average Spike Amp - First unit')
-		plt.subplot(121)
+		plt.subplot(1,2,2)
 		plt.errorbar(dist_unique[1:], avg_mamps[1:], yerr = sem_mamps[1:], color = 'k', ecolor = 'k')
 		plt.xlabel('Distance (um)')
 		plt.ylabel('Average Spike Amp - Max unit')
 		plt_filename = self.filename[:-4] + '_SpikeAmplitudeOverDistance.svg'
 		print plt_filename
 		plt.savefig(plt_filename)
+		
 		
 		plt.figure()
 		cmap = cm.get_cmap('jet', 30)
