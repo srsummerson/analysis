@@ -150,9 +150,6 @@ class OfflineSorted_PlxFile():
 		mpowers[mpowers ==0] = np.nan
 		powers[powers ==0] = np.nan
 		print len(powers)
-
-		# distances from position (2,1) for 2-03
-		# distances from position (2,2) for 7-02
 		
 		power_mat = np.zeros([6,6])
 		power_mat[:,:] = np.nan 	# all entries initially nan until they are update with peak powers
@@ -165,6 +162,8 @@ class OfflineSorted_PlxFile():
 		row_three = np.array([28, 11, 33, 21, 22, 6])
 		row_four = np.array([27, 26, 25, 33, 8, 7])
 		row_five = np.array([10, 9, 33, 33, 24, 23])
+
+		chan_mat = np.vstack([row_zero, row_one, row_two, row_three, row_four, row_five])
 
 		power_mat[0,:] = powers[row_zero-1]
 		power_mat[1,:] = powers[row_one-1]
@@ -180,7 +179,32 @@ class OfflineSorted_PlxFile():
 		mpower_mat[4,:] = mpowers[row_four-1]
 		mpower_mat[5,:] = mpowers[row_five-1]
 
-		
+		# distances from position (2,1) for 2-03
+		# distances from position (2,2) for 7-02
+
+		if self.filename[:-4] == 'Travis20180324-2-03':
+			ref_point = np.array([2,1])
+		else:
+			ref_point = np.array([2,2])
+
+		pitch = 38 		# microns
+
+		dist = np.zeros(36)
+		amps = np.zeros(36)
+		mamps = np.zeros(36)
+		counter = 0
+
+		for i in range(6):
+			for j in range(6):
+				dist[counter] = pitch*np.linalg.norm(np.array([i,j]) - ref_point) 	# dist in microns
+				amps[counter] = power_mat[i,j]
+				mamps[counter] = mpower_mat[i,j]
+				counter += 1
+
+		arg_dist_sort = np.argsort(dist)
+		dist_sorted = dist[arg_dist_sort]
+		amps_sorted = amps[arg_dist_sort]
+		mamps_sorted = mamps[arg_dist_sort]
 		
 		plt.figure()
 		cmap = cm.get_cmap('jet', 30)
@@ -218,7 +242,7 @@ class OfflineSorted_PlxFile():
 		plt.close()
 		
 
-		return powers, mpowers, power_mat, mpower_mat
+		return dist_sorted, amps_sorted, mamps_sorted
 
 	def peak_to_peak_hist(self, plot_data = True):
 		'''
