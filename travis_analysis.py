@@ -183,9 +183,9 @@ class OfflineSorted_PlxFile():
 		# distances from position (2,2) for 7-02
 
 		if self.filename[:-4] == 'Travis20180324-2-03':
-			ref_point = np.array([1,2])
+			ref_point = np.array([1,2])  	# originally 2,1
 		else:
-			ref_point = np.array([2,5])
+			ref_point = np.array([3,4]) 	# originally 2,2
 
 		pitch = 38 		# microns
 
@@ -233,6 +233,7 @@ class OfflineSorted_PlxFile():
 		plt_filename = self.filename[:-4] + '_SpikeAmplitudeOverDistance.svg'
 		print plt_filename
 		plt.savefig(plt_filename)
+		plt.close()
 		
 		
 		plt.figure()
