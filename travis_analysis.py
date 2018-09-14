@@ -185,7 +185,7 @@ class OfflineSorted_PlxFile():
 		if self.filename[:-4] == 'Travis20180324-2-03':
 			ref_point = np.array([1,2])  	# originally 2,1
 		else:
-			ref_point = np.array([3,4]) 	# originally 2,2
+			ref_point = np.array([0,0]) 	# originally 2,2
 
 		pitch = 38 		# microns
 
