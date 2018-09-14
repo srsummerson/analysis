@@ -212,7 +212,7 @@ class OfflineSorted_PlxFile():
 		sem_amps = np.zeros(len(dist_unique))
 		sem_mamps = np.zeros(len(dist_unique))
 
-		for k, ind in enumerate(dist_inds[-1]):
+		for k, ind in enumerate(dist_inds[:-1]):
 			avg_amps[k] = np.nanmean(amps_sorted[ind:dist_inds[i+1]])
 			avg_mamps[k] = np.nanmean(mamps_sorted[ind:dist_inds[i+1]])
 			sem_amps[k] = np.nanstd(amps_sorted[ind:dist_inds[i+1]])/np.sqrt(len(amps_sorted[ind:dist_inds[i+1]]))
