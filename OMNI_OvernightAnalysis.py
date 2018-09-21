@@ -45,7 +45,8 @@ for i in range(len(mat_files)):
 
 num_samps, num_chann = total_data.shape
 print "Data is %f minutes" % (num_samps/(fs*60))
-	
+
+'''	
 print "Computing spectrogram"
 t = time.time()
 #powers, cf_list = make_single_spectrogram(total_data[:fs*60*3, channel], fs, fmax, 0, fs, fs)
@@ -115,3 +116,4 @@ plt.plot(x,theta_delta_ratio_smooth,'r',label='TDR Smooth')
 plt.ylabel('Theta/Delta Ratio')
 plt.legend()
 plt.show()
+'''
