@@ -78,11 +78,15 @@ for i, hdf in enumerate(hdf_location):
 	
 '''
 Load pupil dilation and heart rate data
+
+
+STOPPED HERE: CANNOT SAVE PUPIL AND PULSE DATA AS ARRAYS INDEXED THIS WAY. ERROR WITH ELEMENTS BEING FLOATS.
 '''
 pulse_data = dict()
 pupil_data = dict()
 
 for j in range(len(block_num)):
+	print "Loading phys data from Block %i" % (j+1)
 	f = open(PupD_filename[j], 'r')
 	reader = csv.reader(f)
 	data = list(reader)
