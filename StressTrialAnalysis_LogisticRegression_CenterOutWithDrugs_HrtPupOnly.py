@@ -25,7 +25,7 @@ from sklearn.cross_validation import cross_val_score
 
 #### still needs to be fixed - more samples in csv file than TDT neo reading
 
-hdf_filenames = ['mari20180815_02_te1116.hdf', 'mari20180815_02_te1117.hdf'] 			# list of hdf files for block A and B
+hdf_filenames = ['mari20180815_02_te1116.hdf', 'mari20180815_03_te1117.hdf'] 			# list of hdf files for block A and B
 filename = ['Mario20180815', 'Mario20180815'] 							# list of TDT tanks for blocks A and B
 block_num = [1, 2] 										# corresponding TDT block numbers of the tanks for blocks A and B of behavior
 
