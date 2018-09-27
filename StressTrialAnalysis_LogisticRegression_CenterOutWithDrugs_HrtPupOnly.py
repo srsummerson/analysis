@@ -59,7 +59,7 @@ for i, hdf in enumerate(hdf_location):
 	if i ==0:
 		num_trials = np.array([len(sb.ind_reward_states)])
 		response_times = sb.trial_times
-		stress_type = sb.stress_trial
+		#stress_type = sb.stress_trial
 
 		tdt_ind_hold_center, tdt_sr = sb.get_state_TDT_LFPvalues(sb.ind_hold_center_states,mat_filename)
 		
@@ -68,7 +68,7 @@ for i, hdf in enumerate(hdf_location):
 	else:
 		num_trials = np.append(num_trials, len(sb.ind_reward_states))
 		response_times = np.append(response_times, sb.trial_times)
-		stress_type = np.append(stress_type, sb.stress_trial)
+		#stress_type = np.append(stress_type, sb.stress_trial)
 
 		inds, tdt_sr = sb.get_state_TDT_LFPvalues(sb.ind_hold_center_states,mat_filename)
 		tdt_ind_hold_center = np.append(tdt_ind_hold_center, inds)
