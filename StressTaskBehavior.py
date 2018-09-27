@@ -1001,3 +1001,227 @@ class StressBehavior_CenterOut():
 		plt.show()
 
 		return 
+
+class StressBehaviorWithDrugs_CenterOut():
+
+	def __init__(self, hdf_file):
+		self.filename =  hdf_file
+		self.table = tables.openFile(self.filename)
+
+		self.state = self.table.root.task_msgs[:]['msg']
+		self.state_time = self.table.root.task_msgs[:]['time']
+		#self.stress_type = self.table.root.task[:]['stress_trial']
+	  
+		self.ind_wait_states = np.ravel(np.nonzero(self.state == 'wait'))   # total number of unique trials
+		self.ind_center_states = np.ravel(np.nonzero(self.state == 'center'))   # total number of totals (includes repeats if trial was incomplete)
+		self.ind_hold_center_states = np.ravel(np.nonzero(self.state == 'hold_center'))
+		self.ind_target_states = np.ravel(np.nonzero(self.state == 'target'))
+		self.ind_reward_states = np.ravel(np.nonzero(self.state == 'reward'))
+		#self.stress_trial = np.ravel(self.stress_type[self.state_time[self.ind_reward_states-4]])
+		
+		self.num_trials = self.ind_center_states.size
+		self.num_successful_trials = self.ind_reward_states.size
+		self.trial_times = (self.state_time[self.ind_reward_states] - self.state_time[self.ind_reward_states-4])/60.		# gives trial lengths in seconds (calculated as diff between reward state and hold center state)
+		
+
+	
+	def get_state_TDT_LFPvalues(self,ind_state,syncHDF_file):
+		'''
+		This method finds the TDT sample numbers that correspond to indicated task state using the syncHDF.mat file.
+
+		Inputs:
+			- ind_state: array with state numbers corresponding to which state we're interested in finding TDT sample numbers for, e.g. self.ind_hold_center_states
+			- syncHDF_file: syncHDF.mat file path, e.g. '/home/srsummerson/storage/syncHDF/Mario20161104_b1_syncHDF.mat'
+		Output:
+			- lfp_state_row_ind: array of tdt sample numbers that correspond the the task state events in ind_state array
+		'''
+		# Load syncing data
+		hdf_times = dict()
+		sp.io.loadmat(syncHDF_file, hdf_times)
+		hdf_rows = np.ravel(hdf_times['row_number'])
+		hdf_rows = [val for val in hdf_rows]
+		dio_tdt_sample = np.ravel(hdf_times['tdt_samplenumber'])
+		dio_freq = np.ravel(hdf_times['tdt_dio_samplerate'])
+
+		lfp_dio_sample_num = dio_tdt_sample  # assumes DIOx and LFPx are saved using the same sampling rate
+
+		state_row_ind = self.state_time[ind_state]		# gives the hdf row number sampled at 60 Hz
+		lfp_state_row_ind = np.zeros(state_row_ind.size)
+
+		for i in range(len(state_row_ind)):
+			hdf_index = np.argmin(np.abs(hdf_rows - state_row_ind[i]))
+			if np.abs(hdf_rows[hdf_index] - state_row_ind[i])==0:
+				lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
+			elif hdf_rows[hdf_index] > state_row_ind[i]:
+				hdf_row_diff = hdf_rows[hdf_index] - hdf_rows[hdf_index -1]  # distance of the interval of the two closest hdf_row_numbers
+				m = (lfp_dio_sample_num[hdf_index]-lfp_dio_sample_num[hdf_index - 1])/hdf_row_diff
+				b = lfp_dio_sample_num[hdf_index-1] - m*hdf_rows[hdf_index-1]
+				lfp_state_row_ind[i] = int(m*state_row_ind[i] + b)
+			elif (hdf_rows[hdf_index] < state_row_ind[i])&(hdf_index + 1 < len(hdf_rows)):
+				hdf_row_diff = hdf_rows[hdf_index + 1] - hdf_rows[hdf_index]
+				if (hdf_row_diff > 0):
+					m = (lfp_dio_sample_num[hdf_index + 1] - lfp_dio_sample_num[hdf_index])/hdf_row_diff
+					b = lfp_dio_sample_num[hdf_index] - m*hdf_rows[hdf_index]
+					lfp_state_row_ind[i] = int(m*state_row_ind[i] + b)
+				else:
+					lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
+			else:
+				lfp_state_row_ind[i] = lfp_dio_sample_num[hdf_index]
+
+		return lfp_state_row_ind, dio_freq
+
+
+	def get_cursor_velocity(self, go_cue_ix, before_cue_time, after_cue_time, fs=60., use_filt_vel=True):
+	    '''
+	    hdf file -- task file generated from bmi3d
+	    go_cue_ix -- list of go cue indices (units of hdf file row numbers)
+	    before_cue_time -- time before go cue to inclue in trial (units of sec)
+	    after_cue_time -- time after go cue to include in trial (units of sec)
+
+	    returns a time x (x,y) x trials filtered velocity array
+	    '''
+
+	    ix = np.arange(-1*before_cue_time*fs, after_cue_time*fs).astype(int)
+
+
+	    # Get trial trajectory: 
+	    cursor = []
+	    for g in go_cue_ix:
+	        try:
+	            #Get cursor
+	            cursor.append(self.table.root.task[ix+g]['cursor'][:, [0, 2]])
+
+	        except:
+	            print 'skipping index: ', g, ' -- too close to beginning or end of file'
+	    cursor = np.dstack((cursor))    # time x (x,y) x trial
+	    
+	    dt = 1./fs
+	    vel = np.diff(cursor,axis=0)/dt
+
+	    #Filter velocity: 
+	    if use_filt_vel:
+	        filt_vel = sg_filt.savgol_filter(vel, 9, 5, axis=0)
+	    else:
+	        filt_vel = vel
+	    total_vel = np.zeros((int(filt_vel.shape[0]),int(filt_vel.shape[2])))
+	    for n in range(int(filt_vel.shape[2])):
+	        total_vel[:,n] = np.sqrt(filt_vel[:,0,n]**2 + filt_vel[:,1,n]**2)
+
+	    vel_bins = np.linspace(-1*before_cue_time, after_cue_time, vel.shape[0])
+
+	    return filt_vel, total_vel, vel_bins
+	
+	def compute_rt_per_trial(self, trials): 
+		'''
+		Compute the reaction time for all trials in array trials.
+		'''
+
+		#Extract go_cue_indices in units of hdf file row number
+		go_cue_ix = np.array([self.table.root.task_msgs[j-3]['time'] for j, i in enumerate(self.table.root.task_msgs) if i['msg']=='reward'])
+		go_cue_ix = go_cue_ix[trials]
+
+		# Calculate filtered velocity and 'velocity mag. in target direction'
+		filt_vel, total_vel, vel_bins = self.get_cursor_velocity(go_cue_ix, 0., 2., use_filt_vel=False)
+		## Calculate 'RT' from vel_in_targ_direction: use with get_cusor_velocity_in_targ_dir
+		kin_feat = get_rt_change_deriv(total_vel.T, vel_bins, d_vel_thres = 0.3, fs=60)
+		return kin_feat[:,1], total_vel
+
+	def PlotReactionAndTrialTimes(self, num_trials_slide):
+		'''
+		This method computes the sliding average over num_trials_slide bins of the reaction times and trial times, as well as the histograms.
+
+		NOTE: Need to add reaction time computation and plotting.
+		'''
+
+		trial_times = (self.state_time[self.ind_reward_states] - self.state_time[self.ind_reward_states-5])/60.		# gives trial lengths in seconds (calculated as diff between reward state and center state)
+		transition_trials = np.ravel(np.nonzero(self.stress_trial[1:] - self.stress_trial[:-1])) 								# these trial numbers mark the ends of a block
+		transition_trials = np.append(transition_trials, len(trials)-1)									# add end of final block
+		num_blocks = len(transition_trials)
+
+		block_length = np.zeros(num_blocks)  															# holder for length of blocks in minutes
+
+		cmap = mpl.cm.hsv
+		plt.figure()
+
+		for i, trial_end in enumerate(transition_trials):
+			if i==0:
+				block_trial_times = trial_times[0:trial_end+1]
+				num_trials_prev_block = 0
+				trial_ind = np.arange(0,trial_end+1)
+			else:
+				block_trial_times = trial_times[transition_trials[i-1]+1:trial_end+1]
+				num_trials_prev_block = transition_trials[i-1]
+				trial_ind = np.arange(transition_trials[i-1]+1,trial_end+1)
+
+			
+			# compute average mins/trial
+			sliding_avg_trial_length = trial_sliding_avg(block_trial_times, num_trials_slide)   	# gives the average num of sec/trial
+
+			max_trial_length = np.max(block_trial_times)
+			bins_trial_time = np.linspace(0,max_trial_length+1,10)
+
+			# compute reaction times
+			rt_per_trial, total_vel = self.compute_rt_per_trial_FreeChoiceTask(trial_ind)
+			# compute sliding average of reaction times
+			sliding_avg_rt = trial_sliding_avg(rt_per_trial, num_trials_slide)
+			#max_rt = np.max(rt_per_trial)
+			max_rt = 0.5
+			bins_rt = np.linspace(0, max_rt+.1,10)
+			
+			
+			plt.figure(1)
+			plt.subplot(211)
+			plt.plot(np.arange(len(sliding_avg_trial_length)) + num_trials_prev_block, sliding_avg_trial_length,label='Block %i - Stress type: %i' % (i+1, trials[trial_end-1]), color=cmap(i/float(num_blocks)))
+			
+			plt.subplot(212)
+			plt.hist(block_trial_times, bins_trial_time, alpha=0.5, label='Block %i - Stress type: %i' % (i+1, trials[trial_end-1]), color=cmap(i/float(num_blocks)))
+
+			plt.figure(2)
+			plt.subplot(211)
+			plt.plot(np.arange(len(sliding_avg_rt)) + num_trials_prev_block, sliding_avg_rt,label='Block %i - Stress type: %i' % (i+1, trials[trial_end-1]), color=cmap(i/float(num_blocks)))
+			
+			plt.subplot(212)
+			plt.hist(rt_per_trial, bins_rt, alpha=0.5, label='Block %i - Stress type: %i' % (i+1, trials[trial_end-1]), color=cmap(i/float(num_blocks)))
+
+		# Figure showing the average trial length in secs as a function of trials
+		plt.figure(1)
+		ax1 = plt.subplot(211)
+		plt.xlabel('Trials')
+		plt.ylabel('Avg Trial Length (s)')
+		ax1.get_yaxis().set_tick_params(direction='out')
+		ax1.get_xaxis().set_tick_params(direction='out')
+		ax1.get_xaxis().tick_bottom()
+		ax1.get_yaxis().tick_left()
+		plt.legend()
+
+		ax1 = plt.subplot(212)
+		plt.xlabel('Trial Lengths (s)')
+		plt.ylabel('Frequency')
+		ax1.get_yaxis().set_tick_params(direction='out')
+		ax1.get_xaxis().set_tick_params(direction='out')
+		ax1.get_xaxis().tick_bottom()
+		ax1.get_yaxis().tick_left()
+		plt.legend()
+
+		plt.figure(2)
+		ax1 = plt.subplot(211)
+		plt.xlabel('Trials')
+		plt.ylabel('Avg Reaction Time (s)')
+		ax1.get_yaxis().set_tick_params(direction='out')
+		ax1.get_xaxis().set_tick_params(direction='out')
+		ax1.get_xaxis().tick_bottom()
+		ax1.get_yaxis().tick_left()
+		plt.legend()
+
+		ax1 = plt.subplot(212)
+		plt.xlabel('Reaction Time (s)')
+		plt.ylabel('Frequency')
+		ax1.get_yaxis().set_tick_params(direction='out')
+		ax1.get_xaxis().set_tick_params(direction='out')
+		ax1.get_xaxis().tick_bottom()
+		ax1.get_yaxis().tick_left()
+		plt.legend()
+
+		plt.show()
+
+		return 

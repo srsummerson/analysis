@@ -7,7 +7,7 @@ import csv
 import statsmodels.api as sm
 from neo import io
 from PulseMonitorData import findIBIs, getIBIandPuilDilation
-from StressTaskBehavior import StressBehavior_CenterOut
+from StressTaskBehavior import StressBehaviorWithDrugs_CenterOut
 from scipy import signal
 from scipy import stats
 from matplotlib import mlab
@@ -48,7 +48,7 @@ for i, hdf in enumerate(hdf_location):
 	'''
 	Load behavior data, and syncing data for behavior and TDT recording.
 	''' 
-	sb = StressBehavior_CenterOut(hdf)
+	sb = StressBehaviorWithDrugs_CenterOut(hdf)
 	mat_filename = filename[i]+'_b'+str(block_num[i])+'_syncHDF.mat'
 	mat_filename = mat_location + mat_filename
 
