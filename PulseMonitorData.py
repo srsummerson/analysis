@@ -251,9 +251,11 @@ def getIBIandPuilDilation(pulse_data, pulse_ind,samples_pulse, pulse_samprate,pu
 	pupil_data_array = np.array(pupil_data)
 
 	for i in range(0,len(pulse_ind)):
-		print pulse_ind[i], samples_pulse[i]
+		#print pulse_ind[i], samples_pulse[i]
 		pulse_snippet = pulse_data_array[pulse_ind[i]:pulse_ind[i]+samples_pulse[i]]
+		# all ibi_snippet arrays are coming back empty
 		ibi_snippet = findIBIs(pulse_snippet,pulse_samprate)
+		print ibi_snippet
 		all_ibi += ibi_snippet.tolist()
 		if np.isnan(np.nanmean(ibi_snippet))and(ibi_mean != []):
 			ibi_mean.append(ibi_mean[-1])   # repeat last measurement
@@ -297,6 +299,7 @@ def getIBIandPuilDilation(pulse_data, pulse_ind,samples_pulse, pulse_samprate,pu
 		pupil_std.append(np.nanstd(pupil_snippet))
 
 	mean_ibi = np.nanmean(all_ibi)
+	print "Mean all ibi:", mean_ibi
 	std_ibi = np.nanstd(all_ibi)
 	nbins_ibi = np.arange(mean_ibi-10*std_ibi,mean_ibi+10*std_ibi,float(std_ibi)/2)
 	ibi_hist,nbins_ibi = np.histogram(all_ibi,bins=nbins_ibi)
@@ -306,6 +309,7 @@ def getIBIandPuilDilation(pulse_data, pulse_ind,samples_pulse, pulse_samprate,pu
 	mean_pupil = np.nanmean(all_pupil)
 	std_pupil = np.nanstd(all_pupil)
 	nbins_pupil = np.arange(mean_pupil-10*std_pupil,mean_pupil+10*std_pupil,float(std_pupil)/2)
+	#print "Bins are:", nbins_pupil
 	pupil_hist,nbins_pupil = np.histogram(all_pupil,bins=nbins_pupil)
 	nbins_pupil = nbins_pupil[1:]
 	pupil_hist = pupil_hist/float(len(all_pupil))

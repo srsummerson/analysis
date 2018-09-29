@@ -1003,6 +1003,9 @@ class StressBehavior_CenterOut():
 		return 
 
 class StressBehaviorWithDrugs_CenterOut():
+	'''
+	For use with JoystickMulti
+	'''
 
 	def __init__(self, hdf_file):
 		self.filename =  hdf_file
@@ -1014,9 +1017,11 @@ class StressBehaviorWithDrugs_CenterOut():
 	  
 		self.ind_wait_states = np.ravel(np.nonzero(self.state == 'wait'))   # total number of unique trials
 		self.ind_center_states = np.ravel(np.nonzero(self.state == 'center'))   # total number of totals (includes repeats if trial was incomplete)
-		self.ind_hold_center_states = np.ravel(np.nonzero(self.state == 'hold_center'))
-		self.ind_target_states = np.ravel(np.nonzero(self.state == 'target'))
 		self.ind_reward_states = np.ravel(np.nonzero(self.state == 'reward'))
+		#self.ind_hold_center_states = np.ravel(np.nonzero(self.state == 'hold_center'))
+		self.ind_hold_center_states = self.ind_reward_states-5
+		self.ind_target_states = np.ravel(np.nonzero(self.state == 'target'))
+		
 		#self.stress_trial = np.ravel(self.stress_type[self.state_time[self.ind_reward_states-4]])
 		
 		self.num_trials = self.ind_center_states.size

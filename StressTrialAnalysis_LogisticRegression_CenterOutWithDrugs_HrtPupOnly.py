@@ -90,7 +90,7 @@ for j in range(len(block_num)):
 	f = open(PupD_filename[j], 'r')
 	reader = csv.reader(f)
 	data = list(reader)
-	datal = [k for i in data for k in i]
+	datal = [k if k!= '' else np.nan for i in data for k in i]
 	pupil_data[j] = np.array([float(val) for val in datal])
 	#pupil_data[j] = get_csv_data_singlechannel(PupD_filename[j])
 	pupil_samprate = 3051.757813
@@ -98,7 +98,7 @@ for j in range(len(block_num)):
 	f = open(HrtR_filename[j], 'r')
 	reader = csv.reader(f)
 	data = list(reader)
-	datal = [k for i in data for k in i]
+	datal = [k if k!= '' else np.nan for i in data for k in i]
 	pulse_data[j] = np.array([float(val) for val in datal])
 	#pulse_data[j] = get_csv_data_singlechannel(HrtR_filename[j])
 	pulse_samprate = 3051.757813
@@ -117,7 +117,7 @@ pupil_reg_mean = np.array([])
 
 
 for k in range(len(hdf_filenames)):
-	 
+	print "Block %i - samples by trials" % (k) 
 	trial_end = trial_start + num_trials[k]
 
 	pulse_d = np.ravel(pulse_data[k])
@@ -126,6 +126,9 @@ for k in range(len(hdf_filenames)):
 	pupil_d = np.ravel(pupil_data[k])
 	pupil_ind = tdt_ind_hold_center[trial_start:trial_end]
 	nsamples_pupil = samples_pupil[trial_start:trial_end]
+
+	ibi_mean, ibi_std, pupil_mean, pupil_std, nbins_ibi, ibi_hist, nbins_pupil, pupil_hist = getIBIandPuilDilation(pulse_d, pulse_ind,nsamples_pulse, pulse_samprate,pupil_d, pupil_ind,nsamples_pupil,pupil_samprate)
+	
 
 	'''
 	Compute values based on time windows
@@ -143,9 +146,8 @@ for k in range(len(hdf_filenames)):
 		pupil_ind_time = pulse_ind_time
 
 
-	print "Block %i" % (k)
+	print "Block %i - samples in time windows" % (k)
 	print len(pulse_d)
-	ibi_mean, ibi_std, pupil_mean, pupil_std, nbins_ibi, ibi_hist, nbins_pupil, pupil_hist = getIBIandPuilDilation(pulse_d, pulse_ind,nsamples_pulse, pulse_samprate,pupil_d, pupil_ind,nsamples_pupil,pupil_samprate)
 	ibi_mean_time, ibi_std_time, pupil_mean_time, pupil_std_time, nbins_ibi_time, ibi_hist_time, nbins_pupil_time, pupil_hist_time = getIBIandPuilDilation(pulse_d, pulse_ind,nsamples_pulse, pulse_samprate,pupil_d, pupil_ind,nsamples_pupil,pupil_samprate)
 	#
 	# trial_start = trial_end
