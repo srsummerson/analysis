@@ -337,7 +337,7 @@ plot_cov_ellipse(cov_reg_time,mean_vec_reg_time,fc='b',ec='None',a=0.2)
 if len(hdf_filenames)==3:
 	for i in range(0,len(ibi_blockC_mean_adj_time)):
 		plt.plot(norm_ibi_blockC_mean_time[i],norm_pupil_blockC_mean_time[i],color=cmap_blockC(i/float(len(ibi_blockC_mean_time))),marker='o')
-	plot_cov_ellipse(cov_blockC_time,mean_vec_blockC_time,fc='b',ec='None',a=0.2)
+	plot_cov_ellipse(cov_blockC_time,mean_vec_blockC_time,fc='k',ec='None',a=0.2)
 #plt.legend()
 plt.xlabel('Mean Trial IBI (s)')
 plt.ylabel('Mean Trial PD (AU)')
