@@ -23,11 +23,11 @@ from sklearn import metrics
 from sklearn.metrics import roc_curve, auc
 from sklearn.cross_validation import cross_val_score
 
-#### still needs to be fixed - more samples in csv file than TDT neo reading
+#### still needs to be fixed - add third block if it exists
 
-hdf_filenames = ['mari20180815_02_te1116.hdf', 'mari20180815_03_te1117.hdf'] 			# list of hdf files for block A and B
-filename = ['Mario20180815', 'Mario20180815'] 							# list of TDT tanks for blocks A and B
-block_num = [1, 2] 										# corresponding TDT block numbers of the tanks for blocks A and B of behavior
+hdf_filenames = ['mari20180815_02_te1116.hdf', 'mari20180815_03_te1117.hdf', 'mari20180815_04_te1118.hdf'] 			# list of hdf files for block A and B
+filename = ['Mario20180815', 'Mario20180815', 'Mario20180815'] 							# list of TDT tanks for blocks A and B
+block_num = [1, 2, 3] 										# corresponding TDT block numbers of the tanks for blocks A and B of behavior
 
 #TDT_tank = ['/backup/subnetsrig/storage/tdt/'+name for name in filename]
 TDT_tank = ['/home/srsummerson/storage/tdt/'+name for name in filename]
@@ -65,7 +65,7 @@ for i, hdf in enumerate(hdf_location):
 		
 		reg_start_sample = dio_tdt_sample[0]
 		reg_stop_sample = dio_tdt_sample[-1]
-	else:
+	elif i == 1:
 		num_trials = np.append(num_trials, len(sb.ind_reward_states))
 		response_times = np.append(response_times, sb.trial_times)
 		#stress_type = np.append(stress_type, sb.stress_trial)
@@ -75,12 +75,19 @@ for i, hdf in enumerate(hdf_location):
 		stress_start_sample = dio_tdt_sample[0]
 		stress_stop_sample = dio_tdt_sample[-1]
 
+	elif i == 2:
+		num_trials = np.append(num_trials, len(sb.ind_reward_states))
+		response_times = np.append(response_times, sb.trial_times)
+		#stress_type = np.append(stress_type, sb.stress_trial)
+
+		inds, tdt_sr = sb.get_state_TDT_LFPvalues(sb.ind_hold_center_states,mat_filename)
+		tdt_ind_hold_center = np.append(tdt_ind_hold_center, inds)
+		blockC_start_sample = dio_tdt_sample[0]
+		blockC_stop_sample = dio_tdt_sample[-1]
 	
 '''
 Load pupil dilation and heart rate data
 
-
-STOPPED HERE: CANNOT SAVE PUPIL AND PULSE DATA AS ARRAYS INDEXED THIS WAY. ERROR WITH ELEMENTS BEING FLOATS.
 '''
 pulse_data = dict()
 pupil_data = dict()
@@ -112,8 +119,10 @@ samples_pupil = np.floor(response_times*pupil_samprate)
 trial_start = 0
 ibi_stress_mean = np.array([])
 ibi_reg_mean = np.array([])
+ibi_blockC_mean = np.array([])
 pupil_stress_mean = np.array([])
 pupil_reg_mean = np.array([])
+pupil_blockC_mean = np.array([])
 
 
 for k in range(len(hdf_filenames)):
@@ -144,6 +153,9 @@ for k in range(len(hdf_filenames)):
 	elif k==1:
 		pulse_ind_time = np.arange(stress_start_sample, stress_stop_sample, len_window_samples)
 		pupil_ind_time = pulse_ind_time
+	elif k==2:
+		pulse_ind_time = np.arange(blockC_start_sample, blockC_stop_sample, len_window_samples)
+		pupil_ind_time = pulse_ind_time
 
 
 	print "Block %i - samples in time windows" % (k)
@@ -162,32 +174,43 @@ for k in range(len(hdf_filenames)):
 		pupil_stress_mean = np.array(pupil_mean)
 		ibi_stress_mean_time = np.array(ibi_mean_time)
 		pupil_stress_mean_time = np.array(pupil_mean_time)
-	
+	elif k==2:
+		ibi_blockC_mean = np.array(ibi_mean)
+		pupil_blockC_mean = np.array(pupil_mean)
+		ibi_blockC_mean_time = np.array(ibi_mean_time)
+		pupil_blockC_mean_time = np.array(pupil_mean_time)
 
 	trial_start = trial_end # moved
 
-'''
-STOPPED HERE: 
-need to change to be either by trials or times
-'''
 
 # delete PD values less than 0
 ibi_stress_mean_adj = np.array([ibi_stress_mean[i] for i in range(len(ibi_stress_mean)) if (pupil_stress_mean[i] > -3)and(~np.isnan(ibi_stress_mean[i]))])
 ibi_reg_mean_adj = np.array([ibi_reg_mean[i] for i in range(len(ibi_reg_mean)) if (pupil_reg_mean[i] > -3)and(~np.isnan(ibi_reg_mean[i]))])
 pupil_stress_mean_adj = np.array([pupil_stress_mean[i] for i in range(len(pupil_stress_mean)) if (pupil_stress_mean[i] > -3)and(~np.isnan(ibi_stress_mean[i]))])
 pupil_reg_mean_adj = np.array([pupil_reg_mean[i] for i in range(len(pupil_reg_mean)) if (pupil_reg_mean[i] > -3)and(~np.isnan(ibi_reg_mean[i]))])
+if len(hdf_filenames)==3:
+	ibi_blockC_mean_adj = np.array([ibi_blockC_mean[i] for i in range(len(ibi_blockC_mean)) if (pupil_blockC_mean[i] > -3)and(~np.isnan(ibi_blockC_mean[i]))])
+	pupil_blockC_mean_adj = np.array([pupil_blockC_mean[i] for i in range(len(pupil_blockC_mean)) if (pupil_blockC_mean[i] > -3)and(~np.isnan(ibi_blockC_mean[i]))])
+
 
 ibi_stress_mean_adj_time = np.array([ibi_stress_mean_time[i] for i in range(len(ibi_stress_mean_time)) if (pupil_stress_mean_time[i] > -3)and(~np.isnan(ibi_stress_mean_time[i]))])
 ibi_reg_mean_adj_time = np.array([ibi_reg_mean_time[i] for i in range(len(ibi_reg_mean_time)) if (pupil_reg_mean_time[i] > -3)and(~np.isnan(ibi_reg_mean_time[i]))])
 pupil_stress_mean_adj_time = np.array([pupil_stress_mean_time[i] for i in range(len(pupil_stress_mean_time)) if (pupil_stress_mean_time[i] > -3)and(~np.isnan(ibi_stress_mean_time[i]))])
 pupil_reg_mean_adj_time = np.array([pupil_reg_mean_time[i] for i in range(len(pupil_reg_mean_time)) if (pupil_reg_mean_time[i] > -3)and(~np.isnan(ibi_reg_mean_time[i]))])
+if len(hdf_filenames)==3:
+	ibi_blockC_mean_adj_time = np.array([ibi_blockC_mean_time[i] for i in range(len(ibi_blockC_mean_time)) if (pupil_blockC_mean_time[i] > -3)and(~np.isnan(ibi_blockC_mean_time[i]))])
+	pupil_blockC_mean_adj_time = np.array([pupil_blockC_mean_time[i] for i in range(len(pupil_blockC_mean_time)) if (pupil_blockC_mean_time[i] > -3)and(~np.isnan(ibi_blockC_mean_time[i]))])
 
 
 num_successful_stress = len(ibi_stress_mean_adj)
 num_successful_reg = len(ibi_reg_mean_adj)
+if len(hdf_filenames)==3:
+	num_successful_blockC = len(ibi_blockC_mean_adj)
 
 num_stress_time = len(ibi_stress_mean_adj_time)
 num_reg_time = len(ibi_reg_mean_adj_time)
+if len(hdf_filenames)==3:
+	num_blockC_time = len(ibi_blockC_mean_adj_time)
 
 y_successful_stress = np.ones(num_successful_stress)
 y_successful_reg = np.zeros(num_successful_reg)
@@ -227,6 +250,9 @@ norm_ibi_stress_mean = ibi_stress_mean_adj
 norm_pupil_stress_mean = pupil_stress_mean_adj 
 norm_ibi_reg_mean = ibi_reg_mean_adj
 norm_pupil_reg_mean = pupil_reg_mean_adj
+if len(hdf_filenames)==3:
+	norm_ibi_blockC_mean = ibi_blockC_mean_adj
+	norm_pupil_blockC_mean = pupil_blockC_mean_adj
 
 points_stress = np.array([norm_ibi_stress_mean,norm_pupil_stress_mean])
 points_reg = np.array([norm_ibi_reg_mean,norm_pupil_reg_mean])
@@ -234,11 +260,18 @@ cov_stress = np.cov(points_stress)
 cov_reg = np.cov(points_reg)
 mean_vec_stress = [np.nanmean(norm_ibi_stress_mean),np.nanmean(norm_pupil_stress_mean)]
 mean_vec_reg = [np.nanmean(norm_ibi_reg_mean),np.nanmean(norm_pupil_reg_mean)]
+if len(hdf_filenames)==3:
+	points_blockC = np.array([norm_ibi_blockC_mean,norm_pupil_blockC_mean])
+	cov_blockC = np.cov(points_blockC)
+	mean_vec_blockC = [np.nanmean(norm_ibi_blockC_mean),np.nanmean(norm_pupil_blockC_mean)]
 
 norm_ibi_stress_mean_time = ibi_stress_mean_adj_time 
 norm_pupil_stress_mean_time = pupil_stress_mean_adj_time
 norm_ibi_reg_mean_time = ibi_reg_mean_adj_time
 norm_pupil_reg_mean_time = pupil_reg_mean_adj_time
+if len(hdf_filenames)==3:
+	norm_ibi_blockC_mean_time = ibi_blockC_mean_adj_time 
+	norm_pupil_blockC_mean_time = pupil_blockC_mean_adj_time
 
 points_stress_time = np.array([norm_ibi_stress_mean_time,norm_pupil_stress_mean_time])
 points_reg_time = np.array([norm_ibi_reg_mean_time,norm_pupil_reg_mean_time])
@@ -246,9 +279,15 @@ cov_stress_time = np.cov(points_stress_time)
 cov_reg_time = np.cov(points_reg_time)
 mean_vec_stress_time = [np.nanmean(norm_ibi_stress_mean_time),np.nanmean(norm_pupil_stress_mean_time)]
 mean_vec_reg_time = [np.nanmean(norm_ibi_reg_mean_time),np.nanmean(norm_pupil_reg_mean_time)]
+if len(hdf_filenames)==3:
+	points_blockC_time = np.array([norm_ibi_blockC_mean_time,norm_pupil_blockC_mean_time])
+	cov_blockC_time = np.cov(points_blockC_time)
+	mean_vec_blockC_time = [np.nanmean(norm_ibi_blockC_mean_time),np.nanmean(norm_pupil_blockC_mean_time)]
+
 
 cmap_stress = mpl.cm.autumn
 cmap_reg = mpl.cm.winter
+cmap_blockC = mpl.cm.gray
 
 plt.figure()
 for i in range(0,len(ibi_stress_mean_adj)):
@@ -258,6 +297,10 @@ plot_cov_ellipse(cov_stress,mean_vec_stress,fc='r',ec='None',a=0.2)
 for i in range(0,len(ibi_reg_mean_adj)):
 	plt.plot(norm_ibi_reg_mean[i],norm_pupil_reg_mean[i],color=cmap_reg(i/float(len(ibi_reg_mean))),marker='o')
 plot_cov_ellipse(cov_reg,mean_vec_reg,fc='b',ec='None',a=0.2)
+if len(hdf_filenames)==3:
+	for i in range(0,len(ibi_blockC_mean_adj)):
+		plt.plot(norm_ibi_blockC_mean[i],norm_pupil_blockC_mean[i],color=cmap_blockC(i/float(len(ibi_blockC_mean))),marker='o')
+	plot_cov_ellipse(cov_blockC,mean_vec_blockC,fc='k',ec='None',a=0.2)
 #plt.legend()
 plt.xlabel('Mean Trial IBI (s)')
 plt.ylabel('Mean Trial PD (AU)')
@@ -272,6 +315,12 @@ sm_stress = plt.cm.ScalarMappable(cmap=cmap_stress, norm=plt.Normalize(vmin=0, v
 sm_stress._A = []
 cbar = plt.colorbar(sm_stress,ticks=[0,1], orientation='vertical')
 cbar.ax.set_xticklabels(['Early', 'Late'])  # horizontal colorbar
+if len(hdf_filenames)==3:
+	sm_blockC = plt.cm.ScalarMappable(cmap=cmap_blockC, norm=plt.Normalize(vmin=0, vmax=1))
+	# fake up the array of the scalar mappable. Urgh...
+	sm_blockC._A = []
+	cbar = plt.colorbar(sm_blockC,ticks=[0,1], orientation='vertical')
+	cbar.ax.set_xticklabels(['Early', 'Late'])  # horizontal colorbar
 #plt.ylim((-0.05,1.05))
 #plt.xlim((-0.05,1.05))
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename[0]+'_b'+str(block_num[0])+'_IBIPupilCovariance.svg')
@@ -284,7 +333,11 @@ for i in range(0,len(ibi_stress_mean_adj_time)):
 plot_cov_ellipse(cov_stress_time,mean_vec_stress_time,fc='r',ec='None',a=0.2)
 for i in range(0,len(ibi_reg_mean_adj_time)):
 	plt.plot(norm_ibi_reg_mean_time[i],norm_pupil_reg_mean_time[i],color=cmap_reg(i/float(len(ibi_reg_mean_time))),marker='o')
-plot_cov_ellipse(cov_reg,mean_vec_reg_time,fc='b',ec='None',a=0.2)
+plot_cov_ellipse(cov_reg_time,mean_vec_reg_time,fc='b',ec='None',a=0.2)
+if len(hdf_filenames)==3:
+	for i in range(0,len(ibi_blockC_mean_adj_time)):
+		plt.plot(norm_ibi_blockC_mean_time[i],norm_pupil_blockC_mean_time[i],color=cmap_blockC(i/float(len(ibi_blockC_mean_time))),marker='o')
+	plot_cov_ellipse(cov_blockC_time,mean_vec_blockC_time,fc='b',ec='None',a=0.2)
 #plt.legend()
 plt.xlabel('Mean Trial IBI (s)')
 plt.ylabel('Mean Trial PD (AU)')
@@ -299,21 +352,32 @@ sm_stress = plt.cm.ScalarMappable(cmap=cmap_stress, norm=plt.Normalize(vmin=0, v
 sm_stress._A = []
 cbar = plt.colorbar(sm_stress,ticks=[0,1], orientation='vertical')
 cbar.ax.set_xticklabels(['Early', 'Late'])  # horizontal colorbar
+if len(hdf_filenames)==3:
+	sm_blockC = plt.cm.ScalarMappable(cmap=cmap_blockC, norm=plt.Normalize(vmin=0, vmax=1))
+	# fake up the array of the scalar mappable. Urgh...
+	sm_blockC._A = []
+	cbar = plt.colorbar(sm_blockC,ticks=[0,1], orientation='vertical')
+	cbar.ax.set_xticklabels(['Early', 'Late'])  # horizontal colorbar
 #plt.ylim((-0.05,1.05))
 #plt.xlim((-0.05,1.05))
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename[0]+'_b'+str(block_num[0])+'_IBIPupilCovariance_TimeWindows.svg')
 
+
 # Recall, len_window is the length of the time windows used to compute the data points
 # Make tick marks every minute
-
 
 plt.figure()
 plt.subplot(121)
 plt.plot(range(len(ibi_reg_mean_time)), ibi_reg_mean_time,'b', label = 'Reg')
 plt.plot(range(len(ibi_reg_mean_time), len(ibi_reg_mean_time) + len(ibi_stress_mean_time)), ibi_stress_mean_time, 'r', label = 'Stress')
+if len(hdf_filenames)==3:
+	plt.plot(range(len(ibi_reg_mean_time) + len(ibi_stress_mean_time), len(ibi_reg_mean_time) + len(ibi_stress_mean_time) + len(ibi_blockC_mean_time)), ibi_blockC_mean_time, 'k', label='Block C')
+	xticklabels = np.arange(0,(len(ibi_reg_mean_time) + len(ibi_stress_mean_time) + len(ibi_blockC_mean_time))*len_window/60.,len_window/60.)  # labels in minutes
+else:
+	xticklabels = np.arange(0,(len(ibi_reg_mean_time) + len(ibi_stress_mean_time))*len_window/60.,len_window/60.)  # labels in minutes
+plt.legend()
 plt.title('IBI - Reg vs Stress')
-xticklabels = np.arange(0,(len(ibi_reg_mean_time) + len(ibi_stress_mean_time))*len_window/60.,len_window/60.)  # labels in minutes
-xticks = np.arange(0, len(xticklabels), 60./len_window)
+xticks = np.arange(0, len(xticklabels), 5 * 60./len_window) # tick every 5 mins
 xticks = [int(val) for val in xticks]
 xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
 plt.xticks(xticks, xticklabels)
@@ -323,4 +387,15 @@ plt.subplot(122)
 plt.plot(range(len(pupil_reg_mean_time)), pupil_reg_mean_time,'b', label = 'Reg')
 plt.plot(range(len(pupil_reg_mean_time), len(pupil_reg_mean_time) + len(pupil_stress_mean_time)), pupil_stress_mean_time, 'r', label = 'Stress')
 plt.title('Pupil - Reg vs Stress')
+if len(hdf_filenames)==3:
+	plt.plot(range(len(pupil_reg_mean_time) + len(pupil_stress_mean_time), len(pupil_reg_mean_time) + len(pupil_stress_mean_time) + len(pupil_blockC_mean_time)), pupil_blockC_mean_time, 'k', label='Block C')
+	xticklabels = np.arange(0,(len(ibi_reg_mean_time) + len(ibi_stress_mean_time) + len(ibi_blockC_mean_time))*len_window/60.,len_window/60.)  # labels in minutes
+else:
+	xticklabels = np.arange(0,(len(ibi_reg_mean_time) + len(ibi_stress_mean_time))*len_window/60.,len_window/60.)  # labels in minutes
+plt.legend()
+xticks = np.arange(0, len(xticklabels), 5 * 60./len_window) # tick every 5 mins
+xticks = [int(val) for val in xticks]
+xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
+plt.xticks(xticks, xticklabels)
+plt.xlabel('Minutes')
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename[0]+'_b'+str(block_num[0])+'_IBIPupil_TimeWindows.svg')
