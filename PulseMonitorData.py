@@ -28,10 +28,10 @@ def findIBIs(pulse,sampling_rate):
 	'''
 	pulse_signal = pulse[np.nonzero(pulse)] # only look at pulse signal when it was saving
 	if len(pulse_signal) > 0:
-		pulse_peak_amp = np.amax(pulse_signal)
-		pulse_trough_amp = np.amin(pulse_signal)
-		pulse_mean = np.mean(pulse_signal)
-		pulse_std = np.std(pulse_signal)
+		pulse_peak_amp = np.nanmax(pulse_signal)
+		pulse_trough_amp = np.nanmin(pulse_signal)
+		pulse_mean = np.nanmean(pulse_signal)
+		pulse_std = np.nanstd(pulse_signal)
 		#thres = pulse_trough_amp + 0.6*(pulse_peak_amp - pulse_trough_amp)
 		thres = pulse_mean + 0.2*pulse_std
 		thresholded_pulse = (pulse_signal > thres)
@@ -255,7 +255,6 @@ def getIBIandPuilDilation(pulse_data, pulse_ind,samples_pulse, pulse_samprate,pu
 		pulse_snippet = pulse_data_array[pulse_ind[i]:pulse_ind[i]+samples_pulse[i]]
 		# all ibi_snippet arrays are coming back empty
 		ibi_snippet = findIBIs(pulse_snippet,pulse_samprate)
-		print ibi_snippet
 		all_ibi += ibi_snippet.tolist()
 		if np.isnan(np.nanmean(ibi_snippet))and(ibi_mean != []):
 			ibi_mean.append(ibi_mean[-1])   # repeat last measurement
@@ -309,8 +308,8 @@ def getIBIandPuilDilation(pulse_data, pulse_ind,samples_pulse, pulse_samprate,pu
 	mean_pupil = np.nanmean(all_pupil)
 	std_pupil = np.nanstd(all_pupil)
 	nbins_pupil = np.arange(mean_pupil-10*std_pupil,mean_pupil+10*std_pupil,float(std_pupil)/2)
-	#print "Bins are:", nbins_pupil
-	pupil_hist,nbins_pupil = np.histogram(all_pupil,bins=nbins_pupil)
+	print "Bins are:", nbins_pupil
+	pupil_hist,nbins_pupil = np.histogram(all_pupil,bins=nbins_pupil,range=(nbins_pupil.min(),nbins_pupil.max()))
 	nbins_pupil = nbins_pupil[1:]
 	pupil_hist = pupil_hist/float(len(all_pupil))
 
