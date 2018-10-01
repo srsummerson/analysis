@@ -393,6 +393,7 @@ if len(hdf_filenames)==3:
 else:
 	xticklabels = np.arange(0,(len(ibi_reg_mean_time) + len(ibi_stress_mean_time))*len_window/60.,len_window/60.)  # labels in minutes
 plt.legend()
+plt.ylim((1, 3))
 xticks = np.arange(0, len(xticklabels), 5 * 60./len_window) # tick every 5 mins
 xticks = [int(val) for val in xticks]
 xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
