@@ -303,12 +303,21 @@ cbar.ax.set_xticklabels(['Early', 'Late'])  # horizontal colorbar
 #plt.xlim((-0.05,1.05))
 plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename[0]+'_b'+str(block_num[0])+'_IBIPupilCovariance_TimeWindows.svg')
 
+# Recall, len_window is the length of the time windows used to compute the data points
+# Make tick marks every minute
+
 
 plt.figure()
 plt.subplot(121)
 plt.plot(range(len(ibi_reg_mean_time)), ibi_reg_mean_time,'b', label = 'Reg')
 plt.plot(range(len(ibi_reg_mean_time), len(ibi_reg_mean_time) + len(ibi_stress_mean_time)), ibi_stress_mean_time, 'r', label = 'Stress')
 plt.title('IBI - Reg vs Stress')
+xticklabels = np.arange(0,(len(ibi_reg_mean_time) + len(ibi_stress_mean_time))*len_window/60.,len_window/60.)  # labels in minutes
+xticks = np.arange(0, len(xticklabels), 60./len_window)
+xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
+plt.xticks(xticks, xticklabels)
+plt.xlabel('Minutes')
+
 plt.subplot(122)
 plt.plot(range(len(pupil_reg_mean_time)), pupil_reg_mean_time,'b', label = 'Reg')
 plt.plot(range(len(pupil_reg_mean_time), len(pupil_reg_mean_time) + len(pupil_stress_mean_time)), pupil_stress_mean_time, 'r', label = 'Stress')
