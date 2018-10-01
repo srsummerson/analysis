@@ -314,6 +314,7 @@ plt.plot(range(len(ibi_reg_mean_time), len(ibi_reg_mean_time) + len(ibi_stress_m
 plt.title('IBI - Reg vs Stress')
 xticklabels = np.arange(0,(len(ibi_reg_mean_time) + len(ibi_stress_mean_time))*len_window/60.,len_window/60.)  # labels in minutes
 xticks = np.arange(0, len(xticklabels), 60./len_window)
+xticks = [int(val) for val in xticks]
 xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
 plt.xticks(xticks, xticklabels)
 plt.xlabel('Minutes')
