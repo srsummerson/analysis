@@ -160,7 +160,7 @@ for k in range(len(hdf_filenames)):
 
 	print "Block %i - samples in time windows" % (k)
 	print len(pulse_d)
-	ibi_mean_time, ibi_std_time, pupil_mean_time, pupil_std_time, nbins_ibi_time, ibi_hist_time, nbins_pupil_time, pupil_hist_time = getIBIandPuilDilation(pulse_d, pulse_ind,nsamples_pulse, pulse_samprate,pupil_d, pupil_ind,nsamples_pupil,pupil_samprate)
+	ibi_mean_time, ibi_std_time, pupil_mean_time, pupil_std_time, nbins_ibi_time, ibi_hist_time, nbins_pupil_time, pupil_hist_time = getIBIandPuilDilation(pulse_d, pulse_ind_time,len_window_samples, pulse_samprate,pupil_d, pupil_ind_time,len_window_samples,pupil_samprate)
 	#
 	# trial_start = trial_end
 
