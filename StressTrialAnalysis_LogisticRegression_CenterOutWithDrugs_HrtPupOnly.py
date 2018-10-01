@@ -147,20 +147,23 @@ for k in range(len(hdf_filenames)):
 	#pulse_ind_time = np.arange(pulse_ind[0], pulse_ind[-1], len_window_samples)
 	#pupil_ind_time = np.arange(pupil_ind[0], pupil_ind[-1], len_window_samples)
 
+
 	if k==0:
 		pulse_ind_time = np.arange(reg_start_sample, reg_stop_sample, len_window_samples)
 		pupil_ind_time = pulse_ind_time
+
 	elif k==1:
 		pulse_ind_time = np.arange(stress_start_sample, stress_stop_sample, len_window_samples)
 		pupil_ind_time = pulse_ind_time
 	elif k==2:
 		pulse_ind_time = np.arange(blockC_start_sample, blockC_stop_sample, len_window_samples)
 		pupil_ind_time = pulse_ind_time
-
+	nsamples_pulse_window = len_window_samples*np.ones(len(pulse_ind_time))
+	nsamples_pupil_window = len_window_samples*np.ones(len(pupil_ind_time))
 
 	print "Block %i - samples in time windows" % (k)
 	print len(pulse_d)
-	ibi_mean_time, ibi_std_time, pupil_mean_time, pupil_std_time, nbins_ibi_time, ibi_hist_time, nbins_pupil_time, pupil_hist_time = getIBIandPuilDilation(pulse_d, pulse_ind_time,len_window_samples, pulse_samprate,pupil_d, pupil_ind_time,len_window_samples,pupil_samprate)
+	ibi_mean_time, ibi_std_time, pupil_mean_time, pupil_std_time, nbins_ibi_time, ibi_hist_time, nbins_pupil_time, pupil_hist_time = getIBIandPuilDilation(pulse_d, pulse_ind_time,nsamples_pulse_window, pulse_samprate,pupil_d, pupil_ind_time,nsamples_pupil_window,pupil_samprate)
 	#
 	# trial_start = trial_end
 
