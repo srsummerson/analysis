@@ -298,7 +298,7 @@ def getIBIandPuilDilation(pulse_data, pulse_ind,samples_pulse, pulse_samprate,pu
 		pupil_std.append(np.nanstd(pupil_snippet))
 
 	mean_ibi = np.nanmean(all_ibi)
-	print "Mean all ibi:", mean_ibi
+	#print "Mean all ibi:", mean_ibi
 	std_ibi = np.nanstd(all_ibi)
 	nbins_ibi = np.arange(mean_ibi-10*std_ibi,mean_ibi+10*std_ibi,float(std_ibi)/2)
 	ibi_hist,nbins_ibi = np.histogram(all_ibi,bins=nbins_ibi)
@@ -308,7 +308,7 @@ def getIBIandPuilDilation(pulse_data, pulse_ind,samples_pulse, pulse_samprate,pu
 	mean_pupil = np.nanmean(all_pupil)
 	std_pupil = np.nanstd(all_pupil)
 	nbins_pupil = np.arange(mean_pupil-10*std_pupil,mean_pupil+10*std_pupil,float(std_pupil)/2)
-	print "Bins are:", nbins_pupil
+	#print "Bins are:", nbins_pupil
 	pupil_hist,nbins_pupil = np.histogram(all_pupil,bins=nbins_pupil,range=(nbins_pupil.min(),nbins_pupil.max()))
 	nbins_pupil = nbins_pupil[1:]
 	pupil_hist = pupil_hist/float(len(all_pupil))

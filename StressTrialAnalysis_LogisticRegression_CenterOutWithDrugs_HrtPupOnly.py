@@ -25,8 +25,8 @@ from sklearn.cross_validation import cross_val_score
 
 #### still needs to be fixed - add third block if it exists
 
-hdf_filenames = ['mari20180824_04_te1169.hdf', 'mari20180824_05_te1170.hdf', 'mari20180824_06_te1171.hdf'] 			# list of hdf files for block A and B
-filename = ['Mario20180824', 'Mario20180824', 'Mario20180824'] 							# list of TDT tanks for blocks A and B
+hdf_filenames = ['mari20180826_03_te1186.hdf', 'mari20180826_04_te1187.hdf', 'mari20180826_07_te1190.hdf'] 			# list of hdf files for block A and B
+filename = ['Mario20180826', 'Mario20180826', 'Mario20180826'] 							# list of TDT tanks for blocks A and B
 block_num = [1, 2, 3] 										# corresponding TDT block numbers of the tanks for blocks A and B of behavior
 
 #TDT_tank = ['/backup/subnetsrig/storage/tdt/'+name for name in filename]
@@ -162,7 +162,7 @@ for k in range(len(hdf_filenames)):
 	nsamples_pupil_window = len_window_samples*np.ones(len(pupil_ind_time))
 
 	print "Block %i - samples in time windows" % (k)
-	print len(pulse_d)
+	
 	ibi_mean_time, ibi_std_time, pupil_mean_time, pupil_std_time, nbins_ibi_time, ibi_hist_time, nbins_pupil_time, pupil_hist_time = getIBIandPuilDilation(pulse_d, pulse_ind_time,nsamples_pulse_window, pulse_samprate,pupil_d, pupil_ind_time,nsamples_pupil_window,pupil_samprate)
 	#
 	# trial_start = trial_end
