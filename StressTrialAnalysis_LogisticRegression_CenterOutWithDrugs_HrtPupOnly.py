@@ -25,9 +25,9 @@ from sklearn.cross_validation import cross_val_score
 
 #### still needs to be fixed - add third block if it exists
 
-hdf_filenames = ['mari20180906_02_te1241.hdf', 'mari20180906_03_te1242.hdf', 'mari20180906_04_te1243.hdf'] 			# list of hdf files for block A and B
-filename = ['Mario20180906', 'Mario20180906', 'Mario20180906'] 							# list of TDT tanks for blocks A and B
-block_num = [1, 2, 3] 										# corresponding TDT block numbers of the tanks for blocks A and B of behavior
+hdf_filenames = ['mari20180908_03_te1247.hdf', 'mari20180908_04_te1248.hdf'] 			# list of hdf files for block A and B
+filename = ['Mario20180908', 'Mario20180908'] 							# list of TDT tanks for blocks A and B
+block_num = [1, 2] 										# corresponding TDT block numbers of the tanks for blocks A and B of behavior
 
 #TDT_tank = ['/backup/subnetsrig/storage/tdt/'+name for name in filename]
 TDT_tank = ['/home/srsummerson/storage/tdt/'+name for name in filename]
