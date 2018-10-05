@@ -25,8 +25,8 @@ from sklearn.cross_validation import cross_val_score
 
 #### still needs to be fixed - add third block if it exists
 
-hdf_filenames = ['mari20180924_03_te1325.hdf', 'mari20180924_06_te1328.hdf', 'mari20180924_07_te1329.hdf'] 			# list of hdf files for block A and B
-filename = ['Mario20180924', 'Mario20180924', 'Mario20180924-1'] 							# list of TDT tanks for blocks A and B
+hdf_filenames = ['mari20181004_02_te1350.hdf', 'mari20181004_03_te1351.hdf', 'mari20181004_04_te1352.hdf'] 			# list of hdf files for block A and B
+filename = ['Mario20181004', 'Mario20181004', 'Mario20181004-1'] 							# list of TDT tanks for blocks A and B
 block_num = [1, 2, 1] 										# corresponding TDT block numbers of the tanks for blocks A and B of behavior
 
 #TDT_tank = ['/backup/subnetsrig/storage/tdt/'+name for name in filename]
@@ -242,12 +242,14 @@ model_glm = sm.Logit(y_successful,x_successful)
 fit_glm = model_glm.fit()
 print fit_glm.summary()
 
+"""
 print "Regression with time windows"
 print "x1: IBI"
 print "x2: Pupil Dilation"
 model_glm_time = sm.Logit(y_time,x_time)
 fit_glm_time = model_glm_time.fit()
 print fit_glm_time.summary()
+"""
 
 norm_ibi_stress_mean = ibi_stress_mean_adj 
 norm_pupil_stress_mean = pupil_stress_mean_adj 
