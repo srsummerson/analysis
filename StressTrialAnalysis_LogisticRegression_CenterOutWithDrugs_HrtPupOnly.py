@@ -23,11 +23,10 @@ from sklearn import metrics
 from sklearn.metrics import roc_curve, auc
 from sklearn.cross_validation import cross_val_score
 
-#### still needs to be fixed - add third block if it exists
 
-hdf_filenames = ['mari20181005_02_te1354.hdf', 'mari20181005_03_te1355.hdf', 'mari20181005_04_te1356.hdf'] 			# list of hdf files for block A and B
-filename = ['Mario20181005', 'Mario20181005', 'Mario20181005-1'] 							# list of TDT tanks for blocks A and B
-block_num = [1, 2, 1] 										# corresponding TDT block numbers of the tanks for blocks A and B of behavior
+hdf_filenames = ['mari20181009_09_te1390.hdf', 'mari20181009_10_te1391.hdf'] 			# list of hdf files for block A and B
+filename = ['Mario20181009', 'Mario20181009'] 							# list of TDT tanks for blocks A and B
+block_num = [1, 2] 										# corresponding TDT block numbers of the tanks for blocks A and B of behavior
 
 #TDT_tank = ['/backup/subnetsrig/storage/tdt/'+name for name in filename]
 TDT_tank = ['/home/srsummerson/storage/tdt/'+name for name in filename]
@@ -126,18 +125,23 @@ pupil_blockC_mean = np.array([])
 
 
 for k in range(len(hdf_filenames)):
-	print "Block %i - samples by trials" % (k) 
-	trial_end = trial_start + num_trials[k]
+	print "Block %i - samples by trials" % (k)
+	if num_trials[k] > 0: 
+		trial_end = trial_start + num_trials[k]
 
-	pulse_d = np.ravel(pulse_data[k])
-	pulse_ind = tdt_ind_hold_center[trial_start:trial_end]
-	nsamples_pulse = samples_pulse[trial_start:trial_end]
-	pupil_d = np.ravel(pupil_data[k])
-	pupil_ind = tdt_ind_hold_center[trial_start:trial_end]
-	nsamples_pupil = samples_pupil[trial_start:trial_end]
+		pulse_d = np.ravel(pulse_data[k])
+		pulse_ind = tdt_ind_hold_center[trial_start:trial_end]
+		nsamples_pulse = samples_pulse[trial_start:trial_end]
+		pupil_d = np.ravel(pupil_data[k])
+		pupil_ind = tdt_ind_hold_center[trial_start:trial_end]
+		nsamples_pupil = samples_pupil[trial_start:trial_end]
 
-	ibi_mean, ibi_std, pupil_mean, pupil_std, nbins_ibi, ibi_hist, nbins_pupil, pupil_hist = getIBIandPuilDilation(pulse_d, pulse_ind,nsamples_pulse, pulse_samprate,pupil_d, pupil_ind,nsamples_pupil,pupil_samprate)
-	
+		ibi_mean, ibi_std, pupil_mean, pupil_std, nbins_ibi, ibi_hist, nbins_pupil, pupil_hist = getIBIandPuilDilation(pulse_d, pulse_ind,nsamples_pulse, pulse_samprate,pupil_d, pupil_ind,nsamples_pupil,pupil_samprate)
+	elif num_trials[k] == 0:
+		ibi_mean = np.array([])
+		ibi_std = np.array([])
+		pupil_mean = np.array([])
+		pupil_std = np.array([])
 
 	'''
 	Compute values based on time windows
@@ -242,14 +246,14 @@ model_glm = sm.Logit(y_successful,x_successful)
 fit_glm = model_glm.fit()
 print fit_glm.summary()
 
-"""
+
 print "Regression with time windows"
 print "x1: IBI"
 print "x2: Pupil Dilation"
 model_glm_time = sm.Logit(y_time,x_time)
 fit_glm_time = model_glm_time.fit()
 print fit_glm_time.summary()
-"""
+
 
 norm_ibi_stress_mean = ibi_stress_mean_adj 
 norm_pupil_stress_mean = pupil_stress_mean_adj 
