@@ -8,6 +8,7 @@ import statsmodels.api as sm
 from neo import io
 from PulseMonitorData import findIBIs, getIBIandPuilDilation
 from StressTaskBehavior import StressBehaviorWithDrugs_CenterOut
+from syncHDF_withCSV import syncHDF_withCSV
 from scipy import signal
 from scipy import stats
 from matplotlib import mlab
