@@ -3,11 +3,12 @@ import numpy as np
 import scipy as sp
 import csv
 
-def syncHDF_withCSV(filename, TDT_tank, DIO_csv_files):
+def syncHDF_withCSV(filename, TDT_tank, block_num, DIO_csv_files):
 	'''
 	Input: 
 	- filename: string, name of tank (e.g. 'Mario20181012')
 	- TDT_tank: string, location of tank with name filename (e.g. '/home/srsummerson/storage/tdt/'+filename)
+	- block_num: int, number of the recording block in the TDT tank
 	- DIO_csv_files: list, list of file locations for four CSV files corresponding to the four DIO channels exported to CSV file format
 
 	Output:
