@@ -1,6 +1,7 @@
 
 import numpy as np
 import scipy as sp
+import csv
 
 def syncHDF_withCSV(filename, TDT_tank, DIO_csv_files):
 	'''
@@ -55,7 +56,7 @@ def syncHDF_withCSV(filename, TDT_tank, DIO_csv_files):
 	tdt_samplenumber = []
 
 	# Get synchronizing data
-	
+
 	hdf_times['tdt_dio_samplerate'] = DIOx_samprate		# Sampling frequency of DIO signal recorded by TDT system 
 	find_recording_start = np.ravel(np.nonzero(DIOx1))[0]
 	find_data_rows = np.logical_and(np.ravel(np.equal(DIOx3,13)),np.ravel(np.greater(DIOx2,0))) 	# samples when data corresponds to a row and strobe is on
