@@ -49,7 +49,7 @@ for l in range(len(block_num)):
 if DIOx_csv == True:
 	print 'Makeing syncHDF file from DIO CSV files'
 	for m in range(len(hdf_filenames)):
-		hdf_times = syncHDF_withCSV(filename[m], TDT_tank[m], DIO_csv_files[m])
+		hdf_times = syncHDF_withCSV(filename[m], TDT_tank[m], DIOx_filename[m])
 
 #### ADD IN INDICATING IF DIO IS FROM CSV FILE
 
