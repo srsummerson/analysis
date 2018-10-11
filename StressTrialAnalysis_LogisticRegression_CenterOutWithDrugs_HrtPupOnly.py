@@ -45,6 +45,11 @@ for l in range(len(block_num)):
 						'/home/srsummerson/storage/tdt/' + filename[l] + '/' + filename[l] + '_Block-' + str(block_num[l]) + '_DIOx_CH3.csv',
 						'/home/srsummerson/storage/tdt/' + filename[l] + '/' + filename[l] + '_Block-' + str(block_num[l]) + '_DIOx_CH14csv']
 
+if DIOx_csv == True:
+	print 'Makeing syncHDF file from DIO CSV files'
+	for m in range(len(hdf_filenames)):
+		hdf_times = syncHDF_withCSV(filename[m], TDT_tank[m], DIO_csv_files[m])
+
 #### ADD IN INDICATING IF DIO IS FROM CSV FILE
 
 len_window = 5.0 										# number of seconds used for computing pulse and pupil mean values over time
