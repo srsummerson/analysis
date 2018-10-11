@@ -27,6 +27,8 @@ from sklearn.cross_validation import cross_val_score
 hdf_filenames = ['mari20181009_09_te1390.hdf', 'mari20181009_10_te1391.hdf'] 			# list of hdf files for block A and B
 filename = ['Mario20181009', 'Mario20181009'] 							# list of TDT tanks for blocks A and B
 block_num = [1, 2] 										# corresponding TDT block numbers of the tanks for blocks A and B of behavior
+DIOx_csv = True 										# Boolean indicating if DIO is from CSV or syncHDF file
+
 
 #TDT_tank = ['/backup/subnetsrig/storage/tdt/'+name for name in filename]
 TDT_tank = ['/home/srsummerson/storage/tdt/'+name for name in filename]
@@ -36,7 +38,14 @@ mat_location = '/storage/syncHDF/'
 PupD_filename = ['/home/srsummerson/storage/tdt/' + filename[ind] + '/' + filename[ind] + '_Block-' + str(block_num[ind]) + '_PupD.csv' for ind in range(len(filename))]
 HrtR_filename = ['/home/srsummerson/storage/tdt/' + filename[ind] + '/' + filename[ind] + '_Block-' + str(block_num[ind]) + '_HrtR.csv' for ind in range(len(filename))]
 
-#HrtR_filename = ['/home/srsummerson/storage/tdt/Mario20160320_plex/Mario20160320_Block-1_HrtR.csv']
+DIOx_filename = [None] * 4
+for l in range(len(block_num)):
+	DIOx_filename[l] = ['/home/srsummerson/storage/tdt/' + filename[l] + '/' + filename[l] + '_Block-' + str(block_num[l]) + '_DIOx_CH1.csv', 
+						'/home/srsummerson/storage/tdt/' + filename[l] + '/' + filename[l] + '_Block-' + str(block_num[l]) + '_DIOx_CH2.csv', 
+						'/home/srsummerson/storage/tdt/' + filename[l] + '/' + filename[l] + '_Block-' + str(block_num[l]) + '_DIOx_CH3.csv',
+						'/home/srsummerson/storage/tdt/' + filename[l] + '/' + filename[l] + '_Block-' + str(block_num[l]) + '_DIOx_CH14csv']
+
+#### ADD IN INDICATING IF DIO IS FROM CSV FILE
 
 len_window = 5.0 										# number of seconds used for computing pulse and pupil mean values over time
 
