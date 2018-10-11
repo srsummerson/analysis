@@ -22,7 +22,6 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.cross_validation import train_test_split
 from sklearn import metrics
 from sklearn.metrics import roc_curve, auc
-from sklearn.cross_validation import cross_val_score
 
 
 hdf_filenames = ['mari20181009_09_te1390.hdf', 'mari20181009_10_te1391.hdf'] 			# list of hdf files for block A and B
@@ -44,7 +43,7 @@ for l in range(len(block_num)):
 	DIOx_filename[l] = ['/home/srsummerson/storage/tdt/' + filename[l] + '/' + filename[l] + '_Block-' + str(block_num[l]) + '_DIOx_CH1.csv', 
 						'/home/srsummerson/storage/tdt/' + filename[l] + '/' + filename[l] + '_Block-' + str(block_num[l]) + '_DIOx_CH2.csv', 
 						'/home/srsummerson/storage/tdt/' + filename[l] + '/' + filename[l] + '_Block-' + str(block_num[l]) + '_DIOx_CH3.csv',
-						'/home/srsummerson/storage/tdt/' + filename[l] + '/' + filename[l] + '_Block-' + str(block_num[l]) + '_DIOx_CH14csv']
+						'/home/srsummerson/storage/tdt/' + filename[l] + '/' + filename[l] + '_Block-' + str(block_num[l]) + '_DIOx_CH1.csv']
 
 if DIOx_csv == True:
 	print 'Makeing syncHDF file from DIO CSV files'
