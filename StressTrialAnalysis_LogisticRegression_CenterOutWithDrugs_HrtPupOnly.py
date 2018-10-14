@@ -33,14 +33,10 @@ DIOx_csv = True 										# Boolean indicating if DIO is from CSV or syncHDF fil
 #TDT_tank = ['/backup/subnetsrig/storage/tdt/'+name for name in filename]
 TDT_tank = ['/home/srsummerson/storage/tdt/'+name for name in filename]
 hdf_location = ['/storage/rawdata/hdf/'+hdf_name for hdf_name in hdf_filenames]
-#hdf_location = ['C:/Users/Samantha Summerson/Documents/GitHub/analysis/' + hdf_name for hdf_name in hdf_filenames]
 mat_location = '/storage/syncHDF/'
-#mat_location = 'C:/Users/Samantha Summerson/Documents/GitHub/analysis/'
 
 PupD_filename = ['/home/srsummerson/storage/tdt/' + filename[ind] + '/' + filename[ind] + '_Block-' + str(block_num[ind]) + '_PupD.csv' for ind in range(len(filename))]
 HrtR_filename = ['/home/srsummerson/storage/tdt/' + filename[ind] + '/' + filename[ind] + '_Block-' + str(block_num[ind]) + '_HrtR.csv' for ind in range(len(filename))]
-#PupD_filename = ['C:/Users/Samantha Summerson/Documents/GitHub/analysis/' + filename[ind] + '/' + filename[ind] + '_Block-' + str(block_num[ind]) + '_PupD.csv' for ind in range(len(filename))]
-#HrtR_filename = ['C:/Users/Samantha Summerson/Documents/GitHub/analysis/' + filename[ind] + '/' + filename[ind] + '_Block-' + str(block_num[ind]) + '_HrtR.csv' for ind in range(len(filename))]
 
 
 DIOx_filename = [None] * 4
