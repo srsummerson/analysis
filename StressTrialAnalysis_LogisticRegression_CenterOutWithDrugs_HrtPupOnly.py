@@ -24,8 +24,8 @@ from sklearn import metrics
 from sklearn.metrics import roc_curve, auc
 
 
-hdf_filenames = ['mari20181012_04_te1416.hdf', 'mari20181012_06_te1418.hdf'] 			# list of hdf files for block A and B
-filename = ['Mario20181012', 'Mario20181012'] 							# list of TDT tanks for blocks A and B
+hdf_filenames = ['mari20181013_02_te1422.hdf', 'mari20181013_03_te1423.hdf'] 			# list of hdf files for block A and B
+filename = ['Mario20181013', 'Mario20181013'] 							# list of TDT tanks for blocks A and B
 block_num = [1, 2] 										# corresponding TDT block numbers of the tanks for blocks A and B of behavior
 DIOx_csv = True 										# Boolean indicating if DIO is from CSV or syncHDF file
 
@@ -33,20 +33,28 @@ DIOx_csv = True 										# Boolean indicating if DIO is from CSV or syncHDF fil
 #TDT_tank = ['/backup/subnetsrig/storage/tdt/'+name for name in filename]
 TDT_tank = ['/home/srsummerson/storage/tdt/'+name for name in filename]
 hdf_location = ['/storage/rawdata/hdf/'+hdf_name for hdf_name in hdf_filenames]
+#hdf_location = ['C:/Users/Samantha Summerson/Documents/GitHub/analysis/' + hdf_name for hdf_name in hdf_filenames]
 mat_location = '/storage/syncHDF/'
+#mat_location = 'C:/Users/Samantha Summerson/Documents/GitHub/analysis/'
 
-PupD_filename = ['/home/srsummerson/storage/tdt/' + filename[ind] + '/' + filename[ind] + '_Block-' + str(block_num[ind]) + '_PupD.csv' for ind in range(len(filename))]
-HrtR_filename = ['/home/srsummerson/storage/tdt/' + filename[ind] + '/' + filename[ind] + '_Block-' + str(block_num[ind]) + '_HrtR.csv' for ind in range(len(filename))]
+#PupD_filename = ['/home/srsummerson/storage/tdt/' + filename[ind] + '/' + filename[ind] + '_Block-' + str(block_num[ind]) + '_PupD.csv' for ind in range(len(filename))]
+#HrtR_filename = ['/home/srsummerson/storage/tdt/' + filename[ind] + '/' + filename[ind] + '_Block-' + str(block_num[ind]) + '_HrtR.csv' for ind in range(len(filename))]
+PupD_filename = ['C:/Users/Samantha Summerson/Documents/GitHub/analysis/' + filename[ind] + '/' + filename[ind] + '_Block-' + str(block_num[ind]) + '_PupD.csv' for ind in range(len(filename))]
+HrtR_filename = ['C:/Users/Samantha Summerson/Documents/GitHub/analysis/' + filename[ind] + '/' + filename[ind] + '_Block-' + str(block_num[ind]) + '_HrtR.csv' for ind in range(len(filename))]
+
 
 DIOx_filename = [None] * 4
+
 for l in range(len(block_num)):
 	DIOx_filename[l] = ['/home/srsummerson/storage/tdt/' + filename[l] + '/' + filename[l] + '_Block-' + str(block_num[l]) + '_DIOx_CH1.csv', 
 						'/home/srsummerson/storage/tdt/' + filename[l] + '/' + filename[l] + '_Block-' + str(block_num[l]) + '_DIOx_CH2.csv', 
 						'/home/srsummerson/storage/tdt/' + filename[l] + '/' + filename[l] + '_Block-' + str(block_num[l]) + '_DIOx_CH3.csv',
-						'/home/srsummerson/storage/tdt/' + filename[l] + '/' + filename[l] + '_Block-' + str(block_num[l]) + '_DIOx_CH1.csv']
+						'/home/srsummerson/storage/tdt/' + filename[l] + '/' + filename[l] + '_Block-' + str(block_num[l]) + '_DIOx_CH4.csv']
+
+
 
 if DIOx_csv == True:
-	print 'Makeing syncHDF file from DIO CSV files'
+	print 'Making syncHDF file from DIO CSV files'
 	for m in range(len(hdf_filenames)):
 		hdf_times = syncHDF_withCSV(filename[m], TDT_tank[m], block_num[m], DIOx_filename[m])
 
