@@ -40,7 +40,7 @@ mat_location = '/storage/syncHDF/'
 PupD_filename = ['/home/srsummerson/storage/tdt/' + filename[ind] + '/' + filename[ind] + '_Block-' + str(block_num[ind]) + '_PupD.csv' for ind in range(len(filename))]
 HrtR_filename = ['/home/srsummerson/storage/tdt/' + filename[ind] + '/' + filename[ind] + '_Block-' + str(block_num[ind]) + '_HrtR.csv' for ind in range(len(filename))]
 #PupD_filename = ['C:/Users/Samantha Summerson/Documents/GitHub/analysis/' + filename[ind] + '/' + filename[ind] + '_Block-' + str(block_num[ind]) + '_PupD.csv' for ind in range(len(filename))]
-H#rtR_filename = ['C:/Users/Samantha Summerson/Documents/GitHub/analysis/' + filename[ind] + '/' + filename[ind] + '_Block-' + str(block_num[ind]) + '_HrtR.csv' for ind in range(len(filename))]
+#HrtR_filename = ['C:/Users/Samantha Summerson/Documents/GitHub/analysis/' + filename[ind] + '/' + filename[ind] + '_Block-' + str(block_num[ind]) + '_HrtR.csv' for ind in range(len(filename))]
 
 
 DIOx_filename = [None] * 4
