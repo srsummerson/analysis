@@ -24,9 +24,9 @@ from sklearn import metrics
 from sklearn.metrics import roc_curve, auc
 
 
-hdf_filenames = ['mari20181017_02_te1441.hdf', 'mari20181017_04_te1443.hdf', 'mari20181017_05_te1444.hdf'] 			# list of hdf files for block A and B
-filename = ['Mario20181017', 'Mario20181017', 'Mario20181017-1'] 							# list of TDT tanks for blocks A and B
-block_num = [1, 2, 3] 										# corresponding TDT block numbers of the tanks for blocks A and B of behavior
+hdf_filenames = ['mari20181009_09_te1390.hdf', 'mari20181009_10_te1391.hdf', 'mari20181009_11_te1392.hdf'] 			# list of hdf files for block A and B
+filename = ['Mario20181009', 'Mario20181009', 'Mario20181009-1'] 							# list of TDT tanks for blocks A and B
+block_num = [1, 2, 1] 										# corresponding TDT block numbers of the tanks for blocks A and B of behavior
 DIOx_csv = True 										# Boolean indicating if DIO is from CSV or syncHDF file
 
 
