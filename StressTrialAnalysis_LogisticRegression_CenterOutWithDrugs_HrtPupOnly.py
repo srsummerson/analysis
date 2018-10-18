@@ -124,6 +124,7 @@ for j in range(len(block_num)):
 	data = list(reader)
 	datal = [k if k!= '' else np.nan for i in data for k in i]
 	pulse_data[j] = np.array([float(val) for val in datal])
+	pulse_data[j] = np.array([val for val in pulse_data[j] if val > 1.0]) 			# get rid of padded values that sometimes appear in CSV file
 	#pulse_data[j] = get_csv_data_singlechannel(HrtR_filename[j])
 	pulse_samprate = 3051.757813
 
