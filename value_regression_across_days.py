@@ -17,7 +17,7 @@ acc_units = [5, 6, 19, 22, 30, 39, 42, 43, 55, 58, 59, 69, 74, 77, 85, 90, 91, 1
 all_units = np.append(cd_units, acc_units)
 # List data
 
-dir = "C:/Users/Samantha Summerson/Dropbox/Carmena Lab/Mario/spike_data/"
+dir = "C:/Users/ss45436/Box/UC Berkeley/Cd Stim/Neural Correlates/Mario/spike_data/"
 
 
 hdf_list_sham = [[dir + 'mari20161220_05_te2795.hdf'], \
@@ -1088,9 +1088,9 @@ min_Q = np.min(all_Q_flat)
 max_Q = np.max(all_Q_flat)
 min_Q = 0.5
 max_Q = 0.7
-print min_Q, max_Q
+print(min_Q, max_Q)
 Q_bins = np.arange(min_Q, max_Q + (max_Q - min_Q)/6., (max_Q - min_Q)/6.)
-print Q_bins
+print(Q_bins)
 # bin Qs and sort FRs accordingly for all conditions
 
 # Cd - value coding - stim
@@ -1368,22 +1368,22 @@ model_negreg_acc = ols(formula, dta_acc_negreg).fit()
 aov_table_posreg_acc = anova_lm(model_posreg_acc, typ=2)
 aov_table_negreg_acc = anova_lm(model_negreg_acc, typ=2)
 
-print "Two-way ANOVA analysis: Cd - late - Stim vs Sham"
+print("Two-way ANOVA analysis: Cd - late - Stim vs Sham")
 print(aov_table)
-print "Two-way ANOVA analysis: Cd - Pos Reg - Stim vs Sham"
+print("Two-way ANOVA analysis: Cd - Pos Reg - Stim vs Sham")
 print(aov_table_posreg)
-print "Two-way ANOVA analysis: Cd - Neg Reg - Stim vs Sham"
+print("Two-way ANOVA analysis: Cd - Neg Reg - Stim vs Sham")
 print(aov_table_negreg)
 
-print "Two-way ANOVA analysis: ACC - late - Stim vs Sham"
+print("Two-way ANOVA analysis: ACC - late - Stim vs Sham")
 print(aov_table_acc)
-print "Two-way ANOVA analysis: ACC - Pos Reg - Stim vs Sham"
+print("Two-way ANOVA analysis: ACC - Pos Reg - Stim vs Sham")
 print(aov_table_posreg_acc)
-print "Two-way ANOVA analysis: ACC - Neg Reg - Stim vs Sham"
+print("Two-way ANOVA analysis: ACC - Neg Reg - Stim vs Sham")
 print(aov_table_negreg_acc)
 
 res_stim = pairwise_tukeyhsd(dta_cd_posreg['fr'], dta_cd_posreg['Bin'],alpha=0.01)
-print res_stim
+print(res_stim)
 
 plt.figure()
 plt.subplot(1,3,1)
@@ -1467,9 +1467,12 @@ all_Q_cd_stim_posreg = [item for i,sublist in enumerate(Q_late_mv_cd_stim) for i
 all_Q_cd_sham_posreg = [item for i,sublist in enumerate(Q_late_mv_cd_sham) for item in sublist if beta_late_mv_cd_sham[i] > 0]
 
 plt.figure()
-plt.scatter(all_Q_cd_stim_posreg, all_FR_cd_stim_posreg, c = 'c', marker = 'o')
-plt.scatter(all_Q_cd_sham_posreg, all_FR_cd_sham_posreg, c = 'm', marker = 'o')
+plt.scatter(all_Q_cd_stim_posreg, all_FR_cd_stim_posreg, c = 'c', marker = 'o', label = 'Stim-late')
+plt.scatter(all_Q_cd_sham_posreg, all_FR_cd_sham_posreg, c = 'm', marker = 'o', label = 'Sham-late')
 plt.xlim((Q_bins[0], Q_bins[-1]))
+plt.xlabel('MV Q-value')
+plt.ylabel('Firing Rate (Hz)')
+plt.legend()
 plt.show()
 
 """

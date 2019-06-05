@@ -24,7 +24,7 @@ from logLikelihoodRLPerformance import logLikelihoodRLPerformance, RLPerformance
 
 cd_units = [1, 3, 4, 17, 18, 20, 40, 41, 54, 56, 57, 63, 64, 72, 75, 81, 83, 88, 89, 96, 100, 112, 114, 126, 130, 140, 143, 146, 156, 157, 159]
 acc_units = [5, 6, 19, 22, 30, 39, 42, 43, 55, 58, 59, 69, 74, 77, 85, 90, 91, 102, 105, 121, 128]	
-dir = "C:/Users/Samantha Summerson/Dropbox/Carmena Lab/Mario/spike_data/"			
+dir = "C:/Users/ss45436/Box/UC Berkeley/Cd Stim/Neural Correlates/Mario/spike_data/"			
 
 def trial_sliding_avg(trial_array, num_trials_slide):
 
@@ -2021,7 +2021,7 @@ def ThreeTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_fil
 		
 		# Load spike data:
 		if (spike_files[i] == ['']):
-			print 'no data'
+			print('no data')
 		elif ((channel < 97) and spike_files[i][0] != '') or ((channel > 96) and (spike_files[i][1] != '')):
 			# Find lfp sample numbers corresponding to these times and the sampling frequency of the lfp data
 			lfp_state_row_ind, lfp_freq = cb_block.get_state_TDT_LFPvalues(ind_picture_onset, syncHDF_files[i])
@@ -2030,10 +2030,10 @@ def ThreeTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_fil
 
 			# Load spike data and find all sort codes associated with good channels
 			if channel < 97:
-				print channel
+				print(channel)
 				spike = OfflineSorted_CSVFile(spike_files[i][0])
 			else:
-				print channel
+				print(channel)
 				spike = OfflineSorted_CSVFile(spike_files[i][1])
 
 			# Get matrix that is (Num units on channel)x(num trials in hdf_file) containing the firing rates during the
@@ -2103,7 +2103,7 @@ def MultiTargetTask_FiringRates_DifferenceBetweenBlocks(hdf_files, syncHDF_files
 		
 		# Load spike data:
 		if (spike_files[i] == ['']):
-			print 'no data'
+			print('no data')
 		elif ((channel < 97) and spike_files[i][0] != '') or ((channel > 96) and (spike_files[i][1] != '')):
 			# Find lfp sample numbers corresponding to these times and the sampling frequency of the lfp data
 			lfp_state_row_ind, lfp_freq = cb_block.get_state_TDT_LFPvalues(ind_picture_onset, syncHDF_files[i])
@@ -2112,10 +2112,10 @@ def MultiTargetTask_FiringRates_DifferenceBetweenBlocks(hdf_files, syncHDF_files
 
 			# Load spike data and find all sort codes associated with good channels
 			if channel < 97:
-				print channel
+				print(channel)
 				spike = OfflineSorted_CSVFile(spike_files[i][0])
 			else:
-				print channel
+				print(channel)
 				spike = OfflineSorted_CSVFile(spike_files[i][1])
 
 			# Get matrix that is (Num units on channel)x(num trials in hdf_file) containing the firing rates during the
@@ -2214,12 +2214,12 @@ def MultiTargetTask_FiringRates_DifferenceBetweenBlocks_multichan(hdf_files, syn
 		ind_hold_center = cb_block.ind_check_reward_states - 4
 		ind_picture_onset = cb_block.ind_check_reward_states - 5
 
-		print "Num trials in this file: %i" % (num_trials[i])
-		print "Num trials all together: %i" % (total_num_trials)
+		print("Num trials in this file: %i" % (num_trials[i]))
+		print("Num trials all together: %i" % (total_num_trials))
 		
 		# Load spike data:
 		if (spike_files[i] == ['']):
-			print 'no data'
+			print('no data')
 		else:
 			# Find lfp sample numbers corresponding to these times and the sampling frequency of the lfp data
 			lfp_state_row_ind, lfp_freq = cb_block.get_state_TDT_LFPvalues(ind_picture_onset, syncHDF_files[i])
@@ -2233,8 +2233,8 @@ def MultiTargetTask_FiringRates_DifferenceBetweenBlocks_multichan(hdf_files, syn
 				trial_targ1 = 99
 				trial_targ2 = 199
 
-			print "Trials needed in Block A: %i" % (trial_targ1)
-			print "Trials needed in Block A prime: %i" % (trial_targ2)
+			print("Trials needed in Block A: %i" % (trial_targ1))
+			print("Trials needed in Block A prime: %i" % (trial_targ2))
 
 			# Load spike data for first 96 channels and find average firing rates
 			if spike_files[i][0] != '':
@@ -2250,29 +2250,29 @@ def MultiTargetTask_FiringRates_DifferenceBetweenBlocks_multichan(hdf_files, syn
 				# Output of get_avg_firing_rates_range method is a dictionary with keys equal to the channel numbers and 
 				# entries as an array of firing rate for each unit on the channel.
 				if i==0 and (num_trials[i]>trial_targ2):
-					print "Case 1 for file %i" % (i)
+					print("Case 1 for file %i" % (i))
 					sc_fr_blockA = spike1.get_avg_firing_rates_range(low_channels, times_row_ind[0], times_row_ind[trial_targ1])
 					sc_fr_blockAprime = spike1.get_avg_firing_rates_range(low_channels, times_row_ind[trial_targ2], times_row_ind[-1])
 				if i==0 and (num_trials[i]<=trial_targ2):
-					print "Case 2 for file %i" % (i)
+					print("Case 2 for file %i" % (i))
 					sc_fr_blockA = spike1.get_avg_firing_rates_range(low_channels, times_row_ind[0], times_row_ind[np.min([trial_targ1,num_trials[i]-1])])
 					#sc_fr_blockAprime = spike.get_avg_firing_rates_range(channel, times_row_ind[249], times_row_ind[-1])
 				if i>0 and (total_num_trials>trial_targ2) and ((total_num_trials - num_trials[i]) < trial_targ1):
-					print total_num_trials - num_trials[i], trial_targ1
-					print "Case 3 for file %i" % (i)
+					print(total_num_trials - num_trials[i], trial_targ1)
+					print("Case 3 for file %i" % (i))
 					sc_fr_blockA = spike1.get_avg_firing_rates_range(low_channels, times_row_ind[0], times_row_ind[np.min([num_trials[i], trial_targ1 - total_num_trials + num_trials[i]])])
 					sc_fr_blockAprime = spike1.get_avg_firing_rates_range(low_channels, times_row_ind[trial_targ2 - total_num_trials + num_trials[i]], times_row_ind[-1])
 				if i>0 and (total_num_trials>trial_targ2) and ((total_num_trials - num_trials[i]) > trial_targ1):
-					print "Case 4 for file %i" % (i)
-					print np.max([0, trial_targ2 - total_num_trials + num_trials[i]])
+					print("Case 4 for file %i" % (i))
+					print(np.max([0, trial_targ2 - total_num_trials + num_trials[i]]))
 					sc_fr_blockAprime = spike1.get_avg_firing_rates_range(low_channels, times_row_ind[np.max([0, trial_targ2 - total_num_trials + num_trials[i]])], times_row_ind[-1])
 				if i>0 and (total_num_trials < trial_targ2) and ((total_num_trials - num_trials[i]) <trial_targ1):
-					print "Case 5 for file %i" % (i)
+					print("Case 5 for file %i" % (i))
 					sc_fr_blockA = spike1.get_avg_firing_rates_range(low_channels, times_row_ind[0], times_row_ind[np.min([num_trials[i], trial_targ1 - total_num_trials + num_trials[i]])])
 
 				# Combine lists of spike rates across files. Change everything to long arrays.
 				if i==0:
-					print sc_fr_blockA
+					print(sc_fr_blockA)
 					window_fr_blockA_lowchannels = sc_fr_blockA
 					window_fr_blockAprime_lowchannels = sc_fr_blockAprime
 				else:
@@ -2310,7 +2310,7 @@ def MultiTargetTask_FiringRates_DifferenceBetweenBlocks_multichan(hdf_files, syn
 
 				# Combine lists of spike rates across files. Change everything to long arrays.
 				if i==0:
-					print sc_fr_blockA
+					print(sc_fr_blockA)
 					window_fr_blockA_highchannels = sc_fr_blockA
 					window_fr_blockAprime_highchannels = sc_fr_blockAprime
 				else:
@@ -2371,10 +2371,10 @@ def TwoTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files
 
 			# Load spike data and find all sort codes associated with good channels
 			if channel < 97:
-				print channel
+				print(channel)
 				spike = OfflineSorted_CSVFile(spike_files[i][0])
 			else:
-				print channel
+				print(channel)
 				spike = OfflineSorted_CSVFile(spike_files[i][1])
 
 			# Get matrix that is (Num units on channel)x(num trials in hdf_file) containing the firing rates during the
@@ -2442,10 +2442,10 @@ def ThreeTargetTask_MaxFiringRates_PictureOnset(hdf_files, syncHDF_files, spike_
 
 			# Load spike data and find all sort codes associated with good channels
 			if channel < 97:
-				print channel
+				print(channel)
 				spike = OfflineSorted_CSVFile(spike_files[i][0])
 			else:
-				print channel
+				print(channel)
 				spike = OfflineSorted_CSVFile(spike_files[i][1])
 
 			# Get matrix that is (Num units on channel)x(num trials in hdf_file) containing the firing rates during the
@@ -2519,8 +2519,8 @@ def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, sp
 	mt = (cb.state_time[cb.ind_target_states + 1] - cb.state_time[cb.ind_target_states])/60.
 
 
-	print "Total trials: ", total_trials
-	print "Length reaction time vec: ", len(rt)
+	print("Total trials: ", total_trials)
+	print("Length reaction time vec: ", len(rt))
 
 	# 2. Get firing rates from units on indicated channel around time of target presentation on all trials. Note that
 	# 	window_fr is a dictionary with elements indexed such that the index matches the corresponding set of hdf_files. Each
@@ -2538,7 +2538,7 @@ def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, sp
 		nll = lambda *args: -loglikelihood_ThreeTargetTask_Qlearning(*args)
 		result = op.minimize(nll, [0.2, 1], args=(Q_initial, chosen_target, rewards, targets_on, instructed_or_freechoice), bounds=[(0,1),(0,None)])
 		alpha_ml, beta_ml = result["x"]
-		print "Best fitting alpha and beta are: ", alpha_ml, beta_ml
+		print("Best fitting alpha and beta are: ", alpha_ml, beta_ml)
 		# RL model fit for Q values
 		Q_low, Q_mid, Q_high, prob_choice_low, prob_choice_mid, prob_choice_high, log_likelihood = ThreeTargetTask_Qlearning([alpha_ml, beta_ml], Q_initial, chosen_target, rewards, targets_on, instructed_or_freechoice)
 	else:
@@ -2582,15 +2582,15 @@ def ThreeTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, sp
 		x = np.transpose(x)
 		x = np.hstack((x, np.ones([len(trial_inds),1]))) 	# use this in place of add_constant which doesn't work when constant Q values are used
 		#x = sm.add_constant(x, prepend=False)
-		print x.shape
+		print(x.shape)
 		y = unit_data[trial_inds]
-		print y.shape
+		print(y.shape)
 		#y = y/np.max(y)  # normalize y
 
-		print "Regression for unit ", k
+		print("Regression for unit ", k)
 		model_glm = sm.OLS(y,x)
 		fit_glm = model_glm.fit()
-		print fit_glm.summary()
+		print(fit_glm.summary())
 
 	return window_fr, window_fr_smooth, fr_mat, x, y, Q_low, Q_mid, Q_high
 
@@ -2640,8 +2640,8 @@ def TwoTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, spik
 	mt = (cb.state_time[cb.ind_target_states + 1] - cb.state_time[cb.ind_target_states])/60.
 
 
-	print "Total trials: ", total_trials
-	print "Length reaction time vec: ", len(rt)
+	print("Total trials: ", total_trials)
+	print("Length reaction time vec: ", len(rt))
 
 	# 2. Get firing rates from units on indicated channel around time of target presentation on all trials. Note that
 	# 	window_fr is a dictionary with elements indexed such that the index matches the corresponding set of hdf_files. Each
@@ -2659,7 +2659,7 @@ def TwoTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, spik
 		nll = lambda *args: -logLikelihoodRLPerformance(*args)
 		result = op.minimize(nll, [0.2, 1], args=(Q_initial, rewards, chosen_target, instructed_or_freechoice), bounds=[(0,1),(0,None)])
 		alpha_ml, beta_ml = result["x"]
-		print "Best fitting alpha and beta are: ", alpha_ml, beta_ml
+		print("Best fitting alpha and beta are: ", alpha_ml, beta_ml)
 		# RL model fit for Q values
 		Q_low, Q_high, prob_choice_low, log_likelihood = RLPerformance([alpha_ml, beta_ml], Q_initial, rewards,  chosen_target, instructed_or_freechoice)
 	else:
@@ -2699,15 +2699,15 @@ def TwoTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, spik
 		x = np.transpose(x)
 		x = np.hstack((x, np.ones([len(trial_inds),1]))) 	# use this in place of add_constant which doesn't work when constant Q values are used
 		#x = sm.add_constant(x, prepend=False)
-		print x.shape
+		print(x.shape)
 		y = unit_data[trial_inds]
-		print y.shape
+		print(y.shape)
 		#y = y/np.max(y)  # normalize y
 
-		print "Regression for unit ", k
+		print("Regression for unit ", k)
 		model_glm = sm.OLS(y,x)
 		fit_glm = model_glm.fit()
-		print fit_glm.summary()
+		print(fit_glm.summary())
 
 	return window_fr, window_fr_smooth, fr_mat, x, y, Q_low, Q_high
 
@@ -2777,7 +2777,7 @@ def ThreeTargetTask_RegressedFiringRatesWithValue_PictureOnset(hdf_files, syncHD
 	nll = lambda *args: -loglikelihood_ThreeTargetTask_Qlearning(*args)
 	result = op.minimize(nll, [0.2, 1], args=(Q_initial, chosen_target, rewards, targets_on, instructed_or_freechoice), bounds=[(0,1),(0,None)])
 	alpha_ml, beta_ml = result["x"]
-	print "Best fitting alpha and beta are: ", alpha_ml, beta_ml
+	print("Best fitting alpha and beta are: ", alpha_ml, beta_ml)
 	# RL model fit for Q values
 	Q_low, Q_mid, Q_high, prob_choice_low, prob_choice_mid, prob_choice_high, log_likelihood = ThreeTargetTask_Qlearning([alpha_ml, beta_ml], Q_initial, chosen_target, rewards, targets_on, instructed_or_freechoice)
 
@@ -2812,18 +2812,18 @@ def ThreeTargetTask_RegressedFiringRatesWithValue_PictureOnset(hdf_files, syncHD
 		x = np.transpose(x)
 		x = np.hstack((x, np.ones([len(trial_inds),1]))) 	# use this in place of add_constant which doesn't work when constant Q values are used
 		#x = sm.add_constant(x, prepend=False)
-		print x.shape
+		print(x.shape)
 		y = unit_data[trial_inds]
 		# z-score y
 		y_zscore = stats.zscore(y)
-		print y.shape
+		print(y.shape)
 		#y = y/np.max(y)  # normalize y
 
 		try:
-			print "Regression for unit ", k
+			print("Regression for unit ", k)
 			model_glm = sm.OLS(y_zscore,x)
 			fit_glm = model_glm.fit()
-			print fit_glm.summary()
+			print(fit_glm.summary())
 
 			regress_coef = fit_glm.params[1] 		# The regression coefficient for Qmid is the second parameter
 			regress_intercept = y[0] - regress_coef*Q_mid[trial_inds[0]]
@@ -2902,18 +2902,18 @@ def ThreeTargetTask_RegressedFiringRatesWithValue_PictureOnset(hdf_files, syncHD
 		x = np.transpose(x)
 		x = np.hstack((x, np.ones([len(trial_inds),1]))) 	# use this in place of add_constant which doesn't work when constant Q values are used
 		#x = sm.add_constant(x, prepend=False)
-		print x.shape
+		print(x.shape)
 		y = unit_data[trial_inds]
 		# z-score y
 		y_zscore = stats.zscore(y)
-		print y.shape
+		print(y.shape)
 		#y = y/np.max(y)  # normalize y
 
 		try:
-			print "Regression for unit ", k
+			print("Regression for unit ", k)
 			model_glm_late = sm.OLS(y_zscore,x)
 			fit_glm_late = model_glm_late.fit()
-			print fit_glm_late.summary()
+			print(fit_glm_late.summary())
 
 			regress_coef = fit_glm_late.params[1] 		# The regression coefficient for Qmid is the second parameter
 			regress_intercept = y[0] - regress_coef*Q_mid[trial_inds[0]]
@@ -2977,8 +2977,8 @@ def ThreeTargetTask_RegressedFiringRatesWithValue_PictureOnset(hdf_files, syncHD
 
 			dta_all = pd.DataFrame(dta_all, columns = ['Bin', 'Condition', 'FR'])
 			bin_centers = (bins[1:] + bins[:-1])/2.
-			print len(bin_centers)
-			print len(avg_FR_late)
+			print(len(bin_centers))
+			print(len(avg_FR_late))
 			
 			'''
 			formula = 'FR ~ C(Bin) + C(Condition) + C(Bin):C(Condition)'
@@ -3088,7 +3088,7 @@ def ThreeTargetTask_PeakFiringRatesWithValue_PictureOnset(hdf_files, syncHDF_fil
 	nll = lambda *args: -loglikelihood_ThreeTargetTask_Qlearning(*args)
 	result = op.minimize(nll, [0.2, 1], args=(Q_initial, chosen_target, rewards, targets_on, instructed_or_freechoice), bounds=[(0,1),(0,None)])
 	alpha_ml, beta_ml = result["x"]
-	print "Best fitting alpha and beta are: ", alpha_ml, beta_ml
+	print("Best fitting alpha and beta are: ", alpha_ml, beta_ml)
 	# RL model fit for Q values
 	Q_low, Q_mid, Q_high, prob_choice_low, prob_choice_mid, prob_choice_high, log_likelihood = ThreeTargetTask_Qlearning([alpha_ml, beta_ml], Q_initial, chosen_target, rewards, targets_on, instructed_or_freechoice)
 
@@ -3245,7 +3245,7 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files, cd_only
 			all_units1, total_units1 = spike1.find_unit_sc(spike1.good_channels)
 			all_units2, total_units2 = spike2.find_unit_sc(spike2.good_channels)
 
-			print "Total number of units: ", total_units1 + total_units2
+			print("Total number of units: ", total_units1 + total_units2)
 
 			if cd_only:
 				cd_units = [1, 3, 4, 17, 18, 20, 40, 41, 54, 56, 57, 63, 64, 72, 75, 81, 83, 88, 89, 96, 100, 112, 114, 126, 130, 140, 143, 146, 156, 157, 159]
@@ -3299,7 +3299,7 @@ def ThreeTargetTask_SpikeAnalysis(hdf_files, syncHDF_files, spike_files, cd_only
 			MH_ind = np.ravel(np.nonzero([np.array_equal(target_options[j,:], [0,1,1]) for j in range(int(num_successful_trials[i]))]))
 			avg_psth1, smooth_avg_psth1, unit_list1 = spike1.compute_multiple_channel_avg_psth(spike1_good_channels, times_row_ind[MH_ind],t_before,t_after,t_resolution)
 			avg_psth2, smooth_avg_psth2, unit_list2 = spike2.compute_multiple_channel_avg_psth(spike2_good_channels, times_row_ind[MH_ind],t_before,t_after,t_resolution)
-			print unit_list1
+			print(unit_list1)
 			plt.subplot(3,2,3)
 			plt.title('Middle-High Presented')
 			plt.plot(smooth_avg_psth1.T)
@@ -3906,7 +3906,7 @@ def TwoTargetTask_RegressFiringRates_Value(hdf_files, syncHDF_files, spike_files
 		y = unit_data[trial_inds]
 		#y = y/np.max(y)  # normalize y
 
-		print "Regression for timebin ", k
+		print("Regression for timebin ", k)
 		model_glm = sm.OLS(y,x)
 		fit_glm = model_glm.fit()
 		beta_Q_low[k] = fit_glm.params[0]
@@ -3970,19 +3970,19 @@ def ThreeTargetTask_DecodeChoice_LogisticRegression(hdf_files, syncHDF_files, sp
 	# Get session information for plot
 	str_ind = hdf_files[0].index('201')  	# search for beginning of year in string (used 201 to accomodate both 2016 and 2017)
 	sess_name = 'Mario' + hdf_files[0][str_ind:str_ind + 8]
-	print sess_name
+	print(sess_name)
 	# Define variables
 	choices = np.array([])
 	num_trials = np.zeros(len(hdf_files))
 	all_fr_smooth = dict()
  
 	for i, hdf_file in enumerate(hdf_files):
-		print "Open HDF file number %f" % (i + 1)
+		print("Open HDF file number %f" % (i + 1))
 		# 1. Load behavior data and pull out trial indices for the designated trial case
-		print "Loading behavior"
+		print("Loading behavior")
 		cb_block = ChoiceBehavior_ThreeTargets(hdf_file)
 		num_trials[i] = cb_block.num_successful_trials
-		print "Getting choice information"
+		print("Getting choice information")
 		targets_on, chosen_target, rewards, instructed_or_freechoice = cb_block.GetChoicesAndRewards()
 		ind_fc_LVMV = np.array([ind for ind in range(int(num_trials[i])) if np.array_equal(targets_on[ind],[1,1,0])])
 		chosen_target_fc_LVMV = chosen_target[ind_fc_LVMV]
@@ -3995,7 +3995,7 @@ def ThreeTargetTask_DecodeChoice_LogisticRegression(hdf_files, syncHDF_files, sp
 		else:
 			inds = ind_check_reward[ind_fc_LVMV]
 
-		print "Getting spike data"
+		print("Getting spike data")
 		# 2. Get all spike data
 		if (spike_files[i] != ''):
 			# Find lfp sample numbers corresponding to these times and the sampling frequency of the lfp data
@@ -4033,7 +4033,7 @@ def ThreeTargetTask_DecodeChoice_LogisticRegression(hdf_files, syncHDF_files, sp
 						else:
 							all_fr_smooth[str(chann+96) + '_' + str(sc)] = psth
 
-	print "Reformatting spike data"		
+	print("Reformatting spike data"		)
 	# 3. Re-format spike data into 3-dim array of units x trials x timepoints
 	num_keys = np.shape(all_fr_smooth.keys())[0]
 	num_time_bins = psth.shape[1]
@@ -4043,7 +4043,7 @@ def ThreeTargetTask_DecodeChoice_LogisticRegression(hdf_files, syncHDF_files, sp
 	for k, entry in enumerate(all_fr_smooth.keys()):
 		fr_mat[k,:,:] = all_fr_smooth[entry]
 	
-	print "Starting logistic regression"
+	print("Starting logistic regression")
 	# 4. Do logistic regression for each timepoint
 	for l in range(num_time_bins)[1:]:
 		# 3. Create firing rate matrix with size units x trials for each time point
@@ -4054,13 +4054,13 @@ def ThreeTargetTask_DecodeChoice_LogisticRegression(hdf_files, syncHDF_files, sp
 		
 		# 4. Do regression for each bin 
 		y = choices
-		print np.sum(x,1)
+		print(np.sum(x,1))
 
-		print "Regression for bin ", l
+		print("Regression for bin ", l)
 		#model_glm = sm.OLS(y,x, family = sm.families.Binomial())
 		model_glm = sm.GLM(y,x, family = sm.families.Binomial())
 		fit_glm = model_glm.fit()
-		print fit_glm.summary()
+		print(fit_glm.summary())
 
 	return choices
 
@@ -4119,9 +4119,9 @@ def Compare_QValue_Models_ThreeTarget(hdf_files):
 	BIC = -2*log_likelihood + len(result["x"])*np.log(len(Q_mid))
 	BIC2 = -2*log_likelihood2 + len(result2["x"])*np.log(len(Q_mid2))
 	BIC3 = -2*log_likelihood3 + len(result3["x"])*np.log(len(Q_mid3))
-	print "Accuracy Model 1 = %0.2f, BIC = %0.2f" % (np.mean(accuracy), BIC)
-	print "Accuracy Model 2 = %0.2f, BIC = %0.2f" % (np.mean(accuracy2), BIC2)
-	print "Accuracy Model 3 = %0.2f, BIC = %0.2f" % (np.mean(accuracy3), BIC3)
+	print("Accuracy Model 1 = %0.2f, BIC = %0.2f" % (np.mean(accuracy), BIC))
+	print("Accuracy Model 2 = %0.2f, BIC = %0.2f" % (np.mean(accuracy2), BIC2))
+	print("Accuracy Model 3 = %0.2f, BIC = %0.2f" % (np.mean(accuracy3), BIC3))
 
 	# 6. Compare to real behavior
 	num_trials_slide = 10

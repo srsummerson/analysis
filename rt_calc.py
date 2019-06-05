@@ -114,7 +114,7 @@ def compute_rt_per_trial_CenterOut(hdf_file, method, thres, plot_results):
     elif method==2:
         kin_feat = get_rt_change_deriv(total_vel.T, vel_bins, d_vel_thres = thres, fs=60)
     else:
-        print "Did not choose valid method"
+        print("Did not choose valid method")
         kin_feat = np.zeros((len(total_vel),2))
     
     
@@ -149,7 +149,7 @@ def get_cursor_velocity(hdf, go_cue_ix, before_cue_time, after_cue_time, fs=60.,
             cursor.append(hdf.root.task[ix+g]['cursor'][:, [0, 2]])
 
         except:
-            print 'skipping index: ', g, ' -- too close to beginning or end of file'
+            print('skipping index: ', g, ' -- too close to beginning or end of file')
             skipped_indices = np.append(skipped_indices, k)
 
     cursor = np.dstack((cursor))    # time x (x,y) x trial
@@ -197,7 +197,7 @@ def get_cursor_velocity_in_targ_dir(hdf, go_cue_ix, before_cue_time, after_cue_t
             target.append(hdf.root.task[g+4]['target'][[0, 2]])
 
         except:
-            print 'skipping index: ', g, ' -- too close to beginning or end of file'
+            print('skipping index: ', g, ' -- too close to beginning or end of file')
     cursor = np.dstack((cursor))    # time x (x,y) x trial
     target = np.vstack((target)).T #  (x,y) x trial
 
@@ -332,7 +332,7 @@ def get_kin_sig_shenoy_method(kin_sig, bins, perc=.2, start_tm = .1):
             bin_max = local_max_ind[local_ind]+1 #write down the time
 
         else:
-            print ' no local maxima found -- using maximum speed point as starting pt'
+            print(' no local maxima found -- using maximum speed point as starting pt')
             bin_max = np.argmax(spd)
        
 
@@ -343,7 +343,7 @@ def get_kin_sig_shenoy_method(kin_sig, bins, perc=.2, start_tm = .1):
         try:
             bin_rt = np.nonzero(rev_spd<percent0)[0][0]
         except:
-            print 'never falls below percent of max speed'
+            print('never falls below percent of max speed')
             bin_rt = len(rev_spd)-1
         
         kin_feat[trl, 0] = rev_ind[bin_rt] #Index of 'RT'
