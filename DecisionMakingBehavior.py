@@ -22,6 +22,7 @@ from PulseMonitorData import findIBIs
 from offlineSortedSpikeAnalysis import OfflineSorted_CSVFile
 from logLikelihoodRLPerformance import logLikelihoodRLPerformance, RLPerformance
 
+
 cd_units = [1, 3, 4, 17, 18, 20, 40, 41, 54, 56, 57, 63, 64, 72, 75, 81, 83, 88, 89, 96, 100, 112, 114, 126, 130, 140, 143, 146, 156, 157, 159]
 acc_units = [5, 6, 19, 22, 30, 39, 42, 43, 55, 58, 59, 69, 74, 77, 85, 90, 91, 102, 105, 121, 128]	
 dir = "C:/Users/ss45436/Box/UC Berkeley/Cd Stim/Neural Correlates/Mario/spike_data/"			
@@ -44,18 +45,18 @@ class ChoiceBehavior_ThreeTargets():
 
 	def __init__(self, hdf_file):
 		self.filename =  hdf_file
-		self.table = tables.openFile(self.filename)
+		self.table = tables.open_file(self.filename)
 
 		self.state = self.table.root.task_msgs[:]['msg']
 		self.state_time = self.table.root.task_msgs[:]['time']
 		self.trial_type = self.table.root.task[:]['target_index']
 		self.targets_on = self.table.root.task[:]['LHM_target_on']
 	  
-		self.ind_wait_states = np.ravel(np.nonzero(self.state == 'wait'))   # total number of unique trials
-		self.ind_center_states = np.ravel(np.nonzero(self.state == 'center'))   # total number of totals (includes repeats if trial was incomplete)
-		self.ind_hold_center_states = np.ravel(np.nonzero(self.state == 'hold_center'))
-		self.ind_target_states = np.ravel(np.nonzero(self.state == 'target'))
-		self.ind_check_reward_states = np.ravel(np.nonzero(self.state == 'check_reward'))
+		self.ind_wait_states = np.ravel(np.nonzero(self.state == b'wait'))   # total number of unique trials
+		self.ind_center_states = np.ravel(np.nonzero(self.state == b'center'))   # total number of totals (includes repeats if trial was incomplete)
+		self.ind_hold_center_states = np.ravel(np.nonzero(self.state == b'hold_center'))
+		self.ind_target_states = np.ravel(np.nonzero(self.state == b'target'))
+		self.ind_check_reward_states = np.ravel(np.nonzero(self.state == b'check_reward'))
 		#self.trial_type = np.ravel(trial_type[state_time[ind_center_states]])
 		#self.stress_type = np.ravel(stress_type[state_time[ind_center_states]])
 		
@@ -136,7 +137,7 @@ class ChoiceBehavior_ThreeTargets():
 			targ_presented = targets_on[freechoice_trial_ind[i]]
 			# L-M targets presented
 			if (targ_presented[0]==1)&(targ_presented[2]==1):
-				if choice=='hold_targetM':
+				if choice==b'hold_targetM':
 					all_choices[i] = 1		# optimal choice was made
 					LM_choices = np.append(LM_choices, 1)
 				else:
@@ -144,7 +145,7 @@ class ChoiceBehavior_ThreeTargets():
 
 			# L-H targets presented
 			if (targ_presented[0]==1)&(targ_presented[1]==1):
-				if choice=='hold_targetH':
+				if choice==b'hold_targetH':
 					all_choices[i] = 1
 					LH_choices = np.append(LH_choices, 1)
 				else:
@@ -152,7 +153,7 @@ class ChoiceBehavior_ThreeTargets():
 
 			# M-H targets presented
 			if (targ_presented[1]==1)&(targ_presented[2]==1):
-				if choice=='hold_targetH':
+				if choice==b'hold_targetH':
 					all_choices[i] = 1
 					MH_choices = np.append(MH_choices, 1)
 				else:
@@ -233,15 +234,15 @@ class ChoiceBehavior_ThreeTargets():
 		target_choices = self.state[self.ind_check_reward_states - 2]
 		target_options = self.targets_on[self.state_time[self.ind_check_reward_states]]  # array of three boolean values: LHM
 		target_chosen = np.zeros((len(target_choices), 3)) 								 # placeholder for array with boolen values indicating choice: LHM
-		rewarded_choice = np.array(self.state[self.ind_check_reward_states + 1] == 'reward', dtype = float)
+		rewarded_choice = np.array(self.state[self.ind_check_reward_states + 1] == b'reward', dtype = float)
 		num_trials = len(target_choices)
 
 		for i, choice in enumerate(target_choices):
-			if choice == 'hold_targetM':
+			if choice == b'hold_targetM':
 				target_chosen[i,2] = 1
-			if choice == 'hold_targetL':
+			if choice == b'hold_targetL':
 				target_chosen[i,0] = 1
-			if choice == 'hold_targetH':
+			if choice == b'hold_targetH':
 				target_chosen[i,1] = 1
 
 		return target_options, target_chosen, rewarded_choice
@@ -249,15 +250,15 @@ class ChoiceBehavior_ThreeTargets():
 	def GetChoicesAndRewards(self):
 		ind_holds = self.ind_check_reward_states - 2
 		ind_rewards = self.ind_check_reward_states + 1
-		rewards = np.array([float(st=='reward') for st in self.state[ind_rewards]])
+		rewards = np.array([float(st==b'reward') for st in self.state[ind_rewards]])
 		targets_on = self.targets_on[self.state_time[self.ind_check_reward_states]]  # array of three boolean values: LHM
 		instructed_or_freechoice = np.ravel(self.trial_type[self.state_time[self.ind_check_reward_states]])  # = 1: instructed, =2: free-choice
 		chosen_target = np.zeros(len(ind_holds))
 		
 		for i, ind in enumerate(ind_holds):
-			if self.state[ind] == 'hold_targetM':
+			if self.state[ind] == b'hold_targetM':
 				chosen_target[i] = 1
-			elif self.state[ind] == 'hold_targetH':
+			elif self.state[ind] == b'hold_targetH':
 				chosen_target[i] = 2
 
 		return targets_on, chosen_target, rewards, instructed_or_freechoice
@@ -266,17 +267,17 @@ class ChoiceBehavior_TwoTargets():
 
 	def __init__(self, hdf_file):
 		self.filename =  hdf_file
-		self.table = tables.openFile(self.filename)
+		self.table = tables.open_file(self.filename)
 
 		self.state = self.table.root.task_msgs[:]['msg']
 		self.state_time = self.table.root.task_msgs[:]['time']
 		self.trial_type = self.table.root.task[:]['target_index']
 	  
-		self.ind_wait_states = np.ravel(np.nonzero(self.state == 'wait'))   # total number of unique trials
-		self.ind_center_states = np.ravel(np.nonzero(self.state == 'center'))   # total number of totals (includes repeats if trial was incomplete)
-		self.ind_hold_center_states = np.ravel(np.nonzero(self.state == 'hold_center'))
-		self.ind_target_states = np.ravel(np.nonzero(self.state == 'target'))
-		self.ind_check_reward_states = np.ravel(np.nonzero(self.state == 'check_reward'))
+		self.ind_wait_states = np.ravel(np.nonzero(self.state == b'wait'))   # total number of unique trials
+		self.ind_center_states = np.ravel(np.nonzero(self.state == b'center'))   # total number of totals (includes repeats if trial was incomplete)
+		self.ind_hold_center_states = np.ravel(np.nonzero(self.state == b'hold_center'))
+		self.ind_target_states = np.ravel(np.nonzero(self.state == b'target'))
+		self.ind_check_reward_states = np.ravel(np.nonzero(self.state == b'check_reward'))
 		
 		self.num_trials = self.ind_center_states.size
 		self.num_successful_trials = self.ind_check_reward_states.size
@@ -296,6 +297,7 @@ class ChoiceBehavior_TwoTargets():
 		'''
 		# Load syncing data
 		hdf_times = dict()
+		print(syncHDF_file)
 		sp.io.loadmat(syncHDF_file, hdf_times)
 		hdf_rows = np.ravel(hdf_times['row_number'])
 		hdf_rows = [val for val in hdf_rows]
@@ -347,7 +349,7 @@ class ChoiceBehavior_TwoTargets():
 		freechoice_trial_ind = np.ravel(np.nonzero(freechoice_trial))
 		target_choices = self.state[self.ind_check_reward_states - 2]
 		num_trials = len(target_choices)
-		all_choices = np.array([int(choice=='hold_targetH') for choice in target_choices[freechoice_trial_ind]])
+		all_choices = np.array([int(choice==b'hold_targetH') for choice in target_choices[freechoice_trial_ind]])
 		cmap = mpl.cm.hsv
 
 		sliding_avg_all_choices = trial_sliding_avg(all_choices, num_trials_slide)
@@ -390,14 +392,14 @@ class ChoiceBehavior_TwoTargets():
 		instructed_or_freechoice = np.ravel(self.trial_type[self.state_time[self.ind_check_reward_states]])
 		target_options = np.zeros((len(target_choices), 2))  	# array of two boolean values: LH
 		target_chosen = np.zeros((len(target_choices), 2)) 		# placeholder for array with boolen values indicating choice: LH
-		rewarded_choice = np.array(self.state[self.ind_check_reward_states + 1] == 'reward', dtype = float)
+		rewarded_choice = np.array(self.state[self.ind_check_reward_states + 1] == b'reward', dtype = float)
 		num_trials = len(target_choices)
 
 		for i, choice in enumerate(target_choices):
-			if choice == 'hold_targetL':
+			if choice == b'hold_targetL':
 				target_chosen[i,0] = 1
 				target_options[i,:] = [1,instructed_or_freechoice[i] - 1]
-			if choice == 'hold_targetH':
+			if choice == b'hold_targetH':
 				target_chosen[i,1] = 1
 				target_options[i,:] = [instructed_or_freechoice[i] - 1, 1]
 
@@ -420,10 +422,10 @@ class ChoiceBehavior_TwoTargets():
 
 		ind_holds = self.ind_check_reward_states - 2
 		ind_rewards = self.ind_check_reward_states + 1
-		rewards = np.array([float(st=='reward') for st in self.state[ind_rewards]])
+		rewards = np.array([float(st==b'reward') for st in self.state[ind_rewards]])
 		instructed_or_freechoice = np.ravel(self.trial_type[self.state_time[self.ind_check_reward_states]])  # = 1: instructed, =2: free-choice
 		chosen_target = np.zeros(len(ind_holds))
-		chosen_target = np.array([(int(self.state[ind]=='hold_targetH') + 1) for ind in ind_holds])
+		chosen_target = np.array([(int(self.state[ind]==b'hold_targetH') + 1) for ind in ind_holds])
 
 		'''
 		for i, ind in enumerate(ind_holds):
@@ -446,7 +448,7 @@ class ChoiceBehavior_ThreeTargets_Stimulation():
 	def __init__(self, hdf_files, num_trials_A, num_trials_B):
 		for i, hdf_file in enumerate(hdf_files): 
 			filename =  hdf_file
-			table = tables.openFile(filename)
+			table = tables.open_file(filename)
 			if i == 0:
 				self.state = table.root.task_msgs[:]['msg']
 				self.state_time = table.root.task_msgs[:]['time']
@@ -466,11 +468,11 @@ class ChoiceBehavior_ThreeTargets_Stimulation():
 		
 		if len(hdf_files) > 1:
 			self.targets_on = np.reshape(self.targets_on, (len(self.targets_on)/3,3))  				# this should contain triples indicating targets
-		self.ind_wait_states = np.ravel(np.nonzero(self.state == 'wait'))   # total number of unique trials
-		self.ind_center_states = np.ravel(np.nonzero(self.state == 'center'))   # total number of totals (includes repeats if trial was incomplete)
-		self.ind_hold_center_states = np.ravel(np.nonzero(self.state == 'hold_center'))
-		self.ind_target_states = np.ravel(np.nonzero(self.state == 'target'))
-		self.ind_check_reward_states = np.ravel(np.nonzero(self.state == 'check_reward'))
+		self.ind_wait_states = np.ravel(np.nonzero(self.state == b'wait'))   # total number of unique trials
+		self.ind_center_states = np.ravel(np.nonzero(self.state == b'center'))   # total number of totals (includes repeats if trial was incomplete)
+		self.ind_hold_center_states = np.ravel(np.nonzero(self.state == b'hold_center'))
+		self.ind_target_states = np.ravel(np.nonzero(self.state == b'target'))
+		self.ind_check_reward_states = np.ravel(np.nonzero(self.state == b'check_reward'))
 		
 		self.num_trials = self.ind_center_states.size
 		self.num_successful_trials = self.ind_check_reward_states.size
@@ -561,7 +563,7 @@ class ChoiceBehavior_ThreeTargets_Stimulation():
 			targ_presented = targets_on[freechoice_trial_ind_A[i]]
 			# L-M targets presented
 			if (targ_presented[0]==1)&(targ_presented[2]==1):
-				if choice=='hold_targetM':
+				if choice==b'hold_targetM':
 					all_choices_A[i] = 1		# optimal choice was made
 					LM_choices_A = np.append(LM_choices_A, 1)
 				else:
@@ -569,7 +571,7 @@ class ChoiceBehavior_ThreeTargets_Stimulation():
 
 			# L-H targets presented
 			if (targ_presented[0]==1)&(targ_presented[1]==1):
-				if choice=='hold_targetH':
+				if choice==b'hold_targetH':
 					all_choices_A[i] = 1
 					LH_choices_A = np.append(LH_choices_A, 1)
 				else:
@@ -577,7 +579,7 @@ class ChoiceBehavior_ThreeTargets_Stimulation():
 
 			# M-H targets presented
 			if (targ_presented[1]==1)&(targ_presented[2]==1):
-				if choice=='hold_targetH':
+				if choice==b'hold_targetH':
 					all_choices_A[i] = 1
 					MH_choices_A = np.append(MH_choices_A, 1)
 				else:
@@ -588,7 +590,7 @@ class ChoiceBehavior_ThreeTargets_Stimulation():
 			targ_presented = targets_on[freechoice_trial_ind_Aprime[i]]
 			# L-M targets presented
 			if (targ_presented[0]==1)&(targ_presented[2]==1):
-				if choice=='hold_targetM':
+				if choice==b'hold_targetM':
 					all_choices_Aprime[i] = 1		# optimal choice was made
 					LM_choices_Aprime = np.append(LM_choices_Aprime, 1)
 				else:
@@ -596,7 +598,7 @@ class ChoiceBehavior_ThreeTargets_Stimulation():
 
 			# L-H targets presented
 			if (targ_presented[0]==1)&(targ_presented[1]==1):
-				if choice=='hold_targetH':
+				if choice==b'hold_targetH':
 					all_choices_Aprime[i] = 1
 					LH_choices_Aprime = np.append(LH_choices_Aprime, 1)
 				else:
@@ -604,7 +606,7 @@ class ChoiceBehavior_ThreeTargets_Stimulation():
 
 			# M-H targets presented
 			if (targ_presented[1]==1)&(targ_presented[2]==1):
-				if choice=='hold_targetH':
+				if choice==b'hold_targetH':
 					all_choices_Aprime[i] = 1
 					MH_choices_Aprime = np.append(MH_choices_Aprime, 1)
 				else:
@@ -675,15 +677,15 @@ class ChoiceBehavior_ThreeTargets_Stimulation():
 	def GetChoicesAndRewards(self):
 		ind_holds = self.ind_check_reward_states - 2
 		ind_rewards = self.ind_check_reward_states + 1
-		rewards = np.array([float(st=='reward') for st in self.state[ind_rewards]])
+		rewards = np.array([float(st==b'reward') for st in self.state[ind_rewards]])
 		targets_on = self.targets_on[self.state_time[self.ind_check_reward_states]]  # array of three boolean values: LHM
 		instructed_or_freechoice = np.ravel(self.trial_type[self.state_time[self.ind_check_reward_states]])  # = 1: instructed, =2: free-choice
 		chosen_target = np.zeros(len(ind_holds))
 
 		for i, ind in enumerate(ind_holds):
-			if self.state[ind] == 'hold_targetM':
+			if self.state[ind] == b'hold_targetM':
 				chosen_target[i] = 1
-			elif self.state[ind] == 'hold_targetH':
+			elif self.state[ind] == b'hold_targetH':
 				chosen_target[i] = 2
 
 		return targets_on, chosen_target, rewards, instructed_or_freechoice
@@ -804,7 +806,7 @@ class ChoiceBehavior_TwoTargets_Stimulation():
 	def __init__(self, hdf_files, num_trials_A, num_trials_B):
 		for i, hdf_file in enumerate(hdf_files): 
 			filename =  hdf_file
-			table = tables.openFile(filename)
+			table = tables.open_file(filename)
 			if i == 0:
 				self.state = table.root.task_msgs[:]['msg']
 				self.state_time = table.root.task_msgs[:]['time']
@@ -818,11 +820,11 @@ class ChoiceBehavior_TwoTargets_Stimulation():
 				self.targetL = np.vstack([self.targetL, table.root.task[:]['targetL']])
 				self.targetH = np.vstack([self.targetH, table.root.task[:]['targetH']])
 				
-		self.ind_wait_states = np.ravel(np.nonzero(self.state == 'wait'))   # total number of unique trials
-		self.ind_center_states = np.ravel(np.nonzero(self.state == 'center'))   # total number of totals (includes repeats if trial was incomplete)
-		self.ind_hold_center_states = np.ravel(np.nonzero(self.state == 'hold_center'))
-		self.ind_target_states = np.ravel(np.nonzero(self.state == 'target'))
-		self.ind_check_reward_states = np.ravel(np.nonzero(self.state == 'check_reward'))
+		self.ind_wait_states = np.ravel(np.nonzero(self.state == b'wait'))   # total number of unique trials
+		self.ind_center_states = np.ravel(np.nonzero(self.state == b'center'))   # total number of totals (includes repeats if trial was incomplete)
+		self.ind_hold_center_states = np.ravel(np.nonzero(self.state == b'hold_center'))
+		self.ind_target_states = np.ravel(np.nonzero(self.state == b'target'))
+		self.ind_check_reward_states = np.ravel(np.nonzero(self.state == b'check_reward'))
 		
 		self.num_trials = self.ind_center_states.size
 		self.num_successful_trials = self.ind_check_reward_states.size
@@ -906,8 +908,8 @@ class ChoiceBehavior_TwoTargets_Stimulation():
 		# Initialize variables
 		num_FC_trials_A = len(freechoice_trial_ind_A)
 		num_FC_trials_Aprime = len(freechoice_trial_ind_Aprime)
-		all_choices_A = np.array([int(choice=='hold_targetH') for choice in target_choices_A])
-		all_choices_Aprime = np.array([int(choice=='hold_targetH') for choice in target_choices_Aprime])
+		all_choices_A = np.array([int(choice==b'hold_targetH') for choice in target_choices_A])
+		all_choices_Aprime = np.array([int(choice==b'hold_targetH') for choice in target_choices_Aprime])
 
 		sliding_avg_all_choices_A = trial_sliding_avg(all_choices_A, num_trials_slide)
 		sliding_avg_all_choices_Aprime = trial_sliding_avg(all_choices_Aprime, num_trials_slide)
@@ -955,9 +957,9 @@ class ChoiceBehavior_TwoTargets_Stimulation():
 
 		ind_holds = self.ind_check_reward_states - 2
 		ind_rewards = self.ind_check_reward_states + 1
-		rewards = np.array([float(st=='reward') for st in self.state[ind_rewards]])
+		rewards = np.array([float(st==b'reward') for st in self.state[ind_rewards]])
 		instructed_or_freechoice = np.ravel(self.trial_type[self.state_time[self.ind_check_reward_states]])  # = 1: instructed, =2: free-choice
-		chosen_target = np.array([(int(self.state[ind]=='hold_targetH') + 1) for ind in ind_holds])
+		chosen_target = np.array([(int(self.state[ind]==b'hold_targetH') + 1) for ind in ind_holds])
 
 		return chosen_target, rewards, instructed_or_freechoice
 
@@ -2381,19 +2383,23 @@ def TwoTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files
 			# designated window.
 			sc_chan = spike.find_chan_sc(channel)
 			num_units[i] = len(sc_chan)
-			for j, sc in enumerate(sc_chan):
-				sc_fr = spike.compute_window_fr(channel,sc,times_row_ind,t_before,t_after)
-				sc_fr_smooth = spike.compute_window_fr_smooth(channel,sc,times_row_ind,t_before,t_after)
-				if j == 0:
-					all_fr = sc_fr
-					all_fr_smooth = sc_fr_smooth
-				else:
-					all_fr = np.vstack([all_fr, sc_fr])
-					all_fr_smooth = np.vstack([all_fr_smooth, sc_fr_smooth])
+			
+			if (num_units[i] != 0):
+				for j, sc in enumerate(sc_chan):
+					
+					sc_fr = spike.compute_window_fr(channel,sc,times_row_ind,t_before,t_after)
+					sc_fr_smooth = spike.compute_window_fr_smooth(channel,sc,times_row_ind,t_before,t_after)
+					if j == 0:
+						all_fr = sc_fr
+						all_fr_smooth = sc_fr_smooth
+					else:
+						all_fr = np.vstack([all_fr, sc_fr])
+						all_fr_smooth = np.vstack([all_fr_smooth, sc_fr_smooth])
 
-			# Save matrix of firing rates for units on channel from trials during hdf_file as dictionary element
-			window_fr[i] = all_fr
-			window_fr_smooth[i] = all_fr_smooth
+				# Save matrix of firing rates for units on channel from trials during hdf_file as dictionary element
+				window_fr[i] = all_fr
+				window_fr_smooth[i] = all_fr_smooth
+	
 
 	return num_trials, num_units, window_fr, window_fr_smooth
 
@@ -3990,7 +3996,7 @@ def ThreeTargetTask_DecodeChoice_LogisticRegression(hdf_files, syncHDF_files, sp
 
 		ind_hold_center = cb_block.ind_check_reward_states - 4
 		ind_check_reward = cb_block.ind_check_reward_states
-		if align_to == 'hold_center':
+		if align_to == b'hold_center':
 			inds = ind_hold_center[ind_fc_LVMV]
 		else:
 			inds = ind_check_reward[ind_fc_LVMV]
@@ -4217,6 +4223,7 @@ def Compare_Qlearning_across_blocks(hdf_files):
 	Q_chosen = Q_low*np.equal(chosen_target[:150],0) + Q_mid*np.equal(chosen_target[:150],1) + Q_high*np.equal(chosen_target[:150],2)
 	RPE = rewards[:150] - Q_chosen
 
+
 	#4. Re-fit model for Block A'.
 	Q_initial = np.array([Q_low[-1], Q_mid[-1], Q_high[-1]])
 	result = op.minimize(nll, [0.2, 1], args=(Q_initial, chosen_target[250:], rewards[250:], targets_on[250:], instructed_or_freechoice[250:]), bounds=[(0.01,1),(0.01,None)])
@@ -4227,3 +4234,323 @@ def Compare_Qlearning_across_blocks(hdf_files):
 	RPE2 = rewards[250:] - Q_chosen
 
 	return Q_mid, Q_mid2, RPE, RPE2
+
+def TwoTargetTask_RegressedFiringRatesWithValue_PictureOnset(hdf_files, syncHDF_files, spike_files, channel, t_before, t_after, smoothed):
+	'''
+	This method regresses the firing rate of all units as a function of value. It then plots the firing rate as a function of 
+	the modeled value and uses the regression coefficient to plot a linear fit of the relationship between value and 
+	firing rate.
+
+	Inputs:
+	- hdf_files: list of N hdf_files corresponding to the behavior in the three target task
+	- syncHDF_files: list of N syncHDF_files that containes the syncing DIO data for the corresponding hdf_file and it's
+					TDT recording. If TDT data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, syncHDF_files should have the form [syncHDF_file1.mat, '']
+	- spike_files: list of N tuples of spike_files, where each entry is a list of 2 spike files, one corresponding to spike
+					data from the first 96 channels and the other corresponding to the spike data from the last 64 channels.
+					If spike data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, the hdf_files and syncHDF_files will both have 2 file names, and the 
+					spike_files entry should be of the form [[spike_file1.csv, spike_file2.csv], ''].
+	- channel: integer value indicating what channel will be used to regress activity
+	- t_before: time before (s) the picture onset that should be included when computing the firing rate. t_before = 0 indicates
+					that we only look from the time of onset forward when considering the window of activity.
+	- t_after: time after (s) the picture onset that should be included when computing the firing rate.
+	- smoothed: boolean indicating whether to use smoothed firing rates (True) or not (False)
+
+	'''
+	# Get session information for plot
+	str_ind = hdf_files[0].index('201')  	# search for beginning of year in string (used 201 to accomodate both 2016 and 2017)
+	sess_name = 'Luigi' + hdf_files[0][str_ind:str_ind + 8]
+	if syncHDF_files[0]!='':
+		str_ind = syncHDF_files[0].index('201')
+		session_name = 'Luigi' + syncHDF_files[0][str_ind:str_ind + 11]
+	elif syncHDF_files[1]!='':
+		str_ind = syncHDF_files[1].index('201')
+		session_name = 'Luigi' + syncHDF_files[0][str_ind:str_ind + 11]
+	else:
+		session_name = 'Unknown'
+	
+
+	# 1. Load behavior data and pull out trial indices for the designated trial case
+	cb = ChoiceBehavior_TwoTargets_Stimulation(hdf_files, 100, 100)
+	total_trials = cb.num_successful_trials
+	#targets_on = cb.targets_on[cb.state_time[cb.ind_check_reward_states]]
+
+	# 1a. Get reaction time information
+	rt = np.array([])
+	for file in hdf_files:
+		reaction_time, velocity = compute_rt_per_trial_FreeChoiceTask(file)
+		rt = np.append(rt, reaction_time)
+
+	# 1b. Get movementment time information
+	mt = (cb.state_time[cb.ind_target_states + 1] - cb.state_time[cb.ind_target_states])/60.
+
+	# 2. Get firing rates from units on indicated channel around time of target presentation on all trials. Note that
+	# 	window_fr is a dictionary with elements indexed such that the index matches the corresponding set of hdf_files. Each
+	#	dictionary element contains a matrix of size (num units)x(num trials) with elements corresponding
+	#	to the average firing rate over the window indicated.
+	num_trials, num_units, window_fr, window_fr_smooth = TwoTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files, channel, t_before, t_after)
+	cum_sum_trials = np.cumsum(num_trials).astype(int)
+	print(window_fr)
+
+	# 3. Get Q-values, chosen targets, and rewards
+	chosen_target, rewards, instructed_or_freechoice = cb.GetChoicesAndRewards()
+	
+	# Varying Q-values
+	# Find ML fit of alpha and beta
+	Q_initial = 0.5*np.ones(2)
+	nll = lambda *args: -logLikelihoodRLPerformance(*args)
+	result = op.minimize(nll, [0.2, 1], args=(Q_initial, rewards, chosen_target, instructed_or_freechoice), bounds=[(0,1),(0,None)])
+	alpha_ml, beta_ml = result["x"]
+	print("Best fitting alpha and beta are: ", alpha_ml, beta_ml)
+	# RL model fit for Q values
+	Q_low, Q_high, prob_choice_low, log_likelihood = RLPerformance([alpha_ml, beta_ml], Q_initial, rewards, chosen_target, instructed_or_freechoice)
+
+	# 4. Create firing rate matrix with size (max_num_units)x(total_trials)
+	max_num_units = int(np.max(num_units))
+	fr_mat = np.zeros([max_num_units, total_trials])
+	trial_counter = 0
+	for j in window_fr.keys():
+		if not smoothed:
+			block_fr = window_fr[j]
+		else:
+			block_fr = window_fr_smooth[j]
+		if len(block_fr.shape) == 1:
+			num_units = 1
+			num_trials = len(block_fr)
+		else:
+			num_units,num_trials = block_fr.shape 
+
+		fr_mat[:num_units,cum_sum_trials[j] - num_trials:cum_sum_trials[j]] = block_fr
+
+	
+	# 5. Do regression for each unit only on trials in Blocks A and B with spike data saved.
+	for k in range(max_num_units):
+		unit_data = fr_mat[k,:]
+		#trial_inds = np.array([index for index in ind_trial_case if unit_data[index]!=0], dtype = int)
+
+		# look at all trial types within Blocks A 
+		trial_inds = np.array([index for index in range(33,100) if unit_data[index]!=0], dtype = int)
+		
+		x = np.vstack((Q_low[trial_inds], Q_high[trial_inds]))
+		x = np.vstack((x, rt[trial_inds], mt[trial_inds], chosen_target[trial_inds], rewards[trial_inds]))
+		# include which targets were shown
+		#x = np.vstack((x, targets_on[:,0][trial_inds], targets_on[:,2][trial_inds], targets_on[:,1][trial_inds]))
+		x = np.transpose(x)
+		x = np.hstack((x, np.ones([len(trial_inds),1]))) 	# use this in place of add_constant which doesn't work when constant Q values are used
+		#x = sm.add_constant(x, prepend=False)
+		print(x.shape)
+		y = unit_data[trial_inds]
+		# z-score y
+		y_zscore = stats.zscore(y)
+		print(y.shape)
+		#y = y/np.max(y)  # normalize y
+		
+		if len(trial_inds) > 9:
+			try:
+				print("Regression for unit ", k)
+				model_glm = sm.OLS(y_zscore,x)
+				fit_glm = model_glm.fit()
+				print(fit_glm.summary())
+
+				regress_coef = fit_glm.params[0] 		# The regression coefficient for Qlow is the first parameter
+				regress_intercept = y[0] - regress_coef*Q_low[trial_inds[0]]
+
+				# Get linear regression fit for just Q_low
+				Q_low_min = np.amin(Q_low[trial_inds])
+				Q_low_max = np.amax(Q_low[trial_inds])
+				x_lin = np.linspace(Q_low_min, Q_low_max, num = len(trial_inds), endpoint = True)
+
+				m,b = np.polyfit(x_lin, y, 1)
+
+				plt.figure(k)
+				plt.subplot(1,3,1)
+				plt.scatter(Q_low[trial_inds],y, c= 'k', marker = 'o', label ='Learning Trials')
+				plt.plot(x_lin, m*x_lin + b, c = 'k')
+				#plt.plot(Q_mid[trial_inds], regress_coef*Q_mid[trial_inds] + regress_intercept, c = 'y')
+				plt.xlabel('Q_low')
+				plt.ylabel('Firing Rate (spk/s)')
+				plt.title(sess_name + ' - Channel %i - Unit %i' %(channel, k))
+
+				# save Q and firing rate data
+				Q_learning = Q_low[trial_inds]
+				FR_learning = y
+				Q_low_BlockA = Q_low[trial_inds]
+
+				max_fr = np.amax(y)
+				xlim_min = np.amin(Q_low[trial_inds])
+				xlim_max = np.amax(Q_low[trial_inds])
+
+				data_filename = session_name + ' - Channel %i - Unit %i' %(channel, k)
+				data = dict()
+				data['regression_labels'] = ['Q_low', 'Q_high','RT', 'MT', 'Choice', 'Reward']
+				data['beta_values_blockA'] = fit_glm.params
+				data['pvalues_blockA'] = fit_glm.pvalues
+				data['rsquared_blockA'] = fit_glm.rsquared
+				data['Q_low_early'] = Q_low_BlockA
+				data['FR_early'] = FR_learning
+				sp.io.savemat( dir + 'picture_onset_fr/' + data_filename + '.mat', data)
+
+
+				# Get binned firing rates: average firing rate for each of num_bins equally populated action value bins
+				num_bins = 5
+				sorted_Qvals_inds = np.argsort(Q_low[trial_inds])
+				pts_per_bin = len(trial_inds)/num_bins
+				reorg_Qvals = np.reshape(Q_low[trial_inds][sorted_Qvals_inds[:pts_per_bin*num_bins]], (pts_per_bin, num_bins), order = 'F')
+				avg_Qvals = np.nanmean(reorg_Qvals, axis = 0)
+
+				reorg_FR = np.reshape(y[sorted_Qvals_inds[:pts_per_bin*num_bins]], (pts_per_bin, num_bins), order = 'F')
+				reorg_FR_BlockA = reorg_FR
+				avg_FR = np.nanmean(reorg_FR, axis = 0)
+				sem_FR = np.nanstd(reorg_FR, axis = 0)/np.sqrt(pts_per_bin)
+
+				# Save data for binning by bins of fixed size (rather than equally populated)
+				Q_range_min = np.min(Q_low[trial_inds])
+				Q_range_max = np.max(Q_low[trial_inds])
+				FR_BlockA = y
+				
+
+				plt.figure(k)
+				plt.subplot(1,3,2)
+				plt.errorbar(avg_Qvals, avg_FR, yerr = sem_FR, fmt = '--o', color = 'k', ecolor = 'k', label = 'Learning - Avg FR')
+				plt.legend()
+			
+			except:
+				pass
+		
+		unit_data = fr_mat[k,:]
+		#trial_inds = np.array([index for index in ind_trial_case if unit_data[index]!=0], dtype = int)
+
+		# look at all trial types within Blocks A and B
+		trial_inds = np.array([index for index in range(200,len(unit_data)) if unit_data[index]!=0], dtype = int)
+		#trial_inds = np.array([index for index in range(250,len(unit_data))], dtype = int)
+		x = np.vstack((Q_low[trial_inds], Q_high[trial_inds]))
+		x = np.vstack((x, rt[trial_inds], mt[trial_inds], chosen_target[trial_inds], rewards[trial_inds]))
+		# include which targets were shown
+		#x = np.vstack((x, targets_on[:,0][trial_inds], targets_on[:,2][trial_inds], targets_on[:,1][trial_inds]))
+		x = np.transpose(x)
+		x = np.hstack((x, np.ones([len(trial_inds),1]))) 	# use this in place of add_constant which doesn't work when constant Q values are used
+		#x = sm.add_constant(x, prepend=False)
+		print(x.shape)
+		y = unit_data[trial_inds]
+		# z-score y
+		y_zscore = stats.zscore(y)
+		print(y.shape)
+		#y = y/np.max(y)  # normalize y
+
+		try:
+			print("Regression for unit ", k)
+			model_glm_late = sm.OLS(y_zscore,x)
+			fit_glm_late = model_glm_late.fit()
+			print(fit_glm_late.summary())
+
+			regress_coef = fit_glm_late.params[0] 		# The regression coefficient for Qlow is the first parameter
+			regress_intercept = y[0] - regress_coef*Q_low[trial_inds[0]]
+
+			# Get linear regression fit for just Q_mid
+			Q_low_min = np.amin(Q_low[trial_inds])
+			Q_low_max = np.amax(Q_low[trial_inds])
+			x_lin = np.linspace(Q_low_min, Q_low_max, num = len(trial_inds), endpoint = True)
+
+			m,b = np.polyfit(x_lin, y, 1)
+
+			max_fr_stim = np.amax(y)
+			fr_lim = np.maximum(max_fr, max_fr_stim)
+
+			plt.figure(k)
+			plt.subplot(1,3,1)
+			plt.scatter(Q_low[trial_inds],y, c= 'c', label = 'Stimulation trials')
+			plt.plot(x_lin, m*x_lin + b, c = 'c')
+			#plt.plot(Q_mid[trial_inds], regress_coef*Q_mid[trial_inds] + regress_intercept, c = 'g')
+			plt.ylim((0,1.1*fr_lim))
+			plt.xlim((0.9*xlim_min, 1.1*xlim_max))
+			plt.legend()
+
+			# save Q and firing rate data
+			Q_late = Q_low[trial_inds]
+			FR_late = y
+
+			# Get binned firing rates: bins of fixed size
+			Q_range_min = np.min(np.min(Q_late), Q_range_min)
+			Q_range_max = np.max(np.max(Q_late), Q_range_max)
+			bins = np.arange(Q_range_min, Q_range_max + 0.5*(Q_range_max - Q_range_min)/5., (Q_range_max - Q_range_min)/5.)
+			hist_BlockA, bins = np.histogram(Q_low_BlockA, bins)
+			hist_late, bins = np.histogram(Q_late, bins)
+
+			sorted_Qvals_inds_BlockA = np.argsort(Q_low_BlockA)
+			sorted_Qvals_inds_late = np.argsort(Q_late)
+
+			begin_BlockA = 0
+			begin_late = 0
+			dta_all = []
+			avg_FR_BlockA = np.zeros(5)
+			avg_FR_late = np.zeros(5)
+			sem_FR_BlockA = np.zeros(5)
+			sem_FR_late = np.zeros(5)
+			for j in range(len(hist_BlockA)):
+				data_BlockA = FR_BlockA[sorted_Qvals_inds_BlockA[begin_BlockA:begin_BlockA+hist_BlockA[j]]]
+				data_late = FR_late[sorted_Qvals_inds_late[begin_late:begin_late+hist_late[j]]]
+				begin_BlockA += hist_BlockA[j]
+				begin_late += hist_late[j]
+
+				avg_FR_BlockA[j] = np.nanmean(data_BlockA)
+				sem_FR_BlockA[j] = np.nanstd(data_BlockA)/np.sqrt(len(data_BlockA))
+				avg_FR_late[j] = np.nanmean(data_late)
+				sem_FR_late[j] = np.nanstd(data_late)/np.sqrt(len(data_late))
+
+				for item in data_BlockA:
+					dta_all += [(j,0,item)]
+
+				for item in data_late:
+					dta_all += [(j,1,item)]
+
+			dta_all = pd.DataFrame(dta_all, columns = ['Bin', 'Condition', 'FR'])
+			bin_centers = (bins[1:] + bins[:-1])/2.
+			print(len(bin_centers))
+			print(len(avg_FR_late))
+
+			# Get binned firing rates: average firing rate for each of num_bins equally populated action value bins
+			sorted_Qvals_inds = np.argsort(Q_low[trial_inds])
+			pts_per_bin = len(trial_inds)/num_bins
+			reorg_Qvals = np.reshape(Q_low[trial_inds][sorted_Qvals_inds[:pts_per_bin*num_bins]], (pts_per_bin, num_bins), order = 'F')
+			avg_Qvals = np.nanmean(reorg_Qvals, axis = 0)
+
+			reorg_FR = np.reshape(y[sorted_Qvals_inds[:pts_per_bin*num_bins]], (pts_per_bin, num_bins), order = 'F')
+			avg_FR = np.nanmean(reorg_FR, axis = 0)
+			sem_FR = np.nanstd(reorg_FR, axis = 0)/np.sqrt(pts_per_bin)
+
+			plt.figure(k)
+			plt.subplot(1,3,2)
+			plt.errorbar(avg_Qvals, avg_FR, yerr = sem_FR/2., fmt = '--o', color = 'c', ecolor = 'c', label = 'Stim - Avg FR')
+			plt.ylim((0,1.1*fr_lim))
+			plt.xlim((0.9*Q_range_min, 1.1*Q_range_max))
+			plt.legend()
+
+			plt.figure(k)
+			plt.subplot(1,3,3)
+			plt.errorbar(bin_centers, avg_FR_BlockA, yerr = sem_FR_BlockA, fmt = '--o', color = 'k', ecolor = 'k', label = 'Learning - Avg FR')
+			plt.errorbar(bin_centers, avg_FR_late, yerr = sem_FR_late, fmt = '--o', color = 'c', ecolor = 'c', label = 'Stim - Avg FR')
+			plt.ylim((0,1.1*fr_lim))
+			plt.xlim((0.9*Q_range_min, 1.1*Q_range_max))
+			plt.legend()
+
+			# Save data
+			data_filename = session_name + ' - Channel %i - Unit %i' %(channel, k)
+			data = dict()
+			data['regression_labels'] = ['Q_low', 'Q_high','RT', 'MT', 'Choice', 'Reward']
+			data['beta_values_blockA'] = fit_glm.params
+			data['pvalues_blockA'] = fit_glm.pvalues
+			data['rsquared_blockA'] = fit_glm.rsquared
+			data['beta_values_blocksAB'] = fit_glm_late.params
+			data['pvalues_blocksAB'] = fit_glm_late.pvalues
+			data['rsquared_blocksAB'] = fit_glm_late.rsquared
+			data['Q_low_early'] = Q_low_BlockA
+			data['Q_low_late'] = Q_late
+			data['FR_early'] = FR_BlockA
+			data['FR_late'] = FR_late
+			sp.io.savemat( dir + 'picture_onset_fr/' + data_filename + '.mat', data)
+		except:
+			pass
+		
+	#return window_fr, window_fr_smooth, fr_mat, x, y, Q_low, Q_mid, Q_high, Q_learning, Q_late, FR_learning, FR_late, fit_glm
+	return Q_low, Q_high

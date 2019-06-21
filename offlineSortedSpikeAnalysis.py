@@ -321,21 +321,24 @@ class OfflineSorted_CSVFile():
 		channel_data = self.times[unit_chan[sc_unit]] 
 
 		t_resolution = 0.1
-		boxcar_length = 4.
+		boxcar_length = 4
 		boxcar_window = signal.boxcar(boxcar_length)  # 2 bins before, 2 bins after for boxcar smoothing
 		b = signal.gaussian(39,4)
 
 		for i, tp in enumerate(times_align):
 			data = channel_data
 			# look at time window in question with padded 2 s before and after
-			t_window = np.arange(tp - t_before - 2, tp + t_after + 2, t_resolution)
+			t_window = np.arange(tp - t_before - 2, tp + t_after + 2-t_resolution, t_resolution)
 			hist, bins = np.histogram(data, bins = t_window)
+			
 			hist_fr = hist/t_resolution
 			smooth_psth = np.convolve(hist_fr, boxcar_window,mode='same')/boxcar_length
 			#smooth_psth = filters.convolve1d(hist_fr, b/b.sum())
-			num_samps_in_window = np.rint((t_after + t_before)/t_resolution)
+			num_samps_in_window = np.rint((t_after + t_before)/t_resolution).astype(int)
 			len_psth = len(smooth_psth)
-			window_fr[i] = 0.5*np.sum(smooth_psth[len_psth/2 - num_samps_in_window/2:len_psth/2 + num_samps_in_window/2])/(num_samps_in_window/2.)		# count spikes and divide by window length
+			abegin = len_psth/2 - num_samps_in_window/2
+			aend = len_psth/2 + num_samps_in_window/2
+			window_fr[i] = 0.5*np.sum(smooth_psth[int(abegin):int(aend)])/(num_samps_in_window/2.)		# count spikes and divide by window length
 
 		return window_fr
 

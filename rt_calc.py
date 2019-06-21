@@ -6,10 +6,10 @@ import matplotlib.pyplot as plt
 
 def compute_rt_per_trial_FreeChoiceTask(hdf_file): 
     # Load HDF file
-    hdf = tables.openFile(hdf_file)
+    hdf = tables.open_file(hdf_file)
 
     #Extract go_cue_indices in units of hdf file row number
-    go_cue_ix = np.array([hdf.root.task_msgs[j-3]['time'] for j, i in enumerate(hdf.root.task_msgs) if i['msg']=='check_reward'])
+    go_cue_ix = np.array([hdf.root.task_msgs[j-3]['time'] for j, i in enumerate(hdf.root.task_msgs) if i['msg']==b'check_reward'])
     
     # Calculate filtered velocity and 'velocity mag. in target direction'
     filt_vel, total_vel, vel_bins, skipped_indices = get_cursor_velocity(hdf, go_cue_ix, 0., 2., use_filt_vel=False)
@@ -33,7 +33,7 @@ def compute_rt_per_trial_FreeChoiceTask(hdf_file):
 
 def compute_rt_per_trial_StressTask(hdf_file, deriv_vel_thres): 
     # Load HDF file
-    hdf = tables.openFile(hdf_file)
+    hdf = tables.open_file(hdf_file)
 
     #Extract go_cue_indices in units of hdf file row number
     go_cue_ix = np.array([hdf.root.task_msgs[j-3]['time'] for j, i in enumerate(hdf.root.task_msgs) if i['msg']=='check_reward'])
@@ -66,7 +66,7 @@ def compute_rt_per_trial_StressTask(hdf_file, deriv_vel_thres):
 
 def compute_rt_per_trial_CenterOutStressTask(hdf_file, deriv_vel_thres): 
     # Load HDF file
-    hdf = tables.openFile(hdf_file)
+    hdf = tables.open_file(hdf_file)
 
     #Extract go_cue_indices in units of hdf file row number
     go_cue_ix = np.array([hdf.root.task_msgs[j-7]['time'] for j, i in enumerate(hdf.root.task_msgs) if i['msg']=='reward'])
@@ -99,7 +99,7 @@ def compute_rt_per_trial_CenterOutStressTask(hdf_file, deriv_vel_thres):
 
 def compute_rt_per_trial_CenterOut(hdf_file, method, thres, plot_results): 
     # Load HDF file
-    hdf = tables.openFile(hdf_file)
+    hdf = tables.open_file(hdf_file)
 
     #Extract go_cue_indices in units of hdf file row number
     go_cue_ix = np.array([hdf.root.task_msgs[j-3]['time'] for j, i in enumerate(hdf.root.task_msgs) if i['msg']=='reward'])
@@ -280,8 +280,8 @@ def get_rt_change_deriv(kin_sig, bins, d_vel_thres = 0., fs = 60):
         else:
             bin_rt = np.ravel(np.nonzero(np.greater(d_spd,d_vel_thres)))[0]
         
-        kin_feat[trl, 0] = bin_rt + 1 #Index of 'RT'
-        kin_feat[trl, 1] = bins[kin_feat[trl, 0]] #Actual time of 'RT'
+        kin_feat[trl, 0] = int(bin_rt + 1) #Index of 'RT'
+        kin_feat[trl, 1] = bins[int(kin_feat[trl, 0])] #Actual time of 'RT'
     return kin_feat
 
 
