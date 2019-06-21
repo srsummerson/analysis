@@ -138,3 +138,5 @@ cort_vals1, data1_legend = process_plate(plate1, Plate1_legend)
 cort_vals2, data2_legend = process_plate(plate2, Plate2_legend)
 cort_vals3, data3_legend = process_plate(plate3, Plate3_legend)
 cort_vals4, data4_legend = process_plate(plate4, Plate4_legend)
+
+###Need to go through to extract the four data points for each session and make comparisons
