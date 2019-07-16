@@ -4279,6 +4279,7 @@ def TwoTargetTask_RegressedFiringRatesWithValue_PictureOnset(hdf_files, syncHDF_
 	# 1a. Get reaction time information
 	rt = np.array([])
 	for file in hdf_files:
+		print(file)
 		reaction_time, velocity = compute_rt_per_trial_FreeChoiceTask(file)
 		rt = np.append(rt, reaction_time)
 
@@ -4346,77 +4347,78 @@ def TwoTargetTask_RegressedFiringRatesWithValue_PictureOnset(hdf_files, syncHDF_
 		print(y.shape)
 		#y = y/np.max(y)  # normalize y
 		
-		if len(trial_inds) > 9:
-			try:
-				print("Regression for unit ", k)
-				model_glm = sm.OLS(y_zscore,x)
-				fit_glm = model_glm.fit()
-				print(fit_glm.summary())
+		# Use the below statement to only perform analysis if unit had non-zero firing on at least 10 trials
+		#if len(trial_inds) > 9:
+		try:
+			print("Regression for unit ", k)
+			model_glm = sm.OLS(y_zscore,x)
+			fit_glm = model_glm.fit()
+			print(fit_glm.summary())
 
-				regress_coef = fit_glm.params[0] 		# The regression coefficient for Qlow is the first parameter
-				regress_intercept = y[0] - regress_coef*Q_low[trial_inds[0]]
+			regress_coef = fit_glm.params[0] 		# The regression coefficient for Qlow is the first parameter
+			regress_intercept = y[0] - regress_coef*Q_low[trial_inds[0]]
 
-				# Get linear regression fit for just Q_low
-				Q_low_min = np.amin(Q_low[trial_inds])
-				Q_low_max = np.amax(Q_low[trial_inds])
-				x_lin = np.linspace(Q_low_min, Q_low_max, num = len(trial_inds), endpoint = True)
+			# Get linear regression fit for just Q_low
+			Q_low_min = np.amin(Q_low[trial_inds])
+			Q_low_max = np.amax(Q_low[trial_inds])
+			x_lin = np.linspace(Q_low_min, Q_low_max, num = len(trial_inds), endpoint = True)
 
-				m,b = np.polyfit(x_lin, y, 1)
+			m,b = np.polyfit(x_lin, y, 1)
 
-				plt.figure(k)
-				plt.subplot(1,3,1)
-				plt.scatter(Q_low[trial_inds],y, c= 'k', marker = 'o', label ='Learning Trials')
-				plt.plot(x_lin, m*x_lin + b, c = 'k')
-				#plt.plot(Q_mid[trial_inds], regress_coef*Q_mid[trial_inds] + regress_intercept, c = 'y')
-				plt.xlabel('Q_low')
-				plt.ylabel('Firing Rate (spk/s)')
-				plt.title(sess_name + ' - Channel %i - Unit %i' %(channel, k))
+			plt.figure(k)
+			plt.subplot(1,3,1)
+			plt.scatter(Q_low[trial_inds],y, c= 'k', marker = 'o', label ='Learning Trials')
+			plt.plot(x_lin, m*x_lin + b, c = 'k')
+			#plt.plot(Q_mid[trial_inds], regress_coef*Q_mid[trial_inds] + regress_intercept, c = 'y')
+			plt.xlabel('Q_low')
+			plt.ylabel('Firing Rate (spk/s)')
+			plt.title(sess_name + ' - Channel %i - Unit %i' %(channel, k))
 
-				# save Q and firing rate data
-				Q_learning = Q_low[trial_inds]
-				FR_learning = y
-				Q_low_BlockA = Q_low[trial_inds]
+			# save Q and firing rate data
+			Q_learning = Q_low[trial_inds]
+			FR_learning = y
+			Q_low_BlockA = Q_low[trial_inds]
 
-				max_fr = np.amax(y)
-				xlim_min = np.amin(Q_low[trial_inds])
-				xlim_max = np.amax(Q_low[trial_inds])
+			max_fr = np.amax(y)
+			xlim_min = np.amin(Q_low[trial_inds])
+			xlim_max = np.amax(Q_low[trial_inds])
 
-				data_filename = session_name + ' - Channel %i - Unit %i' %(channel, k)
-				data = dict()
-				data['regression_labels'] = ['Q_low', 'Q_high','RT', 'MT', 'Choice', 'Reward']
-				data['beta_values_blockA'] = fit_glm.params
-				data['pvalues_blockA'] = fit_glm.pvalues
-				data['rsquared_blockA'] = fit_glm.rsquared
-				data['Q_low_early'] = Q_low_BlockA
-				data['FR_early'] = FR_learning
-				sp.io.savemat( dir + 'picture_onset_fr/' + data_filename + '.mat', data)
+			data_filename = session_name + ' - Channel %i - Unit %i' %(channel, k)
+			data = dict()
+			data['regression_labels'] = ['Q_low', 'Q_high','RT', 'MT', 'Choice', 'Reward']
+			data['beta_values_blockA'] = fit_glm.params
+			data['pvalues_blockA'] = fit_glm.pvalues
+			data['rsquared_blockA'] = fit_glm.rsquared
+			data['Q_low_early'] = Q_low_BlockA
+			data['FR_early'] = FR_learning
+			sp.io.savemat( dir + 'picture_onset_fr/' + data_filename + '.mat', data)
 
 
-				# Get binned firing rates: average firing rate for each of num_bins equally populated action value bins
-				num_bins = 5
-				sorted_Qvals_inds = np.argsort(Q_low[trial_inds])
-				pts_per_bin = len(trial_inds)/num_bins
-				reorg_Qvals = np.reshape(Q_low[trial_inds][sorted_Qvals_inds[:pts_per_bin*num_bins]], (pts_per_bin, num_bins), order = 'F')
-				avg_Qvals = np.nanmean(reorg_Qvals, axis = 0)
+			# Get binned firing rates: average firing rate for each of num_bins equally populated action value bins
+			num_bins = 5
+			sorted_Qvals_inds = np.argsort(Q_low[trial_inds])
+			pts_per_bin = len(trial_inds)/num_bins
+			reorg_Qvals = np.reshape(Q_low[trial_inds][sorted_Qvals_inds[:pts_per_bin*num_bins]], (pts_per_bin, num_bins), order = 'F')
+			avg_Qvals = np.nanmean(reorg_Qvals, axis = 0)
 
-				reorg_FR = np.reshape(y[sorted_Qvals_inds[:pts_per_bin*num_bins]], (pts_per_bin, num_bins), order = 'F')
-				reorg_FR_BlockA = reorg_FR
-				avg_FR = np.nanmean(reorg_FR, axis = 0)
-				sem_FR = np.nanstd(reorg_FR, axis = 0)/np.sqrt(pts_per_bin)
+			reorg_FR = np.reshape(y[sorted_Qvals_inds[:pts_per_bin*num_bins]], (pts_per_bin, num_bins), order = 'F')
+			reorg_FR_BlockA = reorg_FR
+			avg_FR = np.nanmean(reorg_FR, axis = 0)
+			sem_FR = np.nanstd(reorg_FR, axis = 0)/np.sqrt(pts_per_bin)
 
-				# Save data for binning by bins of fixed size (rather than equally populated)
-				Q_range_min = np.min(Q_low[trial_inds])
-				Q_range_max = np.max(Q_low[trial_inds])
-				FR_BlockA = y
-				
-
-				plt.figure(k)
-				plt.subplot(1,3,2)
-				plt.errorbar(avg_Qvals, avg_FR, yerr = sem_FR, fmt = '--o', color = 'k', ecolor = 'k', label = 'Learning - Avg FR')
-				plt.legend()
+			# Save data for binning by bins of fixed size (rather than equally populated)
+			Q_range_min = np.min(Q_low[trial_inds])
+			Q_range_max = np.max(Q_low[trial_inds])
+			FR_BlockA = y
 			
-			except:
-				pass
+
+			plt.figure(k)
+			plt.subplot(1,3,2)
+			plt.errorbar(avg_Qvals, avg_FR, yerr = sem_FR, fmt = '--o', color = 'k', ecolor = 'k', label = 'Learning - Avg FR')
+			plt.legend()
+		
+		except:
+			pass
 		
 		unit_data = fr_mat[k,:]
 		#trial_inds = np.array([index for index in ind_trial_case if unit_data[index]!=0], dtype = int)

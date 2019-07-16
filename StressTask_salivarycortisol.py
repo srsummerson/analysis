@@ -121,18 +121,62 @@ def process_plate(plate, plate_legend):
 	cortisol_vals = peval(data,plsq[0])
 
 	xval = np.linspace(0.0,1.000,20)
-	#plt.plot(peval(xval,plsq[0]),x,y,'o')
-	plt.plot(peval(xval,plsq[0]), xval,'k-')
-	plt.plot(cortisol_vals,data,'bo')
+	
+	
+	#plt.plot(peval(xval,plsq[0]), xval,'k-')
+	#plt.plot(cortisol_vals,data,'bo')
 	plt.plot(y,x,'ro')
 	plt.xlabel('cortisol (ug/dL)')
 	plt.ylabel('B/Bo')
-	#plt.xlim((0,3.1))
-	#plt.ylim((0,1.1))
+	plt.xlim((0,3.1))
+	plt.ylim((0,1.1))
 	plt.show()
+	
 	
 	return cortisol_vals, data_legend
 			
+
+def monkey_cortisol_data(animal_id, cort_vals, data_legend):
+	'''
+	This method pulls of the cortisol data of a specific animal indicated by the animal id and
+	then organizes it by date and condition.
+
+	Input:
+	- animal_id: string, indicates animal's name
+	- cort_vals: array (floats), cortisol measurements from process_plate function
+	- data_legend: array (strings), labels for the cortisol measurements
+	Output:
+	- cort_mat: 2D array (floats), N by 4 matrix of cortisol measurements taken across N sessions where
+		each column represents the four datapoints in the order initial, baseline, stress, treatment
+	- unique_days: array (strings), N dates of the cortisol measurements in order that they are organized
+		in cort_mat
+	'''
+	# 1. Extract data for the specific animal
+	animal_inds = [i for i in range(len(data_legend)) if data_legend[i][:5]==animal_id]
+	animal_vals = cort_vals[animal_inds]
+	animal_legend = data_legend[animal_inds]
+
+	# 2. Get list of unique days
+	days = [animal_legend[j][:13] for j in range(len(animal_legend))]
+	unique_days = list(set(days))
+
+	# 3. Populate matrix with data from unique days
+	cort_mat = np.empty((len(unique_days),4,))
+	cort_mat[:] = np.nan
+
+	for i, day in enumerate(animal_legend):
+		# find which row it should fill in in the matrix
+		row_ind = unique_days.index(day[:13])
+		# find which column it should fill in in the matrix
+		# only need the final letter to differentiate: l for initial, e for baseline, s for stress, t for treatment
+		key = ['l', 'e','s','t']
+		col_ind = key.index(day[-1])
+		# add data to matrix
+		cort_mat[row_ind,col_ind] = animal_vals[i]
+
+
+	return cort_mat, unique_days
+
 
 cort_vals1, data1_legend = process_plate(plate1, Plate1_legend)
 cort_vals2, data2_legend = process_plate(plate2, Plate2_legend)
@@ -140,3 +184,12 @@ cort_vals3, data3_legend = process_plate(plate3, Plate3_legend)
 cort_vals4, data4_legend = process_plate(plate4, Plate4_legend)
 
 ###Need to go through to extract the four data points for each session and make comparisons
+###Want matrix of dates by 4 time sample points
+all_vals = np.hstack([cort_vals1, cort_vals2, cort_vals3, cort_vals4])
+all_legend = np.hstack([data1_legend, data2_legend, data3_legend, data4_legend])
+
+mario_cort_mat, mario_data_labels = monkey_cortisol_data('Mario', all_vals, all_legend)
+luigi_cort_mat, luigi_data_labels = monkey_cortisol_data('Luigi', all_vals, all_legend)
+
+print(mario_mean = np.nanmean(mario_cort_mat,axis=0))
+print(luigi_mean = np.nanmean(luigi_cort_mat,axis=0))
