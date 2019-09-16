@@ -52,7 +52,7 @@ def running_mean(x, N):
 	cumsum = np.cumsum(np.insert(x, 0, 0)) 
 	return (cumsum[N:] - cumsum[:-N]) / N 
 
-
+'''
 for i in range(len(hdf_list_stim_luigi)):
 	print(i)
 	StressTaskAnalysis_ComputePowerFeatures(hdf_list_stim_luigi[i], filenames_stim_luigi[i], block_nums, TDT_tank_luigi, power_bands)
@@ -61,7 +61,7 @@ for i in range(len(hdf_list_control_luigi)):
 	print(i+7)
 	StressTaskAnalysis_ComputePowerFeatures(hdf_list_control_luigi[i], filenames_control_luigi[i], block_nums, TDT_tank_luigi, power_bands)
 
-
+'''
 
 
 # Define variables
@@ -75,15 +75,38 @@ pupil_md_treat = dict()
 pupil_time_base_mean_stim = np.zeros(len(filenames_stim_luigi))
 pupil_time_stress_mean_stim = np.zeros(len(filenames_stim_luigi))
 pupil_time_treat_mean_stim = np.zeros(len(filenames_stim_luigi))
+
+pupil_time_stress_mean_early_stim = np.zeros(len(filenames_stim_luigi))
+pupil_time_treat_mean_early_stim = np.zeros(len(filenames_stim_luigi))
+pupil_time_stress_mean_late_stim = np.zeros(len(filenames_stim_luigi))
+pupil_time_treat_mean_late_stim = np.zeros(len(filenames_stim_luigi))
+
 ibi_time_base_mean_stim = np.zeros(len(filenames_stim_luigi))
 ibi_time_stress_mean_stim = np.zeros(len(filenames_stim_luigi))
 ibi_time_treat_mean_stim = np.zeros(len(filenames_stim_luigi))
+
+ibi_time_stress_mean_early_stim = np.zeros(len(filenames_stim_luigi))
+ibi_time_treat_mean_early_stim= np.zeros(len(filenames_stim_luigi))
+ibi_time_stress_mean_late_stim = np.zeros(len(filenames_stim_luigi))
+ibi_time_treat_mean_late_stim= np.zeros(len(filenames_stim_luigi))
+
 pupil_time_base_mean_control = np.zeros(len(filenames_control_luigi))
 pupil_time_stress_mean_control = np.zeros(len(filenames_control_luigi))
 pupil_time_treat_mean_control = np.zeros(len(filenames_control_luigi))
+
+pupil_time_stress_mean_early_control = np.zeros(len(filenames_control_luigi))
+pupil_time_treat_mean_early_control = np.zeros(len(filenames_control_luigi))
+pupil_time_stress_mean_late_control = np.zeros(len(filenames_control_luigi))
+pupil_time_treat_mean_late_control = np.zeros(len(filenames_control_luigi))
+
 ibi_time_base_mean_control = np.zeros(len(filenames_control_luigi))
 ibi_time_stress_mean_control = np.zeros(len(filenames_control_luigi))
 ibi_time_treat_mean_control = np.zeros(len(filenames_control_luigi))
+
+ibi_time_stress_mean_early_control = np.zeros(len(filenames_control_luigi))
+ibi_time_treat_mean_early_control = np.zeros(len(filenames_control_luigi))
+ibi_time_stress_mean_late_control = np.zeros(len(filenames_control_luigi))
+ibi_time_treat_mean_late_control = np.zeros(len(filenames_control_luigi))
 
 
 for i,name in enumerate(filenames_stim_luigi):
@@ -102,6 +125,18 @@ for i,name in enumerate(filenames_stim_luigi):
 	pupil_time_stress_mean_stim[i] = np.nanmean(phys_stim[i].pupil_time_stress)
 	ibi_time_treat_mean_stim[i] = np.nanmean(phys_stim[i].ibi_time_treat)
 	pupil_time_treat_mean_stim[i] = np.nanmean(phys_stim[i].pupil_time_treat)
+
+	# Compute average values for early half of stress and treatment sessions
+	ibi_time_stress_mean_early_stim[i] = np.nanmean(phys_stim[i].ibi_time_stress[:int(len(ibi_time_stress)/2.)])
+	pupil_time_stress_mean_early_stim[i] = np.nanmean(phys_stim[i].pupil_time_stress[:int(len(ibi_time_stress)/2.)])
+	ibi_time_treat_mean_early_stim[i] = np.nanmean(phys_stim[i].ibi_time_treat[:int(len(ibi_time_stress)/2.)])
+	pupil_time_treat_mean_early_stim[i] = np.nanmean(phys_stim[i].pupil_time_treat[:int(len(ibi_time_stress)/2.)])
+
+	# Compute average values for late half of stress and treatment sessions
+	ibi_time_stress_mean_late_stim[i] = np.nanmean(phys_stim[i].ibi_time_stress[int(len(ibi_time_stress)/2.):])
+	pupil_time_stress_mean_late_stim[i] = np.nanmean(phys_stim[i].pupil_time_stress[int(len(ibi_time_stress)/2.):])
+	ibi_time_treat_mean_late_stim[i] = np.nanmean(phys_stim[i].ibi_time_treat[int(len(ibi_time_stress)/2.):])
+	pupil_time_treat_mean_late_stim[i] = np.nanmean(phys_stim[i].pupil_time_treat[int(len(ibi_time_stress)/2.):])
 
 	# Compute smoothed ibi and pupil values
 	ibi_base_smooth_stim = running_mean(phys_stim[i].ibi_time_base,100)
@@ -128,6 +163,7 @@ for i,name in enumerate(filenames_control_luigi):
 	# Load data into class
 	phys_filenames = [phys_dir + name[0] + '_b1_PhysFeatures.mat',  phys_dir + name[0] + '_b2_PhysFeatures.mat', phys_dir + name[0] + '_b3_PhysFeatures.mat']
 	phys_control[i] = StressTask_PhysData(phys_filenames)
+	phys_control.IBIvsPup_ScatterPlot('time')
 
 	# Compute modulation depth
 	#ibi_md_stress[i], pupil_md_stress[i], ibi_md_treat[i], pupil_md_treat[i] = phys[i].ModulationDepth('time', show_fig = False)
@@ -139,6 +175,19 @@ for i,name in enumerate(filenames_control_luigi):
 	pupil_time_stress_mean_control[i] = np.nanmean(phys_control[i].pupil_time_stress)
 	ibi_time_treat_mean_control[i] = np.nanmean(phys_control[i].ibi_time_treat)
 	pupil_time_treat_mean_control[i] = np.nanmean(phys_control[i].pupil_time_treat)
+
+	# Compute average values for early half of stress and treatment sessions
+	ibi_time_stress_mean_early_control[i] = np.nanmean(phys_control[i].ibi_time_stress[:int(len(ibi_time_stress)/2.)])
+	pupil_time_stress_mean_early_control[i] = np.nanmean(phys_control[i].pupil_time_stress[:int(len(pupil_time_stress)/2.)])
+	ibi_time_treat_mean_early_control[i] = np.nanmean(phys_control[i].ibi_time_treat[:int(len(ibi_time_treat)/2.)])
+	pupil_time_treat_mean_early_control[i] = np.nanmean(phys_control[i].pupil_time_treat[:int(len(pupil_time_treat)/2.)])
+
+	# Compute average values for late half of stress and treatment sessions
+	ibi_time_stress_mean_late_control[i] = np.nanmean(phys_control[i].ibi_time_stress[int(len(ibi_time_stress)/2.):])
+	pupil_time_stress_mean_late_control[i] = np.nanmean(phys_control[i].pupil_time_stress[int(len(pupil_time_stress)/2.):])
+	ibi_time_treat_mean_late_control[i] = np.nanmean(phys_control[i].ibi_time_treat[int(len(ibi_time_treat)/2.):])
+	pupil_time_treat_mean_late_control[i] = np.nanmean(phys_control[i].pupil_time_treat[int(len(pupil_time_treat)/2.):])
+
 
 	# Compute smoothed ibi and pupil values
 	ibi_base_smooth_control = running_mean(phys_control[i].ibi_time_base,100)
@@ -220,6 +269,123 @@ xticklabels = ['Stress - Baseline', 'Treatment - Baseline']
 xticks = ind + width/2
 plt.xticks(xticks, xticklabels)
 plt.xlabel('Values relative to Baseline')
+plt.ylabel('Average PD (a.u.)')
+plt.legend()
+plt.show()
+
+
+### Compute values for early vs late
+# Baseline - all
+ibi_base_mean_stim = np.nanmean(ibi_time_base_mean_stim)
+ibi_base_mean_control = np.nanmean(ibi_time_base_mean_control)
+ibi_base_sem_stim = np.nanstd(ibi_time_base_mean_stim)/np.sqrt(len(ibi_time_base_mean_stim))
+ibi_base_sem_control = np.nanstd(ibi_time_base_mean_control)/np.sqrt(len(ibi_time_base_mean_control))
+
+pupil_base_mean_stim = np.nanmean(pupil_time_base_mean_stim)
+pupil_base_mean_control = np.nanmean(pupil_time_base_mean_control)
+pupil_base_sem_stim = np.nanstd(pupil_time_base_mean_stim)/np.sqrt(len(pupil_time_base_mean_stim))
+pupil_base_sem_control = np.nanstd(pupil_time_base_mean_control)/np.sqrt(len(pupil_time_base_mean_control))
+
+# Stress - all
+ibi_stress_mean_stim = np.nanmean(ibi_time_stress_mean_stim)
+ibi_stress_mean_control = np.nanmean(ibi_time_stress_mean_control)
+ibi_stress_sem_stim = np.nanstd(ibi_time_stress_mean_stim)/np.sqrt(len(ibi_time_stress_mean_stim))
+ibi_stress_sem_control = np.nanstd(ibi_time_stress_mean_control)/np.sqrt(len(ibi_time_stress_mean_control))
+
+pupil_stress_mean_stim = np.nanmean(pupil_time_stress_mean_stim)
+pupil_stress_mean_control = np.nanmean(pupil_time_stress_mean_control)
+pupil_stress_sem_stim = np.nanstd(pupil_time_stress_mean_stim)/np.sqrt(len(pupil_time_stress_mean_stim))
+pupil_stress_sem_control = np.nanstd(pupil_time_stress_mean_control)/np.sqrt(len(pupil_time_stress_mean_control))
+
+
+# Stress - early
+ibi_stress_mean_early_stim = np.nanmean(ibi_time_stress_mean_early_stim)
+ibi_stress_mean_early_control = np.nanmean(ibi_time_stress_mean_early_control)
+ibi_stress_sem_early_stim = np.nanstd(ibi_time_stress_mean_early_stim)/np.sqrt(len(ibi_time_stress_mean_early_stim))
+ibi_stress_sem_early_control = np.nanstd(ibi_time_stress_mean_early_control)/np.sqrt(len(ibi_time_stress_mean_early_control))
+
+pupil_stress_mean_early_stim = np.nanmean(pupil_time_stress_mean_early_stim)
+pupil_stress_mean_early_control = np.nanmean(pupil_time_stress_mean_early_control)
+pupil_stress_sem_early_stim = np.nanstd(pupil_time_stress_mean_early_stim)/np.sqrt(len(pupil_time_stress_mean_early_stim))
+pupil_stress_sem_early_control = np.nanstd(pupil_time_stress_mean_early_control)/np.sqrt(len(pupil_time_stress_mean_early_control))
+
+# Stress - late
+ibi_stress_mean_late_stim = np.nanmean(ibi_time_stress_mean_late_stim)
+ibi_stress_mean_late_control = np.nanmean(ibi_time_stress_mean_late_control)
+ibi_stress_sem_late_stim = np.nanstd(ibi_time_stress_mean_late_stim)/np.sqrt(len(ibi_time_stress_mean_late_stim))
+ibi_stress_sem_late_control = np.nanstd(ibi_time_stress_mean_late_control)/np.sqrt(len(ibi_time_stress_mean_late_control))
+
+pupil_stress_mean_late_stim = np.nanmean(pupil_time_stress_mean_late_stim)
+pupil_stress_mean_late_control = np.nanmean(pupil_time_stress_mean_late_control)
+pupil_stress_sem_late_stim = np.nanstd(pupil_time_stress_mean_late_stim)/np.sqrt(len(pupil_time_stress_mean_late_stim))
+pupil_stress_sem_late_control = np.nanstd(pupil_time_stress_mean_late_control)/np.sqrt(len(pupil_time_stress_mean_late_control))
+
+# Treatment - all
+ibi_treat_mean_stim = np.nanmean(ibi_time_treat_mean_stim)
+ibi_treat_mean_control = np.nanmean(ibi_time_treat_mean_control)
+ibi_treat_sem_stim = np.nanstd(ibi_time_treat_mean_stim)/np.sqrt(len(ibi_time_treat_mean_stim))
+ibi_treat_sem_control = np.nanstd(ibi_time_treat_mean_control)/np.sqrt(len(ibi_time_treat_mean_control))
+
+pupil_treat_mean_stim = np.nanmean(pupil_time_treat_mean_stim)
+pupil_treat_mean_control = np.nanmean(pupil_time_treat_mean_control)
+pupil_treat_sem_stim = np.nanstd(pupil_time_treat_mean_stim)/np.sqrt(len(pupil_time_treat_mean_stim))
+pupil_treat_sem_control = np.nanstd(pupil_time_treat_mean_control)/np.sqrt(len(pupil_time_treat_mean_control))
+
+
+# Treat - early
+ibi_treat_mean_early_stim = np.nanmean(ibi_time_treat_mean_early_stim)
+ibi_treat_mean_early_control = np.nanmean(ibi_time_treat_mean_early_control)
+ibi_treat_sem_early_stim = np.nanstd(ibi_time_treat_mean_early_stim)/np.sqrt(len(ibi_time_treat_mean_early_stim))
+ibi_treat_sem_early_control = np.nanstd(ibi_time_treat_mean_early_control)/np.sqrt(len(ibi_time_treat_mean_early_control))
+
+pupil_treat_mean_early_stim = np.nanmean(pupil_time_treat_mean_early_stim)
+pupil_treat_mean_early_control = np.nanmean(pupil_time_treat_mean_early_control)
+pupil_treat_sem_early_stim = np.nanstd(pupil_time_treat_mean_early_stim)/np.sqrt(len(pupil_time_treat_mean_early_stim))
+pupil_treat_sem_early_control = np.nanstd(pupil_time_treat_mean_early_control)/np.sqrt(len(pupil_time_treat_mean_early_control))
+
+# Treat - late
+ibi_treat_mean_late_stim = np.nanmean(ibi_time_treat_mean_late_stim)
+ibi_treat_mean_late_control = np.nanmean(ibi_time_treat_mean_late_control)
+ibi_treat_sem_late_stim = np.nanstd(ibi_time_treat_mean_late_stim)/np.sqrt(len(ibi_time_treat_mean_late_stim))
+ibi_treat_sem_late_control = np.nanstd(ibi_time_treat_mean_late_control)/np.sqrt(len(ibi_time_treat_mean_late_control))
+
+pupil_treat_mean_late_stim = np.nanmean(pupil_time_treat_mean_late_stim)
+pupil_treat_mean_late_control = np.nanmean(pupil_time_treat_mean_late_control)
+pupil_treat_sem_late_stim = np.nanstd(pupil_time_treat_mean_late_stim)/np.sqrt(len(pupil_time_treat_mean_late_stim))
+pupil_treat_sem_late_control = np.nanstd(pupil_time_treat_mean_late_control)/np.sqrt(len(pupil_time_treat_mean_late_control))
+
+
+# Plot figure of individual block averages
+ibi_stim = [ibi_base_mean_stim, ibi_stress_mean_stim, ibi_stress_mean_early_stim, ibi_stress_mean_late_stim,ibi_treat_mean_stim,ibi_treat_mean_early_stim, ibi_treat_mean_late_stim]
+ibi_control = [ibi_base_mean_control, ibi_stress_mean_control, ibi_stress_mean_early_control, ibi_stress_mean_late_control,ibi_treat_mean_control,ibi_treat_mean_early_control, ibi_treat_mean_late_control]
+ibi_stim_err = np.array([ibi_base_sem_stim, ibi_stress_sem_stim, ibi_stress_sem_early_stim, ibi_stress_sem_late_stim,ibi_treat_sem_stim,ibi_treat_sem_early_stim, ibi_treat_sem_late_stim])
+ibi_control_err = np.array([ibi_base_sem_control, ibi_stress_sem_control, ibi_stress_sem_early_control, ibi_stress_sem_late_control,ibi_treat_sem_control,ibi_treat_sem_early_control, ibi_treat_sem_late_control])
+
+pupil_stim = [pupil_base_mean_stim, pupil_stress_mean_stim, pupil_stress_mean_early_stim, pupil_stress_mean_late_stim,pupil_treat_mean_stim,pupil_treat_mean_early_stim, pupil_treat_mean_late_stim]
+pupil_control = [pupil_base_mean_control, pupil_stress_mean_control, pupil_stress_mean_early_control, pupil_stress_mean_late_control,pupil_treat_mean_control,pupil_treat_mean_early_control, pupil_treat_mean_late_control]
+pupil_stim_err = np.array([pupil_base_sem_stim, pupil_stress_sem_stim, pupil_stress_sem_early_stim, pupil_stress_sem_late_stim,pupil_treat_sem_stim,pupil_treat_sem_early_stim, pupil_treat_sem_late_stim])
+pupil_control_err = np.array([pupil_base_sem_control, pupil_stress_sem_control, pupil_stress_sem_early_control, pupil_stress_sem_late_control,pupil_treat_sem_control,pupil_treat_sem_early_control, pupil_treat_sem_late_control])
+
+
+ind = np.arange(6)
+width = 0.35
+plt.figure()
+plt.subplot(1,2,1)
+plt.bar(ind, ibi_stim, width, color = 'b', yerr = 0.5*ibi_stim_err, label = 'Stim')
+plt.bar(ind+0.35, ibi_control, width, color = 'c', yerr = 0.5*ibi_control_err, label = 'Control')
+xticklabels = ['Baseline', 'Stress', 'Stress-Early','Stress-Late','Treatment','Treatmeant-Early', 'Treatment-Late']
+xticks = ind + width/2
+plt.xticks(xticks, xticklabels)
+plt.xlabel('Blocks')
+plt.ylabel('Average IBI (s)')
+
+plt.subplot(1,2,2)
+plt.bar(ind, pupil_stim, width, color = 'b', yerr = 0.5*pupil_stim_err, label = 'Stim')
+plt.bar(ind+0.35, pupil_control, width, color = 'c', yerr = 0.5*pupil_control_err, label = 'Control')
+xticklabels = ['Baseline', 'Stress', 'Stress-Early','Stress-Late','Treatment','Treatmeant-Early', 'Treatment-Late']
+xticks = ind + width/2
+plt.xticks(xticks, xticklabels)
+plt.xlabel('Blocks')
 plt.ylabel('Average PD (a.u.)')
 plt.legend()
 plt.show()
