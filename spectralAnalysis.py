@@ -18,6 +18,7 @@ def LFPSpectrumSingleChannel(tankname,channel):
 	bl = r.read_block(lazy=False,cascade=True)
 	tank = tankname[-13:]  # extracts last 13 values, which should be LuigiYYYYMMDD
 	block_num = 0
+
 	for block in bl.segments:
 		block_num += 1
 		for analogsig in block.analogsignals:
@@ -28,24 +29,24 @@ def LFPSpectrumSingleChannel(tankname,channel):
 				data = analogsig
 				num_timedom_samples = data.size
 				time = [float(t)/Fs for t in range(0,num_timedom_samples)]
- 				freq, Pxx_den = signal.welch(data, Fs, nperseg=1024)
+				freq, Pxx_den = signal.welch(data, Fs, nperseg=1024)
 
- 				plt.figure()
- 				plt.subplot(2,1,1)
- 				plt.plot(freq,Pxx_den/np.sum(Pxx_den),'r') # plotting the spectrum
- 				plt.xlim((0, 100))
- 				plt.xlabel('Freq (Hz)')
- 				plt.ylabel('PSD')
- 				plt.title('Channel ' +str(channel))
- 				
- 				plt.subplot(2,1,2)
+				plt.figure()
+				plt.subplot(2,1,1)
+				plt.plot(freq,Pxx_den/np.sum(Pxx_den),'r') # plotting the spectrum
+				plt.xlim((0, 100))
+				plt.xlabel('Freq (Hz)')
+				plt.ylabel('PSD')
+				plt.title('Channel ' +str(channel))
+				
+				plt.subplot(2,1,2)
 				plt.plot(time[0:np.int(Fs)*10],data[0:np.int(Fs)*10],'r') # plotting LFP snippet
 				plt.xlabel('Time (s)')
 				plt.ylabel('LFP (uv)')
 				plt.title('LFP Snippet')
- 				plt.savefig('/home/srsummerson/code/analysis/Mario_Spectrum_figs/PowerSpec_'+tank+'_'+str(block_num)+'_Ch'+str(channel)+'.png')
- 				plt.close()
- 	return 
+				plt.savefig('/home/srsummerson/code/analysis/Mario_Spectrum_figs/PowerSpec_'+tank+'_'+str(block_num)+'_Ch'+str(channel)+'.png')
+				plt.close()
+	return 
 
 
 def LFPSpectrumAllChannel(tankname,num_channels):
@@ -66,39 +67,38 @@ def LFPSpectrumAllChannel(tankname,num_channels):
 			if (analogsig.name[:3]=='LFP'):
 				Fs = analogsig.sampling_rate
 				data = analogsig
-				
- 				freq, Pxx_den = signal.welch(data, Fs, nperseg=1024)
- 				plt.figure(2*block_num-1)
- 				if num_channels==96:
- 					ax1 = plt.subplot(8,12,analogsig.channel_index)
- 				else:
- 					ax1 = plt.subplot(10,16,analogsig.channel_index)
- 					
- 				plt.plot(freq,Pxx_den/np.sum(Pxx_den),'r')
- 				ax1.set_xlim([0, 40])
- 				ax1.set_xticklabels([])
+
+				freq, Pxx_den = signal.welch(data, Fs, nperseg=1024)
+				plt.figure(2*block_num-1)
+				if num_channels==96:
+					ax1 = plt.subplot(8,12,analogsig.channel_index)
+				else:
+					ax1 = plt.subplot(10,16,analogsig.channel_index)
+
+				plt.plot(freq,Pxx_den/np.sum(Pxx_den),'r')
+				ax1.set_xlim([0, 40])
+				ax1.set_xticklabels([])
 				ax1.set_ylim([0, 0.8])
 				ax1.set_yticklabels([])
 				plt.title(str(analogsig.channel_index))
- 				
- 				plt.figure(2*block_num)
- 				if num_channels==96:
- 					ax2 = plt.subplot(8,12,analogsig.channel_index)
- 				else:
- 					ax2 = plt.subplot(10,16,analogsig.channel_index)
+				plt.figure(2*block_num)
+				if num_channels==96:
+					ax2 = plt.subplot(8,12,analogsig.channel_index)
+				else:
+					ax2 = plt.subplot(10,16,analogsig.channel_index)
 				plt.semilogy(freq,Pxx_den,'r')
- 				ax2.set_xlim([0, 40])
- 				ax2.set_xticklabels([])
+				ax2.set_xlim([0, 40])
+				ax2.set_xticklabels([])
 				#ax2.set_ylim([0, 1.0e-8])
 				ax2.set_yticklabels([])
 				plt.title(str(analogsig.channel_index))
- 		plt.figure(1)
- 		plt.savefig('/home/srsummerson/code/analysis/Mario_Spectrum_figs/NormalizedPowerSpec_'+tank+'_'+str(block_num)+'.png')
- 		plt.close()
- 		plt.figure(2)
- 		plt.savefig('/home/srsummerson/code/analysis/Mario_Spectrum_figs/PowerSpec_'+tank+'_'+str(block_num)+'.png')
- 		plt.close()
- 	return 
+		plt.figure(1)
+		plt.savefig('/home/srsummerson/code/analysis/Mario_Spectrum_figs/NormalizedPowerSpec_'+tank+'_'+str(block_num)+'.png')
+		plt.close()
+		plt.figure(2)
+		plt.savefig('/home/srsummerson/code/analysis/Mario_Spectrum_figs/PowerSpec_'+tank+'_'+str(block_num)+'.png')
+		plt.close()
+	return 
 
 def gen_spcgrm(tankname,channel,cutoffs=(0,250),binsize=50):
 	r = io.TdtIO(dirname=tankname)
@@ -117,22 +117,21 @@ def TrialAveragedPSD(lfp_data, chann, Fs, lfp_ind, samples_lfp, row_ind, stim_fr
 	Computes PSD per channel, with data averaged over trials. 
 	'''
 	density_length = 30
-	
 	trial_power = np.zeros([density_length,len(row_ind)])
 	freq = np.zeros(257)
-	
-	for i in range(0,len(row_ind)):	
+
+	for i in range(0,len(row_ind)):
 		lfp_snippet = lfp_data[chann][lfp_ind[i]:lfp_ind[i]+samples_lfp[i]]
 		num_timedom_samples = lfp_snippet.size
 		time = [float(t)/Fs for t in range(0,num_timedom_samples)]
- 		freq, Pxx_den = signal.welch(lfp_snippet, Fs, nperseg=512, noverlap=256)
- 		norm_freq = np.append(np.ravel(np.nonzero(np.less(freq,stim_freq-3))),np.ravel(np.nonzero(np.less(freq,stim_freq+3))))
- 		total_power_Pxx_den = np.sum(Pxx_den[norm_freq])
- 		Pxx_den = Pxx_den/total_power_Pxx_den
- 		trial_power[:,i] = Pxx_den[0:density_length]
+		freq, Pxx_den = signal.welch(lfp_snippet, Fs, nperseg=512, noverlap=256)
+		norm_freq = np.append(np.ravel(np.nonzero(np.less(freq,stim_freq-3))),np.ravel(np.nonzero(np.less(freq,stim_freq+3))))
+		total_power_Pxx_den = np.sum(Pxx_den[norm_freq])
+		Pxx_den = Pxx_den/total_power_Pxx_den
+		trial_power[:,i] = Pxx_den[0:density_length]
 
- 	'''
- 	z_min, z_max = -np.abs(trial_power).max(), np.abs(trial_power).max()
+	'''
+	z_min, z_max = -np.abs(trial_power).max(), np.abs(trial_power).max()
 	plt.figure()
 	plt.subplot(1, 2, 1)
 	plt.imshow(low_power, cmap='RdBu')
@@ -152,7 +151,6 @@ def TrialAveragedPSD(lfp_data, chann, Fs, lfp_ind, samples_lfp, row_ind, stim_fr
 	#plt.axis([x.min(), x.max(), y.min(), y.max()])
 	plt.colorbar()
 	'''
-	
 	return freq, trial_power
 
 def TrialAveragedPeakPower(lfp, Fs, lfp_ind, samples_lfp, freq_window, stim_freq):
@@ -179,22 +177,20 @@ def TrialAveragedPeakPower(lfp, Fs, lfp_ind, samples_lfp, freq_window, stim_freq
 	peak_power = np.zeros([len(channels),len(lfp_ind)])
 	density_length = 30
 
-	for i in range(0,len(lfp_ind)):	
+	for i in range(0,len(lfp_ind)):
 		for chann in channels:
 			lfp_snippet = lfp[chann][lfp_ind[i]:lfp_ind[i]+samples_lfp[i]]
 			num_timedom_samples = lfp_snippet.size
 			freq, Pxx_den = signal.welch(lfp_snippet, Fs, nperseg=512, noverlap=256)
-	 		norm_freq = np.append(np.ravel(np.nonzero(np.less(freq,stim_freq-3))),np.ravel(np.nonzero(np.less(freq,stim_freq+3))))
-	 		total_power_Pxx_den = np.sum(Pxx_den[norm_freq])
-	 		Pxx_den = Pxx_den/total_power_Pxx_den
-	 		
-	 		freq_band = np.less(freq,f_high)&np.greater(freq,f_low)
- 			freq_band_ind = np.ravel(np.nonzero(freq_band))
- 			peak_power[chann-1,i] = np.max(Pxx_den[freq_band_ind])
+			norm_freq = np.append(np.ravel(np.nonzero(np.less(freq,stim_freq-3))),np.ravel(np.nonzero(np.less(freq,stim_freq+3))))
+			total_power_Pxx_den = np.sum(Pxx_den[norm_freq])
+			Pxx_den = Pxx_den/total_power_Pxx_den
+			freq_band = np.less(freq,f_high)&np.greater(freq,f_low)
+			freq_band_ind = np.ravel(np.nonzero(freq_band))
+			peak_power[chann-1,i] = np.max(Pxx_den[freq_band_ind])
+	trial_averaged_peak_power = np.nanmean(peak_power,axis=1)
 
- 	trial_averaged_peak_power = np.nanmean(peak_power,axis=1)
-
- 	return trial_averaged_peak_power
+	return trial_averaged_peak_power
 
 def TrialAveragedPeakPowerDuringHold(lfp, Fs, lfp_ind, samples_lfp, hold_duration, freq_window, stim_freq):
 	'''
@@ -222,22 +218,20 @@ def TrialAveragedPeakPowerDuringHold(lfp, Fs, lfp_ind, samples_lfp, hold_duratio
 	density_length = 30
 	hold = Fs*hold_duration 	# length of hold period in samples
 
-	for i in range(0,len(lfp_ind)):	
+	for i in range(0,len(lfp_ind)):
 		for chann in channels:
 			lfp_snippet = lfp[chann][lfp_ind[i]:lfp_ind[i]+np.minimum(hold, samples_lfp[i])]
 			num_timedom_samples = lfp_snippet.size
 			freq, Pxx_den = signal.welch(lfp_snippet, Fs, nperseg=512, noverlap=256)
-	 		norm_freq = np.append(np.ravel(np.nonzero(np.less(freq,stim_freq-3))),np.ravel(np.nonzero(np.less(freq,stim_freq+3))))
-	 		total_power_Pxx_den = np.sum(Pxx_den[norm_freq])
-	 		Pxx_den = Pxx_den/total_power_Pxx_den
-	 		
-	 		freq_band = np.less(freq,f_high)&np.greater(freq,f_low)
- 			freq_band_ind = np.ravel(np.nonzero(freq_band))
- 			peak_power[chann-1,i] = np.max(Pxx_den[freq_band_ind])
+			norm_freq = np.append(np.ravel(np.nonzero(np.less(freq,stim_freq-3))),np.ravel(np.nonzero(np.less(freq,stim_freq+3))))
+			total_power_Pxx_den = np.sum(Pxx_den[norm_freq])
+			Pxx_den = Pxx_den/total_power_Pxx_den
+			freq_band = np.less(freq,f_high)&np.greater(freq,f_low)
+			freq_band_ind = np.ravel(np.nonzero(freq_band))
+			peak_power[chann-1,i] = np.max(Pxx_den[freq_band_ind])
+	trial_averaged_peak_power = np.nanmean(peak_power,axis=1)
 
- 	trial_averaged_peak_power = np.nanmean(peak_power,axis=1)
-
- 	return trial_averaged_peak_power
+	return trial_averaged_peak_power
 
 def computePeakPowerPerChannel(lfp,Fs,stim_freq,t_start,t_end,freq_window):
 	'''
@@ -257,19 +251,19 @@ def computePeakPowerPerChannel(lfp,Fs,stim_freq,t_start,t_end,freq_window):
 	f_high = freq_window[1]
 	counter = 0
 	peak_power = np.zeros(len(channels))
-	
+
 	for chann in channels:
 		lfp_snippet = lfp[chann][t_start:t_end]
 		num_timedom_samples = lfp_snippet.size
 		freq, Pxx_den = signal.welch(lfp_snippet, Fs, nperseg=512, noverlap=256)
- 		norm_freq = np.append(np.ravel(np.nonzero(np.less(freq,stim_freq-3))),np.ravel(np.nonzero(np.less(freq,stim_freq+3))))
- 		total_power_Pxx_den = np.sum(Pxx_den[norm_freq])
- 		Pxx_den = Pxx_den/total_power_Pxx_den
+		norm_freq = np.append(np.ravel(np.nonzero(np.less(freq,stim_freq-3))),np.ravel(np.nonzero(np.less(freq,stim_freq+3))))
+		total_power_Pxx_den = np.sum(Pxx_den[norm_freq])
+		Pxx_den = Pxx_den/total_power_Pxx_den
 
- 		freq_band = np.less(freq,f_high)&np.greater(freq,f_low)
- 		freq_band_ind = np.ravel(np.nonzero(freq_band))
- 		peak_power[counter] = np.max(Pxx_den[freq_band_ind])
- 		counter += 1
+		freq_band = np.less(freq,f_high)&np.greater(freq,f_low)
+		freq_band_ind = np.ravel(np.nonzero(freq_band))
+		peak_power[counter] = np.max(Pxx_den[freq_band_ind])
+		counter += 1
 
 	return peak_power
 
@@ -456,6 +450,67 @@ def computePowerFeatures(lfp_data, Fs, power_bands, event_indices, t_window):
 
 	return features
 
+def computePowerFeatures_overTime(lfp_data, Fs, power_bands,  **kwargs):
+	'''
+	Inputs
+		- lfp_data: dictionary of data, with one entry for each channel 
+		- Fs: sampling frequency 
+		- power_bands: list of power bands, e.g. [[4,8], [13,30]] is a list defining two frequency bands: 4 - 8 Hz, and 13 - 30 Hz 
+		- t_bin_size: length of time bins to chunk time into (in seconds) to compute features over; default is 5 seconds
+		- t_overlap: length of time (in seconds) that time bins should overlap; default is t_bin_size/2 seconds
+		- t_start: sample index at which to begin computation; default is sample 0
+		- t_stop: sample index at which to end computation; default is sample -1
+	Outputs
+		- features: dictionary with N entries (one per time chunk), with a C x K matric which C is the number of channels 
+					and K is the number of features (number of power bands times M)
+	'''
+	# Defining the optional input parameters to the method
+	t_bin_size = kwargs.get('t_bin_size', 5.)
+	t_overlap = kwargs.get('t_overlap', t_bin_size/2.)
+	t_start = kwargs.get('t_start', 0)
+	t_stop = kwargs.get('t_stop', len(lfp_data))
+
+
+	NFFT = int(Fs*0.25)						# number of samples used in computing the FFT
+	noverlap = int(Fs*0.1875)				# number of overlap samples when computing the FFT
+	t_bin_size = int(Fs*t_bin_size)		 	# changing seconds into samples
+	t_overlap = int(Fs*t_overlap)			# changing seconds into samples
+
+	event_indices = np.arange(t_start, t_stop, t_bin_size - t_overlap)
+
+	padding = int(Fs*0.5)  					# pad data on both ends for purpose of computation
+
+	N = len(event_indices)
+	'''
+	times = np.ones([N,M])
+	for t,time in enumerate(t_window):
+		times[:,t] = time*np.ones(N)
+	'''
+	features = dict()
+
+	channels = lfp_data.keys()
+
+	for trial in range(0,N):
+		events = event_indices[trial]  
+		events = int(events)
+		trial_powers = np.zeros([len(channels),len(power_bands)])
+		for j, chann in enumerate(channels):
+			chann_data = lfp_data[chann]
+			feat_counter = 0
+			data = chann_data[events:events + t_bin_size]
+			data = np.ravel(data)
+			f, t, Sxx = signal.spectrogram(data, fs = Fs, nperseg = NFFT, noverlap=noverlap)  # units are V**2/Hz
+			Sxx = np.sqrt(Sxx)		# units are V/sqrt(Hz)
+			for k in range(0,len(power_bands)):
+				low_band, high_band = power_bands[k]
+				freqs = np.ravel(np.nonzero(np.greater(f,low_band)&np.less_equal(f,high_band)))
+				tot_power_band = np.sum(Sxx[freqs,:],axis=0)
+				trial_powers[j,feat_counter] = np.sum(tot_power_band)/float(len(tot_power_band))
+				feat_counter += 1
+		features[str(trial)] = trial_powers
+
+	return features, event_indices
+
 def computePowerFeatures_Chirplets(lfp_data, Fs, power_bands, event_indices, t_window):
 	'''
 	Inputs
@@ -474,7 +529,6 @@ def computePowerFeatures_Chirplets(lfp_data, Fs, power_bands, event_indices, t_w
 
 	'''
 	t_window = [int(Fs*time) for time in t_window]  # changing seconds into samples
-
 	N, M = event_indices.shape
 	tot_features = N*M
 	times = np.ones([N,M])
@@ -486,8 +540,8 @@ def computePowerFeatures_Chirplets(lfp_data, Fs, power_bands, event_indices, t_w
 	channels = lfp_data.keys()
 	chan_powers = np.zeros([len(channels),tot_features,len(power_bands)])
 
-	for j, chann in enumerate(channels): 
-		print chann
+	for j, chann in enumerate(channels):
+		print("chann")
 		chann_data = lfp_data[chann]
 		data = np.zeros([tot_features, times[0,0] + 2*int(Fs)])
 		for i in range(tot_features):
@@ -499,7 +553,7 @@ def computePowerFeatures_Chirplets(lfp_data, Fs, power_bands, event_indices, t_w
 		Sxx, Power, f = make_spectrogram(data, Fs, fmax=100, trialave=False, makeplot=False)  # Sxx is events x freq x time
 		Sxx_trunc = Sxx[:,:,Fs:-Fs] 					# get rid of padded data in time domain
 		Sxx_trunc = Sxx_trunc/np.sum(Sxx_trunc)		# normalize by total power
-			
+
 		for k in range(0,len(power_bands)):
 			low_band, high_band = power_bands[k]
 			freqs = np.ravel(np.nonzero(np.greater(f,low_band)&np.less_equal(f,high_band)))
@@ -507,7 +561,7 @@ def computePowerFeatures_Chirplets(lfp_data, Fs, power_bands, event_indices, t_w
 			tot_power_band = np.sum(tot_power_band[:,:], axis=1) # sum over freq
 			chan_powers[j,:,k] = tot_power_band
 			#trial_powers[j,i*len(power_bands) + k] = np.sum(tot_power_band)/float(len(tot_power_band))
-		
+
 	feat_counter = 0
 	for q in range(N): # loop over trials
 		trial_powers = np.zeros([len(channels),M*len(power_bands)])
@@ -599,7 +653,7 @@ def computeAllCoherenceFeatures(lfp_data, Fs, power_bands, event_indices, t_wind
 		for chan2 in channels[i+1:]:
 			channel_pairs.append([chan1, chan2])
 
-	print "There are %i channel pairs" % (len(channel_pairs))
+	print("There are %i channel pairs" % (len(channel_pairs)))
 	features = computeCoherenceFeatures(lfp_data, channel_pairs, Fs, power_bands, event_indices, t_window)
 	return features
 
@@ -669,7 +723,7 @@ def averagedPSD(data, Fs, cutoff, len_windows, num_wins, notch):
 	filtered_data = lowpassFilterData(filtered_data, Fs, cutoff) 	# low-pass filter
 
 	for i in range(num_wins):
-		print "Window number: %i" % (i)
+		print("Window number: %i" % (i))
 		if i==0:
 			freq, Pxx = signal.welch(filtered_data[i*len_windows:(i+1)*len_windows], Fs, nperseg=512, noverlap=256)
 			Pxx_nonorm = Pxx

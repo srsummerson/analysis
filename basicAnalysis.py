@@ -187,7 +187,7 @@ def computeSpikeRatesPerChannel(spike_file1,spike_file2,t_start,t_end):
 
 		for unit in unit_vals:
 			unit_name = 'Ch'+str(channel) +'_' + str(unit)
-			print unit_name
+			print(unit_name)
 			unit_labels.append(unit_name)
 			spike_times = [spike[0] for spike in channel_spikes if (spike[2]==unit)]
 			counts, bins = np.histogram(spike_times,epoch_bins)
@@ -433,6 +433,27 @@ def lowpassFilterData(data, Fs, cutoff):
 
 	return filtered_data
 
+def highpassFilterData(data, Fs, cutoff):
+	'''
+	This method highpass filters data using a butterworth filter.
+
+	Inputs:
+		- data: array of time-stamped values to be filtered 
+		- Fs: sampling frequency of data 
+		- cutoff: cutoff frequency of the LPF in Hz
+	Outputs:
+		- filtered_data: array contained the lowpass-filtered data
+
+	'''
+	nyq = 0.5*Fs
+	order = 5
+	normal_cutoff = cutoff / nyq
+
+	b, a = signal.butter(order, normal_cutoff, btype= 'highpass', analog = False)
+	filtered_data = signal.filtfilt(b,a,data)
+
+	return filtered_data
+
 def notchFilterData(data, Fs, notch_freq):
 	'''
 	This method lowpass filters data using a butterworth filter.
@@ -632,7 +653,7 @@ def getConnectionWeightsMLP(net, num_in, num_hidden, num_out):
 	for mod in net.modules:
 		for conn in net.connections[mod]:
 			conn_name = str(conn)
-			print conn_name[-19:]
+			print(conn_name[-19:])
 			if (conn_name[-19:] == "'hidden0' -> 'out'>"):
 				# fill in weights from hidden layer to output layer
 				weights = conn.params 

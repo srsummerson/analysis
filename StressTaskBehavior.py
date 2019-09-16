@@ -30,7 +30,7 @@ class StressBehavior():
 
 	def __init__(self, hdf_file):
 		self.filename =  hdf_file
-		self.table = tables.openFile(self.filename)
+		self.table = tables.open_file(self.filename)
 
 		self.state = self.table.root.task_msgs[:]['msg']
 		self.state_time = self.table.root.task_msgs[:]['time']
@@ -283,7 +283,7 @@ class StressBehavior():
 	            cursor.append(self.table.root.task[ix+g]['cursor'][:, [0, 2]])
 
 	        except:
-	            print 'skipping index: ', g, ' -- too close to beginning or end of file'
+	            print('skipping index: ', g, ' -- too close to beginning or end of file')
 	    cursor = np.dstack((cursor))    # time x (x,y) x trial
 	    
 	    dt = 1./fs
@@ -589,10 +589,10 @@ class TDTNeuralData():
 	def __init__(self, TDT_directory, block_num):
 		# load syncing data: hdf timestamps matching with TDT sample numbers
 		tank_name = TDT_directory[-14:]   # assumes TDT directory has format ".../MarioYYYYMMDD/"
-		print tank_name
+		print(tank_name)
 		#mat_filename = TDT_directory[:-17] + 'syncHDF/' + tank_name+ '_b'+str(block_num)+'_syncHDF.mat'
 		mat_filename = TDT_directory[:-13] + '/' + tank_name+ '_b'+str(block_num)+'_syncHDF.mat'
-		print TDT_directory[:-13]
+		print(TDT_directory[:-13])
 		self.hdf_times = dict()
 		sp.io.loadmat(mat_filename,self.hdf_times)
 
@@ -607,7 +607,7 @@ class TDTNeuralData():
 
 		r = io.TdtIO(TDT_directory)
 		bl = r.read_block(lazy=False,cascade=True)
-		print "File read."
+		print("File read.")
 		self.lfp = dict()
 		# Get Pulse and Pupil Data
 		for sig in bl.segments[block_num-1].analogsignals:
@@ -782,7 +782,7 @@ class StressBehavior_CenterOut():
 
 	def __init__(self, hdf_file):
 		self.filename =  hdf_file
-		self.table = tables.openFile(self.filename)
+		self.table = tables.open_file(self.filename)
 
 		self.state = self.table.root.task_msgs[:]['msg']
 		self.state_time = self.table.root.task_msgs[:]['time']
@@ -868,7 +868,7 @@ class StressBehavior_CenterOut():
 	            cursor.append(self.table.root.task[ix+g]['cursor'][:, [0, 2]])
 
 	        except:
-	            print 'skipping index: ', g, ' -- too close to beginning or end of file'
+	            print('skipping index: ', g, ' -- too close to beginning or end of file')
 	    cursor = np.dstack((cursor))    # time x (x,y) x trial
 	    
 	    dt = 1./fs
@@ -1009,18 +1009,18 @@ class StressBehaviorWithDrugs_CenterOut():
 
 	def __init__(self, hdf_file):
 		self.filename =  hdf_file
-		self.table = tables.openFile(self.filename)
+		self.table = tables.open_file(self.filename)
 
-		self.state = self.table.root.task_msgs[:]['msg']
-		self.state_time = self.table.root.task_msgs[:]['time']
+		self.state = self.table.root.task_msgs[:]["msg"]
+		self.state_time = self.table.root.task_msgs[:]["time"]
 		#self.stress_type = self.table.root.task[:]['stress_trial']
 	  
-		self.ind_wait_states = np.ravel(np.nonzero(self.state == 'wait'))   # total number of unique trials
-		self.ind_center_states = np.ravel(np.nonzero(self.state == 'center'))   # total number of totals (includes repeats if trial was incomplete)
-		self.ind_reward_states = np.ravel(np.nonzero(self.state == 'reward'))
+		self.ind_wait_states = np.ravel(np.nonzero(self.state == b'wait'))   # total number of unique trials
+		self.ind_center_states = np.ravel(np.nonzero(self.state == b'center'))   # total number of totals (includes repeats if trial was incomplete)
+		self.ind_reward_states = np.ravel(np.nonzero(self.state == b'reward'))
 		#self.ind_hold_center_states = np.ravel(np.nonzero(self.state == 'hold_center'))
 		self.ind_hold_center_states = self.ind_reward_states-5
-		self.ind_target_states = np.ravel(np.nonzero(self.state == 'target'))
+		self.ind_target_states = np.ravel(np.nonzero(self.state == b'target'))
 		
 		#self.stress_trial = np.ravel(self.stress_type[self.state_time[self.ind_reward_states-4]])
 		
@@ -1097,7 +1097,7 @@ class StressBehaviorWithDrugs_CenterOut():
 	            cursor.append(self.table.root.task[ix+g]['cursor'][:, [0, 2]])
 
 	        except:
-	            print 'skipping index: ', g, ' -- too close to beginning or end of file'
+	            print('skipping index: ', g, ' -- too close to beginning or end of file')
 	    cursor = np.dstack((cursor))    # time x (x,y) x trial
 	    
 	    dt = 1./fs

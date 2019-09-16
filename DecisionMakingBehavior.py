@@ -23,6 +23,7 @@ from offlineSortedSpikeAnalysis import OfflineSorted_CSVFile
 from logLikelihoodRLPerformance import logLikelihoodRLPerformance, RLPerformance
 
 
+
 cd_units = [1, 3, 4, 17, 18, 20, 40, 41, 54, 56, 57, 63, 64, 72, 75, 81, 83, 88, 89, 96, 100, 112, 114, 126, 130, 140, 143, 146, 156, 157, 159]
 acc_units = [5, 6, 19, 22, 30, 39, 42, 43, 55, 58, 59, 69, 74, 77, 85, 90, 91, 102, 105, 121, 128]	
 dir = "C:/Users/ss45436/Box/UC Berkeley/Cd Stim/Neural Correlates/Mario/spike_data/"			
@@ -39,6 +40,124 @@ def trial_sliding_avg(trial_array, num_trials_slide):
 			slide_avg[i] = np.sum(trial_array[i-num_trials_slide+1:i+1])/float(num_trials_slide)
 
 	return slide_avg
+
+def Value_from_reward_history_TwoTargetTask(hdf_files):
+
+	# 1. Load behavior data and pull out trial indices for the designated trial case
+	cb = ChoiceBehavior_TwoTargets_Stimulation(hdf_files, 100, 100)
+	total_trials = cb.num_successful_trials
+	#targets_on = cb.targets_on[cb.state_time[cb.ind_check_reward_states]]
+
+	# 2. Get chosen targets and rewards
+	chosen_target, rewards, instructed_or_freechoice = cb.GetChoicesAndRewards()
+	chose_hv_inds = np.ravel(np.nonzero(chosen_target[:-1]-1))
+	chose_lv_inds = np.ravel(np.nonzero(2-chosen_target[:-1]))
+
+	# 3. Extract reward information for each target
+	q_hv = np.zeros(len(chosen_target))
+	q_lv = np.zeros(len(chosen_target))
+	q_hv[0] = 0.5
+	q_lv[0] = 0.5
+
+	reward_hv = rewards[chose_hv_inds]
+	reward_lv = rewards[chose_lv_inds]
+
+	# 4. Determine values as sliding average of reward history
+	reward_hv_avg = trial_sliding_avg(reward_hv,10)
+	reward_lv_avg = trial_sliding_avg(reward_lv,10)
+
+	q_hv[chose_hv_inds+1] = reward_hv_avg
+	q_lv[chose_lv_inds+1] = reward_lv_avg
+
+	# 4a. Fill in values for trials where target was not selected
+	for i in range(len(q_hv)-1):
+		if i not in chose_hv_inds:
+			q_hv[i+1] = q_hv[i]
+
+	for i in range(len(q_lv)-1):
+		if i not in chose_lv_inds:
+			q_lv[i+1] = q_lv[i]
+
+	# 5. Smooth value information
+	b = signal.gaussian(20, 1)
+	q_hv_smooth = filters.convolve1d(q_hv, b/b.sum())
+	q_lv_smooth = filters.convolve1d(q_lv, b/b.sum())
+
+	'''
+	plt.figure()
+	plt.plot(q_hv,'r')
+	plt.plot(q_hv_smooth,'m')
+	plt.plot(q_lv,'b')
+	plt.plot(q_lv_smooth,'c')
+	plt.show()
+	'''
+
+	return q_hv_smooth, q_lv_smooth
+
+def Value_from_reward_history_ThreeTargetTask(hdf_files):
+
+	# 1. Load behavior data and pull out trial indices for the designated trial case
+	cb = ChoiceBehavior_ThreeTargets_Stimulation(hdf_files, 150, 100)
+	
+	# 2. Get Q-values, chosen targets, and rewards
+	targets_on, chosen_target, rewards, instructed_or_freechoice = cb.GetChoicesAndRewards()
+	chose_hv_inds = np.ravel(np.nonzero(np.floor(0.5*chosen_target[:-1])))
+	chose_mv_inds = np.ravel(np.nonzero(1 - np.abs(chosen_target[:-1] -1)))
+	chose_lv_inds = np.ravel(np.nonzero(np.floor(1 - 0.5*chosen_target[:-1])))
+
+	# 3. Extract reward information for each target
+	q_hv = np.zeros(len(chosen_target))
+	q_lv = np.zeros(len(chosen_target))
+	q_mv = np.zeros(len(chosen_target))
+	q_hv[0] = 0.5
+	q_lv[0] = 0.5
+	q_mv[0] = 0.5
+
+	reward_hv = rewards[chose_hv_inds]
+	reward_lv = rewards[chose_lv_inds]
+	reward_mv = rewards[chose_mv_inds]
+
+	# 4. Determine values as sliding average of reward history
+	reward_hv_avg = trial_sliding_avg(reward_hv,10)
+	reward_lv_avg = trial_sliding_avg(reward_lv,10)
+	reward_mv_avg = trial_sliding_avg(reward_mv,10)
+
+	q_hv[chose_hv_inds+1] = reward_hv_avg
+	q_lv[chose_lv_inds+1] = reward_lv_avg
+	q_mv[chose_mv_inds+1] = reward_mv_avg
+
+	# 4a. Fill in values for trials where target was not selected
+	for i in range(len(q_hv)-1):
+		if i not in chose_hv_inds:
+			q_hv[i+1] = q_hv[i]
+
+	for i in range(len(q_lv)-1):
+		if i not in chose_lv_inds:
+			q_lv[i+1] = q_lv[i]
+
+	for i in range(len(q_mv)-1):
+		if i not in chose_mv_inds:
+			q_mv[i+1] = q_mv[i]
+
+	# 5. Smooth value information
+	b = signal.gaussian(20, 1)
+	q_hv_smooth = filters.convolve1d(q_hv, b/b.sum())
+	q_lv_smooth = filters.convolve1d(q_lv, b/b.sum())
+	q_mv_smooth = filters.convolve1d(q_mv, b/b.sum())
+
+	'''
+	plt.figure()
+	plt.plot(q_hv,'r', label = 'HV')
+	plt.plot(q_hv_smooth,'m')
+	plt.plot(q_lv,'b', label = 'LV')
+	plt.plot(q_lv_smooth,'c')
+	plt.plot(q_mv,'g', label = 'MV')
+	plt.plot(q_mv_smooth,'y')
+	plt.plot(0.5*chosen_target,'k')
+	plt.show()
+	'''
+
+	return q_hv_smooth, q_mv_smooth, q_lv_smooth
 
 
 class ChoiceBehavior_ThreeTargets():
@@ -1987,6 +2106,9 @@ def loglikelihood_ThreeTargetTask_Qlearning_QMultiplicative_MVLV(parameters, Q_i
 
 def ThreeTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files, channel, t_before, t_after):
 	'''
+	8/15/19 - This method was updated to use the hold center as the behavioral time
+	point to align neural activity to (rather than picture onset, before hold begins) (2152-2153)
+
 	This method returns the average firing rate of all units on the indicated channel during picture onset.
 
 	Inputs:
@@ -2026,7 +2148,10 @@ def ThreeTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_fil
 			print('no data')
 		elif ((channel < 97) and spike_files[i][0] != '') or ((channel > 96) and (spike_files[i][1] != '')):
 			# Find lfp sample numbers corresponding to these times and the sampling frequency of the lfp data
-			lfp_state_row_ind, lfp_freq = cb_block.get_state_TDT_LFPvalues(ind_picture_onset, syncHDF_files[i])
+
+			#lfp_state_row_ind, lfp_freq = cb_block.get_state_TDT_LFPvalues(ind_picture_onset, syncHDF_files[i])
+			lfp_state_row_ind, lfp_freq = cb_block.get_state_TDT_LFPvalues(ind_hold_center, syncHDF_files[i])
+
 			# Convert lfp sample numbers to times in seconds
 			times_row_ind = lfp_state_row_ind/float(lfp_freq)
 
@@ -2330,6 +2455,9 @@ def MultiTargetTask_FiringRates_DifferenceBetweenBlocks_multichan(hdf_files, syn
 
 def TwoTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files, channel, t_before, t_after):
 	'''
+	8/15/2019 - this method updated to use the picture_onset behavioral event rather than picture onset
+	which occurs before hold begins (2499-2500)
+
 	This method returns the average firing rate of all units on the indicated channel during picture onset.
 
 	Inputs:
@@ -2367,16 +2495,19 @@ def TwoTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files
 		# Load spike data: 
 		if (spike_files[i] != ''):
 			# Find lfp sample numbers corresponding to these times and the sampling frequency of the lfp data
+
 			lfp_state_row_ind, lfp_freq = cb_block.get_state_TDT_LFPvalues(ind_picture_onset, syncHDF_files[i])
+			#lfp_state_row_ind, lfp_freq = cb_block.get_state_TDT_LFPvalues(ind_hold_center, syncHDF_files[i])
+
 			# Convert lfp sample numbers to times in seconds
 			times_row_ind = lfp_state_row_ind/float(lfp_freq)
 
 			# Load spike data and find all sort codes associated with good channels
 			if channel < 97:
-				print(channel)
+				#print(channel)
 				spike = OfflineSorted_CSVFile(spike_files[i][0])
 			else:
-				print(channel)
+				#print(channel)
 				spike = OfflineSorted_CSVFile(spike_files[i][1])
 
 			# Get matrix that is (Num units on channel)x(num trials in hdf_file) containing the firing rates during the
@@ -2717,8 +2848,11 @@ def TwoTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, spik
 
 	return window_fr, window_fr_smooth, fr_mat, x, y, Q_low, Q_high
 
-def ThreeTargetTask_RegressedFiringRatesWithValue_PictureOnset(hdf_files, syncHDF_files, spike_files, channel, t_before, t_after, smoothed):
+def ThreeTargetTask_RegressedFiringRatesWithValue_PictureOnset(dir1, hdf_files, syncHDF_files, spike_files, channel, t_before, t_after, smoothed):
 	'''
+	8/15/19 - Updated to use vales determined from smoothed reward history (2915-2925) and to use the hold center as the behavioral time
+	point to align neural activity to (rather than picture onset, before hold begins) (2908), and to save to the right folder (3174)
+
 	This method regresses the firing rate of all units as a function of value. It then plots the firing rate as a function of 
 	the modeled value and uses the regression coefficient to plot a linear fit of the relationship between value and 
 	firing rate.
@@ -2778,6 +2912,7 @@ def ThreeTargetTask_RegressedFiringRatesWithValue_PictureOnset(hdf_files, syncHD
 	targets_on, chosen_target, rewards, instructed_or_freechoice = cb.GetChoicesAndRewards()
 	
 	# Varying Q-values
+	"""
 	# Find ML fit of alpha and beta
 	Q_initial = 0.5*np.ones(3)
 	nll = lambda *args: -loglikelihood_ThreeTargetTask_Qlearning(*args)
@@ -2786,6 +2921,8 @@ def ThreeTargetTask_RegressedFiringRatesWithValue_PictureOnset(hdf_files, syncHD
 	print("Best fitting alpha and beta are: ", alpha_ml, beta_ml)
 	# RL model fit for Q values
 	Q_low, Q_mid, Q_high, prob_choice_low, prob_choice_mid, prob_choice_high, log_likelihood = ThreeTargetTask_Qlearning([alpha_ml, beta_ml], Q_initial, chosen_target, rewards, targets_on, instructed_or_freechoice)
+	"""
+	Q_high, Q_mid, Q_low = Value_from_reward_history_ThreeTargetTask(hdf_files)
 
 	# 4. Create firing rate matrix with size (max_num_units)x(total_trials)
 	max_num_units = int(np.max(num_units))
@@ -3034,7 +3171,7 @@ def ThreeTargetTask_RegressedFiringRatesWithValue_PictureOnset(hdf_files, syncHD
 			data['Q_mid_late'] = Q_late
 			data['FR_early'] = FR_BlockA
 			data['FR_late'] = FR_late
-			sp.io.savemat( dir + 'picture_onset_fr/' + data_filename + '.mat', data)
+			sp.io.savemat( dir1 + 'hold_center_fr/' + data_filename + '.mat', data)
 		except:
 			pass
 
@@ -4235,8 +4372,11 @@ def Compare_Qlearning_across_blocks(hdf_files):
 
 	return Q_mid, Q_mid2, RPE, RPE2
 
-def TwoTargetTask_RegressedFiringRatesWithValue_PictureOnset(hdf_files, syncHDF_files, spike_files, channel, t_before, t_after, smoothed):
+def TwoTargetTask_RegressedFiringRatesWithValue_PictureOnset(dir, hdf_files, syncHDF_files, spike_files, channel, t_before, t_after, smoothed):
 	'''
+	8/15/19 - Updated to use vales determined from smoothed reward history (4441-4451) and to use the picture onset as the behavioral time
+	point to align neural activity to (rather than picture onset, before hold begins) (4433)
+
 	This method regresses the firing rate of all units as a function of value. It then plots the firing rate as a function of 
 	the modeled value and uses the regression coefficient to plot a linear fit of the relationship between value and 
 	firing rate.
@@ -4294,10 +4434,11 @@ def TwoTargetTask_RegressedFiringRatesWithValue_PictureOnset(hdf_files, syncHDF_
 	cum_sum_trials = np.cumsum(num_trials).astype(int)
 	print(window_fr)
 
-	# 3. Get Q-values, chosen targets, and rewards
+	# 3. Get chosen targets, and rewards
 	chosen_target, rewards, instructed_or_freechoice = cb.GetChoicesAndRewards()
 	
 	# Varying Q-values
+	"""
 	# Find ML fit of alpha and beta
 	Q_initial = 0.5*np.ones(2)
 	nll = lambda *args: -logLikelihoodRLPerformance(*args)
@@ -4306,6 +4447,8 @@ def TwoTargetTask_RegressedFiringRatesWithValue_PictureOnset(hdf_files, syncHDF_
 	print("Best fitting alpha and beta are: ", alpha_ml, beta_ml)
 	# RL model fit for Q values
 	Q_low, Q_high, prob_choice_low, log_likelihood = RLPerformance([alpha_ml, beta_ml], Q_initial, rewards, chosen_target, instructed_or_freechoice)
+	"""
+	Q_high, Q_low = Value_from_reward_history_TwoTargetTask(hdf_files)
 
 	# 4. Create firing rate matrix with size (max_num_units)x(total_trials)
 	max_num_units = int(np.max(num_units))
@@ -4346,6 +4489,12 @@ def TwoTargetTask_RegressedFiringRatesWithValue_PictureOnset(hdf_files, syncHDF_
 		y_zscore = stats.zscore(y)
 		print(y.shape)
 		#y = y/np.max(y)  # normalize y
+
+		# save Q and firing rate data
+		Q_learning = Q_low[trial_inds]
+		FR_learning = y
+		Q_low_BlockA = Q_low[trial_inds]
+		data = dict()
 		
 		# Use the below statement to only perform analysis if unit had non-zero firing on at least 10 trials
 		#if len(trial_inds) > 9:
@@ -4374,10 +4523,6 @@ def TwoTargetTask_RegressedFiringRatesWithValue_PictureOnset(hdf_files, syncHDF_
 			plt.ylabel('Firing Rate (spk/s)')
 			plt.title(sess_name + ' - Channel %i - Unit %i' %(channel, k))
 
-			# save Q and firing rate data
-			Q_learning = Q_low[trial_inds]
-			FR_learning = y
-			Q_low_BlockA = Q_low[trial_inds]
 
 			max_fr = np.amax(y)
 			xlim_min = np.amin(Q_low[trial_inds])
@@ -4457,7 +4602,9 @@ def TwoTargetTask_RegressedFiringRatesWithValue_PictureOnset(hdf_files, syncHDF_
 			m,b = np.polyfit(x_lin, y, 1)
 
 			max_fr_stim = np.amax(y)
-			fr_lim = np.maximum(max_fr, max_fr_stim)
+			#fr_lim = np.maximum(max_fr, max_fr_stim)
+			fr_lim = max_fr_stim
+
 
 			plt.figure(k)
 			plt.subplot(1,3,1)
@@ -4465,16 +4612,18 @@ def TwoTargetTask_RegressedFiringRatesWithValue_PictureOnset(hdf_files, syncHDF_
 			plt.plot(x_lin, m*x_lin + b, c = 'c')
 			#plt.plot(Q_mid[trial_inds], regress_coef*Q_mid[trial_inds] + regress_intercept, c = 'g')
 			plt.ylim((0,1.1*fr_lim))
-			plt.xlim((0.9*xlim_min, 1.1*xlim_max))
+			plt.xlim((0.9*Q_low_min, 1.1*Q_low_max))
 			plt.legend()
 
 			# save Q and firing rate data
 			Q_late = Q_low[trial_inds]
 			FR_late = y
-
+			"""
 			# Get binned firing rates: bins of fixed size
-			Q_range_min = np.min(np.min(Q_late), Q_range_min)
-			Q_range_max = np.max(np.max(Q_late), Q_range_max)
+			#Q_range_min = np.min(np.min(Q_late), Q_range_min)
+			#Q_range_max = np.max(np.max(Q_late), Q_range_max)
+			Q_range_min = np.min(Q_low[trial_inds])
+			Q_range_max = np.max(Q_low[trial_inds])
 			bins = np.arange(Q_range_min, Q_range_max + 0.5*(Q_range_max - Q_range_min)/5., (Q_range_max - Q_range_min)/5.)
 			hist_BlockA, bins = np.histogram(Q_low_BlockA, bins)
 			hist_late, bins = np.histogram(Q_late, bins)
@@ -4535,24 +4684,22 @@ def TwoTargetTask_RegressedFiringRatesWithValue_PictureOnset(hdf_files, syncHDF_
 			plt.ylim((0,1.1*fr_lim))
 			plt.xlim((0.9*Q_range_min, 1.1*Q_range_max))
 			plt.legend()
+			"""
 
 			# Save data
+			print('Saving data')
 			data_filename = session_name + ' - Channel %i - Unit %i' %(channel, k)
-			data = dict()
 			data['regression_labels'] = ['Q_low', 'Q_high','RT', 'MT', 'Choice', 'Reward']
-			data['beta_values_blockA'] = fit_glm.params
-			data['pvalues_blockA'] = fit_glm.pvalues
-			data['rsquared_blockA'] = fit_glm.rsquared
 			data['beta_values_blocksAB'] = fit_glm_late.params
 			data['pvalues_blocksAB'] = fit_glm_late.pvalues
 			data['rsquared_blocksAB'] = fit_glm_late.rsquared
-			data['Q_low_early'] = Q_low_BlockA
 			data['Q_low_late'] = Q_late
-			data['FR_early'] = FR_BlockA
 			data['FR_late'] = FR_late
 			sp.io.savemat( dir + 'picture_onset_fr/' + data_filename + '.mat', data)
+			#sp.io.savemat( dir + 'hold_center_fr/' + data_filename + '.mat', data)
 		except:
 			pass
+
 		
 	#return window_fr, window_fr_smooth, fr_mat, x, y, Q_low, Q_mid, Q_high, Q_learning, Q_late, FR_learning, FR_late, fit_glm
 	return Q_low, Q_high

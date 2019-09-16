@@ -90,7 +90,7 @@ def process_plate(plate, plate_legend):
 			entry = plate_legend[i,j:j+2]
 			vals = plate[i,j:j+2]
 			if (entry[0]==entry[1])&(entry[0] != 'x'):
-				data.append(np.mean(vals))
+				data.append(np.nanmean(vals))
 				data_legend.append(entry[0])
 				
 			elif (entry[0] != 'x'):
@@ -191,5 +191,5 @@ all_legend = np.hstack([data1_legend, data2_legend, data3_legend, data4_legend])
 mario_cort_mat, mario_data_labels = monkey_cortisol_data('Mario', all_vals, all_legend)
 luigi_cort_mat, luigi_data_labels = monkey_cortisol_data('Luigi', all_vals, all_legend)
 
-print(mario_mean = np.nanmean(mario_cort_mat,axis=0))
-print(luigi_mean = np.nanmean(luigi_cort_mat,axis=0))
+print(np.nanmean(mario_cort_mat,axis=0))
+print(np.nanmean(luigi_cort_mat,axis=0))

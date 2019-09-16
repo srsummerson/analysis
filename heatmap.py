@@ -128,8 +128,9 @@ def corrplot(data, size_scale=500, marker='s'):
     corr.columns = ['x', 'y', 'value']
     heatmap(
         corr['x'], corr['y'],
-        color=corr['value'], color_range=[-1, 1],
-        palette=sns.diverging_palette(20, 220, n=256),
+        color=corr['value'], color_range=[0, 1],
+        #palette=sns.diverging_palette(20, 220, n=256),
+        palette=sns.light_palette((210, 90, 60), n_colors = 256, input="husl"),
         size=corr['value'].abs(), size_range=[0,1],
         marker=marker,
         x_order=data.columns,

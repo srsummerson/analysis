@@ -1,6 +1,8 @@
 import numpy as np
 from neo import io
 import scipy as sp
+import matplotlib.pyplot as plt
+from basicAnalysis import highpassFilterData
 
 def running_mean(x, N):
 	cumsum = np.nancumsum(np.insert(x, 0, 0)) 
@@ -34,7 +36,8 @@ def findIBIs(pulse,sampling_rate):
 		pulse_std = np.nanstd(pulse_signal)
 		#thres = pulse_trough_amp + 0.6*(pulse_peak_amp - pulse_trough_amp)
 		thres = pulse_mean + 0.2*pulse_std
-		thresholded_pulse = (pulse_signal > thres)
+		thresholded_pulse1 = (pulse_signal > thres)
+		thresholded_pulse = np.array([int(val) for val in thresholded_pulse1])
 		pulse_detect = ((thresholded_pulse[1:] - thresholded_pulse[:-1]) > 0.5)  # is 1 when pulse crosses threshold
 
 		max_rate = 220 # beats per min
@@ -235,6 +238,19 @@ def getIBIandPuilDilation(pulse_data, pulse_ind,samples_pulse, pulse_samprate,pu
 	'''
 	This method computes statistics on the IBI and pupil diameter per trial, as well as aggregating data
 	from all the trials indicated by the row_ind input to compute histograms of the data.
+
+	Inputs:
+	- pulse_data: list or array; time series data from pulse monitor
+	- pulse_ind: list; integers corresponding with sample indices at which snippets of pulse data should be extracted
+	- samples_pulse: list; integers corresponding to length (in number of samples) of the snippet of pulse data to be analyzed
+	- pulse_samprate: float; sampling frequency of pulse monitor data
+	- pupil data: list or array; time series data of horizontal pupil dilation
+	- pupil_ind: list; integers corresponding with sample indices at which snippets of pupil data should be extracted
+	- samples_pupil: list; integers corresponding to length (in number of samples) of the snippet of pupil data to be analyzed
+	- pupil_samprate: float; sampling frequency of pupil data
+
+	Outputs:
+
 	'''
 	ibi_mean = []
 	ibi_std = []
@@ -244,21 +260,28 @@ def getIBIandPuilDilation(pulse_data, pulse_ind,samples_pulse, pulse_samprate,pu
 	all_pupil = []
 	pulse_ind = np.array([int(ind) for ind in pulse_ind])
 	pupil_ind = np.array([int(ind) for ind in pupil_ind])
+	print(len(samples_pulse))
 	samples_pulse = np.array([int(ind) for ind in samples_pulse])
 	samples_pupil = np.array([int(ind) for ind in samples_pupil])
 
 	pulse_data_array = np.array(pulse_data)
 	pupil_data_array = np.array(pupil_data)
+	cutoff = 1.5
+	pulse_data_array = highpassFilterData(pulse_data_array, pulse_samprate, cutoff)
+
+	# ideally want to hpf the pulse data and lpf the pupil data
+
 
 	for i in range(0,len(pulse_ind)):
 		#print pulse_ind[i], samples_pulse[i]
 		pulse_snippet = pulse_data_array[pulse_ind[i]:pulse_ind[i]+samples_pulse[i]]
 		# all ibi_snippet arrays are coming back empty
 		ibi_snippet = findIBIs(pulse_snippet,pulse_samprate)
+		
 		all_ibi += ibi_snippet.tolist()
-		if np.isnan(np.nanmean(ibi_snippet))and(ibi_mean != []):
+		if (np.isnan(np.nanmean(ibi_snippet))&(ibi_mean != [])):
 			ibi_mean.append(ibi_mean[-1])   # repeat last measurement
-		elif np.isnan(np.nanmean(ibi_snippet))and(ibi_mean == []):
+		elif (np.isnan(np.nanmean(ibi_snippet))&(ibi_mean == [])):
 			ibi_mean.append(np.nan)
 		else:
 			ibi_mean.append(np.nanmean(ibi_snippet))
@@ -266,7 +289,7 @@ def getIBIandPuilDilation(pulse_data, pulse_ind,samples_pulse, pulse_samprate,pu
 		
 		pupil_snippet = pupil_data_array[pupil_ind[i]:pupil_ind[i]+samples_pupil[i]]
 		pupil_snippet_range = range(0,len(pupil_snippet))
-		eyes_closed = np.nonzero(np.less(np.array(pupil_snippet),-3.3))
+		eyes_closed = np.nonzero(np.less(pupil_snippet,-3.3))
 		eyes_closed = np.ravel(eyes_closed)
 		if len(eyes_closed) > 1:
 			find_blinks = eyes_closed[1:] - eyes_closed[:-1]
@@ -282,6 +305,7 @@ def getIBIandPuilDilation(pulse_data, pulse_ind,samples_pulse, pulse_samprate,pu
 				rm_indices = [pupil_snippet_range.index(rm_range[ind]) for ind in range(0,len(rm_range)) if (rm_range[ind] in pupil_snippet_range)]
 				pupil_snippet_range = np.delete(pupil_snippet_range,rm_indices)
 				pupil_snippet_range = pupil_snippet_range.tolist()
+
 		pupil_snippet = pupil_snippet[pupil_snippet_range]
 		pupil_snippet_mean = np.nanmean(pupil_snippet)
 		pupil_snippet_std = np.nanstd(pupil_snippet)
@@ -289,29 +313,40 @@ def getIBIandPuilDilation(pulse_data, pulse_ind,samples_pulse, pulse_samprate,pu
 		#pupil_snippet = (pupil_snippet[0:window]- pupil_snippet_mean)/float(pupil_snippet_std)
 		pupil_snippet = pupil_snippet[0:window]
 		all_pupil += pupil_snippet.tolist()
-		if np.isnan(np.nanmean(pupil_snippet))and(pupil_mean != []):
+		if np.isnan(np.nanmean(pupil_snippet))&(pupil_mean != []):
 			pupil_mean.append(pupil_mean[-1])
-		elif np.isnan(np.nanmean(pupil_snippet))and(pupil_mean == []):
-			pupil_mean.append(-3.3)
+		elif np.isnan(np.nanmean(pupil_snippet))&(pupil_mean == []):
+			pupil_mean.append(np.nan)
+		elif np.nanmean(pupil_snippet)<-3:			# if eyes were closed for entire snippet
+			pupil_mean.append(np.nan)
 		else:
 			pupil_mean.append(np.nanmean(pupil_snippet))
 		pupil_std.append(np.nanstd(pupil_snippet))
 
 	mean_ibi = np.nanmean(all_ibi)
-	#print "Mean all ibi:", mean_ibi
+	
 	std_ibi = np.nanstd(all_ibi)
-	nbins_ibi = np.arange(mean_ibi-10*std_ibi,mean_ibi+10*std_ibi,float(std_ibi)/2)
-	ibi_hist,nbins_ibi = np.histogram(all_ibi,bins=nbins_ibi)
-	nbins_ibi = nbins_ibi[1:]
-	ibi_hist = ibi_hist/float(len(all_ibi))
+	
+	if std_ibi>0:
+		nbins_ibi = np.arange(mean_ibi-10*std_ibi,mean_ibi+10*std_ibi,float(std_ibi)/2)
+		ibi_hist,nbins_ibi = np.histogram(all_ibi,bins=nbins_ibi)
+		nbins_ibi = nbins_ibi[1:]
+		ibi_hist = ibi_hist/float(len(all_ibi))
+	else:
+		nbins_ibi = []
+		ibi_hist = []
 
 	mean_pupil = np.nanmean(all_pupil)
 	std_pupil = np.nanstd(all_pupil)
-	nbins_pupil = np.arange(mean_pupil-10*std_pupil,mean_pupil+10*std_pupil,float(std_pupil)/2)
-	#print "Bins are:", nbins_pupil
-	pupil_hist,nbins_pupil = np.histogram(all_pupil,bins=nbins_pupil,range=(nbins_pupil.min(),nbins_pupil.max()))
-	nbins_pupil = nbins_pupil[1:]
-	pupil_hist = pupil_hist/float(len(all_pupil))
+	if std_pupil>0:
+		nbins_pupil = np.arange(mean_pupil-10*std_pupil,mean_pupil+10*std_pupil,float(std_pupil)/2)
+		#print "Bins are:", nbins_pupil
+		pupil_hist,nbins_pupil = np.histogram(all_pupil,bins=nbins_pupil,range=(nbins_pupil.min(),nbins_pupil.max()))
+		nbins_pupil = nbins_pupil[1:]
+		pupil_hist = pupil_hist/float(len(all_pupil))
+	else:
+		nbins_pupil = []
+		pupil_hist = []
 
 
 	return ibi_mean, ibi_std, pupil_mean, pupil_std, nbins_ibi, ibi_hist, nbins_pupil, pupil_hist
