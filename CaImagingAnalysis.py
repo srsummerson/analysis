@@ -8,6 +8,18 @@ from heatmap import corrplot
 import pandas as pd
 from scipy import signal
 from scipy.ndimage import filters
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+from sklearn import metrics
+from sklearn.metrics import roc_curve, auc
+from sklearn.model_selection import cross_val_score
+
+'''
+Max tuning working for both conditions, but average tuning looks strange for RH-z1 & RH-z2.
+After fixing this, run population_psth.
+Need to spit out order indices for channels 8, 71, to highlight in plot.
+'''
+
 
 """
 ut_orange = {
@@ -110,7 +122,7 @@ class CaUnit():
 
 class CaData():
 	def __init__(self, mat_filename):
-		self.filename =  mat_filename
+		self.filename =  mat_filename[-23:]		# For the filename, only store the .mat name rather than the entire address
 		# Read  data from .mat file
 		self.raw_data = spio.loadmat(mat_filename, squeeze_me=True)
 		self.B_mat = self.raw_data['B']
@@ -121,12 +133,14 @@ class CaData():
 		self.LH_y = self.B_mat[:,5]				# Left hand y-position: Y2_1_pix
 		self.RH_zone1 = self.B_mat[:,6]			# Right hand present in Zone 1: EV1_1
 		self.RH_zone2 = self.B_mat[:,7]			# Right hand present in Zone 2: EV1_3
-		self.LH_zone1 = self.B_mat[:,8]			# Left hand present in Zone 1: EV1_7
-		self.LH_zone2 = self.B_mat[:,9]			# Left hand present in Zone 2: EV1_9
-		self.RH_zone1_entry = self.B_mat[:,11]	# Right hand entry in Zone 1: EV1_1_unique
-		self.RH_zone2_entry = self.B_mat[:,12]	# Right hand entry in Zone 2: EV1_3_unique
-		self.LH_zone1_entry = self.B_mat[:,13]	# Left hand entry in Zone 1: EV1_7_unique
-		self.LH_zone2_entry = self.B_mat[:,14]	# Left hand entry in Zone 2: EV1_9_unique
+		self.RH_zoneH = self.B_mat[:,8]			# Right hand present in home zone: EV1_5
+		self.LH_zone1 = self.B_mat[:,9]			# Left hand present in Zone 1: EV1_7
+		self.LH_zone2 = self.B_mat[:,10]		# Left hand present in Zone 2: EV1_9
+		self.LH_zoneH = self.B_mat[:,11]		# Left hand present in home zone: EV1_11
+		self.RH_zone1_entry = self.B_mat[:,12]	# Right hand entry in Zone 1: EV1_1_unique
+		self.RH_zone2_entry = self.B_mat[:,13]	# Right hand entry in Zone 2: EV1_3_unique
+		self.LH_zone1_entry = self.B_mat[:,14]	# Left hand entry in Zone 1: EV1_7_unique
+		self.LH_zone2_entry = self.B_mat[:,15]	# Left hand entry in Zone 2: EV1_9_unique
 		self.C_struct = self.raw_data['C']
 		self.num_units = len(self.C_struct)
 		self.unit_dict = dict()
@@ -206,7 +220,8 @@ class CaData():
 			plt.xticks(np.arange(t_window[0],t_window[1],step=60), np.arange(0,(t_window[1]-t_window[0])/60,step=1))
 			plt.xlabel('mins')
 			plt.ylabel('Units')
-			plt.show()
+			plt.savefig("C:/Users/ss45436/Box/CNPRC/Figures/" + self.filename[:-4] +"_" + event +"_population_raster.svg")
+			plt.close()
 		
 		elif event == 'sp':
 
@@ -227,7 +242,8 @@ class CaData():
 			plt.xticks(np.arange(t_window[0],t_window[1],step=60), np.arange(0,(t_window[1]-t_window[0])/60,step=1))
 			plt.xlabel('mins')
 			plt.ylabel('Units')
-			plt.show()
+			plt.savefig("C:/Users/ss45436/Box/CNPRC/Figures/" + self.filename[:-4] + "_population_raster.svg")
+			plt.close()
 
 		else:
 			print('Error - event type was not properly entered.\nPlease use either "ca" or "sp" to indicate event type.')
@@ -312,10 +328,136 @@ class CaData():
 		
 		return data_corr, chans
 
-	def psth():
+	def trial_raster(self,event,hand,zone,**kwargs):
+		'''
+		Make grid of raster plots for indicated channels of either calcium ('ca') or spike ('sp') events.
+		activity is aligned to timestamps related to zone entry by indicated hand. A Gaussian kernel is
+		used for smoothing the psth.
+
+		Inputs:
+		- event: string; either 'ca' or 'sp' to indicate calcium or spike events, respectively
+		- hand: string; either 'l' or 'r' to indicate left or right hand, respectively
+		- zone: int; either 1 or 2 to indicate zone 1 or zone 2, respectively
+		- chans: array; integers indicating which channels to use to do pairwise correlations, default is all channels
+		- t_before: float; time (in seconds) before zone entry to include in psth, default is 3 seconds
+		- t_after: float; time (in seconds) after zone entry to include in psth, default is 3 second
+		- t_resolution: float; bin size (in seconds) of bins used for psth, default is 1 seconds
+		- t_overlap: float; time (in seconds) to overlap bins, default is 0.5 seconds
+
+		Outputs:
+		- smooth_avg_psth: dict; keys are the unit numbers and elements are an array containing the smoothed psth values, also a key called 'times' which has the timepoints (in seconds) corresponding to the psth array entries
+		- avg_psth: dict; keys are the unit numbers and elements are an array containing the smooth psth values, also a key called 'times' which has the timepoints (in seconds) corresponding to the psth array entries
+
+		'''
+		'''
+		Plot population raster for indicated channels of either calcium ('ca') or spike ('sp') events.
+
+		Inputs:
+		- event: string; either 'ca' or 'sp' to indicate calcium or spike events, respectively
+		- chans: array; integers indicating which channels to use in the population raster, default is all channels
+		- t_window: array; two float values in the form (t_start,t_stop) indicating the start and stop times (in seconds) of the time window to use, default is all tine
+		
+		Output:
+
+		'''
+		# Determine PSTH parameters
+		t_before = kwargs.get('t_before', 3.)
+		t_after = kwargs.get('t_after', 3.)
+		t_resolution = kwargs.get('t_resolution', 1.0)
+		t_overlap = kwargs.get('t_overlap', 0.5)
+		chans = kwargs.get('chans', np.arange(0,self.num_units))
+
+		# Retrieve zone entry data for designated hand and zone
+		if (hand=='r') & (zone==1):
+			zentry = self.RH_zone1_entry
+		elif (hand=='r') & (zone==2):
+			zentry = self.RH_zone2_entry
+		elif (hand=='l') & (zone==1):
+			zentry = self.LH_zone1_entry
+		elif (hand=='l') & (zone==2):
+			zentry = self.LH_zone2_entry
+
+		num_chans = len(chans)
+		ax = plt.gca()
+
+		# Make grid plot
+		num_plots = len(chans)
+		num_rows = int(np.ceil(num_plots/8))
+		num_cols = int(np.min([8,num_plots]))
 		
 
-		return
+		# Determine unique zone entry times to align neural data to
+		inds = np.ravel(np.nonzero(zentry))			# indices for unique zone entries
+		times_align = self.B_timestamp[inds]
+		
+
+		if event == 'ca':
+			fig = plt.figure()
+			for k,chan in enumerate(chans):
+				ith = 0
+				for i, tp in enumerate(times_align):
+					t_start = tp - t_before
+					t_end = tp + t_after 
+					
+					event_times_list = self.unit_dict[chan].ca_evt_s
+					if np.isscalar(event_times_list):
+						event_times_list = np.array([event_times_list])
+						#print(len(event_times_list))
+					event_times_list_twindow = np.array([t for t in event_times_list if (t >= t_start)&(t <= t_end)])
+					
+					
+					plt.subplot(num_rows,num_cols,k+1)
+					for trial in event_times_list_twindow:
+						plt.vlines(trial-t_start, ith, ith + 1.0)
+					plt.title('Unit %i' % (chan))
+					plt.ylim(0, ith+1)
+					plt.xlim((0,t_after + t_before))
+					plt.xticks(np.arange(0,(t_after+t_before)/1.,step=1),np.arange(-t_before,t_after,step=1))
+					plt.xlabel('secs')
+					plt.ylabel('Trials')
+						
+
+					ith += 1
+				
+			fig.set_size_inches((40, 50), forward=False)	
+			plt.savefig("C:/Users/ss45436/Box/CNPRC/Figures/" + self.filename[:-4] + "_" + hand+ "h_z" + str(zone)+ "_" + event +  "_event_raster.svg", dpi = 500)
+			plt.close()
+		
+		elif event == 'sp':
+
+			
+			for k,chan in enumerate(chans):
+				ith = 0
+				for i, tp in enumerate(times_align):
+					t_start = tp - t_before
+					t_end = tp + t_after 
+					
+					event_times_list = self.unit_dict[chan].sp_evt_s
+					if np.isscalar(event_times_list):
+						event_times_list = np.array([event_times_list])
+					event_times_list_twindow = np.array([t for t in event_times_list if (t >= t_start)&(t <= t_end)])
+					
+					for trial in event_times_list_twindow:
+						plt.vlines(trial-t_start, ith, ith + 1.0, color=k)
+
+					ith += 1
+				
+				plt.subplot(num_rows,num_cols,k+1)
+				plt.title('Unit %i' % (chan))
+				plt.ylim(0, ith)
+				#plt.xlim(t_window)
+				plt.xticks(np.arange(t_before,t_after,step=1), np.arange(0,(t_after-t_before)/1.,step=1))
+				plt.xlabel('secs')
+				plt.ylabel('Trials')
+
+			
+			plt.savefig("C:/Users/ss45436/Box/CNPRC/Figures/" + self.filename[:-4] + "_" + hand+ "h_z" + str(zone)+ "_" + event +  "_event_raster.svg", dpi = 500)
+			plt.close()	
+
+		else:
+			print('Error - event type was not properly entered.\nPlease use either "ca" or "sp" to indicate event type.')
+
+		return 
 
 	def population_psth(self,event,hand,zone,**kwargs):
 		'''
@@ -328,10 +470,12 @@ class CaData():
 		- hand: string; either 'l' or 'r' to indicate left or right hand, respectively
 		- zone: int; either 1 or 2 to indicate zone 1 or zone 2, respectively
 		- chans: array; integers indicating which channels to use to do pairwise correlations, default is all channels
-		- t_before: float; time (in seconds) before zone entry to include in psth, default is 4 seconds
-		- t_after: float; time (in seconds) after zone entry to include in psth, default is 1 second
-		- t_resolution: float; bin size (in seconds) of bins used for psth, default is 0.2 seconds
-		- t_overlap: float; time (in seconds) to overlap bins, default is 0.1 seconds
+		- tuning: string; either 'max' or 'avg' if using tuning to sort entries
+		- t_before: float; time (in seconds) before zone entry to include in psth, default is 3 seconds
+		- t_after: float; time (in seconds) after zone entry to include in psth, default is 3 second
+		- t_resolution: float; bin size (in seconds) of bins used for psth, default is 1 seconds
+		- t_overlap: float; time (in seconds) to overlap bins, default is 0.5 seconds
+		- show_fig: Boolean; indicate if figure should be shown
 
 		Outputs:
 		- smooth_avg_psth: dict; keys are the unit numbers and elements are an array containing the smoothed psth values, also a key called 'times' which has the timepoints (in seconds) corresponding to the psth array entries
@@ -339,30 +483,33 @@ class CaData():
 
 		'''
 		# Determine PSTH parameters
-		t_before = kwargs.get('t_before', 4.)
-		t_after = kwargs.get('t_after', 1.)
-		t_resolution = kwargs.get('t_resolution', 0.2)
-		t_overlap = kwargs.get('t_overlap', 0.1)
+		t_before = kwargs.get('t_before', 3.)
+		t_after = kwargs.get('t_after', 3.)
+		t_resolution = kwargs.get('t_resolution', 1.0)
+		t_overlap = kwargs.get('t_overlap', 0.5)
 		chans = kwargs.get('chans', np.arange(0,self.num_units))
+
+		show_fig = kwargs.get('show_fig', False)
 
 		# Retrieve zone entry data for designated hand and zone
 		if (hand=='r') & (zone==1):
-			zentry = self.RH_zone1
+			zentry = self.RH_zone1_entry
 		elif (hand=='r') & (zone==2):
-			zentry = self.RH_zone2
+			zentry = self.RH_zone2_entry
 		elif (hand=='l') & (zone==1):
-			zentry = self.LH_zone1
+			zentry = self.LH_zone1_entry
 		elif (hand=='l') & (zone==2):
-			zentry = self.LH_zone2
+			zentry = self.LH_zone2_entry
 
 		# Determine unique zone entry times to align neural data to
-		inds, times_align = self.zone_reach_timestamps(zentry)
+		inds = np.ravel(np.nonzero(zentry))			# indices for unique zone entries
+		times_align = self.B_timestamp[inds]
 
 		# Define variables for PSTH calculation
 		psth_length = int(np.rint((t_before + t_after - t_overlap)/(t_resolution - t_overlap)))
 		num_timepoints = len(times_align)
 		xticklabels = np.arange(-t_before,t_after,(t_before	+ t_after)/psth_length)
-		
+		xticklabels = np.linspace(-t_before,t_after,psth_length)
 		b = signal.gaussian(39, 1)
 		
 		# Compute PSTH per unit
@@ -393,15 +540,64 @@ class CaData():
 		num_rows = int(np.ceil(num_plots/8))
 		num_cols = int(np.min([8,num_plots]))
 
-		plt.figure()
+		max_val = 0
+		psth_heatmap = np.empty([len(chans), len(xticklabels)])
+
+		fig = plt.figure()
 		for i,c in enumerate(chans):
 			plt.subplot(num_rows,num_cols,i+1)
 			plt.title('Unit %i' % (c))
-			plt.plot(xticklabels,avg_psth[c],'r')
+			plt.xlabel('sec')
+			plt.ylabel('event rate (Hz)')
+			plt.step(xticklabels,avg_psth[c],'r')
 			plt.plot(xticklabels,smooth_avg_psth[c],'b')
+			psth_heatmap[i,:] = smooth_avg_psth[c]
 
-		plt.show()
-		return smooth_avg_psth, avg_psth
+		fig.set_size_inches((40, 50), forward=False)
+		plt.savefig("C:/Users/ss45436/Box/CNPRC/Figures/" + self.filename[:-4] + "_" + hand+ "h_z" + str(zone)+ "_" + event +  "_psth.svg")
+		plt.close()	
+
+			
+			
+		if show_fig:
+			plt.show()
+		max_val = np.max(psth_heatmap)
+		time_inds = np.array([i for i,t in enumerate(xticklabels) if (t>-0.5)&(t<0.5)])
+		max_inds = np.argsort(np.max(psth_heatmap[:,time_inds],axis=1))							# sort units by max event rate in the (-0.5,0.5) time window around the home zone entry
+
+		chan_order = kwargs.get('chan_order', 'none')
+		if chan_order == 'none':
+			chan_order = chans
+		elif chan_order == 'max':
+			tuning = self.tuning_metric_RZ1_RZ2_max(event = event, hand='r', hand2='l', chans = chans)
+			chan_order = np.argsort(tuning)
+		elif chan_order == 'avg':
+			tuning = self.tuning_metric_RZ1_RZ2_avg(event = event, hand='r', hand2='l', chans = chans)
+			chan_order = np.argsort(tuning)
+
+		# create heatmap of activity
+		plt.figure()
+		plt.subplot(1,2,1)
+		plt.pcolormesh(xticklabels,chans,psth_heatmap[chan_order,])
+		plt.ylim((0,chans[-1]))
+		plt.xlabel('Time (s)')
+		plt.ylabel('Unit')
+		plt.title('Units sorted by tuning')
+		
+		plt.subplot(1,2,2)
+		plt.pcolormesh(xticklabels,chans,psth_heatmap)
+		plt.ylim((0,chans[-1]))
+		plt.xlabel('Time (s)')
+		plt.ylabel('Unit')
+		plt.title('Units unsorted')
+		cbar = plt.colorbar()
+		cbar.set_label('Event rate (Hz)')
+		if show_fig:
+			plt.show()
+		plt.savefig("C:/Users/ss45436/Box/CNPRC/Figures/" + self.filename[:-4] + "_" + hand+ "h_z" + str(zone)+ "_" + event +  "_psth_heatmap.svg")
+		plt.close()	
+
+		return smooth_avg_psth, avg_psth, chan_order
 
 	def psth_compare_zones(self,event,hand,**kwargs):
 		'''
@@ -410,26 +606,28 @@ class CaData():
 		Inputs:
 		- event: string; either 'ca' or 'sp' to indicate calcium or spike events, respectively
 		- hand: string; either 'l' or 'r' to indicate left or right hand, respectively
+		- hand2: string; either 'l' or 'r', used to indicate if comparison should be made with other hand
 		- zone: int; either 1 or 2 to indicate zone 1 or zone 2, respectively
 		- chans: array; integers indicating which channels to use to do pairwise correlations, default is all channels
-		- t_before: float; time (in seconds) before zone entry to include in psth, default is 4 seconds
-		- t_after: float; time (in seconds) after zone entry to include in psth, default is 1 second
-		- t_resolution: float; bin size (in seconds) of bins used for psth, default is 0.2 seconds
-		- t_overlap: float; time (in seconds) to overlap bins, default is 0.1 seconds
+		- t_before: float; time (in seconds) before zone entry to include in psth, default is 3 seconds
+		- t_after: float; time (in seconds) after zone entry to include in psth, default is 3 second
+		- t_resolution: float; bin size (in seconds) of bins used for psth, default is 1 seconds
+		- t_overlap: float; time (in seconds) to overlap bins, default is 0.5 seconds
 		- smoothing: logical; indicate if smoothed PSTH should be plotted, default is True
 
 		'''
 		# Determine PSTH parameters
-		t_before = kwargs.get('t_before', 4.)
-		t_after = kwargs.get('t_after', 1.)
-		t_resolution = kwargs.get('t_resolution', 0.2)
-		t_overlap = kwargs.get('t_overlap', 0.1)
+		hand2 = kwargs.get('hand2', hand)
+		t_before = kwargs.get('t_before', 3.)
+		t_after = kwargs.get('t_after', 3.)
+		t_resolution = kwargs.get('t_resolution', 1)
+		t_overlap = kwargs.get('t_overlap', 0.5)
 		chans = kwargs.get('chans', np.arange(0,self.num_units))
 		smoothing = kwargs.get('smoothing',True)
 
 		# Compute PSTH for zones 1 and 2
-		smooth_avg_psth_z1, avg_psth_z1 = self.population_psth(event,hand,1, t_before = t_before, t_after= t_after, t_resolution= t_resolution, t_overlap= t_overlap, chans= chans)
-		smooth_avg_psth_z2, avg_psth_z2 = self.population_psth(event,hand,2, t_before = t_before, t_after= t_after, t_resolution= t_resolution, t_overlap= t_overlap, chans= chans)
+		smooth_avg_psth_z1, avg_psth_z1, chan_order = self.population_psth(event,hand,1, t_before = t_before, t_after= t_after, t_resolution= t_resolution, t_overlap= t_overlap, chans= chans, show_fig = False)
+		smooth_avg_psth_z2, avg_psth_z2, chan_order = self.population_psth(event,hand2,2, t_before = t_before, t_after= t_after, t_resolution= t_resolution, t_overlap= t_overlap, chans= chans, show_fig = False)
 
 		# Choose whether to use smooth PSTHs or unsmoothed for plotting
 		if smoothing:
@@ -444,15 +642,405 @@ class CaData():
 		num_rows = int(np.ceil(num_plots/8))
 		num_cols = int(np.min([8,num_plots]))
 
-		plt.figure()
+		
+		'''
 		for i,c in enumerate(chans):
 			plt.subplot(num_rows,num_cols,i+1)
 			plt.title('Unit %i' % (c))
-			plt.plot(psth_z1['times'],psth_z1[c],'r',label='z1')
-			plt.plot(psth_z2['times'],psth_z2[c],'b',label='z2')
+			plt.plot(psth_z1['times'],psth_z1[c],'r',label='%s - z1' % (hand))
+			plt.plot(psth_z2['times'],psth_z2[c],'b',label='%s - z2' % (hand2))
+			plt.legend()
+		'''
+		ts = np.linspace(-t_before,t_after,len(psth_z1['times']))
+		fig = plt.figure()
+		for i,c in enumerate(chans):
+			plt.subplot(num_rows,num_cols,i+1)
+			plt.title('Unit %i' % (c))
+			#plt.bar(psth_z1['times'],psth_z1[c],width = 0.5, color = 'r',label='%s - z1' % (hand))
+			plt.step(ts,psth_z1[c], color = 'r', where = 'mid',label='%s - z1' % (hand))
+			#plt.bar(psth_z2['times'],psth_z2[c], width = 0.5, color = 'b',label='%s - z2' % (hand2))
+			plt.step(ts,psth_z2[c], color = 'b', where = 'mid',label='%s - z2' % (hand2))
+			plt.xlabel('secs')
+			plt.ylabel('event rate (Hz)')
 			plt.legend()
 
+		fig.set_size_inches((40, 50), forward=False)
+		plt.savefig("C:/Users/ss45436/Box/CNPRC/Figures/" + self.filename[:-4] + "_" + hand+ "h_" + event +  "_psth_compare_zones.svg")
+		plt.close()
+
+		return psth_z1, psth_z2
+
+	def tuning_metric_RZ1_LZ2_max(self, event, hand='r', hand2='l',**kwargs):
+
+		chans = kwargs.get('chans', np.arange(0,self.num_units))
+
+		psth_rh_z1, psth_lh_z2 = self.psth_compare_zones(event,hand,hand2=hand2)
+
+		times = np.ravel(psth_rh_z1['times'])
+		time_inds = np.array([i for i,t in enumerate(times) if (t>-1)&(t<2)])
+
+		peak_l_z2 = np.zeros(len(chans))
+		peak_r_z1 = np.zeros(len(chans))
+		tuning = np.zeros(len(chans))
+
+		for i,c in enumerate(chans):
+			peak_l_z2[i] = np.nanmax(psth_lh_z2[c][time_inds])
+			peak_r_z1[i] = np.nanmax(psth_rh_z1[c][time_inds])
+
+		peak_l_z2[np.isnan(peak_l_z2)] = 0
+		peak_r_z1[np.isnan(peak_r_z1)] = 0
+		tuning = (peak_l_z2 - peak_r_z1)/(peak_l_z2 + peak_r_z1)
+			
+		tuning[np.isnan(tuning)] = 0
+		return tuning
+
+	def tuning_metric_RZ1_RZ2_max(self, event, hand='r', hand2='r',**kwargs):
+
+		chans = kwargs.get('chans', np.arange(0,self.num_units))
+
+		psth_rh_z1, psth_lh_z2 = self.psth_compare_zones(event,hand,hand2=hand2)
+
+		times = np.ravel(psth_rh_z1['times'])
+		time_inds = np.array([i for i,t in enumerate(times) if (t>-1)&(t<2)])
+
+		peak_l_z2 = np.zeros(len(chans))
+		peak_r_z1 = np.zeros(len(chans))
+		tuning = np.zeros(len(chans))
+
+		for i,c in enumerate(chans):
+			peak_l_z2[i] = np.nanmax(psth_lh_z2[c][time_inds])
+			peak_r_z1[i] = np.nanmax(psth_rh_z1[c][time_inds])
+
+		peak_l_z2[np.isnan(peak_l_z2)] = 0
+		peak_r_z1[np.isnan(peak_r_z1)] = 0
+		tuning = (peak_l_z2 - peak_r_z1)/(peak_l_z2 + peak_r_z1)
+			
+		tuning[np.isnan(tuning)] = 0
+		return tuning
+
+	def tuning_metric_RZ1_RZ2_overtime(self, event, hand='r', hand2='r',**kwargs):
+
+		chans = kwargs.get('chans', np.arange(0,self.num_units))
+
+		psth_rh_z1, psth_rh_z2 = self.psth_compare_zones(event,hand,hand2=hand2)
+
+		times = np.ravel(psth_rh_z1['times'])
+		#time_inds = np.array([i for i,t in enumerate(times) if (t>-1)&(t<2)])
+
+		tuning = np.zeros((len(chans),len(times)))
+
+		for i,c in enumerate(chans):
+			peak_r_z2 = psth_rh_z2[c]
+			peak_r_z1 = psth_rh_z1[c]
+			tuning[i,:] = (peak_r_z2 - peak_r_z1)/(peak_r_z2 + peak_r_z1)
+			tuning[i, np.isnan(tuning[i,:])] = 0
+
+		cmap = sns.color_palette("RdBu_r", 256)
+		plt.close()
+		plt.figure()
+		plt.pcolormesh(times,chans,tuning, cmap='RdBu_r')
+		plt.xticks(times)
+		plt.ylim((0,chans[-1]))
+		plt.xlabel('Time (s)')
+		plt.ylabel('Unit')
+		#plt.title('Tuning Metric')
+		cbar = plt.colorbar()
+		cbar.set_label('Tuning Metric (AU)')
 		plt.show()
 
-		return
+		
+		return tuning
 
+	def tuning_metric_RZ1_LZ2_avg(self, event, hand='r', hand2='l',**kwargs):
+
+		chans = kwargs.get('chans', np.arange(0,self.num_units))
+
+		psth_rh_z1, psth_lh_z2 = self.psth_compare_zones(event,hand,hand2=hand2)
+
+		times = np.ravel(psth_rh_z1['times'])
+		time_inds = np.array([i for i,t in enumerate(times) if (t>-1)&(t<2)])
+
+		er_l_z2 = np.zeros(len(chans))
+		er_r_z1 = np.zeros(len(chans))
+		tuning = np.zeros(len(chans))
+
+		for i,c in enumerate(chans):
+			er_l_z2[i] = np.nanmean(psth_lh_z2[c][time_inds])
+			er_r_z1[i] = np.nanmean(psth_rh_z1[c][time_inds])
+		
+		er_l_z2[np.isnan(er_l_z2)] = 0
+		er_r_z1[np.isnan(er_r_z1)] = 0
+		tuning[i] = (er_l_z2[i] - er_r_z1[i])/(er_l_z2[i] + er_r_z1[i])
+			
+		#tuning[np.isnan(tuning)] = 0
+		return tuning
+
+	def tuning_metric_RZ1_RZ2_avg(self, event, hand='r', hand2='r',**kwargs):
+
+		chans = kwargs.get('chans', np.arange(0,self.num_units))
+
+		psth_rh_z1, psth_lh_z2 = self.psth_compare_zones(event,hand,hand2=hand2)
+
+		times = np.ravel(psth_rh_z1['times'])
+		time_inds = np.array([i for i,t in enumerate(times) if (t>-1)&(t<2)])
+
+		er_l_z2 = np.zeros(len(chans))
+		er_r_z1 = np.zeros(len(chans))
+		tuning = np.zeros(len(chans))
+
+		for i,c in enumerate(chans):
+			er_l_z2[i] = np.nanmean(psth_lh_z2[c][time_inds])
+			er_r_z1[i] = np.nanmean(psth_rh_z1[c][time_inds])
+		
+		er_l_z2[np.isnan(er_l_z2)] = 0
+		er_r_z1[np.isnan(er_r_z1)] = 0
+		tuning[i] = (er_l_z2[i] - er_r_z1[i])/(er_l_z2[i] + er_r_z1[i])
+			
+		#tuning[np.isnan(tuning)] = 0
+		return tuning
+
+	def trial_traces(self,hand,zone,**kwargs):
+		'''
+		Make dictionary of Ca2+ trace data for indicated channels aligned to reaches to indicated zone.
+		Activity is aligned to timestamps related to zone entry by indicated hand. 
+
+		Inputs:
+		- hand: string; either 'l' or 'r' to indicate left or right hand, respectively
+		- zone: int; either 1 or 2 to indicate zone 1 or zone 2, respectively
+		- chans: array; integers indicating which channels to use to do pairwise correlations, default is all channels
+		- t_before: float; time (in seconds) before zone entry to include in psth, default is 3 seconds
+		- t_after: float; time (in seconds) after zone entry to include in psth, default is 3 second
+		- t_resolution: float; bin size (in seconds) of bins used for psth, default is 1 seconds
+		- t_overlap: float; time (in seconds) to overlap bins, default is 0.5 seconds
+
+		Outputs:
+		- trial_traces: dict; keys are the unit numbers and elements are a matrix containing the trace values across trials where each row corresponds to one trials's data; also a key called 'times' which has the timepoints (in seconds) corresponding to the psth array entries
+		
+		'''
+		
+		# Determine trace parameters
+		t_before = kwargs.get('t_before', 3.)
+		t_after = kwargs.get('t_after', 3.)
+		t_resolution = kwargs.get('t_resolution', 1.0)
+		t_overlap = kwargs.get('t_overlap', 0.5)
+		chans = kwargs.get('chans', np.arange(0,self.num_units))
+
+		avg_trace = dict()
+
+		# Retrieve zone entry data for designated hand and zone
+		if (hand=='r') & (zone==1):
+			zentry = self.RH_zone1_entry
+		elif (hand=='r') & (zone==2):
+			zentry = self.RH_zone2_entry
+		elif (hand=='l') & (zone==1):
+			zentry = self.LH_zone1_entry
+		elif (hand=='l') & (zone==2):
+			zentry = self.LH_zone2_entry
+
+		num_chans = len(chans)
+		ax = plt.gca()
+
+		# Make grid plot
+		num_plots = len(chans)
+		num_rows = int(np.ceil(num_plots/8))
+		num_cols = int(np.min([8,num_plots]))
+		
+
+		# Determine unique zone entry times to align neural data to
+		inds = np.ravel(np.nonzero(zentry))			# indices for unique zone entries
+		times_align = self.B_timestamp[inds]
+		
+		# For each channel, pull out relevant trace data
+		for k,chan in enumerate(chans):
+			ith = 0
+			trace_data = self.unit_dict[chan].trace
+			trace_data_ts = self.unit_dict[chan].trace_ts	
+
+			trace_mat = np.zeros((len(times_align),(int(t_before)+ int(t_after))*10)) 		# data is subsampled to 10 Hz
+			for i, tp in enumerate(times_align):
+				t_start = tp - t_before
+				t_end = tp + t_after 
+				
+				event_times_list_twindow = np.array([ind for ind,t in enumerate(trace_data_ts) if (t >= t_start)&(t <= t_end)])
+				trace_snippet = trace_data[event_times_list_twindow]
+				trace_mat[i,:len(trace_snippet)] = trace_snippet
+
+				ith += 1
+			
+			avg_trace[chan] = trace_mat
+		
+		avg_trace['times'] = np.arange(-t_before, t_after, 1./10)
+		
+
+		return avg_trace
+
+	def avg_trial_traces(self,hand,zone,**kwargs):
+		'''
+		Make grid of Ca2+ average trace plots for indicated channels aligned to reaches to indicated zone.
+		Activity is aligned to timestamps related to zone entry by indicated hand. 
+
+		Inputs:
+		- hand: string; either 'l' or 'r' to indicate left or right hand, respectively
+		- zone: int; either 1 or 2 to indicate zone 1 or zone 2, respectively
+		- zone2: int; either 1 or 2, if want to do comparison between zones
+		- chans: array; integers indicating which channels to use to do pairwise correlations, default is all channels
+		- t_before: float; time (in seconds) before zone entry to include in psth, default is 3 seconds
+		- t_after: float; time (in seconds) after zone entry to include in psth, default is 3 second
+		- t_resolution: float; bin size (in seconds) of bins used for psth, default is 1 seconds
+		- t_overlap: float; time (in seconds) to overlap bins, default is 0.5 seconds
+
+		Outputs:
+		- trial_traces: dict; keys are the unit numbers and elements are a matrix containing the trace values across trials where each row corresponds to one trials's data; also a key called 'times' which has the timepoints (in seconds) corresponding to the psth array entries
+		
+		'''
+		# Determine trace parameters
+		t_before = kwargs.get('t_before', 3.)
+		t_after = kwargs.get('t_after', 3.)
+		t_resolution = kwargs.get('t_resolution', 1.0)
+		t_overlap = kwargs.get('t_overlap', 0.5)
+		chans = kwargs.get('chans', np.arange(0,self.num_units))
+		zone2 = kwargs.get('zone2', 0)		# if second zone was not indicated, set to 0 and disregard later
+
+		# Get dictionary of trace values over time window for all indicated channels
+		avg_trace = self.trial_traces(hand,zone,chans = chans, t_before	= t_before, t_after = t_after, t_resolution	= t_resolution, t_overlap = t_overlap)
+		avg_trace_mat = np.zeros((len(chans),avg_trace[chans[0]].shape[1]))
+		sem_trace_mat = avg_trace_mat
+		times = avg_trace['times']
+
+		if zone2 > 0:
+			avg_trace2 = self.trial_traces(hand,zone2,chans = chans, t_before	= t_before, t_after = t_after, t_resolution	= t_resolution, t_overlap = t_overlap)
+			avg_trace_mat2 = np.zeros((len(chans),avg_trace2[chans[0]].shape[1]))
+			sem_trace_mat2 = avg_trace_mat2
+			times2 = avg_trace2['times']
+
+		# Make grid plot
+		num_plots = len(chans)
+		num_rows = int(np.ceil(num_plots/8))
+		num_cols = int(np.min([8,num_plots]))
+
+		
+		# Compute averages and SEMs per channel
+		fig = plt.figure()
+
+		for i,c in enumerate(chans):
+			trace_mat = avg_trace[c]
+			trace_avg = np.nanmean(trace_mat,axis = 0)
+			trace_sem = np.nanstd(trace_mat,axis = 0)/np.sqrt(trace_mat.shape[0])
+			avg_trace_mat[i,:] = trace_avg
+			sem_trace_mat[i,:] = trace_sem
+
+			if zone2 > 0:
+				trace_mat2 = avg_trace2[c]
+				trace_avg2 = np.nanmean(trace_mat2,axis = 0)
+				trace_sem2 = np.nanstd(trace_mat2,axis = 0)/np.sqrt(trace_mat2.shape[0])
+				avg_trace_mat2[i,:] = trace_avg2
+				sem_trace_mat2[i,:] = trace_sem2
+
+			plt.subplot(num_rows,num_cols,i+1)
+			plt.title('Unit %i' % (c))
+			plt.plot(times,trace_avg, color = 'r')
+			plt.fill_between(times,trace_avg - trace_sem, trace_avg	+ trace_sem, facecolor = 'r', alpha = 0.25, label='%s - z%i' % (hand, zone))
+			figname = "C:/Users/ss45436/Box/CNPRC/Figures/" + self.filename[:-4] + "_" + hand+ "h_z" + str(zone)+ "_avg_traces.svg"
+			if zone2 > 0:
+				plt.plot(times2,trace_avg2, color = 'b')
+				plt.fill_between(times2,trace_avg2 - trace_sem2, trace_avg2	+ trace_sem2, facecolor = 'b', alpha = 0.25, label='%s - z%i' % (hand, zone2))
+				figname = "C:/Users/ss45436/Box/CNPRC/Figures/" + self.filename[:-4] + "_" + hand+ "h_both_zones_avg_traces.svg"
+			#plt.ylim((0,3.75))
+			plt.legend()
+		fig.set_size_inches((40, 50), forward=False)	
+		plt.savefig(figname, dpi = 500)
+		plt.close()
+		
+		return 
+
+	def decoding_logistic_regression(self, event, hand1,hand2,zone1,zone2, **kwargs):
+		'''
+		Method that uses event activity from a specified window to decode reaches of hand1 to zone1 and hand2 to zone2.
+		'''
+		# Determine method parameters
+		t_before = kwargs.get('t_before', 1.)
+		t_after = kwargs.get('t_after', 2.)
+		chans = kwargs.get('chans', np.arange(0,self.num_units))
+
+		# Retrieve zone entry data for designated hands and zones
+		if (hand1=='r') & (zone1==1):
+			zentry1 = self.RH_zone1_entry
+		elif (hand1=='r') & (zone1==2):
+			zentry1 = self.RH_zone2_entry
+		elif (hand1=='l') & (zone1==1):
+			zentry1 = self.LH_zone1_entry
+		elif (hand1=='l') & (zone1==2):
+			zentry1 = self.LH_zone2_entry
+		if (hand2=='r') & (zone2==1):
+			zentry2 = self.RH_zone1_entry
+		elif (hand2=='r') & (zone2==2):
+			zentry2 = self.RH_zone2_entry
+		elif (hand2=='l') & (zone2==1):
+			zentry2 = self.LH_zone1_entry
+		elif (hand2=='l') & (zone2==2):
+			zentry2 = self.LH_zone2_entry
+
+		# Determine unique zone entry times to align neural data to
+		inds1 = np.ravel(np.nonzero(zentry1))			# indices for unique zone entries
+		times_align1 = self.B_timestamp[inds1]
+		inds2 = np.ravel(np.nonzero(zentry2))			# indices for unique zone entries
+		times_align2 = self.B_timestamp[inds2]
+		
+		event_rate1 = self.event_rates(event = event, times_align = times_align1, chans = chans, t_before = t_before, t_after = t_after)
+		event_rate2 = self.event_rates(event = event, times_align = times_align2, chans = chans, t_before = t_before, t_after = t_after)
+
+		# organize data into trial x channel matrix
+		trials1 = len(inds1)
+		trials2 = len(inds2)
+		X_mat = np.zeros((trials1 + trials2,len(chans)))
+		for i,c in enumerate(chans):
+			trial1_data = event_rate1[c]
+			trial2_data = event_rate2[c]
+			X_mat[:trials1,i] = trial1_data
+			X_mat[trials1:,i] = trial2_data
+
+		y = np.zeros(trials1 + trials2)
+		y[trials1:] = 1
+
+		# Model evaluation using 10-fold cross-validation
+		scores_logreg = cross_val_score(LogisticRegression(),X_mat,y,scoring='accuracy',cv=10)
+		np.random.shuffle(X_mat)
+		mc_sim = 2
+		scores_shuffle = np.zeros((mc_sim,10))
+		for j in range(mc_sim):
+			scores_shuffle[j,:] = cross_val_score(LogisticRegression(),X_mat,y,scoring='accuracy',cv=10)
+		scores_logreg_shuffle = np.nanmean(scores_shuffle, axis = 0)
+		#print("CV scores:", scores_logreg)
+		#ca_print("Avg CV score:", scores_logreg.mean())
+    	
+
+		return scores_logreg, scores_logreg_shuffle
+
+	def event_rates(self, event, times_align, chans, t_before, t_after):
+		'''
+		Compute event rate per unit across all units indicated for all of the indicated time points.
+		
+		Inputs:
+
+		Outputs:
+		- event_rate: dict; dictionary with a key for every channel and stored for each channel an array
+			of event rates corresponding to each of the time points in times_align
+		'''
+
+		event_rate = dict()
+
+		for chan in chans:
+			er = np.zeros(len(times_align))
+			if event == 'ca':
+				data = self.unit_dict[chan].ca_evt_s
+			if event == 'sp':
+				data = self.unit_dict[chan].sp_evt_s
+
+			for i, tp in enumerate(times_align):
+				t_start = tp - t_before
+				t_end = tp + t_after
+				data_window = np.ravel(np.greater(data, t_start)&np.less(data, t_end))
+				er[i] = np.sum(data_window)/(t_before + t_after)						# gives final measure in Hz
+			event_rate[chan] = er
+
+		return event_rate

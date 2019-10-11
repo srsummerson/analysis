@@ -1011,21 +1011,22 @@ class StressBehaviorWithDrugs_CenterOut():
 		self.filename =  hdf_file
 		self.table = tables.open_file(self.filename)
 
-		self.state = self.table.root.task_msgs[:]["msg"]
-		self.state_time = self.table.root.task_msgs[:]["time"]
+		self.state = self.table.root.task_msgs[:]['msg']
+		self.state_time = self.table.root.task_msgs[:]['time']
 		#self.stress_type = self.table.root.task[:]['stress_trial']
 	  
 		self.ind_wait_states = np.ravel(np.nonzero(self.state == b'wait'))   # total number of unique trials
-		self.ind_center_states = np.ravel(np.nonzero(self.state == b'center'))   # total number of totals (includes repeats if trial was incomplete)
+		self.ind_center_states = self.ind_wait_states + 1  					 # center always happens after wait state
 		self.ind_reward_states = np.ravel(np.nonzero(self.state == b'reward'))
 		#self.ind_hold_center_states = np.ravel(np.nonzero(self.state == 'hold_center'))
 		self.ind_hold_center_states = self.ind_reward_states-5
-		self.ind_target_states = np.ravel(np.nonzero(self.state == b'target'))
+		self.ind_target_states = self.ind_reward_states-3
 		
 		#self.stress_trial = np.ravel(self.stress_type[self.state_time[self.ind_reward_states-4]])
 		
 		self.num_trials = self.ind_center_states.size
 		self.num_successful_trials = self.ind_reward_states.size
+		self.trials_per_min = self.num_successful_trials/((self.state_time[-1] - self.state_time[0])/60.**2)				# gives number of successful trials per min
 		self.trial_times = (self.state_time[self.ind_reward_states] - self.state_time[self.ind_reward_states-4])/60.		# gives trial lengths in seconds (calculated as diff between reward state and hold center state)
 		
 
@@ -1122,7 +1123,7 @@ class StressBehaviorWithDrugs_CenterOut():
 		'''
 
 		#Extract go_cue_indices in units of hdf file row number
-		go_cue_ix = np.array([self.table.root.task_msgs[j-3]['time'] for j, i in enumerate(self.table.root.task_msgs) if i['msg']=='reward'])
+		go_cue_ix = np.array([self.table.root.task_msgs[j-3]['time'] for j, i in enumerate(self.table.root.task_msgs) if i['msg']==b'reward'])
 		go_cue_ix = go_cue_ix[trials]
 
 		# Calculate filtered velocity and 'velocity mag. in target direction'

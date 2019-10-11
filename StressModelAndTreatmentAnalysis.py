@@ -10,6 +10,7 @@ from PulseMonitorData import findIBIs, getIBIandPuilDilation
 from scipy import signal
 from scipy import stats
 from matplotlib import mlab
+from syncHDF import create_syncHDF_TDTloaded
 import matplotlib.pyplot as plt
 from basicAnalysis import plot_cov_ellipse, highpassFilterData
 from csv_processing import get_csv_data_singlechannel
@@ -30,12 +31,7 @@ with benzodiazepines in terms of the anxiolytic response, where beta-carbolines 
 an anxiogenic response. 
 
 To do:
-- finishing generating all syncHDF files
-- fix files that couldn't be process with syncHDF
-- LPF the pupil and heart rate data to get rid of large + fast fluctuations 
-- test compute power features code
-- test class for phys data
-- test class for power data
+
 
 """
 class StressTask_PhysData():
@@ -173,9 +169,31 @@ class StressTask_PhysData():
 			pupil_treat = self.pupil_time_treat
 
 		# Compute covariance of IBI and PD data for plot
-		points_base = np.array([ibi_base,pupil_base])
-		points_stress = np.array([ibi_stress,pupil_stress])
-		points_treat = np.array([ibi_treat,pupil_treat])
+
+		inds_ibi_base = np.ravel(np.nonzero(~np.isnan(ibi_base)))
+		inds_pupil_base = np.ravel(np.nonzero(~np.isnan(pupil_base)))
+		inds_base = np.array([int(ind) for ind in inds_ibi_base if (ind in inds_pupil_base)])
+		if len(inds_base)>0:
+			points_base = np.array([ibi_base[inds_base],pupil_base[inds_base]])
+		else:
+			points_base = np.array([ibi_base, pupil_base])
+
+		inds_ibi_stress = np.ravel(np.nonzero(~np.isnan(ibi_stress)))
+		inds_pupil_stress = np.ravel(np.nonzero(~np.isnan(pupil_stress)))
+		inds_stress = np.array([int(ind) for ind in inds_ibi_stress if (ind in inds_pupil_stress)])
+		if len(inds_stress)>0:
+			points_stress = np.array([ibi_stress[inds_stress],pupil_stress[inds_stress]])
+		else:
+			points_stress = np.array([ibi_stress,pupil_stress])
+		
+		inds_ibi_treat = np.ravel(np.nonzero(~np.isnan(ibi_treat)))
+		inds_pupil_treat = np.ravel(np.nonzero(~np.isnan(pupil_treat)))
+		inds_treat = np.array([int(ind) for ind in inds_ibi_treat if (ind in inds_pupil_treat)])
+		if len(inds_treat):
+			points_treat = np.array([ibi_treat[inds_treat],pupil_treat[inds_treat]])
+		else:
+			points_treat = np.array([ibi_treat,pupil_treat])
+		
 		cov_base = np.cov(points_base)
 		cov_stress = np.cov(points_stress)
 		cov_treat = np.cov(points_treat)
@@ -203,7 +221,8 @@ class StressTask_PhysData():
 		plt.xlabel('Mean Trial IBI (s)')
 		plt.ylabel('Mean Trial PD (AU)')
 		plt.title('Data points taken over %s' % (trial_or_time))
-		plt.xlim((0.35,0.46))
+		plt.xlim((0.32,0.52))
+		plt.ylim((1,3))
 		sm_base = plt.cm.ScalarMappable(cmap=cmap_base, norm=plt.Normalize(vmin=0, vmax=1))
 		# fake up the array of the scalar mappable. Urgh...
 		sm_base._A = []
@@ -338,6 +357,7 @@ def StressTaskAnalysis_ComputePowerFeatures(hdf_filenames, filenames, block_nums
 	- t_bin_size: float; length of time bins to chunk time into (in seconds) to compute features over, default is 5 seconds
 	- t_overlap: float; length of time (in seconds) that time bins should overlap, default is t_bin_size/2 seconds
 	- len_window: float; length of time (in seconds) to chunk time into to compute peripheral physiology values, default is 5 seconds
+	- need_syncHDF: Boolean; indicates if syncHDF file should be generated with this script
 
 	Example inputs: 
 	- hdf_filenames = ['mari20160409_07_te1961.hdf', 'mario20160409_08_te1962.hdf', 'mari20160409_10_te1964.hdf']
@@ -353,6 +373,7 @@ def StressTaskAnalysis_ComputePowerFeatures(hdf_filenames, filenames, block_nums
 	t_bin_size = kwargs.get('t_bin_size', 5.)				# time bin size for power feature computation, defaults to 5 seconds
 	t_overlap = kwargs.get('t_overlap', t_bin_size/2.)		# overlap of time bins for power feature computation, defaults to t_bin_size/2
 	len_window = kwargs.get('len_window', 5.)				# time bin size (non-overlapping) for peripheral physiology
+	need_syncHDF = kwargs.get('need_syncHDF', False)
 
 	# Defining naming conventions and other variables
 	print(filenames[0])
@@ -400,33 +421,20 @@ def StressTaskAnalysis_ComputePowerFeatures(hdf_filenames, filenames, block_nums
 
 		print("Behavior data loaded.")
 
-
-		'''
-		Load syncing data for behavior and TDT recording
-		'''
-		print("Loading syncing data.")
-
-		
-
-		hdf_times_base = dict()
-		hdf_times_stress = dict()
-		hdf_times_treat = dict()
-		sp.io.loadmat(mat_filename_base, hdf_times_base)
-		sp.io.loadmat(mat_filename_stress, hdf_times_stress)
-		sp.io.loadmat(mat_filename_treat, hdf_times_treat)
-		dio_tdt_sample_base = np.ravel(hdf_times_base['tdt_samplenumber'])
-		dio_tdt_sample_stress = np.ravel(hdf_times_stress['tdt_samplenumber'])
-		dio_tdt_sample_treat = np.ravel(hdf_times_treat['tdt_samplenumber'])
-		
-		
 		'''
 		Load all neural, pupil, and pulse data. FYI, Luigi's data is always 3 blocks in the same tank, whereas Mario's baseline and stress blocks are in one tank and treatment block is in another tank
 		'''
 		print("Loading TDT data.")
+		print(need_syncHDF)
 	
 		r = io.TdtIO(TDT_tanks[0])
 		bl = r.read_block(lazy=False,cascade=True)
 		print("First tank read.")
+
+		if need_syncHDF:
+			print("Creating syncHDF file")
+			create_syncHDF_TDTloaded(filenames[0], TDT_tank[0], bl)
+
 		lfp_base = dict()
 		lfp_stress = dict()
 		lfp_treat = dict()
@@ -493,13 +501,17 @@ def StressTaskAnalysis_ComputePowerFeatures(hdf_filenames, filenames, block_nums
 						channel_name = channel + 96
 						lfp_treat[channel_name] = np.array(sig)
 		else:
-			r = io.TdtIO(TDT_tanks[2])
-			bl = r.read_block(lazy=False,cascade=True)
-			print("Reading separate tank for treatment block.")
+			r1 = io.TdtIO(TDT_tanks[2])
+			bl1 = r1.read_block(lazy=False,cascade=True)
+			print("Separate tank for treatment block read.")
+
+			if need_syncHDF:
+				print("Creating syncHDF file")
+				create_syncHDF_TDTloaded(filenames[2], TDT_tank[2], bl)
 
 			# Get all TDT data from treatment block (Block 3)
 			block_num = block_nums[2]
-			for sig in bl.segments[block_num-1].analogsignals:
+			for sig in bl1.segments[block_num-1].analogsignals:
 				if (sig.name == "b'PupD' 1"):
 					pupil_data_treat = np.array(sig)
 					pupil_samprate = sig.sampling_rate.item()
@@ -519,6 +531,25 @@ def StressTaskAnalysis_ComputePowerFeatures(hdf_filenames, filenames, block_nums
 
 
 		print("Finished loading TDT data.")
+
+
+		'''
+		Load syncing data for behavior and TDT recording
+		'''
+		print("Loading syncing data.")
+
+		
+
+		hdf_times_base = dict()
+		hdf_times_stress = dict()
+		hdf_times_treat = dict()
+		sp.io.loadmat(mat_filename_base, hdf_times_base)
+		sp.io.loadmat(mat_filename_stress, hdf_times_stress)
+		sp.io.loadmat(mat_filename_treat, hdf_times_treat)
+		dio_tdt_sample_base = np.ravel(hdf_times_base['tdt_samplenumber'])
+		dio_tdt_sample_stress = np.ravel(hdf_times_stress['tdt_samplenumber'])
+		dio_tdt_sample_treat = np.ravel(hdf_times_treat['tdt_samplenumber'])
+		
 
 		'''
 		Process pupil and pulse data
