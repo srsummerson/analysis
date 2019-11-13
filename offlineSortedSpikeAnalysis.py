@@ -29,7 +29,9 @@ class OfflineSorted_CSVFile():
 		self.sort_code = np.ravel(np.array(pd.DataFrame(self.df, columns = [u'SORT'])))
 		self.samp_rate = np.ravel(np.array(pd.DataFrame(self.df, columns = [u'Sampling_Freq'])))[0]
 		self.num_waveform_pts = np.ravel(np.array(pd.DataFrame(self.df, columns = [u'NumOfPoints'])))[0]
-		self.waveforms = np.array(pd.DataFrame(self.df, columns = [self.df.columns[-self.num_waveform_pts-1:-1]]))
+		waveform_cols = self.df.columns[-self.num_waveform_pts-1:-1]
+		waveform_cols = np.array([u'%s' % (elem) for elem in waveform_cols])
+		self.waveforms = np.array(pd.DataFrame(self.df, columns = waveform_cols))
 		self.sample_num = np.rint(self.times*self.samp_rate)
 
 		# Find units with non-noisy recorded data. Recall that sort code 31 is for noise events. 

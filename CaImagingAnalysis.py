@@ -111,6 +111,7 @@ class CaUnit():
 	sp_evt_s: array, float values of time stamps (in seconds) for calcium events
 	'''
 	def __init__(self, unit):
+		self.name = unit['name']
 		self.trace = unit['trace']
 		self.trace_ts = unit['trace_ts']
 		self.cell_contour = unit['cell_contour']
@@ -937,7 +938,7 @@ class CaData():
 				sem_trace_mat2[i,:] = trace_sem2
 
 			plt.subplot(num_rows,num_cols,i+1)
-			plt.title('Unit %i' % (c))
+			plt.title('Unit %i - (%s)' % (c, self.unit_dict[c].name), fontsize = 24)
 			plt.plot(times,trace_avg, color = 'r')
 			plt.fill_between(times,trace_avg - trace_sem, trace_avg	+ trace_sem, facecolor = 'r', alpha = 0.25, label='%s - z%i' % (hand, zone))
 			figname = "C:/Users/ss45436/Box/CNPRC/Figures/" + self.filename[:-4] + "_" + hand+ "h_z" + str(zone)+ "_avg_traces.svg"
@@ -946,8 +947,11 @@ class CaData():
 				plt.fill_between(times2,trace_avg2 - trace_sem2, trace_avg2	+ trace_sem2, facecolor = 'b', alpha = 0.25, label='%s - z%i' % (hand, zone2))
 				figname = "C:/Users/ss45436/Box/CNPRC/Figures/" + self.filename[:-4] + "_" + hand+ "h_both_zones_avg_traces.svg"
 			#plt.ylim((0,3.75))
-			plt.legend()
-		fig.set_size_inches((40, 50), forward=False)	
+			plt.legend(fontsize = 20)
+			plt.tick_params(labelsize = 20)
+			plt.xlabel('Time relative to zone entry (s)', fontsize = 24)
+			plt.ylabel('Average ' + r'$\Delta$' +'F', fontsize = 24)
+		fig.set_size_inches((40, 20), forward=False)	
 		plt.savefig(figname, dpi = 500)
 		plt.close()
 		

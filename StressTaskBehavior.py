@@ -1029,6 +1029,18 @@ class StressBehaviorWithDrugs_CenterOut():
 		self.trials_per_min = self.num_successful_trials/((self.state_time[-1] - self.state_time[0])/60.**2)				# gives number of successful trials per min
 		self.trial_times = (self.state_time[self.ind_reward_states] - self.state_time[self.ind_reward_states-4])/60.		# gives trial lengths in seconds (calculated as diff between reward state and hold center state)
 		
+		# Find trial rate for early vs late trials
+		recording_dur_half = (self.state_time[-1] - self.state_time[0])/2.
+		half_time = np.argmin(np.abs(self.state_time - (recording_dur_half + self.state_time[0])))
+
+		print("Start:", self.state_time[0])
+		print("Halfway:", self.state_time[half_time])
+		print("End:", self.state_time[-1])
+
+		num_trials_early = np.sum(self.state_time[self.ind_reward_states] < self.state_time[half_time])
+		num_trials_late = np.sum(self.state_time[self.ind_reward_states] > self.state_time[half_time])
+		self.trials_per_min_early = num_trials_early/(recording_dur_half/60.**2)
+		self.trials_per_min_late = num_trials_late/(recording_dur_half/60**2)
 
 	
 	def get_state_TDT_LFPvalues(self,ind_state,syncHDF_file):

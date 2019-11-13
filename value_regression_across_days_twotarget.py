@@ -1,4 +1,4 @@
-from DecisionMakingBehavior import TwoTargetTask_RegressedFiringRatesWithValue_PictureOnset
+from DecisionMakingBehavior import TwoTargetTask_RegressedFiringRatesWithValue_PictureOnset, TwoTargetTask_FiringRateChanges_FastVsSlow
 from offlineSortedSpikeAnalysis import OfflineSorted_CSVFile
 import numpy as np
 from os import listdir
@@ -145,7 +145,7 @@ num_files = len(hdf_list)
 t_before = 0.
 t_after = 0.4
 smoothed = 1
-
+'''
 ###RUNNING WITH SLIDING VALUES BUT BACK TO PICTURE ONSET
 for i in range(num_files):
 	for channel in cd_units:
@@ -154,6 +154,15 @@ for i in range(num_files):
 		spike = spike_list[i]
 
 		Qs = TwoTargetTask_RegressedFiringRatesWithValue_PictureOnset(dir, hdf, sync, spike, channel, t_before, t_after, smoothed)
+'''
+good_channels = np.array([1, 2, 4, 5, 6, 8, 10, 12, 14, 15, 17, 18, 19, 23, 25, 26, 27, 28, 29, 30, 32, 38, 43, 47, 55, 57, 59, 60, 63, 65, 69, 76, 78, 80, 82, 84, 86, 88])
+modulation_index = []
+unit_classification = []
+for chann in good_channels:
+	print('channel:%i' % (chann))
+	mod_index, unit_class = TwoTargetTask_FiringRateChanges_FastVsSlow(dir, hdf_list_stim[2], syncHDF_list_stim[2], spike_list_stim[2], chann, t_before, t_after, smoothed)
+	modulation_index += mod_index.tolist()
+	unit_classification += unit_class.tolist()
 
 
 '''

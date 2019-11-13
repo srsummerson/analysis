@@ -325,7 +325,7 @@ width = 1./(len(num_sub_units) + 2)
 plt.errorbar(ind, avg_accuracy_all_units, color = 'k', yerr = sem_accuracy_all_units, label = 'All units')
 for n,num_su in enumerate(num_sub_units):
 	plt.errorbar(ind, avg_accuracy_subsampling[:,n], color=cmap(n/float(len(num_sub_units))), yerr = sem_accuracy_subsampling[:,n], label = '%i units' % (num_su))
-plt.errorbar(ind, avg_accuracy_shuffle_all_units, color = 'c', yerr = sem_accuracy_shuffle_all_units, label = 'Shuffled data -\n (all units)')
+plt.errorbar(ind, avg_accuracy_shuffle_all_units, exitcolor = 'c', yerr = sem_accuracy_shuffle_all_units, label = 'Shuffled data -\n (all units)')
 plt.ylim((0,1))
 xticklabels = ['Session %i' % (d+1) for d in np.arange(len(filenames))]
 xticks = ind + width/2
@@ -352,4 +352,24 @@ plt.xlabel('Units Used for Decoding')
 plt.title('Avg Decoding Accuracy for Bin [-1,1] s around zone entry')
 plt.legend()
 plt.savefig("C:/Users/ss45436/Box/CNPRC/Figures/Decoding_RH_reaches_averaged_over_sessions_decoding_withsubsampling_.svg")
+plt.close()
+
+# Compute and plot decoding performance for subsampling units
+all_avg_accuracy = np.vstack(())
+cmap = mpl.cm.brg
+avg_accuracy_subsampling = np.nanmean(avg_accuracy_subunits,axis=2)
+sem_accuracy_subsampling = np.nanstd(avg_accuracy_subunits,axis=2)/np.sqrt(10)
+width = 1./(len(num_sub_units) + 2)
+plt.errorbar(ind, avg_accuracy_all_units, color = 'k', yerr = sem_accuracy_all_units, label = 'All units')
+for n,num_su in enumerate(num_sub_units):
+	plt.errorbar(ind, avg_accuracy_subsampling[:,n], color=cmap(n/float(len(num_sub_units))), yerr = sem_accuracy_subsampling[:,n], label = '%i units' % (num_su))
+plt.errorbar(ind, avg_accuracy_shuffle_all_units, exitcolor = 'c', yerr = sem_accuracy_shuffle_all_units, label = 'Shuffled data -\n (all units)')
+plt.ylim((0,1))
+xticklabels = ['Session %i' % (d+1) for d in np.arange(len(filenames))]
+xticks = ind + width/2
+plt.xticks(xticks, xticklabels)
+plt.ylabel('Decoding Accuracy')
+plt.title('Avg Decoding Accuracy for Bin [-1,1] s around zone entry')
+plt.legend()
+plt.savefig("C:/Users/ss45436/Box/CNPRC/Figures/Decoding_RH_reaches_all_sessions_average_decoding_withsubsampling.svg")
 plt.close()

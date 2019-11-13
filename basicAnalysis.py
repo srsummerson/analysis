@@ -381,9 +381,9 @@ def ComputeEfronRSquared(xd,xm_prob):
 	return r_squared
 
 def plot_step_lda(X_lda,y,labels):
-
+	num_labels = len(np.unique(y))
 	ax = plt.subplot(111)
-	for label, marker, color in zip(range(0,2), ('^','s'),('blue','red')):
+	for label, marker, color in zip(range(0,num_labels), ('^','s','o'),('k','r','b')):
 		plt.scatter(x=X_lda[:,0].real[y==label],
 			y=X_lda[:,1].real[y==label],
 			marker=marker,
@@ -454,6 +454,28 @@ def highpassFilterData(data, Fs, cutoff):
 
 	return filtered_data
 
+def bandpassFilterData(data, Fs, cutoff_low, cutoff_high):
+	'''
+	This method lowpass filters data using a butterworth filter.
+
+	Inputs:
+		- data: array of time-stamped values to be filtered 
+		- Fs: sampling frequency of data 
+		- cutoff: cutoff frequency of the LPF in Hz
+	Outputs:
+		- filtered_data: array contained the lowpass-filtered data
+
+	'''
+	nyq = 0.5*Fs
+	order = 2
+	cutoff_low = cutoff_low / nyq
+	cutoff_high = cutoff_high / nyq
+
+	b, a = signal.butter(order, [cutoff_low, cutoff_high], btype= 'bandpass', analog = False)
+	filtered_data = signal.filtfilt(b,a,data)
+
+	return filtered_data
+
 def notchFilterData(data, Fs, notch_freq):
 	'''
 	This method lowpass filters data using a butterworth filter.
@@ -489,16 +511,12 @@ def LDAforFeatureSelection(X,y,filename,block_num):
 	classes = np.unique(y)
 	num_classes = len(classes)
 	num_samples, num_features = X.shape
-
-	orig_stdout = sys.stdout
-	f = file('/home/srsummerson/code/analysis/StressPlots/LDA for Pupil and Pulse Data.txt', 'w')
-	sys.stdout = f
-
+	
 	# Compute the num-features-dimensional mean vectors of the different classes
 	mean_vectors = []
 	for cl in classes:
 		mean_vectors.append(np.nanmean(X[y==cl], axis=0))
-		print('Mean vector class %s: %s\n' %(cl, mean_vectors[int(cl)]))
+		#print('Mean vector class %s: %s\n' %(cl, mean_vectors[int(cl)]))
 
 	# Compute the scatter matrices
 
@@ -510,7 +528,7 @@ def LDAforFeatureSelection(X,y,filename,block_num):
 			row, mv = row.reshape(num_features,1), mv.reshape(num_features,1)  	# make column vectors
 			class_sc_mat += (row-mv).dot((row-mv).T)
 		S_W += class_sc_mat 													# sum class scatter matrices
-	print('Within-class Scatter Matrix:\n', S_W)
+	#print('Within-class Scatter Matrix:\n', S_W)
 
 	# Between-class scatter matrix
 	overall_mean = np.nanmean(X, axis = 0)
@@ -521,7 +539,7 @@ def LDAforFeatureSelection(X,y,filename,block_num):
 		mean_vec = mean_vec.reshape(num_features,1) 			# make column vector
 		overall_mean = overall_mean.reshape(num_features,1)		# make column vector
 		S_B += n * (mean_vec - overall_mean).dot((mean_vec - overall_mean).T)
-	print('Between-class Scatter Matrix:\n', S_B)
+	#print('Between-class Scatter Matrix:\n', S_B)
 
 	# Solving the generalized eigenvalue problem 
 	
@@ -529,8 +547,8 @@ def LDAforFeatureSelection(X,y,filename,block_num):
 
 	for i in range(len(eig_vals)):
 		eigvec_sc = eig_vecs[:,i].reshape(num_features,1) 	# make column vector
-		print('\nEigenvector {}: \n{}'.format(i+1,eigvec_sc.real))
-		print('Eigenvalue {:} {:.2e}'.format(i+1,eig_vals[i].real))
+		#print('\nEigenvector {}: \n{}'.format(i+1,eigvec_sc.real))
+		#print('Eigenvalue {:} {:.2e}'.format(i+1,eig_vals[i].real))
 
 	# Selecting linear discriminants
 
@@ -540,30 +558,27 @@ def LDAforFeatureSelection(X,y,filename,block_num):
 	eig_pairs = sorted(eig_pairs, key=lambda k: k[0], reverse=True)
 	eig_pairs_ind = sorted(range(len(eig_vals)), key=lambda k: eig_vals[k], reverse=True)
 
-	print('Eigenvalues in decreasing order:\n')
-	for ind, i in enumerate(eig_pairs):
-		print(i[0], eig_pairs_ind[ind])
+	#print('Eigenvalues in decreasing order:\n')
+	#for ind, i in enumerate(eig_pairs):
+		#print(i[0], eig_pairs_ind[ind])
 
-	print('Variance explained:\n')
+	#print('Variance explained:\n')
 	eigv_sum = sum(eig_vals)
-	for i,j in enumerate(eig_pairs):
-		print('eigenvalue {0:} {1: .2%}'.format(i+1, (j[0]/eigv_sum).real))
+	#for i,j in enumerate(eig_pairs):
+		#print('eigenvalue {0:} {1: .2%}'.format(i+1, (j[0]/eigv_sum).real))
 
 	# Choosing 2 eigenvectors with largest eigenvalues
 	W = np.hstack((eig_pairs[0][1].reshape(num_features,1), eig_pairs[1][1].reshape(num_features,1)))
-	print('Matrix W:\n', W.real)
-
-	sys.stdout = orig_stdout
-	f.close()
+	#print('Matrix W:\n', W.real)
 
 	# Transform the samples onto the new subspace
 	X_lda = X.dot(W)
 
 	plot_step_lda(X_lda,y,['Reg','Stress'])
-	plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_LDA.svg')
-	plt.close()
-
-	return 
+	#plt.savefig('/home/srsummerson/code/analysis/StressPlots/'+filename+'_b'+str(block_num)+'_LDA.svg')
+	#plt.close()
+	plt.show()
+	return W
 
 def computeCursorPathLength(start_times,stop_times,cursor):
 	'''

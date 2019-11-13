@@ -2510,6 +2510,9 @@ def TwoTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files
 				#print(channel)
 				spike = OfflineSorted_CSVFile(spike_files[i][1])
 
+			avg_firing_rates = spike.get_avg_firing_rates(np.array([channel]))[channel]		# array of average firing rates, length is equal to the number of units on the channel
+			unit_class = np.array(avg_firing_rates > 4, dtype = int)						# array that will be used to identify the unit class: 0 = slow, 1 = fast
+
 			# Get matrix that is (Num units on channel)x(num trials in hdf_file) containing the firing rates during the
 			# designated window.
 			sc_chan = spike.find_chan_sc(channel)
@@ -2532,7 +2535,69 @@ def TwoTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files
 				window_fr_smooth[i] = all_fr_smooth
 	
 
-	return num_trials, num_units, window_fr, window_fr_smooth
+	return num_trials, num_units, window_fr, window_fr_smooth, unit_class
+
+def TwoTargetTask_LFPPower_PictureOnset_Multichannels(hdf_files, syncHDF_files, channels, t_before, t_after):
+	'''
+	8/15/2019 - this method updated to use the picture_onset behavioral event rather than picture onset
+	which occurs before hold begins (2499-2500)
+
+	This method returns the average firing rate of all units on the indicated channel during picture onset.
+
+	Inputs:
+	- hdf_files: list of N hdf_files corresponding to the behavior in the three target task
+	- syncHDF_files: list of N syncHDF_files that containes the syncing DIO data for the corresponding hdf_file and it's
+					TDT recording. If TDT data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, syncHDF_files should have the form [syncHDF_file1.mat, '']
+	- spike_files: list of N tuples of spike_files, where each entry is a list of 2 spike files, one corresponding to spike
+					data from the first 96 channels and the other corresponding to the spike data from the last 64 channels.
+					If spike data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, the hdf_files and syncHDF_files will both have 2 file names, and the 
+					spike_files entry should be of the form [[spike_file1.csv, spike_file2.csv], ''].
+	- channels: integer values indicating what channels will be used to regress activity
+	- t_before: time before (s) the picture onset that should be included when computing the firing rate. t_before = 0 indicates
+					that we only look from the time of onset forward when considering the window of activity.
+	- t_after: time after (s) the picture onset that should be included when computing the firing rate.
+
+	Output:
+	- num_trials: array of length N with an element corresponding to the number of successful trials in each of the
+					hdf_files
+	- window_fr: dictionary with elements indexed such that the index matches the corresponding set of hdf_files. Each
+					dictionary element contains a matrix of size (num units)x(num trials) with elements corresponding
+					to the average firing rate over the window indicated.
+	'''
+	num_trials = np.zeros(len(hdf_files))
+	num_units = np.zeros(len(hdf_files))
+	window_fr = dict()
+	window_fr_smooth = dict()
+	for i, hdf_file in enumerate(hdf_files):
+		cb_block = ChoiceBehavior_TwoTargets(hdf_file)
+		num_trials[i] = cb_block.num_successful_trials
+		ind_hold_center = cb_block.ind_check_reward_states - 4
+		ind_picture_onset = cb_block.ind_check_reward_states - 5
+		
+		# 1. Load the TDT LFP data
+		tdt_data_location = syncHDF_files[i][:-15] + '/Block-' + syncHDF_files[i][-13]
+		# Find lfp sample numbers corresponding to these times and the sampling frequency of the lfp data
+
+		lfp_state_row_ind, lfp_freq = cb_block.get_state_TDT_LFPvalues(ind_picture_onset, syncHDF_files[i])
+		#lfp_state_row_ind, lfp_freq = cb_block.get_state_TDT_LFPvalues(ind_hold_center, syncHDF_files[i])
+
+		# load TDT data
+		bl = tdt.read_block(tdt_data_location)
+		lfp1 = bl.streams.LFP1.data
+		lfp2 = bl.streams.LFP2.data
+		lfp_dur = np.min((lfp1.shape[1], lfp2.shape[1]))
+		lfp = np.concatenate((lfp1[:,:lfp_dur], lfp2[:,:lfp_dur]))
+
+		for chann in channels:
+			alpha_pow, beta_pow, gamma_pow, highgamma_pow = computePower(lfp[chann-1,:], lfp_state_row_ind, t_before, t_after)  	# inputs are array of time domain data, indices of time points to compute power around, and the inputs for the size of the time window to consider when computing power
+		
+		#### STILL NEED TO IDENTIFY WHAT THE COMPUTEPOWER METHOD SHOULD BE 
+		#### AND ALSO COLLECT THE DATA IN DICTIONARY ACROSS THE FILES
+
+
+	return num_trials, num_units, window_fr, window_fr_smooth, unit_class
 
 def ThreeTargetTask_MaxFiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files, channel, t_before, t_after):
 	'''
@@ -2784,7 +2849,7 @@ def TwoTargetTask_RegressFiringRates_PictureOnset(hdf_files, syncHDF_files, spik
 	# 	window_fr is a dictionary with elements indexed such that the index matches the corresponding set of hdf_files. Each
 	#	dictionary element contains a matrix of size (num units)x(num trials) with elements corresponding
 	#	to the average firing rate over the window indicated.
-	num_trials, num_units, window_fr, window_fr_smooth = TwoTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files, channel, t_before, t_after)
+	num_trials, num_units, window_fr, window_fr_smooth, unit_class = TwoTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files, channel, t_before, t_after)
 	cum_sum_trials = np.cumsum(num_trials)
 
 	# 3. Get Q-values, chosen targets, and rewards
@@ -4430,7 +4495,7 @@ def TwoTargetTask_RegressedFiringRatesWithValue_PictureOnset(dir, hdf_files, syn
 	# 	window_fr is a dictionary with elements indexed such that the index matches the corresponding set of hdf_files. Each
 	#	dictionary element contains a matrix of size (num units)x(num trials) with elements corresponding
 	#	to the average firing rate over the window indicated.
-	num_trials, num_units, window_fr, window_fr_smooth = TwoTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files, channel, t_before, t_after)
+	num_trials, num_units, window_fr, window_fr_smooth, unit_class = TwoTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files, channel, t_before, t_after)
 	cum_sum_trials = np.cumsum(num_trials).astype(int)
 	print(window_fr)
 
@@ -4703,3 +4768,83 @@ def TwoTargetTask_RegressedFiringRatesWithValue_PictureOnset(dir, hdf_files, syn
 		
 	#return window_fr, window_fr_smooth, fr_mat, x, y, Q_low, Q_mid, Q_high, Q_learning, Q_late, FR_learning, FR_late, fit_glm
 	return Q_low, Q_high
+
+def TwoTargetTask_FiringRateChanges_FastVsSlow(dir, hdf_files, syncHDF_files, spike_files, channel, t_before, t_after, smoothed):
+	'''
+	This method categorizes neurons as either fast-firing or slow-firing
+
+	Inputs:
+	- hdf_files: list of N hdf_files corresponding to the behavior in the three target task
+	- syncHDF_files: list of N syncHDF_files that containes the syncing DIO data for the corresponding hdf_file and it's
+					TDT recording. If TDT data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, syncHDF_files should have the form [syncHDF_file1.mat, '']
+	- spike_files: list of N tuples of spike_files, where each entry is a list of 2 spike files, one corresponding to spike
+					data from the first 96 channels and the other corresponding to the spike data from the last 64 channels.
+					If spike data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, the hdf_files and syncHDF_files will both have 2 file names, and the 
+					spike_files entry should be of the form [[spike_file1.csv, spike_file2.csv], ''].
+	- channel: integer value indicating what channel will be used to regress activity
+	- t_before: time before (s) the picture onset that should be included when computing the firing rate. t_before = 0 indicates
+					that we only look from the time of onset forward when considering the window of activity.
+	- t_after: time after (s) the picture onset that should be included when computing the firing rate.
+	- smoothed: boolean indicating whether to use smoothed firing rates (True) or not (False)
+
+	'''
+	# Get session information for plot
+	str_ind = hdf_files[0].index('201')  	# search for beginning of year in string (used 201 to accomodate both 2016 and 2017)
+	sess_name = 'Luigi' + hdf_files[0][str_ind:str_ind + 8]
+	if syncHDF_files[0]!='':
+		str_ind = syncHDF_files[0].index('201')
+		session_name = 'Luigi' + syncHDF_files[0][str_ind:str_ind + 11]
+	elif syncHDF_files[1]!='':
+		str_ind = syncHDF_files[1].index('201')
+		session_name = 'Luigi' + syncHDF_files[0][str_ind:str_ind + 11]
+	else:
+		session_name = 'Unknown'
+	
+
+	# 1. Load behavior data and pull out trial indices for the designated trial case
+	cb = ChoiceBehavior_TwoTargets_Stimulation(hdf_files, 100, 100)
+	total_trials = cb.num_successful_trials
+	#targets_on = cb.targets_on[cb.state_time[cb.ind_check_reward_states]]
+
+	# 2. Get firing rates from units on indicated channel, classify as either fast or slow spiking, and then find average
+	#	firing rate in first vs last block, and firing rates around picture onset for first vs last blocks.
+	# 	window_fr is a dictionary with elements indexed such that the index matches the corresponding set of hdf_files. Each
+	#	dictionary element contains a matrix of size (num units)x(num trials) with elements corresponding
+
+
+	num_trials, num_units, window_fr, window_fr_smooth, unit_class = TwoTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files, channel, t_before, t_after)
+	cum_sum_trials = np.cumsum(num_trials).astype(int)
+
+	# 3. Get chosen targets, and rewards
+	chosen_target, rewards, instructed_or_freechoice = cb.GetChoicesAndRewards()
+
+	# 4. Create firing rate matrix with size (max_num_units)x(total_trials)
+	max_num_units = int(np.max(num_units))
+	fr_mat = np.zeros([max_num_units, total_trials])
+	trial_counter = 0
+	for j in window_fr.keys():
+		if not smoothed:
+			block_fr = window_fr[j]
+		else:
+			block_fr = window_fr_smooth[j]
+		if len(block_fr.shape) == 1:
+			num_units = 1
+			num_trials = len(block_fr)
+		else:
+			num_units,num_trials = block_fr.shape 
+
+		fr_mat[:num_units,cum_sum_trials[j] - num_trials:cum_sum_trials[j]] = block_fr
+
+	
+	# 5. Do regression for each unit only on trials in Blocks A and B with spike data saved.
+	avg_fr_modulation_index = np.zeros(max_num_units)
+	for k in range(max_num_units):
+		unit_data = fr_mat[k,:]
+		trial_inds_early = np.array([index for index in range(100) if unit_data[index]!=0], dtype = int)
+		trial_inds_late = np.array([index for index in range(200,len(unit_data)) if unit_data[index]!=0], dtype = int)
+
+		avg_fr_modulation_index[k] = (np.nanmean(unit_data[trial_inds_late]) - np.nanmean(unit_data[trial_inds_early]))/(np.nanmean(unit_data[trial_inds_late]) + np.nanmean(unit_data[trial_inds_early]))
+		
+	return avg_fr_modulation_index, unit_class
