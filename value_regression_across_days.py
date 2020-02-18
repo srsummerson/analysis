@@ -1,4 +1,4 @@
-from DecisionMakingBehavior import ThreeTargetTask_RegressedFiringRatesWithValue_PictureOnset
+from DecisionMakingBehavior import ThreeTargetTask_RegressedFiringRatesWithValue_PictureOnset, ThreeTargetTask_RegressedFiringRatesWithRPE_RewardOnset
 from offlineSortedSpikeAnalysis import OfflineSorted_CSVFile
 import numpy as np
 from os import listdir
@@ -310,50 +310,41 @@ def BinFiringRatesByValue_SepReg(Q_early, Q_late, Q_bins, FR_early, FR_late, bet
 	return FR_e_means_posreg, FR_e_means_negreg, FR_l_means_posreg, FR_l_means_negreg, FR_e_sem_posreg, FR_e_sem_negreg, FR_l_sem_posreg, FR_l_sem_negreg, \
 			bin_FR_early_posreg_all, bin_FR_late_posreg_all, bin_FR_early_negreg_all, bin_FR_late_negreg_all
 
-####### Start code
+####### Start code ##############
 
 
 # Define code parameters
+num_files = len(hdf_list)
 t_before = 0.
 t_after = 0.4
 smoothed = 1
-"""
-# Loop through sessions to compute regressions per session
-for j in range(len(hdf_list))[15:16]:
-	# Pull out the relevant session's data
-	hdf_files = hdf_list[j]
-	syncHDF_files = syncHDF_list[j]
-	spike_files = spike_list[j]
-	print "Working on file:", hdf_files[0]
 
-	# Find which Cd and ACC channels have good spiking data
-	if (spike_files[0] != ['']):
-		spike1 = OfflineSorted_CSVFile(spike_files[0][0])
-		fr1 = spike1.get_avg_firing_rates(all_units)
-		units1 = np.array([unit for unit in all_units if fr1[unit][0]>0])
-		spike2 = OfflineSorted_CSVFile(spike_files[0][1])
-		fr2 = spike2.get_avg_firing_rates(all_units)
-		units2 = np.array([unit for unit in all_units if fr2[unit][0]>0])
-		good_units = np.append(units1, units2)
-	elif (spike_files[1] != ['']):
-		spike1 = OfflineSorted_CSVFile(spike_files[1][0])
-		fr1 = spike1.get_avg_firing_rates(all_units)
-		units1 = np.array([unit for unit in all_units if fr1[unit][0]>0])
-		spike2 = OfflineSorted_CSVFile(spike_files[1][1])
-		fr2 = spike2.get_avg_firing_rates(all_units)
-		units2 = np.array([unit for unit in all_units if fr2[unit][0]>0])
-		good_units = np.append(units1, units2)
-	else:
-		good_units = np.array([])
+for i in range(num_files)[10:]:
+	hdf = hdf_list[i]
+	sync = syncHDF_list[i]
+	spike = spike_list[i]
 
-	# Perform analysis for all Cd and ACC channels with spiking data
-	for k,item in enumerate(good_units):
-		output = ThreeTargetTask_RegressedFiringRatesWithValue_PictureOnset(hdf_files, syncHDF_files, spike_files, item, t_before, t_after, smoothed)
+	if spike[0]!= ['']:
+		spike_data1 = OfflineSorted_CSVFile(spike[0][0])
+		spike_data2 = OfflineSorted_CSVFile(spike[0][1])
+		good_channels = np.append(spike_data1.good_channels, spike_data2.good_channels)
+		
+		channels = np.array([chan for chan in all_units if chan in good_channels])
+
+		for chann in channels:
+
+			ThreeTargetTask_RegressedFiringRatesWithRPE_RewardOnset(dir, hdf, sync, spike, chann, t_before, t_after, smoothed)
+
 
 """
-'''
 Average across all files
-'''
+- use pre-processed data in picture_onset_fr/ folder generated from ThreeTargetTask_RegressedFiringRatesWithValue_PictureOnset to identify 
+  encoding of units during picture onset where encoding is determined via linear regression
+    - pre-processed files contain Non-zero firing rates from trials, Q-values, beta values, p-values, and r-squared values
+- regression performed only on last 100 trials in Block A and trials where firing rate was 0 Hz were excluded
+- Q-values in regression comes from traditional Q-learning mordel and is fit from data from all trials
+"""
+
 
 spike_dir = dir + 'picture_onset_fr/'
 filenames = listdir(spike_dir)
@@ -470,6 +461,11 @@ beta_late_mv_acc_sham = np.array([])
 
 
 syncHDF_list_stim_flat = [item for sublist in syncHDF_list_stim for item in sublist]
+
+'''
+Loop through pre-processed files to count up the number of neurons that have significant beta values for the various
+regressors. 
+'''
 
 for filen in filenames:
 	data = dict()

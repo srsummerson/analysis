@@ -10,10 +10,13 @@ dir = "C:/Users/ss45436/Documents/MATLAB/Left/New/New/"
 filenames = ['2018-11-21-10-49-56.mat', \
 			'2018-11-26-11-45-46.mat', \
 			'2018-12-04-10-31-21.mat', \
+			'2018-12-11-10-53-04.mat', \
 			'2018-12-14-11-01-41.mat', \
 			'2018-12-17-11-38-42.mat', \
 			'2018-12-18-11-20-21.mat', \
-			'2018-12-19-11-24-58.mat']
+			'2018-12-19-11-24-58.mat', \
+			'2019-01-07-10-45-52.mat', \
+			'2019-01-24-11-36-02.mat']
 
 def unit_classification_by_zone(ca_data,**kwargs):
 	'''
@@ -201,10 +204,10 @@ def logistic_regression_decoding_overtime(ca_data, fix_bin_size, **kwargs):
 	cv_t_start_shuffle_sem = np.nanstd(cv_t_start_shuffle,axis = 1)/np.sqrt(10)
 
 	# Plot the average performance with error bars
-	plt.fill_between(t_start+fix_bin_size/2., cv_t_start_avg-cv_t_start_sem,cv_t_start_avg+cv_t_start_sem, facecolor = 'b', alpha = 0.5, label = 'Observed outcomes')
-	plt.fill_between(t_start+fix_bin_size/2., cv_t_start_shuffle_avg-cv_t_start_shuffle_sem,cv_t_start_shuffle_avg+cv_t_start_shuffle_sem, facecolor = 'c', alpha = 0.5, label = "Shuffled outcomes")
-	plt.plot(t_start+fix_bin_size/2., cv_t_start_avg, 'b-o')
-	plt.plot(t_start+fix_bin_size/2., cv_t_start_shuffle_avg, 'c-o')
+	plt.fill_between(t_start+fix_bin_size/2., cv_t_start_avg-cv_t_start_sem,cv_t_start_avg+cv_t_start_sem, facecolor = 'tab:orange', alpha = 0.5, label = 'Observed outcomes')
+	plt.fill_between(t_start+fix_bin_size/2., cv_t_start_shuffle_avg-cv_t_start_shuffle_sem,cv_t_start_shuffle_avg+cv_t_start_shuffle_sem, facecolor = 'tab:gray', alpha = 0.5, label = "Shuffled outcomes")
+	plt.plot(t_start+fix_bin_size/2., cv_t_start_avg, 'tab:orange','o')
+	plt.plot(t_start+fix_bin_size/2., cv_t_start_shuffle_avg, 'tab:gray','o')
 	plt.xlabel('Time relative to zone entry (s)')
 	plt.ylabel('Decoding accuracy')
 	plt.title('Logistic Regression - Bin size %i s' % (fix_bin_size))
@@ -254,7 +257,7 @@ sem_accuracy_all_units = np.zeros(len(filenames))
 avg_accuracy_shuffle_all_units = np.zeros(len(filenames))
 sem_accuracy_shuffle_all_units = np.zeros(len(filenames))
 
-num_sub_units = [50,40,30,20,10]
+num_sub_units = [50,40,30,20,10,1]
 
 avg_accuracy_subunits = np.zeros((len(filenames),len(num_sub_units),100))				# 10 comes from the fact that we're repeating the subsampling 10x
 avg_accuracy_shuffle_subunits = np.zeros((len(filenames),len(num_sub_units),100))		# 10 comes from the fact that we're repeating the subsampling 10x
@@ -292,8 +295,8 @@ for k,file in enumerate(filenames):
 # Plot peak accuracy over days
 ind = np.arange(len(filenames))
 width = 0.35
-plt.bar(ind, peak_avg_accuracy_all_units, width, color = 'b', yerr = peak_sem_accuracy_all_units, label = 'Observed data')
-plt.bar(ind+0.35, peak_avg_accuracy_shuffle_all_units, width, color = 'c', yerr = peak_sem_accuracy_shuffle_all_units, label = 'Shuffled data')
+plt.bar(ind, peak_avg_accuracy_all_units, width, color = 'tab:orange', yerr = peak_sem_accuracy_all_units, label = 'Observed data')
+plt.bar(ind+0.35, peak_avg_accuracy_shuffle_all_units, width, color = 'tab:gray', yerr = peak_sem_accuracy_shuffle_all_units, label = 'Shuffled data')
 plt.ylim((0,1))
 xticklabels = ['Session %i' % (d+1) for d in np.arange(len(filenames))]
 xticks = ind + width/2
@@ -305,8 +308,8 @@ plt.savefig("C:/Users/ss45436/Box/CNPRC/Figures/Decoding_RH_reaches_all_sessions
 plt.close()
 
 # Plot average accuracy in (-1,1) bin over days
-plt.bar(ind, avg_accuracy_all_units, width, color = 'b', yerr = sem_accuracy_all_units, label = 'Observed data')
-plt.bar(ind+0.35, avg_accuracy_shuffle_all_units, width, color = 'c', yerr = sem_accuracy_shuffle_all_units, label = 'Shuffled data')
+plt.bar(ind, avg_accuracy_all_units, width, color = 'tab:orange', yerr = sem_accuracy_all_units, label = 'Observed data')
+plt.bar(ind+0.35, avg_accuracy_shuffle_all_units, width, color = 'tab:gray', yerr = sem_accuracy_shuffle_all_units, label = 'Shuffled data')
 plt.ylim((0,1))
 xticklabels = ['Session %i' % (d+1) for d in np.arange(len(filenames))]
 xticks = ind + width/2
@@ -325,7 +328,7 @@ width = 1./(len(num_sub_units) + 2)
 plt.errorbar(ind, avg_accuracy_all_units, color = 'k', yerr = sem_accuracy_all_units, label = 'All units')
 for n,num_su in enumerate(num_sub_units):
 	plt.errorbar(ind, avg_accuracy_subsampling[:,n], color=cmap(n/float(len(num_sub_units))), yerr = sem_accuracy_subsampling[:,n], label = '%i units' % (num_su))
-plt.errorbar(ind, avg_accuracy_shuffle_all_units, exitcolor = 'c', yerr = sem_accuracy_shuffle_all_units, label = 'Shuffled data -\n (all units)')
+plt.errorbar(ind, avg_accuracy_shuffle_all_units, color = 'c', yerr = sem_accuracy_shuffle_all_units, label = 'Shuffled data -\n (all units)')
 plt.ylim((0,1))
 xticklabels = ['Session %i' % (d+1) for d in np.arange(len(filenames))]
 xticks = ind + width/2
@@ -339,9 +342,9 @@ plt.close()
 avg_accuracy_per_number_subsampled = np.nanmean(avg_accuracy_subsampling,axis = 0)
 sem_accuracy_per_number_subsampled = np.nanstd(avg_accuracy_subsampling,axis = 0)/np.sqrt(len(filenames))
 ind1 = np.arange(len(num_sub_units))
-plt.errorbar(0,np.nanmean(avg_accuracy_all_units), yerr = np.nanstd(avg_accuracy_all_units)/np.sqrt(len(filenames)), fmt = '-o', color = 'k', ecolor = 'k', label = 'Decoding with all units')
-plt.errorbar(ind1+1, avg_accuracy_per_number_subsampled, yerr = sem_accuracy_per_number_subsampled, fmt = '-o', color = 'b', ecolor = 'b', label = 'Decoding with subsampled units')
-plt.plot([0,ind1[-1]+1],[np.nanmean(avg_accuracy_shuffle_all_units), np.nanmean(avg_accuracy_shuffle_all_units)],'c--', label = 'Shuffled performance (all units)')
+plt.errorbar(0,np.nanmean(avg_accuracy_all_units), yerr = np.nanstd(avg_accuracy_all_units)/np.sqrt(len(filenames)), fmt = '-o', color = 'tab:orange', ecolor = 'k', label = 'Decoding with all units')
+plt.errorbar(ind1+1, avg_accuracy_per_number_subsampled, yerr = sem_accuracy_per_number_subsampled, fmt = '-o', color = 'b', ecolor = 'tab:orange', label = 'Decoding with subsampled units')
+plt.plot(0,np.nanmean(avg_accuracy_shuffle_all_units),'tab:gray', label = 'Shuffled performance (all units)')
 #plt.ylim((0.5,1))
 xticklabels1 = ['%i units' % (d) for d in num_sub_units]
 xticklabels = ['All units'] + xticklabels1
@@ -355,12 +358,12 @@ plt.savefig("C:/Users/ss45436/Box/CNPRC/Figures/Decoding_RH_reaches_averaged_ove
 plt.close()
 
 # Compute and plot decoding performance for subsampling units
-all_avg_accuracy = np.vstack(())
+
 cmap = mpl.cm.brg
 avg_accuracy_subsampling = np.nanmean(avg_accuracy_subunits,axis=2)
 sem_accuracy_subsampling = np.nanstd(avg_accuracy_subunits,axis=2)/np.sqrt(10)
 width = 1./(len(num_sub_units) + 2)
-plt.errorbar(ind, avg_accuracy_all_units, color = 'k', yerr = sem_accuracy_all_units, label = 'All units')
+plt.errorbar(ind, avg_accuracy_all_units, color = 'tab:orange', yerr = sem_accuracy_all_units, label = 'All units')
 for n,num_su in enumerate(num_sub_units):
 	plt.errorbar(ind, avg_accuracy_subsampling[:,n], color=cmap(n/float(len(num_sub_units))), yerr = sem_accuracy_subsampling[:,n], label = '%i units' % (num_su))
 plt.errorbar(ind, avg_accuracy_shuffle_all_units, exitcolor = 'c', yerr = sem_accuracy_shuffle_all_units, label = 'Shuffled data -\n (all units)')

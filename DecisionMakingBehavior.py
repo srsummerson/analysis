@@ -1,5 +1,6 @@
 import numpy as np 
 import scipy as sp
+import tdt
 from scipy import stats
 from statsmodels.formula.api import ols
 from scipy.interpolate import spline
@@ -21,12 +22,15 @@ from neo import io
 from PulseMonitorData import findIBIs
 from offlineSortedSpikeAnalysis import OfflineSorted_CSVFile
 from logLikelihoodRLPerformance import logLikelihoodRLPerformance, RLPerformance
+from spectralAnalysis import computePowerFeatures
 
 
 
 cd_units = [1, 3, 4, 17, 18, 20, 40, 41, 54, 56, 57, 63, 64, 72, 75, 81, 83, 88, 89, 96, 100, 112, 114, 126, 130, 140, 143, 146, 156, 157, 159]
 acc_units = [5, 6, 19, 22, 30, 39, 42, 43, 55, 58, 59, 69, 74, 77, 85, 90, 91, 102, 105, 121, 128]	
-dir = "C:/Users/ss45436/Box/UC Berkeley/Cd Stim/Neural Correlates/Mario/spike_data/"			
+dir = "C:/Users/ss45436/Box Sync/UC Berkeley/Cd Stim/Neural Correlates/Mario/spike_data/"
+dir_luigi = "C:/Users/ss45436/Box Sync/UC Berkeley/Cd Stim/Neural Correlates/Luigi/spike_data/"
+dir_figs = "C:/Users/ss45436/Box Sync/UC Berkeley/Cd Stim/Neural Correlates/Paper/Figures/"		
 
 def trial_sliding_avg(trial_array, num_trials_slide):
 
@@ -586,7 +590,7 @@ class ChoiceBehavior_ThreeTargets_Stimulation():
 				self.targetM = np.vstack([self.targetM, table.root.task[:]['targetM']])
 		
 		if len(hdf_files) > 1:
-			self.targets_on = np.reshape(self.targets_on, (len(self.targets_on)/3,3))  				# this should contain triples indicating targets
+			self.targets_on = np.reshape(self.targets_on, (int(len(self.targets_on)/3),3))  				# this should contain triples indicating targets
 		self.ind_wait_states = np.ravel(np.nonzero(self.state == b'wait'))   # total number of unique trials
 		self.ind_center_states = np.ravel(np.nonzero(self.state == b'center'))   # total number of totals (includes repeats if trial was incomplete)
 		self.ind_hold_center_states = np.ravel(np.nonzero(self.state == b'hold_center'))
@@ -2106,7 +2110,7 @@ def loglikelihood_ThreeTargetTask_Qlearning_QMultiplicative_MVLV(parameters, Q_i
 
 def ThreeTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files, channel, t_before, t_after):
 	'''
-	8/15/19 - This method was updated to use the hold center as the behavioral time
+	11/20/19 - This method was updated to use the hold center as the behavioral time
 	point to align neural activity to (rather than picture onset, before hold begins) (2152-2153)
 
 	This method returns the average firing rate of all units on the indicated channel during picture onset.
@@ -2157,10 +2161,83 @@ def ThreeTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_fil
 
 			# Load spike data and find all sort codes associated with good channels
 			if channel < 97:
-				print(channel)
 				spike = OfflineSorted_CSVFile(spike_files[i][0])
 			else:
-				print(channel)
+				spike = OfflineSorted_CSVFile(spike_files[i][1])
+
+			# Get matrix that is (Num units on channel)x(num trials in hdf_file) containing the firing rates during the
+			# designated window.
+			sc_chan = spike.find_chan_sc(channel)
+			num_units[i] = len(sc_chan)
+			all_fr = np.array([])
+			all_fr_smooth = np.array([])
+			for j, sc in enumerate(sc_chan):
+				sc_fr = spike.compute_window_fr(channel,sc,times_row_ind,t_before,t_after)
+				sc_fr_smooth = spike.compute_window_fr_smooth(channel,sc,times_row_ind,t_before,t_after)
+				if j == 0:
+					all_fr = sc_fr
+					all_fr_smooth = sc_fr_smooth
+				else:
+					all_fr = np.vstack([all_fr, sc_fr])
+					all_fr_smooth = np.vstack([all_fr_smooth, sc_fr_smooth])
+
+			# Save matrix of firing rates for units on channel from trials during hdf_file as dictionary element
+			window_fr[i] = all_fr
+			window_fr_smooth[i] = all_fr_smooth
+
+	return num_trials, num_units, window_fr, window_fr_smooth
+
+def ThreeTargetTask_FiringRates_RewardOnset(hdf_files, syncHDF_files, spike_files, channel, t_before, t_after):
+	'''
+	This method returns the average firing rate of all units on the indicated channel during check reward onset.
+
+	Inputs:
+	- hdf_files: list of N hdf_files corresponding to the behavior in the three target task
+	- syncHDF_files: list of N syncHDF_files that containes the syncing DIO data for the corresponding hdf_file and it's
+					TDT recording. If TDT data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, syncHDF_files should have the form [syncHDF_file1.mat, '']
+	- spike_files: list of N tuples of spike_files, where each entry is a list of 2 spike files, one corresponding to spike
+					data from the first 96 channels and the other corresponding to the spike data from the last 64 channels.
+					If spike data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, the hdf_files and syncHDF_files will both have 2 file names, and the 
+					spike_files entry should be of the form [[spike_file1.csv, spike_file2.csv], ''].
+	- channel: integer value indicating what channel will be used to regress activity
+	- t_before: time before (s) the picture onset that should be included when computing the firing rate. t_before = 0 indicates
+					that we only look from the time of onset forward when considering the window of activity.
+	- t_after: time after (s) the picture onset that should be included when computing the firing rate.
+
+	Output:
+	- num_trials: array of length N with an element corresponding to the number of successful trials in each of the
+					hdf_files
+	- window_fr: dictionary with elements indexed such that the index matches the corresponding set of hdf_files. Each
+					dictionary element contains a matrix of size (num units)x(num trials) with elements corresponding
+					to the average firing rate over the window indicated.
+	'''
+	num_trials = np.zeros(len(hdf_files))
+	num_units = np.zeros(len(hdf_files))
+	window_fr = dict()
+	window_fr_smooth = dict()
+	for i, hdf_file in enumerate(hdf_files):
+		cb_block = ChoiceBehavior_ThreeTargets(hdf_file)
+		num_trials[i] = cb_block.num_successful_trials
+		ind_check_reward = cb_block.ind_check_reward_states
+		
+		# Load spike data:
+		if (spike_files[i] == ['']):
+			print('no data')
+		elif ((channel < 97) and spike_files[i][0] != '') or ((channel > 96) and (spike_files[i][1] != '')):
+			# Find lfp sample numbers corresponding to these times and the sampling frequency of the lfp data
+
+			#lfp_state_row_ind, lfp_freq = cb_block.get_state_TDT_LFPvalues(ind_picture_onset, syncHDF_files[i])
+			lfp_state_row_ind, lfp_freq = cb_block.get_state_TDT_LFPvalues(ind_check_reward, syncHDF_files[i])
+
+			# Convert lfp sample numbers to times in seconds
+			times_row_ind = lfp_state_row_ind/float(lfp_freq)
+
+			# Load spike data and find all sort codes associated with good channels
+			if channel < 97:
+				spike = OfflineSorted_CSVFile(spike_files[i][0])
+			else:
 				spike = OfflineSorted_CSVFile(spike_files[i][1])
 
 			# Get matrix that is (Num units on channel)x(num trials in hdf_file) containing the firing rates during the
@@ -2455,7 +2532,7 @@ def MultiTargetTask_FiringRates_DifferenceBetweenBlocks_multichan(hdf_files, syn
 
 def TwoTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files, channel, t_before, t_after):
 	'''
-	8/15/2019 - this method updated to use the picture_onset behavioral event rather than picture onset
+	11/20/2019 - this method updated to use the hold_center behavioral event rather than picture onset
 	which occurs before hold begins (2499-2500)
 
 	This method returns the average firing rate of all units on the indicated channel during picture onset.
@@ -2496,8 +2573,8 @@ def TwoTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files
 		if (spike_files[i] != ''):
 			# Find lfp sample numbers corresponding to these times and the sampling frequency of the lfp data
 
-			lfp_state_row_ind, lfp_freq = cb_block.get_state_TDT_LFPvalues(ind_picture_onset, syncHDF_files[i])
-			#lfp_state_row_ind, lfp_freq = cb_block.get_state_TDT_LFPvalues(ind_hold_center, syncHDF_files[i])
+			#lfp_state_row_ind, lfp_freq = cb_block.get_state_TDT_LFPvalues(ind_picture_onset, syncHDF_files[i])
+			lfp_state_row_ind, lfp_freq = cb_block.get_state_TDT_LFPvalues(ind_hold_center, syncHDF_files[i])
 
 			# Convert lfp sample numbers to times in seconds
 			times_row_ind = lfp_state_row_ind/float(lfp_freq)
@@ -2537,9 +2614,9 @@ def TwoTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files
 
 	return num_trials, num_units, window_fr, window_fr_smooth, unit_class
 
-def TwoTargetTask_LFPPower_PictureOnset_Multichannels(hdf_files, syncHDF_files, channels, t_before, t_after):
+def TwoTargetTask_FiringRates_RewardOnset(hdf_files, syncHDF_files, spike_files, channel, t_before, t_after):
 	'''
-	8/15/2019 - this method updated to use the picture_onset behavioral event rather than picture onset
+	11/20/2019 - this method updated to use the hold_center behavioral event rather than picture onset
 	which occurs before hold begins (2499-2500)
 
 	This method returns the average firing rate of all units on the indicated channel during picture onset.
@@ -2554,7 +2631,7 @@ def TwoTargetTask_LFPPower_PictureOnset_Multichannels(hdf_files, syncHDF_files, 
 					If spike data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
 					epoch of recording but not the second, the hdf_files and syncHDF_files will both have 2 file names, and the 
 					spike_files entry should be of the form [[spike_file1.csv, spike_file2.csv], ''].
-	- channels: integer values indicating what channels will be used to regress activity
+	- channel: integer value indicating what channel will be used to regress activity
 	- t_before: time before (s) the picture onset that should be included when computing the firing rate. t_before = 0 indicates
 					that we only look from the time of onset forward when considering the window of activity.
 	- t_after: time after (s) the picture onset that should be included when computing the firing rate.
@@ -2573,11 +2650,87 @@ def TwoTargetTask_LFPPower_PictureOnset_Multichannels(hdf_files, syncHDF_files, 
 	for i, hdf_file in enumerate(hdf_files):
 		cb_block = ChoiceBehavior_TwoTargets(hdf_file)
 		num_trials[i] = cb_block.num_successful_trials
+		ind_check_reward = cb_block.ind_check_reward_states
+
+		
+		# Load spike data: 
+		if (spike_files[i] != ''):
+			# Find lfp sample numbers corresponding to these times and the sampling frequency of the lfp data
+
+			#lfp_state_row_ind, lfp_freq = cb_block.get_state_TDT_LFPvalues(ind_picture_onset, syncHDF_files[i])
+			lfp_state_row_ind, lfp_freq = cb_block.get_state_TDT_LFPvalues(ind_check_reward, syncHDF_files[i])
+
+			# Convert lfp sample numbers to times in seconds
+			times_row_ind = lfp_state_row_ind/float(lfp_freq)
+
+			# Load spike data and find all sort codes associated with good channels
+			if channel < 97:
+				#print(channel)
+				spike = OfflineSorted_CSVFile(spike_files[i][0])
+			else:
+				#print(channel)
+				spike = OfflineSorted_CSVFile(spike_files[i][1])
+
+			avg_firing_rates = spike.get_avg_firing_rates(np.array([channel]))[channel]		# array of average firing rates, length is equal to the number of units on the channel
+			unit_class = np.array(avg_firing_rates > 4, dtype = int)						# array that will be used to identify the unit class: 0 = slow, 1 = fast
+
+			# Get matrix that is (Num units on channel)x(num trials in hdf_file) containing the firing rates during the
+			# designated window.
+			sc_chan = spike.find_chan_sc(channel)
+			num_units[i] = len(sc_chan)
+			
+			if (num_units[i] != 0):
+				for j, sc in enumerate(sc_chan):
+					
+					sc_fr = spike.compute_window_fr(channel,sc,times_row_ind,t_before,t_after)
+					sc_fr_smooth = spike.compute_window_fr_smooth(channel,sc,times_row_ind,t_before,t_after)
+					if j == 0:
+						all_fr = sc_fr
+						all_fr_smooth = sc_fr_smooth
+					else:
+						all_fr = np.vstack([all_fr, sc_fr])
+						all_fr_smooth = np.vstack([all_fr_smooth, sc_fr_smooth])
+
+				# Save matrix of firing rates for units on channel from trials during hdf_file as dictionary element
+				window_fr[i] = all_fr
+				window_fr_smooth[i] = all_fr_smooth
+	
+
+	return num_trials, num_units, window_fr, window_fr_smooth, unit_class
+
+def TwoTargetTask_LFPPower_PictureOnset_Multichannels(tdt_data_dir, hdf_files, syncHDF_files, channels, t_before, t_after):
+	'''
+	This method computes to z-scored power across all trials and channels for four biologically relevant
+	frequency bands: alpha, beta, gamma, and high-gamma. 
+
+	Inputs:
+	- hdf_files: list of N hdf_files corresponding to the behavior in the three target task
+	- syncHDF_files: list of N syncHDF_files that containes the syncing DIO data for the corresponding hdf_file and it's
+					TDT recording. If TDT data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, syncHDF_files should have the form [syncHDF_file1.mat, '']
+	- spike_files: list of N tuples of spike_files, where each entry is a list of 2 spike files, one corresponding to spike
+					data from the first 96 channels and the other corresponding to the spike data from the last 64 channels.
+					If spike data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, the hdf_files and syncHDF_files will both have 2 file names, and the 
+					spike_files entry should be of the form [[spike_file1.csv, spike_file2.csv], ''].
+	- channels: integer values indicating what channels will be used to regress activity, enumerate starts at 1 (i.e. true channel numbers) and will need to be adjusted by -1 for indexing purposes
+	- t_before: time before (s) the picture onset that should be included when computing the firing rate. t_before = 0 indicates
+					that we only look from the time of onset forward when considering the window of activity.
+	- t_after: time after (s) the picture onset that should be included when computing the firing rate.
+
+	Output:
+	- all_powers: 3D-array; array with z-scored power features, arranged as (trials)x(channels)x(power features)
+	'''
+	num_trials = np.zeros(len(hdf_files))
+	power_features = dict()
+	for i, hdf_file in enumerate(hdf_files):
+		cb_block = ChoiceBehavior_TwoTargets(hdf_file)
+		num_trials[i] = cb_block.num_successful_trials
 		ind_hold_center = cb_block.ind_check_reward_states - 4
 		ind_picture_onset = cb_block.ind_check_reward_states - 5
 		
 		# 1. Load the TDT LFP data
-		tdt_data_location = syncHDF_files[i][:-15] + '/Block-' + syncHDF_files[i][-13]
+		tdt_data_location = tdt_data_dir + syncHDF_files[i][76:-15] + '/Block-' + syncHDF_files[i][-13]
 		# Find lfp sample numbers corresponding to these times and the sampling frequency of the lfp data
 
 		lfp_state_row_ind, lfp_freq = cb_block.get_state_TDT_LFPvalues(ind_picture_onset, syncHDF_files[i])
@@ -2589,15 +2742,135 @@ def TwoTargetTask_LFPPower_PictureOnset_Multichannels(hdf_files, syncHDF_files, 
 		lfp2 = bl.streams.LFP2.data
 		lfp_dur = np.min((lfp1.shape[1], lfp2.shape[1]))
 		lfp = np.concatenate((lfp1[:,:lfp_dur], lfp2[:,:lfp_dur]))
+		lfp = lfp[channels-1,:]
+		Fs = bl.streams.LFP1.fs
 
-		for chann in channels:
-			alpha_pow, beta_pow, gamma_pow, highgamma_pow = computePower(lfp[chann-1,:], lfp_state_row_ind, t_before, t_after)  	# inputs are array of time domain data, indices of time points to compute power around, and the inputs for the size of the time window to consider when computing power
+		C = lfp.shape[0]
+
+		power_bands = [[4,8],[8,13],[13,30],[30,60],[70,200]]
+		K = len(power_bands)
+
+		# make lfp dictionary for computePowerFeatures method
+		lfp_data = dict()
+		for j in range(C):
+			lfp_data[j] = lfp[j,:]
+
+		# compute power features
+		lfp_state_row_ind = lfp_state_row_ind.reshape(len(lfp_state_row_ind),1)
+		features = computePowerFeatures(lfp_data, Fs, power_bands, lfp_state_row_ind, [t_after])  	# features: dictionary with N entries (one per trial), with a C x K matric which C is the number of channels and K is the number of features (number of power bands times M)
 		
-		#### STILL NEED TO IDENTIFY WHAT THE COMPUTEPOWER METHOD SHOULD BE 
-		#### AND ALSO COLLECT THE DATA IN DICTIONARY ACROSS THE FILES
+		# arrange into dictionary that builds up across trials
+		for k in range(int(num_trials[i])):
+			if i==0:
+				power_features[k] = features[str(k)]
+			else:
+				power_features[np.sum(num_trials[:i-1]) + k] = features[k]
+
+	# After extracting all power information, arrange into matrix and z-score per channel and per frequency band
+	# Matrix should be trials x channels x bands
+	N = int(np.sum(num_trials))		# total number of trials
+	print(N, C, K)
+	all_powers = np.zeros((N, C, K))
+	for k in range(N):
+		all_powers[k,:,:] = power_features[k]
+
+	all_powers = stats.zscore(all_powers, axis = 0)
 
 
-	return num_trials, num_units, window_fr, window_fr_smooth, unit_class
+	return all_powers, num_trials
+
+def TwoTargetTask_RegressLFPPower_PictureOnset_Multichannels(tdt_data_dir, hdf_files, syncHDF_files, channels, trial_start, trial_end):
+	'''
+	This method regresses z-scored power across all trials for four biologically relevant
+	frequency bands: alpha, beta, gamma, and high-gamma, against the target values
+
+	Inputs:
+	- hdf_files: list of N hdf_files corresponding to the behavior in the three target task
+	- syncHDF_files: list of N syncHDF_files that containes the syncing DIO data for the corresponding hdf_file and it's
+					TDT recording. If TDT data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, syncHDF_files should have the form [syncHDF_file1.mat, '']
+	- spike_files: list of N tuples of spike_files, where each entry is a list of 2 spike files, one corresponding to spike
+					data from the first 96 channels and the other corresponding to the spike data from the last 64 channels.
+					If spike data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, the hdf_files and syncHDF_files will both have 2 file names, and the 
+					spike_files entry should be of the form [[spike_file1.csv, spike_file2.csv], ''].
+	- channels: integer values indicating what channels will be used to regress activity
+
+	Output:
+	'''
+
+	# 0. Get session information for saving data
+	str_ind = hdf_files[0].index('201')  	# search for beginning of year in string (used 201 to accomodate both 2016 and 2017)
+	sess_name = 'Luigi' + hdf_files[0][str_ind:str_ind + 8]
+	if syncHDF_files[0]!='':
+		str_ind = syncHDF_files[0].index('201')
+		session_name = 'Luigi' + syncHDF_files[0][str_ind:str_ind + 11]
+	elif syncHDF_files[1]!='':
+		str_ind = syncHDF_files[1].index('201')
+		session_name = 'Luigi' + syncHDF_files[0][str_ind:str_ind + 11]
+	else:
+		session_name = 'Unknown'
+
+	bands = ['theta', 'alpha', 'beta', 'gamma', 'high gamma']
+	
+	# 1. Load power data for around time point of picture onset
+	t_before = 0
+	t_after = 1
+	all_powers, num_trials = TwoTargetTask_LFPPower_PictureOnset_Multichannels(tdt_data_dir, hdf_files, syncHDF_files, channels, t_before, t_after)	# matrix is trials x channels x power features
+	cum_sum_trials = np.cumsum(num_trials)
+	
+	# 2. Load behavior data and pull out trial indices for the designated trial case
+	cb = ChoiceBehavior_TwoTargets_Stimulation(hdf_files, 100, 100)
+	total_trials = cb.num_successful_trials
+	trial_end = trial_end*(trial_end < total_trials) + total_trials*(trial_end >= total_trials)
+	#ind_trial_case = np.array([ind for ind in range(total_trials) if np.array_equal(targets_on[ind],trial_case)])
+	
+
+	# 2a. Get reaction time information
+	rt = np.array([])
+	for file in hdf_files:
+		reaction_time, velocity = compute_rt_per_trial_FreeChoiceTask(file)
+		rt = np.append(rt, reaction_time)
+
+	# 2b. Get movementment time information
+	mt = (cb.state_time[cb.ind_target_states + 1] - cb.state_time[cb.ind_target_states])/60.
+
+
+	# 3. Get Q-values, chosen targets, and rewards
+	chosen_target, rewards, instructed_or_freechoice = cb.GetChoicesAndRewards()
+	Q_high, Q_low = Value_from_reward_history_TwoTargetTask(hdf_files)
+
+	# 4. Do regression separately for each channel and frequency band.
+	#    Current regression uses Q-values and constant, as well as: 
+	#    reaction time (rt), movement time (mt), choice (chosen_target), and reward (rewards)
+	for k in range(all_powers.shape[1]):
+		for m in range(all_powers.shape[2]):
+			unit_data = all_powers[:,k,m]
+
+			trial_inds = np.array([index for index in range(trial_start,trial_end)], dtype = int)
+			x = np.vstack((Q_low[trial_inds], Q_high[trial_inds]))
+			x = np.vstack((x, rt[trial_inds], mt[trial_inds], chosen_target[trial_inds], rewards[trial_inds]))
+			x = np.transpose(x)
+			x = np.hstack((x, np.ones([len(trial_inds),1]))) 	# use this in place of add_constant which doesn't work when constant Q values are used
+			#x = sm.add_constant(x, prepend=False)
+
+			y = unit_data[trial_inds]
+
+			print("Regression for channel %i and band %i" % (channels[k],m+1))
+			model_glm = sm.OLS(y,x)
+			fit_glm = model_glm.fit()
+
+			data_filename = session_name + ' - Channel %i - Band %s' %(channels[k], bands[m])
+			data = dict()
+			data['regression_labels'] = ['Q_low', 'Q_high','RT', 'MT', 'Choice', 'Reward']
+			data['beta_values_blockA'] = fit_glm.params
+			data['pvalues_blockA'] = fit_glm.pvalues
+			data['rsquared_blockA'] = fit_glm.rsquared
+			data['Q_low'] = Q_low[trial_inds]
+			data['Power'] = y
+			sp.io.savemat( dir_luigi + 'picture_onset_lfp/' + data_filename + '.mat', data)
+
+	return
 
 def ThreeTargetTask_MaxFiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files, channel, t_before, t_after):
 	'''
@@ -2971,8 +3244,8 @@ def ThreeTargetTask_RegressedFiringRatesWithValue_PictureOnset(dir1, hdf_files, 
 	#	dictionary element contains a matrix of size (num units)x(num trials) with elements corresponding
 	#	to the average firing rate over the window indicated.
 	num_trials, num_units, window_fr, window_fr_smooth = ThreeTargetTask_FiringRates_PictureOnset(hdf_files, syncHDF_files, spike_files, channel, t_before, t_after)
-	cum_sum_trials = np.cumsum(num_trials)
-
+	cum_sum_trials = np.cumsum(num_trials).astype(int)
+	
 	# 3. Get Q-values, chosen targets, and rewards
 	targets_on, chosen_target, rewards, instructed_or_freechoice = cb.GetChoicesAndRewards()
 	
@@ -3003,6 +3276,7 @@ def ThreeTargetTask_RegressedFiringRatesWithValue_PictureOnset(dir1, hdf_files, 
 			num_trials = len(block_fr)
 		else:
 			num_units,num_trials = block_fr.shape 
+		
 		fr_mat[:num_units,cum_sum_trials[j] - num_trials:cum_sum_trials[j]] = block_fr
 
 	# 5. Do regression for each unit only on trials in Blocks A and B with spike data saved.
@@ -3020,18 +3294,18 @@ def ThreeTargetTask_RegressedFiringRatesWithValue_PictureOnset(dir1, hdf_files, 
 		x = np.transpose(x)
 		x = np.hstack((x, np.ones([len(trial_inds),1]))) 	# use this in place of add_constant which doesn't work when constant Q values are used
 		#x = sm.add_constant(x, prepend=False)
-		print(x.shape)
+		
 		y = unit_data[trial_inds]
 		# z-score y
 		y_zscore = stats.zscore(y)
-		print(y.shape)
+
 		#y = y/np.max(y)  # normalize y
 
 		try:
-			print("Regression for unit ", k)
+			#print("Regression for unit ", k)
 			model_glm = sm.OLS(y_zscore,x)
 			fit_glm = model_glm.fit()
-			print(fit_glm.summary())
+			#print(fit_glm.summary())
 
 			regress_coef = fit_glm.params[1] 		# The regression coefficient for Qmid is the second parameter
 			regress_intercept = y[0] - regress_coef*Q_mid[trial_inds[0]]
@@ -3043,6 +3317,7 @@ def ThreeTargetTask_RegressedFiringRatesWithValue_PictureOnset(dir1, hdf_files, 
 
 			m,b = np.polyfit(x_lin, y, 1)
 
+			'''
 			plt.figure(k)
 			plt.subplot(1,3,1)
 			plt.scatter(Q_mid[trial_inds],y, c= 'k', marker = 'o', label ='Learning Trials')
@@ -3051,6 +3326,7 @@ def ThreeTargetTask_RegressedFiringRatesWithValue_PictureOnset(dir1, hdf_files, 
 			plt.xlabel('Q_mid')
 			plt.ylabel('Firing Rate (spk/s)')
 			plt.title(sess_name + ' - Channel %i - Unit %i' %(channel, k))
+			'''
 
 			# save Q and firing rate data
 			Q_learning = Q_mid[trial_inds]
@@ -3069,7 +3345,7 @@ def ThreeTargetTask_RegressedFiringRatesWithValue_PictureOnset(dir1, hdf_files, 
 			data['rsquared_blockA'] = fit_glm.rsquared
 			data['Q_mid_early'] = Q_mid_BlockA
 			data['FR_early'] = FR_learning
-			sp.io.savemat( dir + 'picture_onset_fr/' + data_filename + '.mat', data)
+			sp.io.savemat( dir1 + 'hold_center_fr/' + data_filename + '.mat', data)
 
 
 			# Get binned firing rates: average firing rate for each of num_bins equally populated action value bins
@@ -3089,11 +3365,12 @@ def ThreeTargetTask_RegressedFiringRatesWithValue_PictureOnset(dir1, hdf_files, 
 			Q_range_max = np.max(Q_mid[trial_inds])
 			FR_BlockA = y
 			
-
+			'''
 			plt.figure(k)
 			plt.subplot(1,3,2)
 			plt.errorbar(avg_Qvals, avg_FR, yerr = sem_FR, fmt = '--o', color = 'k', ecolor = 'k', label = 'Learning - Avg FR')
 			plt.legend()
+			'''
 		except:
 			pass
 	
@@ -3110,18 +3387,18 @@ def ThreeTargetTask_RegressedFiringRatesWithValue_PictureOnset(dir1, hdf_files, 
 		x = np.transpose(x)
 		x = np.hstack((x, np.ones([len(trial_inds),1]))) 	# use this in place of add_constant which doesn't work when constant Q values are used
 		#x = sm.add_constant(x, prepend=False)
-		print(x.shape)
+		
 		y = unit_data[trial_inds]
 		# z-score y
 		y_zscore = stats.zscore(y)
-		print(y.shape)
+
 		#y = y/np.max(y)  # normalize y
 
 		try:
-			print("Regression for unit ", k)
+			#print("Regression for unit ", k)
 			model_glm_late = sm.OLS(y_zscore,x)
 			fit_glm_late = model_glm_late.fit()
-			print(fit_glm_late.summary())
+			#print(fit_glm_late.summary())
 
 			regress_coef = fit_glm_late.params[1] 		# The regression coefficient for Qmid is the second parameter
 			regress_intercept = y[0] - regress_coef*Q_mid[trial_inds[0]]
@@ -3136,6 +3413,7 @@ def ThreeTargetTask_RegressedFiringRatesWithValue_PictureOnset(dir1, hdf_files, 
 			max_fr_stim = np.amax(y)
 			fr_lim = np.maximum(max_fr, max_fr_stim)
 
+			'''
 			plt.figure(k)
 			plt.subplot(1,3,1)
 			plt.scatter(Q_mid[trial_inds],y, c= 'c', label = 'Stimulation trials')
@@ -3144,6 +3422,7 @@ def ThreeTargetTask_RegressedFiringRatesWithValue_PictureOnset(dir1, hdf_files, 
 			plt.ylim((0,1.1*fr_lim))
 			plt.xlim((0.9*xlim_min, 1.1*xlim_max))
 			plt.legend()
+			'''
 
 			# save Q and firing rate data
 			Q_late = Q_mid[trial_inds]
@@ -3185,8 +3464,6 @@ def ThreeTargetTask_RegressedFiringRatesWithValue_PictureOnset(dir1, hdf_files, 
 
 			dta_all = pd.DataFrame(dta_all, columns = ['Bin', 'Condition', 'FR'])
 			bin_centers = (bins[1:] + bins[:-1])/2.
-			print(len(bin_centers))
-			print(len(avg_FR_late))
 			
 			'''
 			formula = 'FR ~ C(Bin) + C(Condition) + C(Bin):C(Condition)'
@@ -3207,6 +3484,7 @@ def ThreeTargetTask_RegressedFiringRatesWithValue_PictureOnset(dir1, hdf_files, 
 			avg_FR = np.nanmean(reorg_FR, axis = 0)
 			sem_FR = np.nanstd(reorg_FR, axis = 0)/np.sqrt(pts_per_bin)
 
+			'''
 			plt.figure(k)
 			plt.subplot(1,3,2)
 			plt.errorbar(avg_Qvals, avg_FR, yerr = sem_FR/2., fmt = '--o', color = 'c', ecolor = 'c', label = 'Stim - Avg FR')
@@ -3221,6 +3499,7 @@ def ThreeTargetTask_RegressedFiringRatesWithValue_PictureOnset(dir1, hdf_files, 
 			plt.ylim((0,1.1*fr_lim))
 			plt.xlim((0.9*Q_range_min, 1.1*Q_range_max))
 			plt.legend()
+			'''
 
 			# Save data
 			data_filename = session_name + ' - Channel %i - Unit %i' %(channel, k)
@@ -3246,6 +3525,342 @@ def ThreeTargetTask_RegressedFiringRatesWithValue_PictureOnset(dir1, hdf_files, 
 	
 	#return window_fr, window_fr_smooth, fr_mat, x, y, Q_low, Q_mid, Q_high, Q_learning, Q_late, FR_learning, FR_late, fit_glm
 	return Q_low, Q_mid, Q_high
+
+def ThreeTargetTask_RegressedFiringRatesWithRPE_RewardOnset(dir1, hdf_files, syncHDF_files, spike_files, channel, t_before, t_after, smoothed):
+	'''
+	This method regresses the firing rate of all units as a function of positive reward prediction error and negative reward prediction error. It then plots the firing rate as a function of 
+	the modeled RPEs and uses the regression coefficient to plot a linear fit of the relationship between RPE and firing rate.
+
+	Inputs:
+	- hdf_files: list of N hdf_files corresponding to the behavior in the three target task
+	- syncHDF_files: list of N syncHDF_files that containes the syncing DIO data for the corresponding hdf_file and it's
+					TDT recording. If TDT data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, syncHDF_files should have the form [syncHDF_file1.mat, '']
+	- spike_files: list of N tuples of spike_files, where each entry is a list of 2 spike files, one corresponding to spike
+					data from the first 96 channels and the other corresponding to the spike data from the last 64 channels.
+					If spike data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, the hdf_files and syncHDF_files will both have 2 file names, and the 
+					spike_files entry should be of the form [[spike_file1.csv, spike_file2.csv], ''].
+	- channel: integer value indicating what channel will be used to regress activity
+	- t_before: time before (s) the picture onset that should be included when computing the firing rate. t_before = 0 indicates
+					that we only look from the time of onset forward when considering the window of activity.
+	- t_after: time after (s) the picture onset that should be included when computing the firing rate.
+	- smoothed: boolean indicating whether to use smoothed firing rates (True) or not (False)
+
+	'''
+	# Get session information for plot
+	str_ind = hdf_files[0].index('201')  	# search for beginning of year in string (used 201 to accomodate both 2016 and 2017)
+	sess_name = 'Mario' + hdf_files[0][str_ind:str_ind + 8]
+	if syncHDF_files[0]!='':
+		str_ind = syncHDF_files[0].index('201')
+		session_name = 'Mario' + syncHDF_files[0][str_ind:str_ind + 11]
+	elif syncHDF_files[1]!='':
+		str_ind = syncHDF_files[1].index('201')
+		session_name = 'Mario' + syncHDF_files[0][str_ind:str_ind + 11]
+	else:
+		session_name = 'Unknown'
+	
+
+	# 1. Load behavior data and pull out trial indices for the designated trial case
+	cb = ChoiceBehavior_ThreeTargets_Stimulation(hdf_files, 150, 100)
+	total_trials = cb.num_successful_trials
+	targets_on = cb.targets_on[cb.state_time[cb.ind_check_reward_states]]
+
+
+	# 2. Get firing rates from units on indicated channel around time of target presentation on all trials. Note that
+	# 	window_fr is a dictionary with elements indexed such that the index matches the corresponding set of hdf_files. Each
+	#	dictionary element contains a matrix of size (num units)x(num trials) with elements corresponding
+	#	to the average firing rate over the window indicated.
+	num_trials, num_units, window_fr, window_fr_smooth = ThreeTargetTask_FiringRates_RewardOnset(hdf_files, syncHDF_files, spike_files, channel, t_before, t_after)
+	cum_sum_trials = np.cumsum(num_trials).astype(int)
+	
+	# 3. Get Q-values, chosen targets, and rewards
+	targets_on, chosen_target, rewards, instructed_or_freechoice = cb.GetChoicesAndRewards()		# chosen target is 0 (L), 1 (M), or 2 (H)
+	
+	# Varying Q-values
+	"""
+	# Find ML fit of alpha and beta
+	Q_initial = 0.5*np.ones(3)
+	nll = lambda *args: -loglikelihood_ThreeTargetTask_Qlearning(*args)
+	result = op.minimize(nll, [0.2, 1], args=(Q_initial, chosen_target, rewards, targets_on, instructed_or_freechoice), bounds=[(0,1),(0,None)])
+	alpha_ml, beta_ml = result["x"]
+	print("Best fitting alpha and beta are: ", alpha_ml, beta_ml)
+	# RL model fit for Q values
+	Q_low, Q_mid, Q_high, prob_choice_low, prob_choice_mid, prob_choice_high, log_likelihood = ThreeTargetTask_Qlearning([alpha_ml, beta_ml], Q_initial, chosen_target, rewards, targets_on, instructed_or_freechoice)
+	"""
+	Q_high, Q_mid, Q_low = Value_from_reward_history_ThreeTargetTask(hdf_files)
+
+	# 3a. Compute Positive and Negative RPEs
+	Q_mat = np.vstack([Q_low, Q_mid, Q_high])
+	chosen_target = np.array(chosen_target,dtype = int)
+	chosen_target_value = np.array([Q_mat[chosen_target[i],i] for i in range(len(chosen_target))])
+
+	RPE = rewards - chosen_target_value
+	RPE_positive = RPE*(RPE > 0)
+	RPE_negative = RPE*(RPE < 0)
+
+	# 4. Create firing rate matrix with size (max_num_units)x(total_trials)
+	max_num_units = int(np.max(num_units))
+	fr_mat = np.zeros([max_num_units, total_trials])
+	trial_counter = 0
+	for j in window_fr.keys():
+		if not smoothed:
+			block_fr = window_fr[j]
+		else:
+			block_fr = window_fr_smooth[j]
+		if len(block_fr.shape) == 1:
+			num_units = 1
+			num_trials = len(block_fr)
+		else:
+			num_units,num_trials = block_fr.shape 
+		
+		fr_mat[:num_units,cum_sum_trials[j] - num_trials:cum_sum_trials[j]] = block_fr
+
+	# 5. Do regression for each unit only on trials in Blocks A and B with spike data saved.
+	for k in range(max_num_units):
+		unit_data = fr_mat[k,:]
+		#trial_inds = np.array([index for index in ind_trial_case if unit_data[index]!=0], dtype = int)
+
+		# look at all trial types within Blocks A 
+		trial_inds = np.array([index for index in range(50,150) if unit_data[index]!=0], dtype = int)
+		#trial_inds = np.array([index for index in range(50,150)], dtype = int)
+		x = np.vstack((RPE_positive[trial_inds], RPE_negative[trial_inds], chosen_target[trial_inds], rewards[trial_inds]))
+		x = np.transpose(x)
+		x = np.hstack((x, np.ones([len(trial_inds),1]))) 	# use this in place of add_constant which doesn't work when constant Q values are used
+		#x = sm.add_constant(x, prepend=False)
+		
+		y = unit_data[trial_inds]
+		# z-score y
+		y_zscore = stats.zscore(y)
+
+		#y = y/np.max(y)  # normalize y
+
+		try:
+			#print("Regression for unit ", k)
+			model_glm = sm.OLS(y_zscore,x)
+			fit_glm = model_glm.fit()
+			#print(fit_glm.summary())
+
+			regress_coef = fit_glm.params[1] 		# The regression coefficient for Qmid is the second parameter
+			regress_intercept = y[0] - regress_coef*Q_mid[trial_inds[0]]
+
+			# Get linear regression fit for just Q_mid
+			Q_mid_min = np.amin(Q_mid[trial_inds])
+			Q_mid_max = np.amax(Q_mid[trial_inds])
+			x_lin = np.linspace(Q_mid_min, Q_mid_max, num = len(trial_inds), endpoint = True)
+
+			m,b = np.polyfit(x_lin, y, 1)
+
+			'''
+			plt.figure(k)
+			plt.subplot(1,3,1)
+			plt.scatter(Q_mid[trial_inds],y, c= 'k', marker = 'o', label ='Learning Trials')
+			plt.plot(x_lin, m*x_lin + b, c = 'k')
+			#plt.plot(Q_mid[trial_inds], regress_coef*Q_mid[trial_inds] + regress_intercept, c = 'y')
+			plt.xlabel('Q_mid')
+			plt.ylabel('Firing Rate (spk/s)')
+			plt.title(sess_name + ' - Channel %i - Unit %i' %(channel, k))
+			'''
+
+			# save Q and firing rate data
+			Q_learning = Q_mid[trial_inds]
+			FR_learning = y
+			Q_mid_BlockA = Q_mid[trial_inds]
+
+			RPE_early = RPE[trial_inds]
+
+			max_fr = np.amax(y)
+			xlim_min = np.amin(Q_mid[trial_inds])
+			xlim_max = np.amax(Q_mid[trial_inds])
+
+			data_filename = session_name + ' - Channel %i - Unit %i' %(channel, k)
+			data = dict()
+			data['regression_labels'] = ['RPE_positive', 'RPE_negative', 'Choice', 'Reward']
+			data['beta_values_blockA'] = fit_glm.params
+			data['pvalues_blockA'] = fit_glm.pvalues
+			data['rsquared_blockA'] = fit_glm.rsquared
+			data['RPE_early'] = RPE_early
+			data['FR_early'] = FR_learning
+			sp.io.savemat( dir1 + 'check_reward_fr/' + data_filename + '.mat', data)
+
+
+			# Get binned firing rates: average firing rate for each of num_bins equally populated action value bins
+			num_bins = 5
+			sorted_Qvals_inds = np.argsort(Q_mid[trial_inds])
+			pts_per_bin = len(trial_inds)/num_bins
+			reorg_Qvals = np.reshape(Q_mid[trial_inds][sorted_Qvals_inds[:pts_per_bin*num_bins]], (pts_per_bin, num_bins), order = 'F')
+			avg_Qvals = np.nanmean(reorg_Qvals, axis = 0)
+
+			reorg_FR = np.reshape(y[sorted_Qvals_inds[:pts_per_bin*num_bins]], (pts_per_bin, num_bins), order = 'F')
+			reorg_FR_BlockA = reorg_FR
+			avg_FR = np.nanmean(reorg_FR, axis = 0)
+			sem_FR = np.nanstd(reorg_FR, axis = 0)/np.sqrt(pts_per_bin)
+
+			# Save data for binning by bins of fixed size (rather than equally populated)
+			Q_range_min = np.min(Q_mid[trial_inds])
+			Q_range_max = np.max(Q_mid[trial_inds])
+			FR_BlockA = y
+			
+			'''
+			plt.figure(k)
+			plt.subplot(1,3,2)
+			plt.errorbar(avg_Qvals, avg_FR, yerr = sem_FR, fmt = '--o', color = 'k', ecolor = 'k', label = 'Learning - Avg FR')
+			plt.legend()
+			'''
+		except:
+			pass
+	
+		unit_data = fr_mat[k,:]
+		#trial_inds = np.array([index for index in ind_trial_case if unit_data[index]!=0], dtype = int)
+
+		# look at all trial types within Blocks A and B
+		trial_inds = np.array([index for index in range(250,len(unit_data)) if unit_data[index]!=0], dtype = int)
+		#trial_inds = np.array([index for index in range(250,len(unit_data))], dtype = int)
+		x = np.vstack((RPE_positive[trial_inds], RPE_negative[trial_inds], chosen_target[trial_inds], rewards[trial_inds]))
+		x = np.transpose(x)
+		x = np.hstack((x, np.ones([len(trial_inds),1]))) 	# use this in place of add_constant which doesn't work when constant Q values are used
+		#x = sm.add_constant(x, prepend=False)
+		
+		y = unit_data[trial_inds]
+		# z-score y
+		y_zscore = stats.zscore(y)
+
+		#y = y/np.max(y)  # normalize y
+
+		try:
+			#print("Regression for unit ", k)
+			model_glm_late = sm.OLS(y_zscore,x)
+			fit_glm_late = model_glm_late.fit()
+			#print(fit_glm_late.summary())
+
+			regress_coef = fit_glm_late.params[1] 		# The regression coefficient for Qmid is the second parameter
+			regress_intercept = y[0] - regress_coef*Q_mid[trial_inds[0]]
+
+			# Get linear regression fit for just Q_mid
+			Q_mid_min = np.amin(Q_mid[trial_inds])
+			Q_mid_max = np.amax(Q_mid[trial_inds])
+			x_lin = np.linspace(Q_mid_min, Q_mid_max, num = len(trial_inds), endpoint = True)
+
+			m,b = np.polyfit(x_lin, y, 1)
+
+			max_fr_stim = np.amax(y)
+			fr_lim = np.maximum(max_fr, max_fr_stim)
+
+			'''
+			plt.figure(k)
+			plt.subplot(1,3,1)
+			plt.scatter(Q_mid[trial_inds],y, c= 'c', label = 'Stimulation trials')
+			plt.plot(x_lin, m*x_lin + b, c = 'c')
+			#plt.plot(Q_mid[trial_inds], regress_coef*Q_mid[trial_inds] + regress_intercept, c = 'g')
+			plt.ylim((0,1.1*fr_lim))
+			plt.xlim((0.9*xlim_min, 1.1*xlim_max))
+			plt.legend()
+			'''
+
+			# save Q and firing rate data
+			Q_late = Q_mid[trial_inds]
+			FR_late = y
+
+			RPE_late = RPE[trial_inds]
+
+			# Get binned firing rates: bins of fixed size
+			Q_range_min = np.min(np.min(Q_late), Q_range_min)
+			Q_range_max = np.max(np.max(Q_late), Q_range_max)
+			bins = np.arange(Q_range_min, Q_range_max + 0.5*(Q_range_max - Q_range_min)/5., (Q_range_max - Q_range_min)/5.)
+			hist_BlockA, bins = np.histogram(Q_mid_BlockA, bins)
+			hist_late, bins = np.histogram(Q_late, bins)
+
+			sorted_Qvals_inds_BlockA = np.argsort(Q_mid_BlockA)
+			sorted_Qvals_inds_late = np.argsort(Q_late)
+
+			begin_BlockA = 0
+			begin_late = 0
+			dta_all = []
+			avg_FR_BlockA = np.zeros(5)
+			avg_FR_late = np.zeros(5)
+			sem_FR_BlockA = np.zeros(5)
+			sem_FR_late = np.zeros(5)
+			for j in range(len(hist_BlockA)):
+				data_BlockA = FR_BlockA[sorted_Qvals_inds_BlockA[begin_BlockA:begin_BlockA+hist_BlockA[j]]]
+				data_late = FR_late[sorted_Qvals_inds_late[begin_late:begin_late+hist_late[j]]]
+				begin_BlockA += hist_BlockA[j]
+				begin_late += hist_late[j]
+
+				avg_FR_BlockA[j] = np.nanmean(data_BlockA)
+				sem_FR_BlockA[j] = np.nanstd(data_BlockA)/np.sqrt(len(data_BlockA))
+				avg_FR_late[j] = np.nanmean(data_late)
+				sem_FR_late[j] = np.nanstd(data_late)/np.sqrt(len(data_late))
+
+				for item in data_BlockA:
+					dta_all += [(j,0,item)]
+
+				for item in data_late:
+					dta_all += [(j,1,item)]
+
+			dta_all = pd.DataFrame(dta_all, columns = ['Bin', 'Condition', 'FR'])
+			bin_centers = (bins[1:] + bins[:-1])/2.
+			
+			'''
+			formula = 'FR ~ C(Bin) + C(Condition) + C(Bin):C(Condition)'
+			model = ols(formula, dta_all).fit()
+			aov_table = anova_lm(model, typ=2)
+
+			print "Two-way ANOVA analysis"
+			print(aov_table)
+			'''
+
+			# Get binned firing rates: average firing rate for each of num_bins equally populated action value bins
+			sorted_Qvals_inds = np.argsort(Q_mid[trial_inds])
+			pts_per_bin = len(trial_inds)/num_bins
+			reorg_Qvals = np.reshape(Q_mid[trial_inds][sorted_Qvals_inds[:pts_per_bin*num_bins]], (pts_per_bin, num_bins), order = 'F')
+			avg_Qvals = np.nanmean(reorg_Qvals, axis = 0)
+
+			reorg_FR = np.reshape(y[sorted_Qvals_inds[:pts_per_bin*num_bins]], (pts_per_bin, num_bins), order = 'F')
+			avg_FR = np.nanmean(reorg_FR, axis = 0)
+			sem_FR = np.nanstd(reorg_FR, axis = 0)/np.sqrt(pts_per_bin)
+
+			'''
+			plt.figure(k)
+			plt.subplot(1,3,2)
+			plt.errorbar(avg_Qvals, avg_FR, yerr = sem_FR/2., fmt = '--o', color = 'c', ecolor = 'c', label = 'Stim - Avg FR')
+			plt.ylim((0,1.1*fr_lim))
+			plt.xlim((0.9*Q_range_min, 1.1*Q_range_max))
+			plt.legend()
+
+			plt.figure(k)
+			plt.subplot(1,3,3)
+			plt.errorbar(bin_centers, avg_FR_BlockA, yerr = sem_FR_BlockA, fmt = '--o', color = 'k', ecolor = 'k', label = 'Learning - Avg FR')
+			plt.errorbar(bin_centers, avg_FR_late, yerr = sem_FR_late, fmt = '--o', color = 'c', ecolor = 'c', label = 'Stim - Avg FR')
+			plt.ylim((0,1.1*fr_lim))
+			plt.xlim((0.9*Q_range_min, 1.1*Q_range_max))
+			plt.legend()
+			'''
+
+			# Save data
+			data_filename = session_name + ' - Channel %i - Unit %i' %(channel, k)
+			data = dict()
+
+			data['regression_labels'] = ['RPE_positive', 'RPE_negative', 'Choice', 'Reward']
+			data['beta_values_blockA'] = fit_glm.params
+			data['pvalues_blockA'] = fit_glm.pvalues
+			data['rsquared_blockA'] = fit_glm.rsquared
+			data['RPE_early'] = RPE_early
+			data['beta_values_blocksAB'] = fit_glm_late.params
+			data['pvalues_blocksAB'] = fit_glm_late.pvalues
+			data['rsquared_blocksAB'] = fit_glm_late.rsquared
+			data['RPE_late'] = RPE_late
+			data['FR_early'] = FR_BlockA
+			data['FR_late'] = FR_late
+			sp.io.savemat( dir1 + 'check_reward_fr/' + data_filename + '.mat', data)
+		except:
+			pass
+
+	#plt.show()
+
+
+	
+	#return window_fr, window_fr_smooth, fr_mat, x, y, Q_low, Q_mid, Q_high, Q_learning, Q_late, FR_learning, FR_late, fit_glm
+	return 
 
 def ThreeTargetTask_PeakFiringRatesWithValue_PictureOnset(hdf_files, syncHDF_files, spike_files, channel, t_before, t_after):
 	'''
@@ -4050,7 +4665,215 @@ def TwoTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_fi
 		#plt_name = syncHDF_files[i][34:-15]
 		#plt.savefig('/home/srsummerson/code/analysis/Mario_Performance_figs/'+plt_name+ '_' + str(align_to) +'_PSTH_Chan'+str(chann)+'-'+str(sc)+'.svg')
 		plt_name = syncHDF_files[i][syncHDF_files[i].index('Luigi201'):-15]
-		plt.savefig('C:/Users/Samantha Summerson/Dropbox/Carmena Lab/Luigi/Caudate Stim/'+plt_name+ '_' + str(align_to) +'_PSTH_Chan'+str(chann)+'-'+str(sc)+'.svg')
+		plt.savefig(dir_figs +plt_name+ '_' + str(align_to) +'_PSTH_Chan'+str(chann)+'-'+str(sc)+'.svg')
+		#print('Figure saved:',dir_figs +plt_name+ '_' + str(align_to) +'_PSTH_Chan'+str(chann)+'-'+str(sc)+'.svg')
+		
+		plt.close()
+
+	reg_psth = [psth_l, psth_h]
+	smooth_psth = [smooth_psth_l, smooth_psth_h]
+	return reg_psth, smooth_psth, all_raster_l, all_raster_h
+
+
+def TwoTargetTask_SpikeAnalysis_SingleChannel_RPE(hdf_files, syncHDF_files, spike_files, chann, sc, align_to, t_before, t_after, plot_output):
+	'''
+
+	This method aligns spiking data to behavioral choices 
+	in the Two Target Task, where there is a low-value and high-value target. This version does not 
+	differentiate between choices in different blocks. Trials are separated by whether they are rewarded (+RPE) or
+	not rewarded (-RPE).
+
+	Inputs:
+	- hdf_files: list of N hdf_files corresponding to the behavior in the three target task
+	- syncHDF_files: list of N syncHDF_files that containes the syncing DIO data for the corresponding hdf_file and it's
+					TDT recording. If TDT data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, syncHDF_files should have the form [syncHDF_file1.mat, '']
+	- spike_files: list of N tuples of spike_files, where each entry is a list of 2 spike files, one corresponding to spike
+					data from the first 96 channels and the other corresponding to the spike data from the last 64 channels.
+					If spike data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, the hdf_files and syncHDF_files will both have 2 file names, and the 
+					spike_files entry should be of the form [[spike_file1.csv, spike_file2.csv], ''].
+	- chann: integer representing a channel
+	- sc: integer representing unit sort code
+	- align_to: integer in range [1,2] that indicates whether we align the (1) picture onset, a.k. center-hold or (2) check_reward.
+	- plot_output: binary indicating whether output should be plotted + saved or not
+
+	Outputs:
+	- reg_psth: a 2 x N array, where the first row corresponds to the psth values for trials where the low-value 
+				target was selected and the second row corresponds to the psth values for trials where the high-value
+				target was selected
+	- smooth_psth: a 2 x N array of the same format as reg_psth, but with values taken from psths smoothed with a 
+				Gaussian kernel
+	- all_raster_l: a dictionary with number of elements equal to the number of trials where the low-value target was selected,
+				where each element contains spike times for the designated unit within that trial
+	- all_raster_h: a dictionary with number of elements equal to the number of trials where the high-value target was selected,
+				where each element contains spike times for the designated unit within that trial
+	'''
+	num_files = len(hdf_files)
+	trials_per_file = np.zeros(num_files)
+	num_successful_trials = np.zeros(num_files)
+
+	# Define timing parameters for PSTHs
+	t_resolution = 0.1 		# 100 ms time bins
+	num_bins = len(np.arange(-t_before, t_after, t_resolution)) - 1
+
+	# Define arrays to save psth for each trial
+	smooth_psth_l = np.array([])
+	smooth_psth_h = np.array([])
+	psth_l = np.array([])
+	psth_h = np.array([])
+
+	'''
+	Get data for each set of files
+	'''
+	for i in range(num_files):
+		# Load behavior data
+		cb = ChoiceBehavior_TwoTargets(hdf_files[i])
+		num_successful_trials[i] = len(cb.ind_check_reward_states)
+		target_options, target_chosen, rewarded_choice = cb.TrialOptionsAndChoice()
+
+		# Find times corresponding to center holds of successful trials
+		ind_hold_center = cb.ind_check_reward_states - 4
+		ind_check_reward = cb.ind_check_reward_states
+		if align_to == 1:
+			inds = ind_hold_center
+		elif align_to == 2:
+			inds = ind_check_reward
+
+		# Load spike data: 
+		if (spike_files[i] != ''):
+			# Find lfp sample numbers corresponding to these times and the sampling frequency of the lfp data
+			lfp_state_row_ind, lfp_freq = cb.get_state_TDT_LFPvalues(inds, syncHDF_files[i])
+			# Convert lfp sample numbers to times in seconds
+			times_row_ind = lfp_state_row_ind/float(lfp_freq)
+
+			# Load spike data
+			cd_units = [chann]
+			if chann < 97:
+				spike1 = OfflineSorted_CSVFile(spike_files[i][0])
+				all_units1, total_units1 = spike1.find_unit_sc(spike1.good_channels)
+				spike1_good_channels = [unit for unit in cd_units if unit in spike1.good_channels]
+				spike2_good_channels = []
+			else:
+				spike2 = OfflineSorted_CSVFile(spike_files[i][1])
+				all_units2, total_units2 = spike2.find_unit_sc(spike2.good_channels)
+				spike2_good_channels = [unit for unit in cd_units if unit in spike2.good_channels]
+				spike1_good_channels = []
+
+			# 2. Unrewarded trials
+			L_ind = np.ravel(np.nonzero([np.array_equal(rewarded_choice[j], 0) for j in range(int(num_successful_trials[i]))]))
+			if not spike2_good_channels:
+				avg_psth_l, smooth_avg_psth_l = spike1.compute_psth(spike1_good_channels, sc, times_row_ind[L_ind],t_before,t_after,t_resolution)
+				raster_l = spike1.compute_raster(spike1_good_channels, sc, times_row_ind[L_ind],t_before,t_after)
+			else:
+				avg_psth_l, smooth_avg_psth_l = spike2.compute_psth(spike2_good_channels, sc, times_row_ind[L_ind],t_before,t_after,t_resolution)
+				raster_l = spike2.compute_raster(spike1_good_channels, sc, times_row_ind[L_ind],t_before,t_after)
+			if i == 0:
+				psth_l = avg_psth_l
+				smooth_psth_l = smooth_avg_psth_l
+				all_raster_l = raster_l
+			else:
+				psth_l = np.vstack([psth_l, avg_psth_l])
+				smooth_psth_l = np.vstack([smooth_psth_l, smooth_avg_psth_l])
+				all_raster_l.update(raster_l)
+
+			# 3. Rewarded trials
+			H_ind = np.ravel(np.nonzero([np.array_equal(rewarded_choice[j], 1) for j in range(int(num_successful_trials[i]))]))
+			if not spike2_good_channels:
+				avg_psth_h, smooth_avg_psth_h = spike1.compute_psth(spike1_good_channels, sc, times_row_ind[H_ind],t_before,t_after,t_resolution)
+				raster_h = spike1.compute_raster(spike1_good_channels, sc, times_row_ind[H_ind],t_before,t_after)
+			else:
+				avg_psth_h, smooth_avg_psth_h = spike2.compute_psth(spike2_good_channels, sc, times_row_ind[H_ind],t_before,t_after,t_resolution)
+				raster_h = spike2.compute_raster(spike2_good_channels, sc, times_row_ind[H_ind],t_before,t_after)
+			if i == 0:
+				psth_h = avg_psth_h
+				smooth_psth_h = smooth_avg_psth_h
+				all_raster_h = raster_h
+			else:
+				psth_h = np.vstack([psth_h, avg_psth_h])
+				smooth_psth_h = np.vstack([smooth_psth_h, smooth_avg_psth_h])
+				all_raster_h.update(raster_h)
+
+	# Plot average rate for all neurons divided in six cases of targets on option
+	if plot_output:
+		plt.figure(0)
+		b = signal.gaussian(39,0.6)
+		avg_psth_l = np.nanmean(psth_l, axis = 0)
+		sem_avg_psth_l = np.nanstd(psth_l, axis = 0)/np.sqrt(psth_l.shape[0])
+		#smooth_avg_psth_l = np.nanmean(smooth_psth_l, axis = 0)
+		smooth_avg_psth_l = filters.convolve1d(np.nanmean(psth_l,axis=0), b/b.sum())
+		sem_smooth_avg_psth_l = np.nanstd(smooth_psth_l, axis = 0)/np.sqrt(smooth_psth_l.shape[0])
+
+		avg_psth_h = np.nanmean(psth_h, axis = 0)
+		sem_avg_psth_h = np.nanstd(psth_h, axis = 0)/np.sqrt(psth_h.shape[0])
+		smooth_avg_psth_h = np.nanmean(smooth_psth_h, axis = 0)
+		smooth_avg_psth_h = filters.convolve1d(np.nanmean(psth_h,axis=0), b/b.sum())
+		sem_smooth_avg_psth_h = np.nanstd(smooth_psth_h, axis = 0)/np.sqrt(smooth_psth_h.shape[0])
+		
+		y_min_l = (smooth_avg_psth_l - sem_smooth_avg_psth_l).min()
+		y_max_l = (smooth_avg_psth_l+ sem_smooth_avg_psth_l).max()
+		y_min_h = (smooth_avg_psth_h - sem_smooth_avg_psth_h).min()
+		y_max_h = (smooth_avg_psth_h+ sem_smooth_avg_psth_h).max()
+
+		y_min = np.array([y_min_l, y_min_h]).min()
+		y_max = np.array([y_max_l, y_max_h]).max()
+
+
+		num_trials = len(all_raster_l.keys())
+
+		linelengths = float((y_max - y_min))/num_trials
+		lineoffsets = 1
+		xticklabels = np.arange(-t_before,t_after-t_resolution,t_resolution)
+
+		ax1 = plt.subplot(1,2,1)
+		plt.title('All Trials')
+		plt.plot(xticklabels, smooth_avg_psth_l,'b', label = '-RPE')
+		plt.fill_between(xticklabels, smooth_avg_psth_l - sem_smooth_avg_psth_l, smooth_avg_psth_l + sem_smooth_avg_psth_l, facecolor = 'b', alpha = 0.2)
+		#xticks = np.arange(0, len(xticklabels), 10)
+		#xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
+		#plt.xticks(xticks, xticklabels)
+		plt.xlabel('Time from Center Hold (s)')
+		plt.ylabel('Firing Rate (spk/s)')
+		ax1.get_yaxis().set_tick_params(direction='out')
+		ax1.get_xaxis().set_tick_params(direction='out')
+		ax1.get_xaxis().tick_bottom()
+		ax1.get_yaxis().tick_left()
+		
+
+		# DEFINE LINEOFFSETS AND LINELENGTHS BY Y-RANGE OF PSTH
+		for k in range(len(all_raster_l.keys())):
+			plt.eventplot(all_raster_l[k], colors=[[0,0,0]], lineoffsets= y_min + k*linelengths,linelengths=linelengths)
+		plt.legend()
+		plt.ylim((y_min - 1, y_max + 1))
+
+		ax2 = plt.subplot(1,2,2)
+		plt.plot(xticklabels, smooth_avg_psth_h, 'r', label = '+RPE')
+		plt.fill_between(xticklabels, smooth_avg_psth_h - sem_smooth_avg_psth_h, smooth_avg_psth_h + sem_smooth_avg_psth_h, facecolor = 'r', alpha = 0.2)
+		#xticklabels = np.arange(-t_before,t_after-t_resolution,t_resolution)
+		#xticks = np.arange(0, len(xticklabels), 10)
+		#xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
+		#plt.xticks(xticks, xticklabels)
+		if align_to == 1:
+			plt.xlabel('Time from Center Hold (s)')
+		else:
+			plt.xlabel('Time from Check Reward (s)')
+		plt.ylabel('Firing Rate (spk/s)')
+		ax2.get_yaxis().set_tick_params(direction='out')
+		ax2.get_xaxis().set_tick_params(direction='out')
+		ax2.get_xaxis().tick_bottom()
+		ax2.get_yaxis().tick_left()
+
+		# DEFINE LINEOFFSETS AND LINELENGTHS BY Y-RANGE OF PSTH
+		for k in range(len(all_raster_h.keys())):
+			plt.eventplot(all_raster_h[k], colors=[[0,0,0]], lineoffsets= y_min + k*linelengths,linelengths=linelengths)
+		plt.legend()
+		plt.ylim((y_min - 1, y_max + 1))
+
+
+		#plt_name = syncHDF_files[i][34:-15]
+		#plt.savefig('/home/srsummerson/code/analysis/Mario_Performance_figs/'+plt_name+ '_' + str(align_to) +'_PSTH_Chan'+str(chann)+'-'+str(sc)+'.svg')
+		plt_name = syncHDF_files[i][syncHDF_files[i].index('Luigi201'):-15]
+		plt.savefig(dir_figs +plt_name+ '_' + str(align_to) +'_RPE_PSTH_Chan'+str(chann)+'-'+str(sc)+'.svg')
 		
 		plt.close()
 
@@ -4548,11 +5371,11 @@ def TwoTargetTask_RegressedFiringRatesWithValue_PictureOnset(dir, hdf_files, syn
 		x = np.transpose(x)
 		x = np.hstack((x, np.ones([len(trial_inds),1]))) 	# use this in place of add_constant which doesn't work when constant Q values are used
 		#x = sm.add_constant(x, prepend=False)
-		print(x.shape)
+		
 		y = unit_data[trial_inds]
 		# z-score y
 		y_zscore = stats.zscore(y)
-		print(y.shape)
+		
 		#y = y/np.max(y)  # normalize y
 
 		# save Q and firing rate data
@@ -4564,10 +5387,10 @@ def TwoTargetTask_RegressedFiringRatesWithValue_PictureOnset(dir, hdf_files, syn
 		# Use the below statement to only perform analysis if unit had non-zero firing on at least 10 trials
 		#if len(trial_inds) > 9:
 		try:
-			print("Regression for unit ", k)
+			#print("Regression for unit ", k)
 			model_glm = sm.OLS(y_zscore,x)
 			fit_glm = model_glm.fit()
-			print(fit_glm.summary())
+			#print(fit_glm.summary())
 
 			regress_coef = fit_glm.params[0] 		# The regression coefficient for Qlow is the first parameter
 			regress_intercept = y[0] - regress_coef*Q_low[trial_inds[0]]
@@ -4579,6 +5402,7 @@ def TwoTargetTask_RegressedFiringRatesWithValue_PictureOnset(dir, hdf_files, syn
 
 			m,b = np.polyfit(x_lin, y, 1)
 
+			'''
 			plt.figure(k)
 			plt.subplot(1,3,1)
 			plt.scatter(Q_low[trial_inds],y, c= 'k', marker = 'o', label ='Learning Trials')
@@ -4587,7 +5411,7 @@ def TwoTargetTask_RegressedFiringRatesWithValue_PictureOnset(dir, hdf_files, syn
 			plt.xlabel('Q_low')
 			plt.ylabel('Firing Rate (spk/s)')
 			plt.title(sess_name + ' - Channel %i - Unit %i' %(channel, k))
-
+			'''
 
 			max_fr = np.amax(y)
 			xlim_min = np.amin(Q_low[trial_inds])
@@ -4601,7 +5425,7 @@ def TwoTargetTask_RegressedFiringRatesWithValue_PictureOnset(dir, hdf_files, syn
 			data['rsquared_blockA'] = fit_glm.rsquared
 			data['Q_low_early'] = Q_low_BlockA
 			data['FR_early'] = FR_learning
-			sp.io.savemat( dir + 'picture_onset_fr/' + data_filename + '.mat', data)
+			sp.io.savemat( dir + 'hold_center_fr/' + data_filename + '.mat', data)
 
 
 			# Get binned firing rates: average firing rate for each of num_bins equally populated action value bins
@@ -4621,12 +5445,12 @@ def TwoTargetTask_RegressedFiringRatesWithValue_PictureOnset(dir, hdf_files, syn
 			Q_range_max = np.max(Q_low[trial_inds])
 			FR_BlockA = y
 			
-
+			'''
 			plt.figure(k)
 			plt.subplot(1,3,2)
 			plt.errorbar(avg_Qvals, avg_FR, yerr = sem_FR, fmt = '--o', color = 'k', ecolor = 'k', label = 'Learning - Avg FR')
 			plt.legend()
-		
+			'''
 		except:
 			pass
 		
@@ -4643,18 +5467,18 @@ def TwoTargetTask_RegressedFiringRatesWithValue_PictureOnset(dir, hdf_files, syn
 		x = np.transpose(x)
 		x = np.hstack((x, np.ones([len(trial_inds),1]))) 	# use this in place of add_constant which doesn't work when constant Q values are used
 		#x = sm.add_constant(x, prepend=False)
-		print(x.shape)
+		
 		y = unit_data[trial_inds]
 		# z-score y
 		y_zscore = stats.zscore(y)
-		print(y.shape)
+		
 		#y = y/np.max(y)  # normalize y
 
 		try:
-			print("Regression for unit ", k)
+			#print("Regression for unit ", k)
 			model_glm_late = sm.OLS(y_zscore,x)
 			fit_glm_late = model_glm_late.fit()
-			print(fit_glm_late.summary())
+			#print(fit_glm_late.summary())
 
 			regress_coef = fit_glm_late.params[0] 		# The regression coefficient for Qlow is the first parameter
 			regress_intercept = y[0] - regress_coef*Q_low[trial_inds[0]]
@@ -4670,7 +5494,7 @@ def TwoTargetTask_RegressedFiringRatesWithValue_PictureOnset(dir, hdf_files, syn
 			#fr_lim = np.maximum(max_fr, max_fr_stim)
 			fr_lim = max_fr_stim
 
-
+			'''
 			plt.figure(k)
 			plt.subplot(1,3,1)
 			plt.scatter(Q_low[trial_inds],y, c= 'c', label = 'Stimulation trials')
@@ -4679,7 +5503,7 @@ def TwoTargetTask_RegressedFiringRatesWithValue_PictureOnset(dir, hdf_files, syn
 			plt.ylim((0,1.1*fr_lim))
 			plt.xlim((0.9*Q_low_min, 1.1*Q_low_max))
 			plt.legend()
-
+			'''
 			# save Q and firing rate data
 			Q_late = Q_low[trial_inds]
 			FR_late = y
@@ -4752,7 +5576,7 @@ def TwoTargetTask_RegressedFiringRatesWithValue_PictureOnset(dir, hdf_files, syn
 			"""
 
 			# Save data
-			print('Saving data')
+			#print('Saving data')
 			data_filename = session_name + ' - Channel %i - Unit %i' %(channel, k)
 			data['regression_labels'] = ['Q_low', 'Q_high','RT', 'MT', 'Choice', 'Reward']
 			data['beta_values_blocksAB'] = fit_glm_late.params
@@ -4760,8 +5584,341 @@ def TwoTargetTask_RegressedFiringRatesWithValue_PictureOnset(dir, hdf_files, syn
 			data['rsquared_blocksAB'] = fit_glm_late.rsquared
 			data['Q_low_late'] = Q_late
 			data['FR_late'] = FR_late
-			sp.io.savemat( dir + 'picture_onset_fr/' + data_filename + '.mat', data)
-			#sp.io.savemat( dir + 'hold_center_fr/' + data_filename + '.mat', data)
+			#sp.io.savemat( dir + 'picture_onset_fr/' + data_filename + '.mat', data)
+			sp.io.savemat( dir + 'hold_center_fr/' + data_filename + '.mat', data)
+		except:
+			pass
+
+		
+	#return window_fr, window_fr_smooth, fr_mat, x, y, Q_low, Q_mid, Q_high, Q_learning, Q_late, FR_learning, FR_late, fit_glm
+	return Q_low, Q_high, fit_glm_late
+
+def TwoTargetTask_RegressedFiringRatesWithRPE_RewardOnset(dir, hdf_files, syncHDF_files, spike_files, channel, t_before, t_after, smoothed):
+	'''
+	This method regresses the firing rate of all units as a function of RPE. It then plots the firing rate as a function of 
+	the modeled RPE and uses the regression coefficient to plot a linear fit of the relationship between RPE and 
+	firing rate.
+
+	Inputs:
+	- hdf_files: list of N hdf_files corresponding to the behavior in the three target task
+	- syncHDF_files: list of N syncHDF_files that containes the syncing DIO data for the corresponding hdf_file and it's
+					TDT recording. If TDT data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, syncHDF_files should have the form [syncHDF_file1.mat, '']
+	- spike_files: list of N tuples of spike_files, where each entry is a list of 2 spike files, one corresponding to spike
+					data from the first 96 channels and the other corresponding to the spike data from the last 64 channels.
+					If spike data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, the hdf_files and syncHDF_files will both have 2 file names, and the 
+					spike_files entry should be of the form [[spike_file1.csv, spike_file2.csv], ''].
+	- channel: integer value indicating what channel will be used to regress activity
+	- t_before: time before (s) the picture onset that should be included when computing the firing rate. t_before = 0 indicates
+					that we only look from the time of onset forward when considering the window of activity.
+	- t_after: time after (s) the picture onset that should be included when computing the firing rate.
+	- smoothed: boolean indicating whether to use smoothed firing rates (True) or not (False)
+
+	'''
+	# Get session information for plot
+	str_ind = hdf_files[0].index('201')  	# search for beginning of year in string (used 201 to accomodate both 2016 and 2017)
+	sess_name = 'Luigi' + hdf_files[0][str_ind:str_ind + 8]
+	if syncHDF_files[0]!='':
+		str_ind = syncHDF_files[0].index('201')
+		session_name = 'Luigi' + syncHDF_files[0][str_ind:str_ind + 11]
+	elif syncHDF_files[1]!='':
+		str_ind = syncHDF_files[1].index('201')
+		session_name = 'Luigi' + syncHDF_files[0][str_ind:str_ind + 11]
+	else:
+		session_name = 'Unknown'
+	
+
+	# 1. Load behavior data and pull out trial indices for the designated trial case
+	cb = ChoiceBehavior_TwoTargets_Stimulation(hdf_files, 100, 100)
+	total_trials = cb.num_successful_trials
+	#targets_on = cb.targets_on[cb.state_time[cb.ind_check_reward_states]]
+
+
+	# 2. Get firing rates from units on indicated channel around time of target presentation on all trials. Note that
+	# 	window_fr is a dictionary with elements indexed such that the index matches the corresponding set of hdf_files. Each
+	#	dictionary element contains a matrix of size (num units)x(num trials) with elements corresponding
+	#	to the average firing rate over the window indicated.
+	num_trials, num_units, window_fr, window_fr_smooth, unit_class = TwoTargetTask_FiringRates_RewardOnset(hdf_files, syncHDF_files, spike_files, channel, t_before, t_after)
+	cum_sum_trials = np.cumsum(num_trials).astype(int)
+	print(window_fr)
+
+	# 3. Get chosen targets, and rewards
+	chosen_target, rewards, instructed_or_freechoice = cb.GetChoicesAndRewards()
+	
+	# Varying Q-values
+	"""
+	# Find ML fit of alpha and beta
+	Q_initial = 0.5*np.ones(2)
+	nll = lambda *args: -logLikelihoodRLPerformance(*args)
+	result = op.minimize(nll, [0.2, 1], args=(Q_initial, rewards, chosen_target, instructed_or_freechoice), bounds=[(0,1),(0,None)])
+	alpha_ml, beta_ml = result["x"]
+	print("Best fitting alpha and beta are: ", alpha_ml, beta_ml)
+	# RL model fit for Q values
+	Q_low, Q_high, prob_choice_low, log_likelihood = RLPerformance([alpha_ml, beta_ml], Q_initial, rewards, chosen_target, instructed_or_freechoice)
+	"""
+	Q_high, Q_low = Value_from_reward_history_TwoTargetTask(hdf_files)
+
+	# 3a. Compute Positive and Negative RPEs
+	Q_mat = np.vstack([Q_low, Q_high])
+	chosen_target = np.array(chosen_target,dtype = int)   	# = 1 for LV, = 2 for HV
+	chosen_target_value = np.array([Q_mat[chosen_target[i]-1,i] for i in range(len(chosen_target))])
+
+	RPE = rewards - chosen_target_value
+	RPE_positive = RPE*(RPE > 0)
+	RPE_negative = RPE*(RPE < 0)
+
+	# 4. Create firing rate matrix with size (max_num_units)x(total_trials)
+	max_num_units = int(np.max(num_units))
+	fr_mat = np.zeros([max_num_units, total_trials])
+	trial_counter = 0
+	for j in window_fr.keys():
+		if not smoothed:
+			block_fr = window_fr[j]
+		else:
+			block_fr = window_fr_smooth[j]
+		if len(block_fr.shape) == 1:
+			num_units = 1
+			num_trials = len(block_fr)
+		else:
+			num_units,num_trials = block_fr.shape 
+
+		fr_mat[:num_units,cum_sum_trials[j] - num_trials:cum_sum_trials[j]] = block_fr
+
+	
+	# 5. Do regression for each unit only on trials in Blocks A and B with spike data saved.
+	for k in range(max_num_units):
+		unit_data = fr_mat[k,:]
+		#trial_inds = np.array([index for index in ind_trial_case if unit_data[index]!=0], dtype = int)
+
+		# look at all trial types within Blocks A 
+		trial_inds = np.array([index for index in range(33,100) if unit_data[index]!=0], dtype = int)
+		
+		x = np.vstack((RPE_positive[trial_inds], RPE_negative[trial_inds], chosen_target[trial_inds], rewards[trial_inds]))
+		x = np.transpose(x)
+		x = np.hstack((x, np.ones([len(trial_inds),1]))) 	# use this in place of add_constant which doesn't work when constant Q values are used
+		#x = sm.add_constant(x, prepend=False)
+		
+		y = unit_data[trial_inds]
+		# z-score y
+		y_zscore = stats.zscore(y)
+		
+		#y = y/np.max(y)  # normalize y
+
+		# save Q and firing rate data
+		Q_learning = Q_low[trial_inds]
+		FR_learning = y
+		Q_low_BlockA = Q_low[trial_inds]
+		data = dict()
+
+		RPE_early = RPE[trial_inds]
+		
+		# Use the below statement to only perform analysis if unit had non-zero firing on at least 10 trials
+		#if len(trial_inds) > 9:
+		try:
+			#print("Regression for unit ", k)
+			model_glm = sm.OLS(y_zscore,x)
+			fit_glm = model_glm.fit()
+			#print(fit_glm.summary())
+
+			regress_coef = fit_glm.params[0] 		# The regression coefficient for Qlow is the first parameter
+			regress_intercept = y[0] - regress_coef*Q_low[trial_inds[0]]
+
+			# Get linear regression fit for just Q_low
+			Q_low_min = np.amin(Q_low[trial_inds])
+			Q_low_max = np.amax(Q_low[trial_inds])
+			x_lin = np.linspace(Q_low_min, Q_low_max, num = len(trial_inds), endpoint = True)
+
+			m,b = np.polyfit(x_lin, y, 1)
+
+			'''
+			plt.figure(k)
+			plt.subplot(1,3,1)
+			plt.scatter(Q_low[trial_inds],y, c= 'k', marker = 'o', label ='Learning Trials')
+			plt.plot(x_lin, m*x_lin + b, c = 'k')
+			#plt.plot(Q_mid[trial_inds], regress_coef*Q_mid[trial_inds] + regress_intercept, c = 'y')
+			plt.xlabel('Q_low')
+			plt.ylabel('Firing Rate (spk/s)')
+			plt.title(sess_name + ' - Channel %i - Unit %i' %(channel, k))
+			'''
+
+			max_fr = np.amax(y)
+			xlim_min = np.amin(Q_low[trial_inds])
+			xlim_max = np.amax(Q_low[trial_inds])
+
+			data_filename = session_name + ' - Channel %i - Unit %i' %(channel, k)
+			data = dict()
+			data['regression_labels'] = ['RPE_positive', 'RPE_negative', 'Choice', 'Reward']
+			data['beta_values_blockA'] = fit_glm.params
+			data['pvalues_blockA'] = fit_glm.pvalues
+			data['rsquared_blockA'] = fit_glm.rsquared
+			data['RPE_early'] = RPE_early
+			data['FR_early'] = FR_learning
+			sp.io.savemat( dir + 'check_reward_fr/' + data_filename + '.mat', data)
+			
+
+
+			# Get binned firing rates: average firing rate for each of num_bins equally populated action value bins
+			num_bins = 5
+			sorted_Qvals_inds = np.argsort(Q_low[trial_inds])
+			pts_per_bin = len(trial_inds)/num_bins
+			reorg_Qvals = np.reshape(Q_low[trial_inds][sorted_Qvals_inds[:pts_per_bin*num_bins]], (pts_per_bin, num_bins), order = 'F')
+			avg_Qvals = np.nanmean(reorg_Qvals, axis = 0)
+
+			reorg_FR = np.reshape(y[sorted_Qvals_inds[:pts_per_bin*num_bins]], (pts_per_bin, num_bins), order = 'F')
+			reorg_FR_BlockA = reorg_FR
+			avg_FR = np.nanmean(reorg_FR, axis = 0)
+			sem_FR = np.nanstd(reorg_FR, axis = 0)/np.sqrt(pts_per_bin)
+
+			# Save data for binning by bins of fixed size (rather than equally populated)
+			Q_range_min = np.min(Q_low[trial_inds])
+			Q_range_max = np.max(Q_low[trial_inds])
+			FR_BlockA = y
+			
+			'''
+			plt.figure(k)
+			plt.subplot(1,3,2)
+			plt.errorbar(avg_Qvals, avg_FR, yerr = sem_FR, fmt = '--o', color = 'k', ecolor = 'k', label = 'Learning - Avg FR')
+			plt.legend()
+			'''
+		except:
+			pass
+		
+		unit_data = fr_mat[k,:]
+		#trial_inds = np.array([index for index in ind_trial_case if unit_data[index]!=0], dtype = int)
+
+		# look at all trial types within Blocks A and B
+		trial_inds = np.array([index for index in range(200,len(unit_data)) if unit_data[index]!=0], dtype = int)
+		#trial_inds = np.array([index for index in range(250,len(unit_data))], dtype = int)
+		x = np.vstack((RPE_positive[trial_inds], RPE_negative[trial_inds], chosen_target[trial_inds], rewards[trial_inds]))
+		x = np.transpose(x)
+		x = np.hstack((x, np.ones([len(trial_inds),1]))) 	# use this in place of add_constant which doesn't work when constant Q values are used
+		#x = sm.add_constant(x, prepend=False)
+		
+		y = unit_data[trial_inds]
+		# z-score y
+		y_zscore = stats.zscore(y)
+		
+		#y = y/np.max(y)  # normalize y
+
+		try:
+			#print("Regression for unit ", k)
+			model_glm_late = sm.OLS(y_zscore,x)
+			fit_glm_late = model_glm_late.fit()
+			#print(fit_glm_late.summary())
+
+			regress_coef = fit_glm_late.params[0] 		# The regression coefficient for Qlow is the first parameter
+			regress_intercept = y[0] - regress_coef*Q_low[trial_inds[0]]
+
+			# Get linear regression fit for just Q_mid
+			Q_low_min = np.amin(Q_low[trial_inds])
+			Q_low_max = np.amax(Q_low[trial_inds])
+			x_lin = np.linspace(Q_low_min, Q_low_max, num = len(trial_inds), endpoint = True)
+
+			m,b = np.polyfit(x_lin, y, 1)
+
+			max_fr_stim = np.amax(y)
+			#fr_lim = np.maximum(max_fr, max_fr_stim)
+			fr_lim = max_fr_stim
+
+			'''
+			plt.figure(k)
+			plt.subplot(1,3,1)
+			plt.scatter(Q_low[trial_inds],y, c= 'c', label = 'Stimulation trials')
+			plt.plot(x_lin, m*x_lin + b, c = 'c')
+			#plt.plot(Q_mid[trial_inds], regress_coef*Q_mid[trial_inds] + regress_intercept, c = 'g')
+			plt.ylim((0,1.1*fr_lim))
+			plt.xlim((0.9*Q_low_min, 1.1*Q_low_max))
+			plt.legend()
+			'''
+			# save Q and firing rate data
+			Q_late = Q_low[trial_inds]
+			FR_late = y
+			RPE_late = RPE[trial_inds]
+			"""
+			# Get binned firing rates: bins of fixed size
+			#Q_range_min = np.min(np.min(Q_late), Q_range_min)
+			#Q_range_max = np.max(np.max(Q_late), Q_range_max)
+			Q_range_min = np.min(Q_low[trial_inds])
+			Q_range_max = np.max(Q_low[trial_inds])
+			bins = np.arange(Q_range_min, Q_range_max + 0.5*(Q_range_max - Q_range_min)/5., (Q_range_max - Q_range_min)/5.)
+			hist_BlockA, bins = np.histogram(Q_low_BlockA, bins)
+			hist_late, bins = np.histogram(Q_late, bins)
+
+			sorted_Qvals_inds_BlockA = np.argsort(Q_low_BlockA)
+			sorted_Qvals_inds_late = np.argsort(Q_late)
+
+			begin_BlockA = 0
+			begin_late = 0
+			dta_all = []
+			avg_FR_BlockA = np.zeros(5)
+			avg_FR_late = np.zeros(5)
+			sem_FR_BlockA = np.zeros(5)
+			sem_FR_late = np.zeros(5)
+			for j in range(len(hist_BlockA)):
+				data_BlockA = FR_BlockA[sorted_Qvals_inds_BlockA[begin_BlockA:begin_BlockA+hist_BlockA[j]]]
+				data_late = FR_late[sorted_Qvals_inds_late[begin_late:begin_late+hist_late[j]]]
+				begin_BlockA += hist_BlockA[j]
+				begin_late += hist_late[j]
+
+				avg_FR_BlockA[j] = np.nanmean(data_BlockA)
+				sem_FR_BlockA[j] = np.nanstd(data_BlockA)/np.sqrt(len(data_BlockA))
+				avg_FR_late[j] = np.nanmean(data_late)
+				sem_FR_late[j] = np.nanstd(data_late)/np.sqrt(len(data_late))
+
+				for item in data_BlockA:
+					dta_all += [(j,0,item)]
+
+				for item in data_late:
+					dta_all += [(j,1,item)]
+
+			dta_all = pd.DataFrame(dta_all, columns = ['Bin', 'Condition', 'FR'])
+			bin_centers = (bins[1:] + bins[:-1])/2.
+			print(len(bin_centers))
+			print(len(avg_FR_late))
+
+			# Get binned firing rates: average firing rate for each of num_bins equally populated action value bins
+			sorted_Qvals_inds = np.argsort(Q_low[trial_inds])
+			pts_per_bin = len(trial_inds)/num_bins
+			reorg_Qvals = np.reshape(Q_low[trial_inds][sorted_Qvals_inds[:pts_per_bin*num_bins]], (pts_per_bin, num_bins), order = 'F')
+			avg_Qvals = np.nanmean(reorg_Qvals, axis = 0)
+
+			reorg_FR = np.reshape(y[sorted_Qvals_inds[:pts_per_bin*num_bins]], (pts_per_bin, num_bins), order = 'F')
+			avg_FR = np.nanmean(reorg_FR, axis = 0)
+			sem_FR = np.nanstd(reorg_FR, axis = 0)/np.sqrt(pts_per_bin)
+
+			plt.figure(k)
+			plt.subplot(1,3,2)
+			plt.errorbar(avg_Qvals, avg_FR, yerr = sem_FR/2., fmt = '--o', color = 'c', ecolor = 'c', label = 'Stim - Avg FR')
+			plt.ylim((0,1.1*fr_lim))
+			plt.xlim((0.9*Q_range_min, 1.1*Q_range_max))
+			plt.legend()
+
+			plt.figure(k)
+			plt.subplot(1,3,3)
+			plt.errorbar(bin_centers, avg_FR_BlockA, yerr = sem_FR_BlockA, fmt = '--o', color = 'k', ecolor = 'k', label = 'Learning - Avg FR')
+			plt.errorbar(bin_centers, avg_FR_late, yerr = sem_FR_late, fmt = '--o', color = 'c', ecolor = 'c', label = 'Stim - Avg FR')
+			plt.ylim((0,1.1*fr_lim))
+			plt.xlim((0.9*Q_range_min, 1.1*Q_range_max))
+			plt.legend()
+			"""
+
+			# Save data
+			#print('Saving data')
+			data_filename = session_name + ' - Channel %i - Unit %i' %(channel, k)
+			data['regression_labels'] = ['RPE_positive', 'RPE_negative', 'Choice', 'Reward']
+			data['beta_values_blockA'] = fit_glm.params
+			data['pvalues_blockA'] = fit_glm.pvalues
+			data['rsquared_blockA'] = fit_glm.rsquared
+			data['RPE_early'] = RPE_early
+			data['beta_values_blocksAB'] = fit_glm_late.params
+			data['pvalues_blocksAB'] = fit_glm_late.pvalues
+			data['rsquared_blocksAB'] = fit_glm_late.rsquared
+			data['RPE_late'] = RPE_late
+			data['FR_early'] = FR_BlockA
+			data['FR_late'] = FR_late
+			sp.io.savemat( dir1 + 'check_reward_fr/' + data_filename + '.mat', data)
+			
 		except:
 			pass
 

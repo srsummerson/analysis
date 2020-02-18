@@ -161,6 +161,53 @@ class OfflineSorted_CSVFile():
 
 		return
 
+	def plot_all_avg_waveform(self, **kwargs):
+		'''
+		Method that plots the average waveform of all units.
+		'''
+		fig_dir = kwargs.get('fig_dir', "C:/Users/ss45436/Box Sync/UC Berkeley/Cd Stim/Neural Correlates/Paper/Figures/")
+		all_channels = self.good_channels
+		sort_codes, total_units = self.find_unit_sc(all_channels)
+
+		num_figs = 10*np.ceil(total_units/10)
+		num_cols = 10
+		num_rows = int(num_figs/10)
+
+		fig_num = 1		# initialize figure number
+
+		fig = plt.figure()
+
+		for chann in all_channels:
+			scs = sort_codes[chann]
+
+			for sc in scs:
+				unit_chan = np.ravel(np.nonzero(np.equal(self.channel, chann)))
+				sc_unit = np.ravel(np.nonzero(np.equal(self.sort_code[unit_chan], sc)))
+				channel_data = self.waveforms[unit_chan[sc_unit],:]
+
+				avg_waveform = 10**6*np.nanmean(channel_data, axis = 0)	 # give amplitude in uV
+				std_waveform = 10**6*np.nanstd(channel_data, axis = 0) 		# give amplitude in uV
+
+				max_amp = np.max(channel_data)*10**6
+				min_amp = np.min(channel_data)*10**6
+
+				t = range(len(avg_waveform))
+
+				#plt.subplot(np.ceil(fig_num/10),(fig_num+9) % 10 + 1,fig_num)
+				plt.subplot(num_rows, num_cols, fig_num)
+				plt.plot(t,avg_waveform,'k')
+				plt.fill_between(t, avg_waveform - std_waveform, avg_waveform + std_waveform, facecolor='gray', alpha = 0.5)
+				#plt.xlabel('Time (ms)')
+				plt.ylim((-100,100))
+				plt.title('Channel %i - %i' % (chann, sc))
+				plt.ylabel('Amplitude (uV)')
+				#plt.ylim((min_amp, max_amp))
+				
+				fig_num += 1
+		fig.set_size_inches((30, 30), forward=False)
+		plt.savefig(fig_dir + self.filename[81:-12] + '.svg', dpi = 500)
+		return
+
 	def compute_psth(self,chann,sc,times_align,t_before,t_after,t_resolution):
 		'''
 		Method that returns an array of psths for spiking activity aligned to the sample numbers indicated in samples_align
@@ -183,7 +230,7 @@ class OfflineSorted_CSVFile():
 		psth = np.zeros((num_timepoints, psth_length-1))
 		smooth_psth = np.zeros(psth.shape)
 
-		boxcar_length = 5.
+		boxcar_length = int(5)
 		boxcar_window = signal.boxcar(boxcar_length)  # 2 bins before, 2 bins after for boxcar smoothing
 		b = signal.gaussian(39, 1)
 		
@@ -196,7 +243,7 @@ class OfflineSorted_CSVFile():
 			hist, bins = np.histogram(data, bins = t_window)
 			hist_fr = hist/t_resolution
 			psth[i,:] = hist_fr[:psth_length-1]
-			smooth_psth[i,:] = np.convolve(hist_fr[:psth_length-1], boxcar_window,mode='same')/boxcar_length
+			#smooth_psth[i,:] = np.convolve(hist_fr[:psth_length-1], boxcar_window,mode='same')/boxcar_length
 			smooth_psth[i,:] = filters.convolve1d(hist_fr[:psth_length-1], b/b.sum())
 		return psth, smooth_psth
 

@@ -1,4 +1,4 @@
-from DecisionMakingBehavior import TwoTargetTask_RegressedFiringRatesWithValue_PictureOnset, TwoTargetTask_FiringRateChanges_FastVsSlow
+from DecisionMakingBehavior import TwoTargetTask_RegressedFiringRatesWithValue_PictureOnset, TwoTargetTask_FiringRateChanges_FastVsSlow, TwoTargetTask_RegressLFPPower_PictureOnset_Multichannels, TwoTargetTask_RegressedFiringRatesWithRPE_RewardOnset, TwoTargetTask_SpikeAnalysis_SingleChannel, TwoTargetTask_SpikeAnalysis_SingleChannel_RPE
 from offlineSortedSpikeAnalysis import OfflineSorted_CSVFile
 import numpy as np
 from os import listdir
@@ -18,7 +18,8 @@ acc_units = list(range(65,129))
 all_units = np.append(cd_units, acc_units)
 # List data
 
-dir = "C:/Users/ss45436/Box/UC Berkeley/Cd Stim/Neural Correlates/Luigi/spike_data/"
+dir = "C:/Users/ss45436/Box Sync/UC Berkeley/Cd Stim/Neural Correlates/Luigi/spike_data/"
+tdt_data_dir = "E:/UC Berkeley/Caudate Stim/Luigi/"
 
 hdf_list_sham = [[dir + 'luig20170822_07_te133.hdf'], \
 			[dir + 'luig20170824_02_te139.hdf'], \
@@ -90,7 +91,7 @@ spike_list_stim = [[[dir + 'Luigi20170909_Block-3_eNe1_Offline.csv', dir + 'Luig
 			  [[dir + 'Luigi20170915-2_Block-1_eNe1_Offline.csv', dir + 'Luigi20170915-2_Block-1_eNe2_Offline.csv']], \
 			  [[dir + 'Luigi20170927_Block-3_eNe1_Offline.csv', dir + 'Luigi20170927_Block-3_eNe2_Offline.csv']], \
 			  [[dir + 'Luigi20171001_Block-1_eNe1_Offline.csv', dir + 'Luigi20171001_Block-1_eNe2_Offline.csv']], \
-			  [[dir + 'Luigi20171005_Block-1_eNe1_Offline.csv', dir + 'Luigi20171005_Block-1_eNe2_Offline.csv']], \
+			  [[dir + 'Luigi20171005_Block-1_eNe1_Offline.csv', '']], \
 			  [[dir + 'Luigi20171017_Block-1_eNe1_Offline.csv', dir + 'Luigi20171017_Block-1_eNe2_Offline.csv'], [dir + 'Luigi20171017_Block-2_eNe1_Offline.csv', dir + 'Luigi20171017_Block-2_eNe2_Offline.csv']], \
 			  [[dir + 'Luigi20171031_Block-1_eNe1_Offline.csv', dir + 'Luigi20171031_Block-1_eNe2_Offline.csv']], \
 			  [[dir + 'Luigi20171108_Block-1_eNe1_Offline.csv', dir + 'Luigi20171108_Block-1_eNe2_Offline.csv']], \
@@ -141,33 +142,56 @@ def BinChangeInFiringRatesByValue(Q_early, Q_late, Q_bins, FR_early, FR_late):
 	return Q_bins, delta_FR, norm_delta_FR, avg_delta_FR, sem_delta_FR, avg_norm_delta_FR, sem_norm_delta_FR
 
 
+
+###RUNNING WITH SLIDING VALUES BUT with RPE
 num_files = len(hdf_list)
-t_before = 0.
-t_after = 0.4
+t_before = 1
+t_after = 3
 smoothed = 1
-'''
-###RUNNING WITH SLIDING VALUES BUT BACK TO PICTURE ONSET
+
 for i in range(num_files):
-	for channel in cd_units:
-		hdf = hdf_list[i]
-		sync = syncHDF_list[i]
-		spike = spike_list[i]
+	hdf = hdf_list[i]
+	sync = syncHDF_list[i]
+	spike = spike_list[i]
 
-		Qs = TwoTargetTask_RegressedFiringRatesWithValue_PictureOnset(dir, hdf, sync, spike, channel, t_before, t_after, smoothed)
-'''
-good_channels = np.array([1, 2, 4, 5, 6, 8, 10, 12, 14, 15, 17, 18, 19, 23, 25, 26, 27, 28, 29, 30, 32, 38, 43, 47, 55, 57, 59, 60, 63, 65, 69, 76, 78, 80, 82, 84, 86, 88])
-modulation_index = []
-unit_classification = []
-for chann in good_channels:
-	print('channel:%i' % (chann))
-	mod_index, unit_class = TwoTargetTask_FiringRateChanges_FastVsSlow(dir, hdf_list_stim[2], syncHDF_list_stim[2], spike_list_stim[2], chann, t_before, t_after, smoothed)
-	modulation_index += mod_index.tolist()
-	unit_classification += unit_class.tolist()
+	if spike[0]!= ['']:
+		spike_data1 = OfflineSorted_CSVFile(spike[0][0])
+		spike_data1.plot_all_avg_waveform()
+		if spike[0][1]!='':
+			spike_data2 = OfflineSorted_CSVFile(spike[0][1])
+			spike_data2.plot_all_avg_waveform()
 
+
+
+		
 
 '''
+trial_start = 50
+trial_end = 150
+TwoTargetTask_RegressLFPPower_PictureOnset_Multichannels(tdt_data_dir,hdf_list_stim[1], syncHDF_list_stim[1], all_units, trial_start, trial_end)
 
-spike_dir = dir + 'picture_onset_fr/'
+lfp_dir = dir + 'picture_onset_lfp/'
+filenames = listdir(lfp_dir)
+
+pvalues = np.zeros((len(filenames),7))
+beta = np.zeros((len(filenames), 7))
+sig_beta = np.zeros((len(filenames), 7))
+band = []
+for i,filen in enumerate(filenames):
+	print(filen)
+	data = dict()
+	sp.io.loadmat(lfp_dir + filen, data)
+	band += [filen[filen.index('Band')+5:-4]]
+	regression_labels = data['regression_labels']
+	pvalues[i,:] = np.ravel(data['pvalues_blockA'])
+	beta[i,:] = np.ravel(data['beta_values_blockA'])
+	sig_beta[i,:] = beta[i,:]*np.ravel(np.less(pvalues[i,:], 0.05))
+'''
+
+
+
+
+spike_dir = dir + 'hold_center_fr/'
 filenames = listdir(spike_dir)
 
 rsquared_blockA_cd = np.array([])
@@ -461,7 +485,7 @@ for filen in filenames:
 				sig_reg_blockA_acc = np.vstack([sig_reg_blockA_acc, sig_beta_blockA])
 			count_blockA_acc += 1
 
-			val_check = [sig_beta_blocksAB[0], sig_beta_blocksAB[1]]
+			val_check = [sig_beta_blockA[0], sig_beta_blockA[1]]
 			val_check = np.greater(np.abs(val_check),0)
 
 			LV_enc = 0
@@ -469,7 +493,7 @@ for filen in filenames:
 			no_val_enc = 0
 			if val_check[0]==1:
 				LV_enc = 1
-				beta_late_lv = sig_beta_blocksAB[0]
+				beta_late_lv = sig_beta_blockA[0]
 
 			if val_check[1]==1:
 				HV_enc = 1
@@ -819,4 +843,356 @@ plt.ylabel("Normalized Delta FR (Block A' - Block A) (A.U.)")
 plt.legend()
 plt.title('Non-value-coding Cd Units')
 plt.show()
-'''
+
+
+#### RPE units
+spike_rpe_dir = dir + 'check_reward_fr/'
+filenames_rpe = listdir(spike_rpe_dir)
+
+rsquared_blockA_cd_rpe = np.array([])
+rsquared_blockA_acc_rpe = np.array([])
+sig_reg_blockA_cd_rpe = np.array([])		# array to hold all significant regressors
+sig_reg_blockA_acc_rpe = np.array([])		# array to hold all significant regressors
+num_units_rpe = len(filenames_rpe)
+
+count_RPE_pos_blockA_cd = 0
+count_RPE_neg_blockA_cd = 0
+count_RPE_both_blockA_cd = 0
+count_RPE_choice_blockA_cd = 0
+count_RPE_reward_blockA_cd = 0
+
+count_RPE_pos_blockA_acc = 0
+count_RPE_neg_blockA_acc = 0
+count_RPE_both_blockA_acc = 0
+count_RPE_choice_blockA_acc = 0
+count_RPE_reward_blockA_acc = 0
+
+count_RPE_blockA_acc = 0
+count_RPE_blockA_cd = 0
+
+channels_RPE_blockA_cd = np.array([])
+channels_RPE_blockA_acc = np.array([])
+
+stim_file = 0
+
+RPE_early_pos_cd_sham = []
+FR_early_pos_cd_sham = []
+RPE_early_neg_cd_sham = []
+FR_early_neg_cd_sham = []
+RPE_early_both_cd_sham = []
+FR_early_both_cd_sham = []
+RPE_early_other_cd_sham = []
+FR_early_other_cd_sham = []
+
+RPE_early_pos_acc_sham = []
+FR_early_pos_acc_sham = []
+RPE_early_neg_acc_sham = []
+FR_early_neg_acc_sham = []
+RPE_early_both_acc_sham = []
+FR_early_both_acc_sham = []
+RPE_early_other_acc_sham = []
+FR_early_other_acc_sham = []
+
+RPE_early_pos_cd_stim = []
+FR_early_pos_cd_stim = []
+RPE_early_neg_cd_stim = []
+FR_early_neg_cd_stim = []
+RPE_early_both_cd_stim = []
+FR_early_both_cd_stim = []
+RPE_early_other_cd_stim = []
+FR_early_other_cd_stim = []
+
+RPE_early_pos_acc_stim = []
+FR_early_pos_acc_stim = []
+RPE_early_neg_acc_stim = []
+FR_early_neg_acc_stim = []
+RPE_early_both_acc_stim = []
+FR_early_both_acc_stim = []
+RPE_early_other_acc_stim = []
+FR_early_other_acc_stim = []
+
+
+# recording beta values for RPE coding units
+beta_early_rpe_pos_cd_stim = np.array([])
+beta_early_rpe_pos_acc_stim = np.array([])
+beta_early_rpe_pos_cd_sham = np.array([])
+beta_early_rpe_pos_acc_sham = np.array([])
+beta_early_rpe_neg_cd_stim = np.array([])
+beta_early_rpe_neg_acc_stim = np.array([])
+beta_early_rpe_neg_cd_sham = np.array([])
+beta_early_rpe_neg_acc_sham = np.array([])
+beta_early_rpe_both_cd_stim = np.array([])
+beta_early_rpe_both_acc_stim = np.array([])
+beta_early_rpe_both_cd_sham = np.array([])
+beta_early_rpe_both_acc_sham = np.array([])
+
+
+syncHDF_list_stim_flat = [item for sublist in syncHDF_list_stim for item in sublist]
+
+
+"""
+Loop through pre-processed files to count up the number of neurons that have significant beta values for the various
+regressors. 
+"""
+
+
+for filen in filenames_rpe:
+	print(filen)
+	data = dict()
+	sp.io.loadmat(spike_rpe_dir + filen, data)
+	chan_ind = filen.index('Channel')
+	unit_ind = filen.index('Unit')
+	channel_num = float(filen[chan_ind + 8:unit_ind - 3])
+
+	sync_name = dir + filen[:chan_ind-3] + '_syncHDF.mat'
+	#print sync_name
+	if sync_name in syncHDF_list_stim_flat:
+		stim_file = 1
+	else:
+		stim_file = 0
+	#print stim_file
+	
+	regression_labels = data['regression_labels']
+
+	if channel_num in cd_units:
+
+		if ('beta_values_blockA' in data.keys()):
+			beta_blockA = np.ravel(data['beta_values_blockA'])
+			pvalues_blockA = np.ravel(data['pvalues_blockA'])
+			sig_beta_blockA = beta_blockA*np.ravel(np.less(pvalues_blockA, 0.05))
+			if count_RPE_blockA_cd==0:
+				sig_reg_blockA_cd_rpe = sig_beta_blockA
+			else:
+				sig_reg_blockA_cd_rpe = np.vstack([sig_reg_blockA_cd_rpe, sig_beta_blockA])
+			count_RPE_blockA_cd += 1
+
+			if 'RPE_early' in data.keys():
+				RPE_early = np.ravel(data['RPE_early'])
+			else:
+				RPE_early = np.array([])
+			if 'FR_early' in data.keys():
+				FR_early = np.ravel(data['FR_early'])
+			else:
+				FR_early = np.array([])
+
+			"""
+			For Luigi, only +RPE, -RPE, choice and reward were used as the regressors.
+			"""
+			val_check = [sig_beta_blockA[0], sig_beta_blockA[1]]
+			val_check = np.greater(np.abs(val_check),0)
+
+			RPE_pos_enc = 0
+			RPE_neg_enc = 0
+			no_RPE_enc = 0
+			if val_check[0]==1:
+				RPE_pos_enc = 1
+			
+			if val_check[1]==1:
+				RPE_neg_enc = 1
+
+			if ((RPE_pos_enc==1) and (RPE_neg_enc==0)):
+				count_RPE_pos_blockA_cd += 1
+				if stim_file:
+					RPE_early_pos_cd_stim += [RPE_early]
+					FR_early_pos_cd_stim += [FR_early]
+					beta_early_rpe_pos_cd_stim = np.append(beta_early_rpe_pos_cd_stim, beta_blockA)
+				else:
+					RPE_early_pos_cd_sham += [RPE_early]
+					FR_early_pos_cd_sham += [FR_early]
+					beta_early_rpe_pos_cd_sham = np.append(beta_early_rpe_pos_cd_sham, beta_blockA)
+			
+			elif ((RPE_pos_enc==0) and (RPE_neg_enc==1)):
+				count_RPE_neg_blockA_cd += 1
+				if stim_file:
+					RPE_early_neg_cd_stim += [RPE_early]
+					FR_early_neg_cd_stim += [FR_early]
+					beta_early_rpe_neg_cd_stim = np.append(beta_early_rpe_neg_cd_stim, beta_blockA)
+				else:
+					RPE_early_neg_cd_sham += [RPE_early]
+					FR_early_neg_cd_sham += [FR_early]
+					beta_early_rpe_neg_cd_sham = np.append(beta_early_rpe_neg_cd_sham, beta_blockA)
+
+			elif ((RPE_pos_enc==1) and (RPE_neg_enc==1)):
+				count_RPE_both_blockA_cd += 1
+				if stim_file:
+					RPE_early_both_cd_stim += [RPE_early]
+					FR_early_both_cd_stim += [FR_early]
+					beta_early_rpe_both_cd_stim = np.append(beta_early_rpe_both_cd_stim, beta_blockA)
+				else:
+					RPE_early_both_cd_sham += [RPE_early]
+					FR_early_both_cd_sham += [FR_early]
+					beta_early_rpe_both_cd_sham = np.append(beta_early_rpe_both_cd_sham, beta_blockA)
+			else:
+				no_RPE_enc = 1
+
+			if no_RPE_enc:
+				max_beta = np.argmax(np.abs(sig_beta_blockA))
+				if max_beta==2:
+					count_RPE_choice_blockA_cd += 1
+				if max_beta==3:
+					count_RPE_reward_blockA_cd += 1
+
+		if ('rsquared_blockA' in data.keys()):
+			rsquared_blockA_cd_rpe = np.append(rsquared_blockA_cd_rpe, data['rsquared_blockA'])
+		
+
+	else:
+		if ('beta_values_blockA' in data.keys()):
+			beta_blockA = np.ravel(data['beta_values_blockA'])
+			pvalues_blockA = np.ravel(data['pvalues_blockA'])
+			sig_beta_blockA = beta_blockA*np.ravel(np.less(pvalues_blockA, 0.05))
+			if count_RPE_blockA_acc==0:
+				sig_reg_blockA_acc_rpe = sig_beta_blockA
+			else:
+				sig_reg_blockA_acc_rpe = np.vstack([sig_reg_blockA_acc_rpe, sig_beta_blockA])
+			count_RPE_blockA_acc += 1
+
+			if 'RPE_early' in data.keys():
+				RPE_early = np.ravel(data['RPE_early'])
+			else:
+				RPE_early = np.array([])
+			if 'FR_early' in data.keys():
+				FR_early = np.ravel(data['FR_early'])
+			else:
+				FR_early = np.array([])
+
+			"""
+			For Luigi, only +RPE, -RPE, choice and reward were used as the regressors.
+			"""
+			val_check = [sig_beta_blockA[0], sig_beta_blockA[1]]
+			val_check = np.greater(np.abs(val_check),0)
+
+			RPE_pos_enc = 0
+			RPE_neg_enc = 0
+			no_RPE_enc = 0
+			if val_check[0]==1:
+				RPE_pos_enc = 1
+			
+			if val_check[1]==1:
+				RPE_neg_enc = 1
+
+			if ((RPE_pos_enc==1) and (RPE_neg_enc==0)):
+				count_RPE_pos_blockA_acc += 1
+				if stim_file:
+					RPE_early_pos_acc_stim += [RPE_early]
+					FR_early_pos_acc_stim += [FR_early]
+					beta_early_rpe_pos_acc_stim = np.append(beta_early_rpe_pos_acc_stim, beta_blockA)
+				else:
+					RPE_early_pos_acc_sham += [RPE_early]
+					FR_early_pos_acc_sham += [FR_early]
+					beta_early_rpe_pos_acc_sham = np.append(beta_early_rpe_pos_acc_sham, beta_blockA)
+			
+			elif ((RPE_pos_enc==0) and (RPE_neg_enc==1)):
+				count_RPE_neg_blockA_acc += 1
+				if stim_file:
+					RPE_early_neg_acc_stim += [RPE_early]
+					FR_early_neg_acc_stim += [FR_early]
+					beta_early_rpe_neg_acc_stim = np.append(beta_early_rpe_neg_acc_stim, beta_blockA)
+				else:
+					RPE_early_neg_acc_sham += [RPE_early]
+					FR_early_neg_acc_sham += [FR_early]
+					beta_early_rpe_neg_acc_sham = np.append(beta_early_rpe_neg_acc_sham, beta_blockA)
+
+			elif ((RPE_pos_enc==1) and (RPE_neg_enc==1)):
+				count_RPE_both_blockA_acc += 1
+				if stim_file:
+					RPE_early_both_acc_stim += [RPE_early]
+					FR_early_both_acc_stim += [FR_early]
+					beta_early_rpe_both_acc_stim = np.append(beta_early_rpe_both_acc_stim, beta_blockA)
+				else:
+					RPE_early_both_acc_sham += [RPE_early]
+					FR_early_both_acc_sham += [FR_early]
+					beta_early_rpe_both_acc_sham = np.append(beta_early_rpe_both_acc_sham, beta_blockA)
+			else:
+				no_RPE_enc = 1
+
+			if no_RPE_enc:
+				max_beta = np.argmax(np.abs(sig_beta_blockA))
+				if max_beta==2:
+					count_RPE_choice_blockA_acc += 1
+				if max_beta==3:
+					count_RPE_reward_blockA_acc += 1
+
+		if ('rsquared_blockA' in data.keys()):
+			rsquared_blockA_acc_rpe = np.append(rsquared_blockA_acc_rpe, data['rsquared_blockA'])
+
+
+
+# R-squared: model fit plots
+avg_rsquared_blockA_cd_rpe = np.nanmean(rsquared_blockA_cd_rpe)
+sem_rsquared_blockA_cd_rpe = np.nanstd(rsquared_blockA_cd_rpe)/np.sqrt(len(rsquared_blockA_cd_rpe))
+
+avg_rsquared_blockA_acc_rpe = np.nanmean(rsquared_blockA_acc_rpe)
+sem_rsquared_blockA_acc_rpe = np.nanstd(rsquared_blockA_acc_rpe)/np.sqrt(len(rsquared_blockA_acc_rpe))
+
+width = 0.35
+ind = np.arange(2)
+plt.figure()
+plt.bar(ind, [avg_rsquared_blockA_cd_rpe, avg_rsquared_blockA_acc_rpe], width, color = 'y', yerr = [sem_rsquared_blockA_cd_rpe,sem_rsquared_blockA_acc_rpe])
+plt.text(ind[0]+0.1,0.35,'r2=%0.2f' % (avg_rsquared_blockA_cd_rpe))
+plt.text(ind[1]+0.1,0.30,'r2=%0.2f' % (avg_rsquared_blockA_acc_rpe))
+xticklabels = ['Cd', 'ACC']
+xticks = ind + width/2
+plt.xticks(xticks, xticklabels)
+plt.xlabel('Data used for fit')
+plt.ylabel('R-squared')
+plt.title('Linear Regression Fit: RPE')
+plt.legend()
+plt.show()
+
+# Pie charts of overall encoding and then value-coding 
+all_RPE_blockA_cd = float(count_RPE_pos_blockA_cd + count_RPE_neg_blockA_cd +  \
+						count_RPE_both_blockA_cd )
+all_RPE_blockA_acc = float(count_RPE_pos_blockA_acc + count_RPE_neg_blockA_acc +  \
+						count_RPE_both_blockA_acc )
+
+
+labels = ['RPE', 'Choice', 'Reward', 'Non-responsive']
+noncoding_RPE_blockA_cd = count_RPE_blockA_cd - all_RPE_blockA_cd - \
+						count_RPE_choice_blockA_cd - count_RPE_reward_blockA_cd
+noncoding_RPE_blockA_acc = count_RPE_blockA_acc - all_RPE_blockA_acc - \
+						count_RPE_choice_blockA_acc - count_RPE_reward_blockA_acc
+
+
+count_RPE_blockA_cd = float(count_RPE_blockA_cd)
+count_RPE_blockA_acc = float(count_RPE_blockA_acc)
+
+fracs_blockA_cd = [all_RPE_blockA_cd/count_RPE_blockA_cd, \
+					count_RPE_choice_blockA_cd/count_RPE_blockA_cd, \
+					count_RPE_reward_blockA_cd/count_RPE_blockA_cd, \
+					noncoding_RPE_blockA_cd/count_RPE_blockA_cd]
+fracs_blockA_acc = [all_RPE_blockA_acc/count_RPE_blockA_acc, \
+					count_RPE_choice_blockA_acc/count_RPE_blockA_acc, \
+					count_RPE_reward_blockA_acc/count_RPE_blockA_acc, \
+					noncoding_RPE_blockA_acc/count_RPE_blockA_acc]
+
+plt.figure()
+plt.subplot(2,1,1)
+plt.pie(fracs_blockA_cd, labels = labels, autopct='%.2f%%', shadow = False)
+plt.title('Cd - Block A - n = %0.f' % (count_RPE_blockA_cd))
+
+plt.subplot(2,1,2)
+plt.pie(fracs_blockA_acc, labels = labels, autopct='%.2f%%', shadow = False)
+plt.title('ACC - Block A - n = %0.f' % (count_RPE_blockA_acc))
+
+plt.show()
+
+
+labels_RPE = ['RPE-pos', 'RPE-neg', 'RPE-both']
+fracs_RPE_blockA_cd = [count_RPE_pos_blockA_cd/all_RPE_blockA_cd, \
+						count_RPE_neg_blockA_cd/all_RPE_blockA_cd, \
+						count_RPE_both_blockA_cd/all_RPE_blockA_cd]
+fracs_RPE_blockA_acc = [count_RPE_pos_blockA_acc/all_RPE_blockA_acc, \
+						count_RPE_neg_blockA_acc/all_RPE_blockA_acc, \
+						count_RPE_both_blockA_acc/all_RPE_blockA_acc]
+
+plt.figure()
+plt.subplot(2,1,1)
+plt.pie(fracs_RPE_blockA_cd, labels = labels_RPE, autopct='%.2f%%', shadow = False)
+plt.title('Cd - Block A')
+plt.subplot(2,1,2)
+plt.pie(fracs_RPE_blockA_acc, labels = labels_RPE, autopct='%.2f%%', shadow = False)
+plt.title('ACC - Block A')
+plt.show()
+
+

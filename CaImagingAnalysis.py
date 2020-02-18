@@ -14,55 +14,8 @@ from sklearn import metrics
 from sklearn.metrics import roc_curve, auc
 from sklearn.model_selection import cross_val_score
 
-'''
-Max tuning working for both conditions, but average tuning looks strange for RH-z1 & RH-z2.
-After fixing this, run population_psth.
-Need to spit out order indices for channels 8, 71, to highlight in plot.
-'''
 
 
-"""
-ut_orange = {
-0, 48, 99, 0
-248, 151, 31
-#f8971f
-}
-ut_yellow = {
-0, 14, 100, 0
-255, 214, 0
-#ffd600
-}
-ut_lightgreen = {
-40, 0, 89, 0
-166, 205, 87
-#a6cd57
-}
-ut_green = {
-63, 0, 97, 20
-87, 157, 66
-#579d42
-}
-ut_blue = {
-96, 0, 31, 2
-0, 169, 183
-#00a9b7
-}
-ut_darkblue = {
-100, 31, 8, 42
-0, 95, 134
-#005f86
-}
-ut_gray = {
-24, 9, 8, 22
-156, 173, 183
-#9cadb7
-}
-ut_beige = {
-3, 4, 14, 8
-214, 210, 196
-#d6d2c4
-}
-"""
 """
 Figure 2 Decoding of natural motor behavior from ensemble calcium dynamics (within session imaging with behavior)
 B. Example Session (individual cell examples and all cells that show the diversity of tuning - multiple examples of each cell type):
@@ -421,7 +374,7 @@ class CaData():
 					ith += 1
 				
 			fig.set_size_inches((40, 50), forward=False)	
-			plt.savefig("C:/Users/ss45436/Box/CNPRC/Figures/" + self.filename[:-4] + "_" + hand+ "h_z" + str(zone)+ "_" + event +  "_event_raster.svg", dpi = 500)
+			plt.savefig("C:/Users/ss45436/Box Sync/CNPRC/Figures/" + self.filename[:-4] + "_" + hand+ "h_z" + str(zone)+ "_" + event +  "_event_raster_tbefore_" + str(t_before) + "_tafter_" + str(t_after) + ".svg", dpi = 500)
 			plt.close()
 		
 		elif event == 'sp':
@@ -511,7 +464,7 @@ class CaData():
 		num_timepoints = len(times_align)
 		xticklabels = np.arange(-t_before,t_after,(t_before	+ t_after)/psth_length)
 		xticklabels = np.linspace(-t_before,t_after,psth_length)
-		b = signal.gaussian(39, 1)
+		b = signal.gaussian(5, 1)
 		
 		# Compute PSTH per unit
 		smooth_avg_psth = dict()
@@ -658,15 +611,15 @@ class CaData():
 			plt.subplot(num_rows,num_cols,i+1)
 			plt.title('Unit %i' % (c))
 			#plt.bar(psth_z1['times'],psth_z1[c],width = 0.5, color = 'r',label='%s - z1' % (hand))
-			plt.step(ts,psth_z1[c], color = 'r', where = 'mid',label='%s - z1' % (hand))
+			plt.step(ts,psth_z1[c], color = 'm', where = 'post',label='%s - z1' % (hand))
 			#plt.bar(psth_z2['times'],psth_z2[c], width = 0.5, color = 'b',label='%s - z2' % (hand2))
-			plt.step(ts,psth_z2[c], color = 'b', where = 'mid',label='%s - z2' % (hand2))
+			plt.step(ts,psth_z2[c], color = 'g', where = 'post',label='%s - z2' % (hand2))
 			plt.xlabel('secs')
 			plt.ylabel('event rate (Hz)')
 			plt.legend()
 
 		fig.set_size_inches((40, 50), forward=False)
-		plt.savefig("C:/Users/ss45436/Box/CNPRC/Figures/" + self.filename[:-4] + "_" + hand+ "h_" + event +  "_psth_compare_zones.svg")
+		plt.savefig("C:/Users/ss45436/Box/CNPRC/Figures/" + self.filename[:-4] + "_" + hand+ "h_" + event +  "_psth_compare_zones_tbefore_" + str(t_before) + "_tafter_" + str(t_after) + ".svg")
 		plt.close()
 
 		return psth_z1, psth_z2
@@ -855,7 +808,10 @@ class CaData():
 		for k,chan in enumerate(chans):
 			ith = 0
 			trace_data = self.unit_dict[chan].trace
-			trace_data_ts = self.unit_dict[chan].trace_ts	
+			trace_data_ts = self.unit_dict[chan].trace_ts
+
+			trace_mean = np.nanmean(trace_data)
+			trace_sd = np.nanstd(trace_data)	
 
 			trace_mat = np.zeros((len(times_align),(int(t_before)+ int(t_after))*10)) 		# data is subsampled to 10 Hz
 			for i, tp in enumerate(times_align):
@@ -868,7 +824,7 @@ class CaData():
 
 				ith += 1
 			
-			avg_trace[chan] = trace_mat
+			avg_trace[chan] = (trace_mat - trace_mean)/trace_sd
 		
 		avg_trace['times'] = np.arange(-t_before, t_after, 1./10)
 		
@@ -882,6 +838,7 @@ class CaData():
 
 		Inputs:
 		- hand: string; either 'l' or 'r' to indicate left or right hand, respectively
+		- hand2: string; either 'l' or 'r', used to indicate if comparison should be made with other hand
 		- zone: int; either 1 or 2 to indicate zone 1 or zone 2, respectively
 		- zone2: int; either 1 or 2, if want to do comparison between zones
 		- chans: array; integers indicating which channels to use to do pairwise correlations, default is all channels
@@ -895,6 +852,7 @@ class CaData():
 		
 		'''
 		# Determine trace parameters
+		hand2 = kwargs.get('hand2', hand)
 		t_before = kwargs.get('t_before', 3.)
 		t_after = kwargs.get('t_after', 3.)
 		t_resolution = kwargs.get('t_resolution', 1.0)
@@ -909,7 +867,7 @@ class CaData():
 		times = avg_trace['times']
 
 		if zone2 > 0:
-			avg_trace2 = self.trial_traces(hand,zone2,chans = chans, t_before	= t_before, t_after = t_after, t_resolution	= t_resolution, t_overlap = t_overlap)
+			avg_trace2 = self.trial_traces(hand2,zone2,chans = chans, t_before	= t_before, t_after = t_after, t_resolution	= t_resolution, t_overlap = t_overlap)
 			avg_trace_mat2 = np.zeros((len(chans),avg_trace2[chans[0]].shape[1]))
 			sem_trace_mat2 = avg_trace_mat2
 			times2 = avg_trace2['times']
@@ -939,18 +897,19 @@ class CaData():
 
 			plt.subplot(num_rows,num_cols,i+1)
 			plt.title('Unit %i - (%s)' % (c, self.unit_dict[c].name), fontsize = 24)
-			plt.plot(times,trace_avg, color = 'r')
-			plt.fill_between(times,trace_avg - trace_sem, trace_avg	+ trace_sem, facecolor = 'r', alpha = 0.25, label='%s - z%i' % (hand, zone))
-			figname = "C:/Users/ss45436/Box/CNPRC/Figures/" + self.filename[:-4] + "_" + hand+ "h_z" + str(zone)+ "_avg_traces.svg"
+			plt.plot(times,trace_avg, color = 'm')
+			plt.fill_between(times,trace_avg - trace_sem, trace_avg	+ trace_sem, facecolor = 'm', alpha = 0.25, label='%s - z%i' % (hand, zone))
+			figname = "C:/Users/ss45436/Box/CNPRC/Figures/" + self.filename[:-4] + "_" + hand+ "h_z" + str(zone)+ "_avg_traces_tbefore_" + str(t_before) + "_tafter_" + str(t_after) + ".svg"
 			if zone2 > 0:
-				plt.plot(times2,trace_avg2, color = 'b')
-				plt.fill_between(times2,trace_avg2 - trace_sem2, trace_avg2	+ trace_sem2, facecolor = 'b', alpha = 0.25, label='%s - z%i' % (hand, zone2))
-				figname = "C:/Users/ss45436/Box/CNPRC/Figures/" + self.filename[:-4] + "_" + hand+ "h_both_zones_avg_traces.svg"
-			#plt.ylim((0,3.75))
+				plt.plot(times2,trace_avg2, color = 'g')
+				plt.fill_between(times2,trace_avg2 - trace_sem2, trace_avg2	+ trace_sem2, facecolor = 'g', alpha = 0.25, label='%s - z%i' % (hand2, zone2))
+				figname = "C:/Users/ss45436/Box/CNPRC/Figures/" + self.filename[:-4] + "_" + hand +"h" + hand2+ "h_both_zones_avg_traces_tbefore_" + str(t_before) + "_tafter_" + str(t_after) + ".svg"
+			plt.ylim((-0.5,2))
+			plt.xlim((-t_before,t_after))
 			plt.legend(fontsize = 20)
 			plt.tick_params(labelsize = 20)
 			plt.xlabel('Time relative to zone entry (s)', fontsize = 24)
-			plt.ylabel('Average ' + r'$\Delta$' +'F', fontsize = 24)
+			plt.ylabel('Average z-scored' + r'$\Delta$' +'F', fontsize = 24)
 		fig.set_size_inches((40, 20), forward=False)	
 		plt.savefig(figname, dpi = 500)
 		plt.close()

@@ -281,6 +281,9 @@ def LFPPowerPerTrial_SingleBand_PerChannel(lfp,Fs,channels,window_start_times,t_
 		- t_before: length of time in s to look at before the alignment times in window_start_times
 		- t_after: length of time in s to look at after the alignment times 
 		- freq_window: list defining the window of frequencies to look at, should be of the form power_band = [f_min,f_max]
+
+	Outputs:
+		- power_mat: 2D array; 
 	'''
 	# Initialize parameters: convert to units of samples
 	t_before_samp = np.floor(t_before*Fs)  	# convert to units of samples
@@ -420,6 +423,7 @@ def computePowerFeatures(lfp_data, Fs, power_bands, event_indices, t_window):
 	padding = int(Fs*0.5)  # pad data on both ends for purpose of computation
 
 	N, M = event_indices.shape
+	print(N, M)
 	times = np.ones([N,M])
 	for t,time in enumerate(t_window):
 		times[:,t] = time*np.ones(N)
@@ -449,6 +453,8 @@ def computePowerFeatures(lfp_data, Fs, power_bands, event_indices, t_window):
 		features[str(trial)] = trial_powers
 
 	return features
+
+
 
 def computePowerFeatures_overTime(lfp_data, Fs, power_bands,  **kwargs):
 	'''
