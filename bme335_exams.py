@@ -256,3 +256,99 @@ def regression_example(n):
 	plt.savefig(fig_address + 'GPAvsSalary_subsample2_lr.png',bbox_inches='tight',dpi = 500)
 	plt.show()
 	return
+
+def regression_example2(n):
+	'''
+	Method for creating an example of linear regression for class. Fake data is used that relates
+	undergrad GPA to salary post-graduation.
+
+	Input:
+	- n: int; sample size of the fake data used
+
+	Output:
+
+	'''
+	fig_address = 'C:/Users/ss45436/Box/UT Austin/Courses/BME 335 - Fall 2019/Practice/Week 11/'
+
+	gpa = 3 + np.random.rand(n)
+	salary = (gpa + np.random.rand(n))*22000
+	subn = int(n/10)	
+
+	# Plot subsampling of data alone
+	plt.plot(gpa[:subn],salary[:subn],'o',markersize = 8, color = 'b')
+	plt.xlabel('GPA', fontsize = 24)
+	plt.ylabel('Salary', fontsize = 24)
+	plt.xlim((3,4))
+	plt.ylim((3*22000,5*22000))
+	plt.tick_params(labelsize = 20)
+	plt.savefig(fig_address + 'GPAvsSalary_example1.png',bbox_inches='tight',dpi = 500)
+	plt.show()
+
+	# Plot subsample with it's linear regression line
+	gpa_sub = gpa[:subn].reshape(subn,1)
+	salary_sub = salary[:subn].reshape(subn,1)
+	salary_model = linear_model.LinearRegression()
+	salary_model.fit(gpa_sub,salary_sub)
+	gpa = gpa.reshape(n,1)
+	salary_pred = salary_model.predict(gpa)	# do prediction with all gpa data so that prediction line spans the x-axis
+
+	plt.plot(gpa_sub,salary_sub,'o',markersize = 8, color = 'b')
+	plt.plot(gpa,salary_pred, linewidth = 3, color = 'b')
+	plt.xlabel('GPA', fontsize = 24)
+	plt.ylabel('Salary', fontsize = 24)
+	plt.xlim((3,4))
+	plt.ylim((3*22000,5*22000))
+	plt.tick_params(labelsize = 20)
+	plt.savefig(fig_address + 'GPAvsSalary_example1_lr.png',bbox_inches='tight',dpi = 500)
+	plt.show()
+
+	ind_sort = np.argsort(np.ravel(gpa_sub))
+
+	# Compute line manually
+	x_bar = np.nanmean(gpa_sub)
+	y_bar = np.nanmean(salary_sub)
+	print('x_bar:', x_bar)
+	print('y_bar:', y_bar)
+	Lxx = np.sum((gpa_sub - np.nanmean(gpa_sub))**2)
+	Lxy = np.sum((gpa_sub - np.nanmean(gpa_sub))*(salary_sub - np.nanmean(salary_sub)))
+
+	print('Lxx:', Lxx)
+	print('Lxy:', Lxy)
+
+	b = Lxy/Lxx
+	a = np.nanmean(salary_sub) - b*np.nanmean(gpa_sub)
+
+	print('b:', b)
+	print('a:', a)
+
+	salary_sub_hat = a + b*gpa_sub
+
+	plt.plot(gpa_sub,salary_sub,'o',markersize = 8, color = 'b')
+	plt.plot(gpa,salary_pred, linewidth = 3, color = 'b')
+	plt.plot(gpa_sub, salary_sub_hat,'o', markersize = 8, color = 'm')
+	plt.plot(gpa, y_bar*np.ones(n),'r--')
+	plt.xlabel('GPA', fontsize = 24)
+	plt.ylabel('Salary', fontsize = 24)
+	plt.xlim((3,4))
+	plt.ylim((3*22000,5*22000))
+	plt.tick_params(labelsize = 20)
+	plt.savefig(fig_address + 'GPAvsSalary_example1_lr_predictedpoints.png',bbox_inches='tight',dpi = 500)
+	plt.show()
+
+	k = 1
+
+	res_ss = np.sum((salary_sub - salary_sub_hat)**2)
+	res_ms = res_ss/(subn - k - 1)
+	reg_ss = np.sum((salary_sub_hat - y_bar)**2)
+	reg_ms = reg_ss/k
+
+	rsquared = reg_ss/(reg_ss + res_ss)
+
+	print('ResSS:', res_ss)
+	print('RegSS:', reg_ss)
+
+	F = reg_ms/res_ms
+
+	print('F:', F)
+	
+	return np.ravel(gpa_sub)[ind_sort], np.ravel(salary_sub)[ind_sort], np.ravel(salary_sub_hat)[ind_sort]
