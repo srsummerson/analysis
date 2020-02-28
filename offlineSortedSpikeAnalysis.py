@@ -23,9 +23,17 @@ class OfflineSorted_CSVFile():
 		self.event = np.ravel(np.array(pd.DataFrame(self.df, columns = [u'EVENT'])))[0]
 		self.times = np.ravel(np.array(pd.DataFrame(self.df, columns = [u'TIME'])))
 		self.channel = np.ravel(np.array(pd.DataFrame(self.df, columns = [u'CHAN'])))
+		if 'GOODCHAN' in self.df.columns:
+			self.sorted_good_channels = np.ravel(np.array(pd.DataFrame(self.df, columns = [u'GOODCHAN'])))
+			self.sorted_good_channels = self.sorted_good_channels[~np.isnan(self.sorted_good_channels)]
+			self.sorted_good_chans_sc, self.total_sorted_good_units = self.find_sorted_good_chan_sc()
+			self.sorted_good_channels = np.unique(self.sorted_good_channels)
+			
 		# Adjust the channel numbers if this is for channels 97 - 160 that are recorded on the second RZ2.
 		if self.event == 'eNe2':
 			self.channel += 96
+			if 'GOODCHAN' in self.df.columns:
+				self.sorted_good_channels += 96
 		self.sort_code = np.ravel(np.array(pd.DataFrame(self.df, columns = [u'SORT'])))
 		self.samp_rate = np.ravel(np.array(pd.DataFrame(self.df, columns = [u'Sampling_Freq'])))[0]
 		self.num_waveform_pts = np.ravel(np.array(pd.DataFrame(self.df, columns = [u'NumOfPoints'])))[0]
@@ -37,6 +45,22 @@ class OfflineSorted_CSVFile():
 		# Find units with non-noisy recorded data. Recall that sort code 31 is for noise events. 
 		self.good_units = np.ravel(np.nonzero(np.logical_and(np.greater(self.sort_code, 0),np.less(self.sort_code, 31))))
 		self.good_channels = np.unique(self.channel[self.good_units])
+
+	def find_sorted_good_chan_sc(self):
+		'''
+		Method that returns dictionary with keys as the sorted_good_channels and entries as the associated
+		good sort codes.
+		'''
+		sorted_good_sc = np.ravel(np.array(pd.DataFrame(self.df, columns = [u'GOODSC'])))
+		sorted_good_sc = sorted_good_sc[~np.isnan(sorted_good_sc)]
+		sc = dict()
+		total_units = 0
+		for chan in np.unique(self.sorted_good_channels):
+			sc_chan = sorted_good_sc[self.sorted_good_channels==chan]
+			total_units += len(sc_chan)
+			sc[chan] = sc_chan
+		return sc, total_units
+
 
 	def find_chan_sc(self, chan):
 		'''
