@@ -148,11 +148,12 @@ num_files = len(hdf_list)
 t_before = 1
 t_after = 3
 smoothed = 1
-
+'''
 for i in range(num_files):
 	hdf = hdf_list[i]
 	sync = syncHDF_list[i]
 	spike = spike_list[i]
+	print(spike)
 
 	if spike[0]!= ['']:
 		spike_data1 = OfflineSorted_CSVFile(spike[0][0])
@@ -161,7 +162,7 @@ for i in range(num_files):
 			spike_data2 = OfflineSorted_CSVFile(spike[0][1])
 			spike_data2.plot_all_avg_waveform()
 
-
+'''
 
 		
 
@@ -193,6 +194,8 @@ for i,filen in enumerate(filenames):
 
 spike_dir = dir + 'hold_center_fr/'
 filenames = listdir(spike_dir)
+spike_rpe_dir = dir + 'check_reward_fr/'
+filenames_rpe = listdir(spike_rpe_dir)
 
 rsquared_blockA_cd = np.array([])
 rsquared_blocksAB_cd = np.array([])
@@ -293,12 +296,54 @@ syncHDF_list_stim_flat = [item for sublist in syncHDF_list_stim for item in subl
 
 
 """
-Loop through pre-processed files to count up the number of neurons that have significant beta values for the various
-regressors. 
+Loop through pre-processed files to find neurons that are re-sorted as good units based on waveforms
 """
+good_filenames = []
+for i in range(num_files):
+	spike = spike_list[i]
+	sync = syncHDF_list[i]
+	
+	spike_data1 = OfflineSorted_CSVFile(spike[0][0])
+	sorted_good_chans_sc1 = spike_data1.sorted_good_chans_sc
+	channels1 = list(sorted_good_chans_sc1.keys())
+
+	for j,chann in enumerate(channels1):
+		scs = sorted_good_chans_sc1[chann]
+		for sc in scs:
+			file_prefix = sync[0][-28:-12]
+			if file_prefix=='igi20170915-2_b1':
+				file_prefix = sync[0][-30:-12]
+			filename = file_prefix + ' - Channel ' + str(int(chann)) + ' - Unit ' + str(int(sc)) + '.mat'
+			good_filenames += [filename]
 
 
-for filen in filenames:
+	if spike[0][1]!='':
+		spike_data2 = OfflineSorted_CSVFile(spike[0][1])
+		sorted_good_chans_sc2= spike_data2.sorted_good_chans_sc
+		channels2 = list(sorted_good_chans_sc2.keys())
+
+		for j,chann in enumerate(channels2):
+			scs = sorted_good_chans_sc2[chann]
+			for sc in scs:
+				file_prefix = sync[0][-28:-12]
+				if file_prefix=='igi20170915-2_b1':
+					file_prefix = sync[0][-30:-12]
+				filename = file_prefix + ' - Channel ' + str(int(chann)) + ' - Unit ' + str(int(sc)) + '.mat'
+				good_filenames += [filename]
+
+check = np.zeros(len(good_filenames))
+check_rpe = np.zeros(len(good_filenames))
+for k in range(len(good_filenames)):
+	if good_filenames[k] in filenames:
+		check[k] = 1
+	if good_filenames[k] in filenames_rpe:
+		check_rpe[k] = 1
+file_inds = np.nonzero(check)[0]
+file_inds_rpe = np.nonzero(check_rpe)[0]
+good_files = [good_filenames[i] for i in file_inds]
+good_files_rpe = [good_filenames[i] for i in file_inds_rpe]
+
+for filen in good_files:
 	print(filen)
 	data = dict()
 	sp.io.loadmat(spike_dir + filen, data)
@@ -936,7 +981,7 @@ regressors.
 """
 
 
-for filen in filenames_rpe:
+for filen in good_files_rpe:
 	print(filen)
 	data = dict()
 	sp.io.loadmat(spike_rpe_dir + filen, data)

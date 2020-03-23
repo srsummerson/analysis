@@ -4674,6 +4674,209 @@ def TwoTargetTask_SpikeAnalysis_SingleChannel(hdf_files, syncHDF_files, spike_fi
 	smooth_psth = [smooth_psth_l, smooth_psth_h]
 	return reg_psth, smooth_psth, all_raster_l, all_raster_h
 
+def TwoTargetTask_SpikeAnalysis_PSTH_AllSortedGoodChannels(hdf_files, syncHDF_files, spike_files, align_to, t_before, t_after, plot_output):
+	'''
+
+	This method aligns spiking data to behavioral choices 
+	in the Two Target Task, where there is a low-value and high-value target. This version does not 
+	differentiate between choices in different blocks. It generates PSTHs for all re-sorted good channels
+	and plots them in a single figure.
+
+	Inputs:
+	- hdf_files: list of N hdf_files corresponding to the behavior in the three target task
+	- syncHDF_files: list of N syncHDF_files that containes the syncing DIO data for the corresponding hdf_file and it's
+					TDT recording. If TDT data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, syncHDF_files should have the form [syncHDF_file1.mat, '']
+	- spike_files: list of N tuples of spike_files, where each entry is a list of 2 spike files, one corresponding to spike
+					data from the first 96 channels and the other corresponding to the spike data from the last 64 channels.
+					If spike data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, the hdf_files and syncHDF_files will both have 2 file names, and the 
+					spike_files entry should be of the form [[spike_file1.csv, spike_file2.csv], ''].
+	- align_to: integer in range [1,2] that indicates whether we align the (1) picture onset, a.k. center-hold or (2) check_reward.
+	- plot_output: binary indicating whether output should be plotted + saved or not
+
+	Outputs:
+	- reg_psth: a 2 x N array, where the first row corresponds to the psth values for trials where the low-value 
+				target was selected and the second row corresponds to the psth values for trials where the high-value
+				target was selected
+	- smooth_psth: a 2 x N array of the same format as reg_psth, but with values taken from psths smoothed with a 
+				Gaussian kernel
+	- all_raster_l: a dictionary with number of elements equal to the number of trials where the low-value target was selected,
+				where each element contains spike times for the designated unit within that trial
+	- all_raster_h: a dictionary with number of elements equal to the number of trials where the high-value target was selected,
+				where each element contains spike times for the designated unit within that trial
+	'''
+	num_files = len(hdf_files)
+	trials_per_file = np.zeros(num_files)
+	num_successful_trials = np.zeros(num_files)
+
+	# Define timing parameters for PSTHs
+	t_resolution = 0.1 		# 100 ms time bins
+	num_bins = len(np.arange(-t_before, t_after, t_resolution)) - 1
+
+	# Define arrays to save psth for each trial
+	smooth_psth_l = np.array([])
+	smooth_psth_h = np.array([])
+	psth_l = np.array([])
+	psth_h = np.array([])
+
+	'''
+	Get data for each set of files
+	'''
+	for i in range(num_files):
+		# Load behavior data
+		cb = ChoiceBehavior_TwoTargets(hdf_files[i])
+		num_successful_trials[i] = len(cb.ind_check_reward_states)
+		target_options, target_chosen, rewarded_choice = cb.TrialOptionsAndChoice()
+
+		# Find times corresponding to center holds of successful trials
+		ind_hold_center = cb.ind_check_reward_states - 4
+		ind_check_reward = cb.ind_check_reward_states
+		if align_to == 1:
+			inds = ind_hold_center
+		elif align_to == 2:
+			inds = ind_check_reward
+
+		# Load spike data: 
+		if (spike_files[i] != ''):
+			# Find lfp sample numbers corresponding to these times and the sampling frequency of the lfp data
+			lfp_state_row_ind, lfp_freq = cb.get_state_TDT_LFPvalues(inds, syncHDF_files[i])
+			# Convert lfp sample numbers to times in seconds
+			times_row_ind = lfp_state_row_ind/float(lfp_freq)
+
+			# Load spike data
+			if (spike_files[i][0] != ''):
+				spike1 = OfflineSorted_CSVFile(spike_files[i][0])
+				spike1_good_channels = spike1.sorted_good_chans_sc
+				spike2_good_channels = []
+			elif (spike_files[i][1] != ''):
+				spike2 = OfflineSorted_CSVFile(spike_files[i][1])
+				spike2_good_channels = spike2.sorted_good_chans_sc
+				spike1_good_channels = []
+
+			##############
+			# STOPPED HERE
+			##############
+
+			# 2. L chosen
+			L_ind = np.ravel(np.nonzero([np.array_equal(target_chosen[j,:], [1,0]) for j in range(int(num_successful_trials[i]))]))
+			if not spike2_good_channels:
+				avg_psth_l, smooth_avg_psth_l = spike1.compute_psth(spike1_good_channels, sc, times_row_ind[L_ind],t_before,t_after,t_resolution)
+				raster_l = spike1.compute_raster(spike1_good_channels, sc, times_row_ind[L_ind],t_before,t_after)
+			else:
+				avg_psth_l, smooth_avg_psth_l = spike2.compute_psth(spike2_good_channels, sc, times_row_ind[L_ind],t_before,t_after,t_resolution)
+				raster_l = spike2.compute_raster(spike1_good_channels, sc, times_row_ind[L_ind],t_before,t_after)
+			if i == 0:
+				psth_l = avg_psth_l
+				smooth_psth_l = smooth_avg_psth_l
+				all_raster_l = raster_l
+			else:
+				psth_l = np.vstack([psth_l, avg_psth_l])
+				smooth_psth_l = np.vstack([smooth_psth_l, smooth_avg_psth_l])
+				all_raster_l.update(raster_l)
+
+			# 5. H chosen
+			H_ind = np.ravel(np.nonzero([np.array_equal(target_chosen[j,:], [0,1]) for j in range(int(num_successful_trials[i]))]))
+			if not spike2_good_channels:
+				avg_psth_h, smooth_avg_psth_h = spike1.compute_psth(spike1_good_channels, sc, times_row_ind[H_ind],t_before,t_after,t_resolution)
+				raster_h = spike1.compute_raster(spike1_good_channels, sc, times_row_ind[H_ind],t_before,t_after)
+			else:
+				avg_psth_h, smooth_avg_psth_h = spike2.compute_psth(spike2_good_channels, sc, times_row_ind[H_ind],t_before,t_after,t_resolution)
+				raster_h = spike2.compute_raster(spike2_good_channels, sc, times_row_ind[H_ind],t_before,t_after)
+			if i == 0:
+				psth_h = avg_psth_h
+				smooth_psth_h = smooth_avg_psth_h
+				all_raster_h = raster_h
+			else:
+				psth_h = np.vstack([psth_h, avg_psth_h])
+				smooth_psth_h = np.vstack([smooth_psth_h, smooth_avg_psth_h])
+				all_raster_h.update(raster_h)
+
+	# Plot average rate for all neurons divided in six cases of targets on option
+	if plot_output:
+		plt.figure(0)
+		b = signal.gaussian(39,0.6)
+		avg_psth_l = np.nanmean(psth_l, axis = 0)
+		sem_avg_psth_l = np.nanstd(psth_l, axis = 0)/np.sqrt(psth_l.shape[0])
+		#smooth_avg_psth_l = np.nanmean(smooth_psth_l, axis = 0)
+		smooth_avg_psth_l = filters.convolve1d(np.nanmean(psth_l,axis=0), b/b.sum())
+		sem_smooth_avg_psth_l = np.nanstd(smooth_psth_l, axis = 0)/np.sqrt(smooth_psth_l.shape[0])
+
+		avg_psth_h = np.nanmean(psth_h, axis = 0)
+		sem_avg_psth_h = np.nanstd(psth_h, axis = 0)/np.sqrt(psth_h.shape[0])
+		smooth_avg_psth_h = np.nanmean(smooth_psth_h, axis = 0)
+		smooth_avg_psth_h = filters.convolve1d(np.nanmean(psth_h,axis=0), b/b.sum())
+		sem_smooth_avg_psth_h = np.nanstd(smooth_psth_h, axis = 0)/np.sqrt(smooth_psth_h.shape[0])
+		
+		y_min_l = (smooth_avg_psth_l - sem_smooth_avg_psth_l).min()
+		y_max_l = (smooth_avg_psth_l+ sem_smooth_avg_psth_l).max()
+		y_min_h = (smooth_avg_psth_h - sem_smooth_avg_psth_h).min()
+		y_max_h = (smooth_avg_psth_h+ sem_smooth_avg_psth_h).max()
+
+		y_min = np.array([y_min_l, y_min_h]).min()
+		y_max = np.array([y_max_l, y_max_h]).max()
+
+
+		num_trials = len(all_raster_l.keys())
+
+		linelengths = float((y_max - y_min))/num_trials
+		lineoffsets = 1
+		xticklabels = np.arange(-t_before,t_after-t_resolution,t_resolution)
+
+		ax1 = plt.subplot(1,2,1)
+		plt.title('All Trials')
+		plt.plot(xticklabels, smooth_avg_psth_l,'b', label = 'LV Chosen')
+		plt.fill_between(xticklabels, smooth_avg_psth_l - sem_smooth_avg_psth_l, smooth_avg_psth_l + sem_smooth_avg_psth_l, facecolor = 'b', alpha = 0.2)
+		#xticks = np.arange(0, len(xticklabels), 10)
+		#xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
+		#plt.xticks(xticks, xticklabels)
+		plt.xlabel('Time from Center Hold (s)')
+		plt.ylabel('Firing Rate (spk/s)')
+		ax1.get_yaxis().set_tick_params(direction='out')
+		ax1.get_xaxis().set_tick_params(direction='out')
+		ax1.get_xaxis().tick_bottom()
+		ax1.get_yaxis().tick_left()
+		
+
+		# DEFINE LINEOFFSETS AND LINELENGTHS BY Y-RANGE OF PSTH
+		for k in range(len(all_raster_l.keys())):
+			plt.eventplot(all_raster_l[k], colors=[[0,0,0]], lineoffsets= y_min + k*linelengths,linelengths=linelengths)
+		plt.legend()
+		plt.ylim((y_min - 1, y_max + 1))
+
+		ax2 = plt.subplot(1,2,2)
+		plt.plot(xticklabels, smooth_avg_psth_h, 'r', label = 'HV Chosen')
+		plt.fill_between(xticklabels, smooth_avg_psth_h - sem_smooth_avg_psth_h, smooth_avg_psth_h + sem_smooth_avg_psth_h, facecolor = 'r', alpha = 0.2)
+		#xticklabels = np.arange(-t_before,t_after-t_resolution,t_resolution)
+		#xticks = np.arange(0, len(xticklabels), 10)
+		#xticklabels = ['{0:.1f}'.format(xticklabels[k]) for k in xticks]
+		#plt.xticks(xticks, xticklabels)
+		plt.xlabel('Time from Center Hold (s)')
+		plt.ylabel('Firing Rate (spk/s)')
+		ax2.get_yaxis().set_tick_params(direction='out')
+		ax2.get_xaxis().set_tick_params(direction='out')
+		ax2.get_xaxis().tick_bottom()
+		ax2.get_yaxis().tick_left()
+
+		# DEFINE LINEOFFSETS AND LINELENGTHS BY Y-RANGE OF PSTH
+		for k in range(len(all_raster_h.keys())):
+			plt.eventplot(all_raster_h[k], colors=[[0,0,0]], lineoffsets= y_min + k*linelengths,linelengths=linelengths)
+		plt.legend()
+		plt.ylim((y_min - 1, y_max + 1))
+
+
+		#plt_name = syncHDF_files[i][34:-15]
+		#plt.savefig('/home/srsummerson/code/analysis/Mario_Performance_figs/'+plt_name+ '_' + str(align_to) +'_PSTH_Chan'+str(chann)+'-'+str(sc)+'.svg')
+		plt_name = syncHDF_files[i][syncHDF_files[i].index('Luigi201'):-15]
+		plt.savefig(dir_figs +plt_name+ '_' + str(align_to) +'_PSTH_Chan'+str(chann)+'-'+str(sc)+'.svg')
+		#print('Figure saved:',dir_figs +plt_name+ '_' + str(align_to) +'_PSTH_Chan'+str(chann)+'-'+str(sc)+'.svg')
+		
+		plt.close()
+
+	reg_psth = [psth_l, psth_h]
+	smooth_psth = [smooth_psth_l, smooth_psth_h]
+	return reg_psth, smooth_psth, all_raster_l, all_raster_h
+
 
 def TwoTargetTask_SpikeAnalysis_SingleChannel_RPE(hdf_files, syncHDF_files, spike_files, chann, sc, align_to, t_before, t_after, plot_output):
 	'''
