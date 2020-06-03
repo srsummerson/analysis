@@ -32,8 +32,6 @@ class OfflineSorted_CSVFile():
 		# Adjust the channel numbers if this is for channels 97 - 160 that are recorded on the second RZ2.
 		if self.event == 'eNe2':
 			self.channel += 96
-			if 'GOODCHAN' in self.df.columns:
-				self.sorted_good_channels += 96
 		self.sort_code = np.ravel(np.array(pd.DataFrame(self.df, columns = [u'SORT'])))
 		self.samp_rate = np.ravel(np.array(pd.DataFrame(self.df, columns = [u'Sampling_Freq'])))[0]
 		self.num_waveform_pts = np.ravel(np.array(pd.DataFrame(self.df, columns = [u'NumOfPoints'])))[0]
@@ -107,6 +105,39 @@ class OfflineSorted_CSVFile():
 			unit_chan = np.ravel(np.nonzero(np.equal(self.channel, chan)))
 			sc_chan = np.unique(self.sort_code[unit_chan])
 			sc_chan = np.array([sc for sc in sc_chan if (sc != 31)&(sc!=0)])
+			if sc_chan.size == 0:
+				avg_firing_rates[chan] = np.array([np.nan])
+			else:
+				unit_rates = np.zeros(len(sc_chan))
+				for i, sc in enumerate(sc_chan):
+					sc_unit = np.ravel(np.nonzero(np.equal(self.sort_code[unit_chan], sc)))
+					sc_times = self.times[unit_chan[sc_unit]]  	# times that this sort code on this channel was recorded
+					unit_rates[i] = len(sc_times)/float(self.times[-1] - self.times[0])
+
+				avg_firing_rates[chan] = unit_rates
+
+		return avg_firing_rates
+
+	def get_avg_firing_rates_scgiven(self,sc_dict):
+		'''
+		Method that returns the average firing rates of the channels and associated sort codes in the input dictionary.
+
+		Input:
+		- sc_dict: dict, keys are the channel numbers and elements are arrays with the associated sort codes for that channel
+
+		Output:
+		- avg_firing_rates: dict, keys are the channel numbers and elements are the firing rates for the different units
+							on that channel, where the length of the array corresponds to the number of sort codes indicated
+							in the input dictionary
+		'''
+		avg_firing_rates = dict()
+
+		channs = sc_dict.keys()
+
+		for chan in channs:
+			# First find number of units recorded on this channel
+			unit_chan = np.ravel(np.nonzero(np.equal(self.channel, chan)))
+			sc_chan = sc_dict[chan]
 			if sc_chan.size == 0:
 				avg_firing_rates[chan] = np.array([np.nan])
 			else:
