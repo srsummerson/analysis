@@ -185,6 +185,43 @@ class OfflineSorted_CSVFile():
 
 		return avg_firing_rates
 
+	def get_avg_firing_rates_scgiven_range(self,sc_dict, t_start, t_stop):
+		'''
+		Method that returns the average firing rates over a specified time window of the channels and 
+		associated sort codes in the input dictionary.
+
+		Inputs:
+		- sc_dict: dict, keys are the channel numbers and elements are arrays with the associated sort codes for that channel
+		- t_start: float representing time (s) at which to begin counting spikes
+		- t_stop: float representing time (s) at whic to stop counting spikes
+
+		Output:
+		- avg_firing_rates: dict, keys are the channel numbers and elements are the firing rates for the different units
+							on that channel, where the length of the array corresponds to the number of sort codes indicated
+							in the input dictionary
+		'''
+		avg_firing_rates = dict()
+
+		channs = sc_dict.keys()
+
+		for chan in channs:
+			# First find number of units recorded on this channel
+			unit_chan = np.ravel(np.nonzero(np.equal(self.channel, chan)))
+			sc_chan = sc_dict[chan]
+			if sc_chan.size == 0:
+				avg_firing_rates[chan] = np.array([np.nan])
+			else:
+				unit_rates = np.zeros(len(sc_chan))
+				for i, sc in enumerate(sc_chan):
+					sc_unit = np.ravel(np.nonzero(np.equal(self.sort_code[unit_chan], sc)))
+					sc_times = self.times[unit_chan[sc_unit]]  	# times that this sort code on this channel was recorded
+					spikes = (sc_times > t_start)&(sc_times < t_stop)  	# find spikes in this window
+					unit_rates[i] = np.sum(spikes)/float(t_stop - t_start)		# count spikes and divide by window length
+
+				avg_firing_rates[chan] = unit_rates
+
+		return avg_firing_rates
+
 	def plot_avg_waveform(self,chann, sc):
 		'''
 		Method that plots the average waveform of the unit, as well as example traces.
@@ -531,6 +568,120 @@ class OfflineSorted_CSVFile():
 				counter += 1
 
 		return avg_psth, smooth_avg_psth, np.array(unit_list)
+
+	def compute_multiple_channel_scgiven_avg_psth(self, sc_dict, times_align,t_before,t_after,t_resolution):
+		'''
+		Method that returns the average psth of spiking activity for all channels in channs array. The activity for all 
+		channels is aligned to the same event times in times_align.
+
+		Inputs:
+		- sc_dict: dict, keys are the channel numbers and elements are arrays with the associated sort codes for that channel
+		- times_align: array, 
+		- t_before: float, amount of time (seconds) of activity to be included before align times
+		- t_after: float, amount of time (seconds) of activity to be included after align times
+		- t_resolution: float, temporal resolution (in seconds) of bins used for psth
+
+		Outputs:
+		- avg_psth: array, (number of unique units) x (number of time points), containing the activity for each
+					channel unit averaged across the aligned timepoints
+		- smooth_avg_psth: array, (number of unique units) x (number of time points), containing the activity
+					for each channel averaged across the aligned timepoints and smoothed
+		- unit_list:  array, (number of unique units) x 2, the first column contains the channels used and the
+						second column contains the corresponding sort codes; the order that each identifier
+						appears in this array corresponds to the same order that the data comes from for
+						avg_psth and smooth_avg_psth
+		'''
+		unit_list = []
+		avg_psth = []
+		smooth_avg_psth = []
+		counter = 0
+
+		boxcar_length = 4
+		boxcar_window = signal.boxcar(boxcar_length)  # 2 bins before, 2 bins after for boxcar smoothing
+
+		channs = sc_dict.keys()
+
+		for chan in channs:
+			# First find number of units recorded on this channel
+			unit_chan = np.ravel(np.nonzero(np.equal(self.channel, chan)))
+			sc_chan = sc_dict[chan]
+
+			for sc in sc_chan:
+				psth_sc, smooth_psth_sc = self.compute_psth(chan,sc,times_align,t_before,t_after,t_resolution)
+				avg_psth_sc = np.nanmean(psth_sc, axis = 0)
+				smooth_avg_psth_sc = np.nanmean(smooth_psth_sc, axis = 0)
+				#avg_psth.append([avg_psth_sc])
+				if counter == 0:
+					avg_psth = avg_psth_sc
+					smooth_avg_psth = smooth_avg_psth_sc
+				else:
+					avg_psth = np.vstack([avg_psth,avg_psth_sc])
+					smooth_avg_psth = np.vstack([smooth_avg_psth, smooth_avg_psth_sc])
+				unit_list.append([chan, sc])
+				counter += 1
+
+		return avg_psth, smooth_avg_psth, np.array(unit_list)
+
+	def activity_heatmaps(sc_dict, times_align, t_before, t_after, t_resolution):
+		'''
+		This methods produces heatmaps that are essentially PSTHS for either multiple trials or multiple neurons
+		put together. It produces one heatmap per unit that gives the z-scored activity over time across multiple
+		trials, as indicated using the times_align input, and then also produces an heatmap of averaged activity
+		from all the units indicated.
+
+		Inputs:
+		- spike: OfflineSorted_CSVFile class object, contains all the spiking data
+		- units: dict, keys are the channels and entries are the sort codes for the corresponding channel
+		- times_align: array, times that the neural activity is aligned to
+		- t_before: float, time (in seconds) of activity that should be included before the times_align points
+		- t_after: float, time (in seconds) of activity that should be included after the times_align points
+		- t_resolution: float, temporal resolution (in seconds) that should be used to bin the neural activity
+
+		'''
+		channs = sc_dict.keys()
+		counter = 0
+
+		for chan in channs:
+			# First find number of units recorded on this channel
+			unit_chan = np.ravel(np.nonzero(np.equal(self.channel, chan)))
+			sc_chan = sc_dict[chan]
+
+			for sc in sc_chan:
+				psth_sc, smooth_psth_sc = self.compute_psth(chan,sc,times_align,t_before,t_after,t_resolution)
+				
+				# plot heatmap of trials x time bins for each unit
+				# NEED TO CHECK WHEN Z-SCORING SHOULD OCCUR
+				plt.figure()
+				cmap = sns.color_palette("Blues", 256)
+				sns.heatmap(smooth_psth_sc, cmap=cmap)
+				plt.xlabel('Time')
+				plt.ylabel('Trials')
+				plt.title('Normalized Activity over Time - Chan %i - Unit %i' % (chan,sc))
+				# plt.savefig() 
+				# should include an input that helps with naming so we can give different
+				#names for different conditions
+
+
+				avg_psth_sc = np.nanmean(psth_sc, axis = 0)
+				smooth_avg_psth_sc = np.nanmean(smooth_psth_sc, axis = 0)
+				#avg_psth.append([avg_psth_sc])
+				if counter == 0:
+					avg_psth = avg_psth_sc
+					smooth_avg_psth = smooth_avg_psth_sc
+				else:
+					avg_psth = np.vstack([avg_psth,avg_psth_sc])
+					smooth_avg_psth = np.vstack([smooth_avg_psth, smooth_avg_psth_sc])
+		
+		# plot heatmap of neurons x time bins, with averaged psth activity stacked for all neurons
+		plt.figure()
+		cmap = sns.color_palette("Blues", 256)
+		sns.heatmap(smooth_avg_psth, cmap=cmap)
+		plt.xlabel('Time')
+		plt.ylabel('Neurons')
+		plt.title('Normalized Average Activity over Time')
+		#plt.savefig() 
+
+		return
 
 class OfflineSorted_Spikes():
 	'''
