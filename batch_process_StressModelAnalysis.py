@@ -16,8 +16,8 @@ import seaborn as sns
 from heatmap import corrplot, heatmap
 import pandas as pd
 
-TDT_tank = 'C:/Users/ss45436/Box/UC Berkeley/Stress Task/Mario - Neural Data/'
-os.chdir(TDT_tank)
+#TDT_tank = 'C:/Users/ss45436/Box/UC Berkeley/Stress Task/Mario - Neural Data/'
+#os.chdir(TDT_tank)
 
 
 
@@ -471,7 +471,7 @@ and how it's distributed.
 '''
 
 # Define variables
-phys_dir = 'C:/Users/ss45436/Box/UC Berkeley/Stress Task/PowerFeatures/'
+phys_dir = 'C:/Users/ss45436/Box Sync/UC Berkeley/Stress Task/PowerFeatures/'
 phys_stim = dict()
 phys_control = dict()
 ibi_md_stress = dict()
@@ -521,7 +521,7 @@ ibi_time_treat_mean_late_control = np.zeros(len(filenames_control_luigi))
 
 luigi_all_files = filenames_stim_luigi + filenames_control_luigi
 mario_all_files = filenames_stim_mario + filenames_control_mario
-'''
+
 luigi_beta_ibi_time = np.zeros(len(luigi_all_files))
 luigi_beta_pd_time = np.zeros(len(luigi_all_files))
 luigi_beta_ibi_trial = np.zeros(len(luigi_all_files))
@@ -1128,12 +1128,12 @@ plt.xlabel('Blocks - Baseline')
 plt.ylabel('Average PD (a.u.)')
 plt.legend()
 plt.show()
-'''
+
 
 ##################################################################
 ## POWER FEATURE ANALYSIS
 ##################################################################
-
+"""
 colors = ['b','r','g','m']
 channel_group_labels = ['ofc', 'vmpfc','cd']
 ofc_power = np.empty((len(filenames_stim_luigi), 4, 3))
@@ -1576,3 +1576,4 @@ for i,name in enumerate(mario_all_files):
 	power.power_average_overtime(channel_groups = [mario_ofc_indices, mario_vmpfc_indices, mario_cd_indices], channel_group_labels = ['ofc', 'vmpfc','cd'])
 	power.power_heatmap_overtime(channel_groups = [mario_ofc_indices, mario_vmpfc_indices, mario_cd_indices])
 '''
+"""
