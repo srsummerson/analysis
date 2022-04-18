@@ -382,6 +382,46 @@ class OfflineSorted_CSVFile():
 			
 		return psth
 
+	def bin_data(self, t_resolution):
+		'''
+		Method to bin spike data of all good offline sorted neurons into a 2D array: spike-counts x num_neurons
+
+		Input:
+		- t_resolution: integer, temporal resolution of bins (s)
+
+		Output:
+
+		'''
+
+
+		data = np.array([])
+		good_channels = self.sorted_good_chans_sc
+
+		t_max = self.times[-1]
+		t_min = self.times[0]
+		t_bins = np.arange(t_min, t_max, 0.001)
+		t_bin_centers = (t_bins[1:] + t_bins[:-1])/2.
+		X = t_bin_centers
+
+
+		for chan in good_channels:
+			# First find number of units recorded on this channel
+			unit_chan = np.ravel(np.nonzero(np.equal(self.channel, chan)))
+			sc_chan = np.unique(self.sort_code[unit_chan])
+			sc_chan = np.array([sc for sc in sc_chan if ((sc != 31) and (sc != 0))])
+			
+			unit_rates = np.zeros(len(sc_chan))
+			for i, sc in enumerate(sc_chan):
+				#unit_name = 'Ch' + str(chan) + '_' + str(sc)
+				sc_unit = np.ravel(np.nonzero(np.equal(self.sort_code[unit_chan], sc)))
+				sc_times = self.times[unit_chan[sc_unit]]  	# times that this sort code on this channel was recorded
+				hist_spikes, bins = np.histogram(sc_times, t_bins)
+				unit_labels += ['Ch' + str(chan) + '_' + str(sc)]
+				X = np.vstack([X, hist_spikes])
+		print(size(X))
+
+		return X, unit_labels
+
 	def compute_raster(self,chann,sc,times_align,t_before,t_after):
 		'''
 		Method that returns times for spiking activity aligned to the sample numbers indicated in samples_align.
