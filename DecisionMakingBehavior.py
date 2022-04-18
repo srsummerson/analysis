@@ -6461,6 +6461,7 @@ def TwoTargetTask_SpikeAnalysis_PSTH_FactorAnalysis(hdf_files, syncHDF_files, sp
 	'''
 	for i in range(num_files):
 		# Load behavior data
+		print(hdf_files[i])
 		cb = ChoiceBehavior_TwoTargets(hdf_files[i])
 		num_successful_trials[i] = len(cb.ind_check_reward_states)
 		target_options, target_chosen, rewarded_choice = cb.TrialOptionsAndChoice()
@@ -6480,15 +6481,32 @@ def TwoTargetTask_SpikeAnalysis_PSTH_FactorAnalysis(hdf_files, syncHDF_files, sp
 			# Convert lfp sample numbers to times in seconds
 			times_row_ind = lfp_state_row_ind/float(lfp_freq)
 
-			# Load spike data
+			X1 = np.array([]) 		# placeholder
+			X2 = np.array([])		# placeholder
+
+			# Load spike data in 2D arrays
 			if (spike_files[i][0] != ''):
 				spike1 = OfflineSorted_CSVFile(spike_files[i][0])
 				spike1_good_channels = spike1.sorted_good_chans_sc
 				spike2_good_channels = []
+				X1, unit_labels1 = spike1.bin_data(0.1)
+				print(X1.shape)
 			elif (spike_files[i][1] != ''):
 				spike2 = OfflineSorted_CSVFile(spike_files[i][1])
 				spike2_good_channels = spike2.sorted_good_chans_sc
 				spike1_good_channels = []
+				X2, unit_labels2 = spike2.bin_data(0.1)
+				print(X2.shape)
+
+			# Combine arrays if necessary
+			if np.any(X1) && np.any(X2):
+				X = np.vstack([X1, X2])
+			elif np.any(X1):
+				X = X1
+			elif np.any(X2):
+				X = X2
+
+			print(X.shape)
 
 			####################
 			# Do factor analysis
