@@ -6262,6 +6262,7 @@ def TwoTargetTask_SpikeAnalysis_PSTH_FactorAnalysis(hdf_files, syncHDF_files, sp
 	'''
 	for i in range(num_files):
 		# Load behavior data
+		print(hdf_files[i])
 		cb = ChoiceBehavior_TwoTargets(hdf_files[i])
 		num_successful_trials[i] = len(cb.ind_check_reward_states)
 		target_options, target_chosen, rewarded_choice = cb.TrialOptionsAndChoice()
