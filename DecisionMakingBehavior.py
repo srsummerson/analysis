@@ -33,7 +33,7 @@ cd_units = [1, 3, 4, 17, 18, 20, 40, 41, 54, 56, 57, 63, 64, 72, 75, 81, 83, 88,
 acc_units = [5, 6, 19, 22, 30, 39, 42, 43, 55, 58, 59, 69, 74, 77, 85, 90, 91, 102, 105, 121, 128]	
 dir = "C:/Users/ss45436/Box Sync/UC Berkeley/Cd Stim/Neural Correlates/Mario/spike_data/"
 dir_luigi = "C:/Users/ss45436/Box Sync/UC Berkeley/Cd Stim/Neural Correlates/Luigi/spike_data/"
-dir_figs = "C:/Users/ss45436/Box Sync/UC Berkeley/Cd Stim/Neural Correlates/Paper/Figures/"		
+dir_figs = "C:/Users/ss45436/Box Sync/UC Berkeley/Cd Stim/Neural Correlates/Paper/Figures/"			
 
 def trial_sliding_avg(trial_array, num_trials_slide):
 
@@ -99,7 +99,7 @@ def Value_from_reward_history_TwoTargetTask(hdf_files):
 	plt.show()
 	'''
 
-	return q_hv_smooth, q_lv_smooth
+	return q_hv_smooth, q_lv_smooth, q_hv, q_lv
 
 def Value_from_reward_history_ThreeTargetTask(hdf_files):
 
@@ -5087,7 +5087,7 @@ def TwoTargetTask_SpikeAnalysis_SingleChannel_RPE(hdf_files, syncHDF_files, spik
 	smooth_psth = [smooth_psth_l, smooth_psth_h]
 	return reg_psth, smooth_psth, all_raster_l, all_raster_h
 
-def TwoTargetTask_RegressFiringRates_Value(hdf_files, syncHDF_files, spike_files, channel, sc, t_before, t_after, t_resolution, t_overlap, smoothed, trial_start,trial_end):
+def TwoTargetTask_RegressFiringRates_Value(hdf_files, syncHDF_files, spike_files, t_before, t_after, t_resolution, t_overlap, smoothed, align_to, trial_first, trial_last):
 	'''
 	This method regresses the firing rate of all units as a function of value over time. 
 
@@ -5105,63 +5105,190 @@ def TwoTargetTask_RegressFiringRates_Value(hdf_files, syncHDF_files, spike_files
 	- t_before: time before (s) the picture onset that should be included when computing the firing rate. t_before = 0 indicates
 					that we only look from the time of onset forward when considering the window of activity.
 	- t_after: time after (s) the picture onset that should be included when computing the firing rate.
+	- t_resolution: float, time (s) for size of bins of firing rates
 	- smoothed: boolean indicating whether to use smoothed firing rates (True) or not (False)
-	- trial_start: integer indicating at which trial to start for the analysis
-	- trial_end: integer indicating at which trial to end for the analysis
+	- align_to: indicates if aligning to hold_center or check_reward
 
 	'''
-	# 1. Load behavior data and pull out trial indices for the designated trial case
+
+	# 1. Get Q-values: taken as sliding average of reward history over 10 trials
+	Smooth_Q_high, Smooth_Q_low, Q_high, Q_low = Value_from_reward_history_TwoTargetTask(hdf_files)
+
+	# 2a. Load behavior data and pull out trial indices for the designated trial case.
+	# 2b. Get firing rates from units on channel around time of target presentation on all trials.
+	num_files = len(hdf_files)
+	print("Number of files: ", num_files)
+	'''
 	cb = ChoiceBehavior_TwoTargets_Stimulation(hdf_files, 100, 100)
 	total_trials = cb.num_successful_trials
-	trial_end = trial_end*(trial_end < total_trials) + total_trials*(trial_end >= total_trials)
-	#ind_trial_case = np.array([ind for ind in range(total_trials) if np.array_equal(targets_on[ind],trial_case)])
+	
+	
+	trials_per_file = np.zeros(num_files)
+	num_successful_trials = np.zeros(num_files)
+	'''
+	# Define timing parameters for PSTHs
+	num_timebins = int(np.rint((t_before + t_after - t_overlap)/(t_resolution - t_overlap)))
+
+	# Define arrays to save psth for each trial
+	smooth_avg_psth = dict()
+	avg_psth = dict()
 	
 
-	# 2. Get firing rates from units on indicated channel around time of target presentation on all trials. 
-	psth = TwoTargetTask_FiringRates_OverTime(hdf_files, syncHDF_files, spike_files, channel, sc, t_before, t_after, t_resolution, t_overlap)
-	num_timebins = psth.shape[1]
+	'''
+	Get data for each set of files
+	'''
+	keys = []
 
-	# 3. Get Q-values, chosen targets, and rewards
-	Q_low, Q_high = TwoTargetTask_Qvalues(hdf_files, 0.2, 1, 0, total_trials-1)
+	for i in range(num_files):
+		# Load behavior data
+		cb = ChoiceBehavior_TwoTargets(hdf_files[i])
+		#num_successful_trials[i] = len(cb.ind_check_reward_states)
+		target_options, target_chosen, rewarded_choice = cb.TrialOptionsAndChoice()
 
-	# 4. Do regression for each time bin.
+		# Find times corresponding to center holds of successful trials
+		ind_hold_center = cb.ind_check_reward_states - 4
+		ind_check_reward = cb.ind_check_reward_states
+		if align_to == 1:
+			inds = ind_hold_center
+		elif align_to == 2:
+			inds = ind_check_reward
+
+		# Load spike data: 
+		if (spike_files[i] != ''):
+			# Find lfp sample numbers corresponding to these times and the sampling frequency of the lfp data
+			lfp_state_row_ind, lfp_freq = cb.get_state_TDT_LFPvalues(inds, syncHDF_files[i])
+			# Convert lfp sample numbers to times in seconds
+			times_row_ind = lfp_state_row_ind/float(lfp_freq)
+
+			# Load spike data
+			if (spike_files[i][0] != ''):
+				spike1 = OfflineSorted_CSVFile(spike_files[i][0])
+				spike1_good_channels = spike1.sorted_good_chans_sc
+				
+				for chann in spike1_good_channels.keys():
+					for sc in spike1_good_channels[chann]:
+						psth, smooth_psth = spike1.compute_sliding_psth(chann, sc, times_row_ind,t_before,t_after,t_resolution,t_overlap)
+						# Normalize firing rates by z-scoring
+						psth = (psth - np.nanmean(psth))/np.nanstd(psth)
+						smooth_psth = (smooth_psth - np.mean(smooth_psth))/np.std(smooth_psth)
+						if i==0:
+							avg_psth[str(chann)+'-'+str(sc)] = psth
+							smooth_avg_psth[str(chann)+'-'+str(sc)] = smooth_psth
+							keys += [str(chann)+'-'+str(sc)]
+						elif (str(chann)+'-'+str(sc)) in keys:
+							avg_psth[str(chann)+'-'+str(sc)] = np.vstack([avg_psth[str(chann)+'-'+str(sc)], psth])
+							smooth_avg_psth[str(chann)+'-'+str(sc)] = np.vstack([smooth_avg_psth[str(chann)+'-'+str(sc)], smooth_psth])
+			
+			if (spike_files[i][1] != ''):
+				spike2 = OfflineSorted_CSVFile(spike_files[i][1])
+				spike2_good_channels = spike2.sorted_good_chans_sc
+				
+				for chann in spike2_good_channels.keys():
+					for sc in spike2_good_channels[chann]:
+						psth, smooth_psth = spike2.compute_sliding_psth(chann, sc, times_row_ind,t_before,t_after,t_resolution,t_overlap)
+						# Normalize firing rates by z-scoring
+						psth = (psth - np.nanmean(psth))/np.nanstd(psth)
+						smooth_psth = (smooth_psth - np.mean(smooth_psth))/np.std(smooth_psth)
+						if i==0:
+							avg_psth[str(chann)+'-'+str(sc)] = psth
+							smooth_avg_psth[str(chann)+'-'+str(sc)] = smooth_psth
+							keys += [str(chann)+'-'+str(sc)]
+						elif (str(chann)+'-'+str(sc)) in keys:
+							avg_psth[str(chann)+'-'+str(sc)] = np.vstack([avg_psth[str(chann)+'-'+str(sc)], psth])
+							smooth_avg_psth[str(chann)+'-'+str(sc)] = np.vstack([smooth_avg_psth[str(chann)+'-'+str(sc)], smooth_psth])
+			
+			print('Number of units:',len(avg_psth))
+			print('Size of psth:',avg_psth[str(chann)+'-'+str(sc)].shape)
+			
+		
+	
+	# 4. Do regression for each unit in each time bin.
 	#    Current regression uses Q-values and constant.
-	beta_Q_low = np.zeros(num_timebins)
-	beta_Q_high = np.zeros(num_timebins)
-	p_Q_low = np.zeros(num_timebins)
-	p_Q_high = np.zeros(num_timebins)
-	for k in range(num_timebins):
-		unit_data = psth[:,k]
-		#trial_inds = np.array([index for index in ind_trial_case if unit_data[index]!=0], dtype = int)
+	num_units = len(avg_psth.keys())
+	beta_Q_low = np.zeros((num_units, num_timebins))
+	beta_Q_high = np.zeros((num_units, num_timebins))
+	p_Q_low = np.zeros((num_units, num_timebins))
+	p_Q_high = np.zeros((num_units, num_timebins))
+	
+	for m, unit in enumerate(avg_psth.keys()):
+		psth = avg_psth[unit]
+		smooth_psth = smooth_avg_psth[unit]
+		print(psth.shape)
 
-		# look at all trial types within Blocks A and B
-		trial_inds = np.array([index for index in range(trial_start,trial_end) if unit_data[index]!=0], dtype = int)
-		x = np.vstack((Q_low[trial_inds], Q_high[trial_inds]))
-		x = np.transpose(x)
-		x = np.hstack((x, np.ones([len(trial_inds),1]))) 	# use this in place of add_constant which doesn't work when constant Q values are used
-		#x = sm.add_constant(x, prepend=False)
-		y = unit_data[trial_inds]
-		#y = y/np.max(y)  # normalize y
+		for k in range(num_timebins):
+			unit_data = psth[:,k]
+			#trial_inds = np.array([index for index in ind_trial_case if unit_data[index]!=0], dtype = int)
+			trial_start = trial_first
+			trial_end = np.min([trial_last, psth.shape[0]])
+			# look at all trial types within Blocks A and B
+			trial_inds = np.array([index for index in range(trial_start,trial_end) if (unit_data[index]!=0)&(target_options[index,:].all())], dtype = int)
+			x = np.vstack((Q_low[trial_inds], Q_high[trial_inds]))
+			x = np.transpose(x)
+			x = np.hstack((x, np.ones([len(trial_inds),1]))) 	# use this in place of add_constant which doesn't work when constant Q values are used
+			#x = sm.add_constant(x, prepend=False)
+			y = unit_data[trial_inds]
+			#y = y/np.max(y)  # normalize y
 
-		print("Regression for timebin ", k)
-		model_glm = sm.OLS(y,x)
-		fit_glm = model_glm.fit()
-		beta_Q_low[k] = fit_glm.params[0]
-		beta_Q_high[k] = fit_glm.params[1]
-		p_Q_low[k] = fit_glm.pvalues[0]
-		p_Q_high[k] = fit_glm.pvalues[1]
+			#print("Regression for timebin ", k)
+			model_glm = sm.OLS(y,x)
+			fit_glm = model_glm.fit()
+			beta_Q_low[m,k] = fit_glm.params[0]
+			beta_Q_high[m,k] = fit_glm.params[1]
+			p_Q_low[m,k] = fit_glm.pvalues[0]
+			p_Q_high[m,k] = fit_glm.pvalues[1]
 		#print fit_glm.summary()
-	Q_low_sig = np.ravel(np.nonzero(np.less(p_Q_low,0.05)))
-	Q_high_sig = np.ravel(np.nonzero(np.less(p_Q_high, 0.05)))
-	beta_Q_low_sig = np.zeros(len(beta_Q_low))
-	beta_Q_low_sig = None
-	beta_Q_low_sig[Q_low_sig] = beta_Q_low[Q_low_sig]
-	beta_Q_high_sig = np.zeros(len(beta_Q_high))
-	beta_Q_high_sig = None
-	beta_Q_high_sig[Q_high_sig] = beta_Q_high[Q_high_sig]
+	
+	Q_low_sig = p_Q_low <= 0.05
+	Q_high_sig = p_Q_high <= 0.05
+	
+	frac_Q_low = np.sum(Q_low_sig, axis = 0)/num_units
+	frac_Q_high = np.sum(Q_high_sig, axis = 0)/num_units
+
+	sem_denom_low = np.sum(Q_low_sig, axis = 0)
+	sem_denom_high = np.sum(Q_high_sig, axis = 0)
+
+	beta_Q_low_sig = beta_Q_low
+	beta_Q_low_sig[np.nonzero(~Q_low_sig)] = np.nan # only keep significant values, replace non-significant value with nan
+	mean_beta_low = np.nanmean(beta_Q_low_sig,axis = 0)
+	sem_beta_low = np.nanstd(beta_Q_low_sig, axis = 0)/np.sqrt(sem_denom_low)
+
+	beta_Q_high_sig = beta_Q_high
+	beta_Q_high_sig[np.nonzero(~Q_high_sig)] = np.nan # only keep significant values, replace non-significant value with nan
+	mean_beta_high = np.nanmean(beta_Q_high_sig,axis = 0)
+	sem_beta_high = np.nanstd(beta_Q_high_sig, axis = 0)/np.sqrt(sem_denom_high)
 
 	time_values = np.arange(-t_before,t_after,float(t_after + t_before)/num_timebins)
-
+	print('block 1 trials')
+	plt.figure()
+	ax = plt.subplot(111)
+	plt.plot(time_values, frac_Q_low, 'r', label = 'LV')
+	plt.plot(time_values, frac_Q_high, 'b', label = 'HV')
+	plt.xlabel('Time from Center Hold (s) ')
+	plt.ylabel('Fraction of Neurons')
+	plt.title('Encoding of Value over Time')
+	ax.get_yaxis().set_tick_params(direction='out')
+	ax.get_xaxis().set_tick_params(direction='out')
+	ax.get_xaxis().tick_bottom()
+	ax.get_yaxis().tick_left()
+	plt.legend()
+	ax = plt.subplot(121)
+	plt.plot(time_values, mean_beta_low, 'r', label = 'LV')
+	plt.fill_between(time_values,mean_beta_low - sem_beta_low, mean_beta_low + sem_beta_low, facecolor = 'r', alpha = 0.25)
+	plt.plot(time_values, mean_beta_high, 'b', label = 'HV')
+	plt.fill_between(time_values,mean_beta_high - sem_beta_high, mean_beta_high + sem_beta_high, facecolor = 'b', alpha = 0.25)
+	plt.xlabel('Time from Center Hold (s)')
+	plt.ylabel('Beta Coefficient')
+	plt.title('Significant Betas over Time')
+	ax.get_yaxis().set_tick_params(direction='out')
+	ax.get_xaxis().set_tick_params(direction='out')
+	ax.get_xaxis().tick_bottom()
+	ax.get_yaxis().tick_left()
+	plt.legend()
+	plt_name = syncHDF_files[i][syncHDF_files[i].index('Luigi201'):-15]
+	plt.savefig(dir_figs +plt_name+ '_FractionEncodingValOverTimee_trials%i-%i.png' % (trial_first, trial_last))
+	plt.savefig(dir_figs +plt_name+ '_FractionEncodingValOverTimee_trials%i-%i.svg' % (trial_first, trial_last))
+	plt.clf()
+	'''
 	plt.figure()
 	ax = plt.subplot(111)
 	plt.plot(time_values, beta_Q_low, 'r', alpha = 0.2)
@@ -5176,8 +5303,80 @@ def TwoTargetTask_RegressFiringRates_Value(hdf_files, syncHDF_files, spike_files
 	ax.get_yaxis().tick_left()
 	plt.legend()
 	plt.show()
-
+	
 	return time_values, beta_Q_low, beta_Q_high, p_Q_low, p_Q_high, fit_glm
+	'''
+	return time_values, frac_Q_low, frac_Q_high, Q_low_sig, Q_high_sig
+
+def TwoTargetTask_FiringRates_OverTime(hdf_files, syncHDF_files, spike_files, channel, sc, t_before, t_after, align_to, bin_size, bin_overlap):
+	'''
+	Method that gets firing rates from units on indicated channel around time of target presentation (hold_center) or reward (check_reward) 
+	on all trials. Provides firing rates over time for the duration of the time window indicated. 
+
+	Inputs:
+	- hdf_files: list of N hdf_files corresponding to the behavior in the two target task
+	- syncHDF_files: list of N syncHDF_files that containes the syncing DIO data for the corresponding hdf_file and it's
+					TDT recording. If TDT data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, syncHDF_files should have the form [syncHDF_file1.mat, '']
+	- spike_files: list of N tuples of spike_files, where each entry is a list of 2 spike files, one corresponding to spike
+					data from the first 96 channels and the other corresponding to the spike data from the last 64 channels.
+					If spike data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
+					epoch of recording but not the second, the hdf_files and syncHDF_files will both have 2 file names, and the 
+					spike_files entry should be of the form [[spike_file1.csv, spike_file2.csv], ''].
+	- t_before: time before (s) the align_to point that should be included when computing the firing rate. t_before = 0 indicates
+					that we only look from the time of align_to forward when considering the window of activity.
+	- t_after: time after (s) the align_to point that should be included when computing the firing rate.
+	- align_to: string, either 'hold_center' or 'check_reward', indicating what time point in the task we're aligned to
+	- bin_size: float representing the size of the spike bins (s)
+	- bin_overlap: float representing the amount that bins overlap (s)
+
+	Output:
+	- psth: 2D array of size T x M, where T is the number of trials and M is the number of bins over the time range [t_before, t_after]
+	'''
+	num_trials = np.zeros(len(hdf_files))
+
+	for i, hdf_file in enumerate(hdf_files):
+		print("Open HDF file number %f" % (i + 1))
+		# 1. Load behavior data and pull out trial indices for the designated trial case
+		print("Loading behavior")
+		cb_block = ChoiceBehavior_TwoTargets(hdf_file)
+		num_trials[i] = cb_block.num_successful_trials
+
+		ind_hold_center = cb_block.ind_check_reward_states - 4
+		ind_check_reward = cb_block.ind_check_reward_states
+		if align_to == b'hold_center':
+			inds = ind_hold_center
+		else:
+			inds = ind_check_reward
+
+		# Find lfp sample numbers corresponding to these times and the sampling frequency of the lfp data
+		lfp_state_row_ind, lfp_freq = cb_block.get_state_TDT_LFPvalues(inds, syncHDF_files[i])
+		# Convert lfp sample numbers to times in seconds
+		times_row_ind = lfp_state_row_ind/float(lfp_freq)
+
+		print("Getting spike data")
+		print("Number of trials:%i" % (len(inds)))
+		# 2. Get spike data for channel indicated
+		if channel < 97:
+			if (spike_files[i] != ''):
+				spike1 = OfflineSorted_CSVFile(spike_files[i][0])
+				psth = spike1.compute_sliding_psth(channel,sc,inds,t_before,t_after,bin_size, bin_overlap)
+				#psth = spike1.compute_psth(channel,sc,inds,t_before,t_after,bin_size)
+			else:
+				psth = nd.array([])
+		else:		
+			if spike_files[i][1] != '':
+				spike2 = OfflineSorted_CSVFile(spike_files[i][1])
+				psth = spike2.compute_sliding_psth(channel,sc,inds,t_before,t_after,bin_size, bin_overlap)
+			else:
+				psth = nd.array([])
+
+		if i == 0:
+			all_psth = psth
+		else:
+			all_psth = np.vstack([all_psth, psth])
+
+	return psth, all_psth, num_trials
 
 def ThreeTargetTask_DecodeChoice_LogisticRegression(hdf_files, syncHDF_files, spike_files, t_before, t_after, align_to, bin_size, bin_overlap):
 	'''
