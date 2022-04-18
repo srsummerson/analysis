@@ -400,8 +400,8 @@ class OfflineSorted_CSVFile():
 		t_min = self.times[0]
 		t_bins = np.arange(t_min, t_max, t_resolution)
 		t_bin_centers = (t_bins[1:] + t_bins[:-1])/2.
-		X = np.array([])
-		#X = t_bin_centers
+		#X = np.array([])
+		X = t_bin_centers
 		unit_labels = []
 
 
@@ -420,7 +420,7 @@ class OfflineSorted_CSVFile():
 				X = np.vstack([X, hist_spikes])
 		print(X.shape)
 
-		return X, unit_labels
+		return X[1:,:], unit_labels
 
 	def compute_raster(self,chann,sc,times_align,t_before,t_after):
 		'''
