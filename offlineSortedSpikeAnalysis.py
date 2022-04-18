@@ -388,7 +388,8 @@ class OfflineSorted_CSVFile():
 		- t_resolution: integer, temporal resolution of bins (s)
 
 		Output:
-
+		- X: ndarray, 2D array of spike counts with resolution of t_resolution, size is neurons x spike_counts
+		- unit_labsl: list, labels for units with channel number and sort codes
 		'''
 
 
@@ -397,9 +398,10 @@ class OfflineSorted_CSVFile():
 
 		t_max = self.times[-1]
 		t_min = self.times[0]
-		t_bins = np.arange(t_min, t_max, 0.001)
+		t_bins = np.arange(t_min, t_max, t_resolution)
 		t_bin_centers = (t_bins[1:] + t_bins[:-1])/2.
-		X = t_bin_centers
+		X = np.array([])
+		#X = t_bin_centers
 		unit_labels = []
 
 
@@ -407,8 +409,6 @@ class OfflineSorted_CSVFile():
 			# First find number of units recorded on this channel
 			unit_chan = np.ravel(np.nonzero(np.equal(self.channel, chan)))
 			sc_chan = good_channels[chan]
-			#sc_chan = np.unique(self.sort_code[unit_chan])
-			#sc_chan = np.array([sc for sc in sc_chan if ((sc != 31) and (sc != 0))])
 			
 			unit_rates = np.zeros(len(sc_chan))
 			for i, sc in enumerate(sc_chan):
