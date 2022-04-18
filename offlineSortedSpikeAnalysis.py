@@ -53,8 +53,8 @@ class OfflineSorted_CSVFile():
 		sorted_good_sc = sorted_good_sc[~np.isnan(sorted_good_sc)]
 		sc = dict()
 		total_units = 0
-		for chan in np.unique(self.sorted_good_channels):
-			sc_chan = sorted_good_sc[self.sorted_good_channels==chan]
+		for chan in np.unique(self.sorted_good_chann):
+			sc_chan = sorted_good_sc[self.sorted_good_chann==chan]
 			total_units += len(sc_chan)
 			sc[chan] = sc_chan
 		return sc, total_units
