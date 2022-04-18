@@ -5,6 +5,7 @@ from scipy import io
 from scipy import stats
 import matplotlib as mpl
 import tables
+import seaborn as sns
 from matplotlib import pyplot as plt
 from scipy import signal
 from scipy.ndimage import filters
@@ -317,7 +318,7 @@ class OfflineSorted_CSVFile():
 		- psth: T x N array containing the average firing rate over a window of total length N samples for T different
 				time points
 		'''
-		psth_length = int(np.rint((t_before + t_after)/t_resolution))
+		psth_length = int(np.rint((t_before + t_after)/t_resolution))+1
 		num_timepoints = len(times_align)
 		psth = np.zeros((num_timepoints, psth_length-1))
 		smooth_psth = np.zeros(psth.shape)
@@ -331,7 +332,7 @@ class OfflineSorted_CSVFile():
 		channel_data = self.times[unit_chan[sc_unit]] 
 		for i, tp in enumerate(times_align):
 			data = channel_data
-			t_window = np.arange(tp - t_before, tp + t_after, t_resolution)
+			t_window = np.arange(tp - t_before, tp + t_after + t_resolution, t_resolution)
 			hist, bins = np.histogram(data, bins = t_window)
 			hist_fr = hist/t_resolution
 			psth[i,:] = hist_fr[:psth_length-1]
@@ -361,10 +362,8 @@ class OfflineSorted_CSVFile():
 		psth_length = int(np.rint((t_before + t_after - t_overlap)/(t_resolution - t_overlap)))
 		num_timepoints = len(times_align)
 		psth = np.zeros((num_timepoints, psth_length))
+		smooth_psth = np.zeros((num_timepoints, psth_length))
 		
-
-		boxcar_length = 4.
-		boxcar_window = signal.boxcar(boxcar_length)  # 2 bins before, 2 bins after for boxcar smoothing
 		b = signal.gaussian(39, 1)
 		
 		unit_chan = np.ravel(np.nonzero(np.equal(self.channel, chann)))
@@ -377,10 +376,9 @@ class OfflineSorted_CSVFile():
 			for k in range(psth_length):
 				data_window = np.ravel(np.greater(data, t_start + k*t_overlap)&np.less(data, t_start + k*t_overlap + t_resolution))
 				psth[i,k] = np.sum(data_window)/t_resolution
-
-			#smooth_psth[i,:] = filters.convolve1d(psth[i,:], b/b.sum())
+			smooth_psth[i,:] = filters.convolve1d(psth[i,:], b/b.sum())
 			
-		return psth
+		return psth, smooth_psth
 
 	def compute_raster(self,chann,sc,times_align,t_before,t_after):
 		'''
@@ -622,7 +620,7 @@ class OfflineSorted_CSVFile():
 
 		return avg_psth, smooth_avg_psth, np.array(unit_list)
 
-	def activity_heatmaps(sc_dict, times_align, t_before, t_after, t_resolution):
+	def activity_heatmaps(self, sc_dict, times_align, t_before, t_after, t_resolution, **kwargs):
 		'''
 		This methods produces heatmaps that are essentially PSTHS for either multiple trials or multiple neurons
 		put together. It produces one heatmap per unit that gives the z-scored activity over time across multiple
@@ -636,10 +634,18 @@ class OfflineSorted_CSVFile():
 		- t_before: float, time (in seconds) of activity that should be included before the times_align points
 		- t_after: float, time (in seconds) of activity that should be included after the times_align points
 		- t_resolution: float, temporal resolution (in seconds) that should be used to bin the neural activity
-
+		- plot_suffix: string, added to the end of the default naming convention for the plots produced
 		'''
+		fig_dir = kwargs.get('fig_dir', "C:/Users/ss45436/Box Sync/UC Berkeley/Cd Stim/Neural Correlates/Paper/Figures/")
+		time_zero_label = kwargs.get('time_zero_label','unspecified')
+
 		channs = sc_dict.keys()
 		counter = 0
+
+		# create x-axis time labels for plots
+		x_vals = np.arange(-t_before,t_after,t_resolution)
+		x_vals = [format(x,'.1f') for x in x_vals]
+		
 
 		for chan in channs:
 			# First find number of units recorded on this channel
@@ -648,7 +654,7 @@ class OfflineSorted_CSVFile():
 
 			for sc in sc_chan:
 				psth_sc, smooth_psth_sc = self.compute_psth(chan,sc,times_align,t_before,t_after,t_resolution)
-				
+				x_ind = np.arange(psth_sc.shape[1])
 				# plot heatmap of trials x time bins for each unit
 				# NEED TO CHECK WHEN Z-SCORING SHOULD OCCUR
 				plt.figure()
@@ -656,12 +662,12 @@ class OfflineSorted_CSVFile():
 				sns.heatmap(smooth_psth_sc, cmap=cmap)
 				plt.xlabel('Time')
 				plt.ylabel('Trials')
-				plt.title('Normalized Activity over Time - Chan %i - Unit %i' % (chan,sc))
-				# plt.savefig() 
-				# should include an input that helps with naming so we can give different
-				#names for different conditions
-
-
+				plt.title('Spiking Activity over Time - Chan %i - Unit %i - Aligned %s' % (int(chan),int(sc),time_zero_label))
+				fig_name = 'PSTH_heatmap_chan_' + str(int(chan)) + '_sc_' + str(int(sc)) + '.png'
+				plt.xticks(x_ind[::10],x_vals[::10])
+				plt.savefig(fig_dir + self.filename[81:-12] + "_" + fig_name, dpi = 500)
+				plt.close()
+				
 				avg_psth_sc = np.nanmean(psth_sc, axis = 0)
 				smooth_avg_psth_sc = np.nanmean(smooth_psth_sc, axis = 0)
 				#avg_psth.append([avg_psth_sc])
@@ -671,17 +677,40 @@ class OfflineSorted_CSVFile():
 				else:
 					avg_psth = np.vstack([avg_psth,avg_psth_sc])
 					smooth_avg_psth = np.vstack([smooth_avg_psth, smooth_avg_psth_sc])
-		
+				counter += 1
+
 		# plot heatmap of neurons x time bins, with averaged psth activity stacked for all neurons
+		# normalize by average firing rate per channel
+		avg_fr = np.nanmean(smooth_avg_psth,axis = 1)
+		repeats_array = np.transpose([avg_fr] * smooth_avg_psth.shape[1])
+		norm_smooth_avg_psth = smooth_avg_psth/repeats_array
+
+		# indices of time indices corresponding to time window of interest
+		t_begin = round(t_before/t_resolution)
+		t_end = round((t_before + 1)/t_resolution)
+		windowed_averages = np.nanmean(norm_smooth_avg_psth[:,t_begin:t_end], axis = 1)
+		sorted_ind = np.argsort(windowed_averages)
+
 		plt.figure()
+		plt.subplot(121)
+		# normalized acitivity for neurons in order of indices
 		cmap = sns.color_palette("Blues", 256)
-		sns.heatmap(smooth_avg_psth, cmap=cmap)
+		sns.heatmap(norm_smooth_avg_psth, cmap=cmap)
 		plt.xlabel('Time')
 		plt.ylabel('Neurons')
-		plt.title('Normalized Average Activity over Time')
-		#plt.savefig() 
-
-		return
+		plt.title('Normalized Average Activity over Time - Aligned %s' % (time_zero_label))
+		plt.xticks(x_ind[::10],x_vals[::10])
+		plt.subplot(122)
+		# normalized activity for neurons ordered by peak activity during time window of interest
+		sns.heatmap(norm_smooth_avg_psth[sorted_ind,:], cmap=cmap)
+		plt.xlabel('Time')
+		plt.ylabel('Neurons')
+		plt.title('Normalized Average Activity over Time - Aligned %s' % (time_zero_label))
+		plt.xticks(x_ind[::10],x_vals[::10])
+		fig_name = 'PSTH_heatmap_all_channels' + '.png'
+		plt.savefig(fig_dir + self.filename[81:-12] + fig_name) 
+		
+		return avg_psth, smooth_avg_psth
 
 class OfflineSorted_Spikes():
 	'''
