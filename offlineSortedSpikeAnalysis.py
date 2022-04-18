@@ -24,10 +24,10 @@ class OfflineSorted_CSVFile():
 		self.times = np.ravel(np.array(pd.DataFrame(self.df, columns = [u'TIME'])))
 		self.channel = np.ravel(np.array(pd.DataFrame(self.df, columns = [u'CHAN'])))
 		if 'GOODCHAN' in self.df.columns:
-			self.sorted_good_channels = np.ravel(np.array(pd.DataFrame(self.df, columns = [u'GOODCHAN'])))
-			self.sorted_good_channels = self.sorted_good_channels[~np.isnan(self.sorted_good_channels)]
+			self.sorted_good_chann = np.ravel(np.array(pd.DataFrame(self.df, columns = [u'GOODCHAN'])))
+			self.sorted_good_chann = self.sorted_good_chann[~np.isnan(self.sorted_good_chann)]
 			self.sorted_good_chans_sc, self.total_sorted_good_units = self.find_sorted_good_chan_sc()
-			self.sorted_good_channels = np.unique(self.sorted_good_channels)
+			self.sorted_good_channels = np.unique(self.sorted_good_chann)
 			
 		# Adjust the channel numbers if this is for channels 97 - 160 that are recorded on the second RZ2.
 		if self.event == 'eNe2':
