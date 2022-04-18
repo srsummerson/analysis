@@ -400,13 +400,15 @@ class OfflineSorted_CSVFile():
 		t_bins = np.arange(t_min, t_max, 0.001)
 		t_bin_centers = (t_bins[1:] + t_bins[:-1])/2.
 		X = t_bin_centers
+		unit_labels = []
 
 
 		for chan in good_channels:
 			# First find number of units recorded on this channel
 			unit_chan = np.ravel(np.nonzero(np.equal(self.channel, chan)))
-			sc_chan = np.unique(self.sort_code[unit_chan])
-			sc_chan = np.array([sc for sc in sc_chan if ((sc != 31) and (sc != 0))])
+			sc_chan = good_channels[chan]
+			#sc_chan = np.unique(self.sort_code[unit_chan])
+			#sc_chan = np.array([sc for sc in sc_chan if ((sc != 31) and (sc != 0))])
 			
 			unit_rates = np.zeros(len(sc_chan))
 			for i, sc in enumerate(sc_chan):
