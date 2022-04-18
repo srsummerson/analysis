@@ -418,7 +418,6 @@ class OfflineSorted_CSVFile():
 				hist_spikes, bins = np.histogram(sc_times, t_bins)
 				unit_labels += ['Ch' + str(chan) + '_' + str(sc)]
 				X = np.vstack([X, hist_spikes])
-		print(X.shape)
 
 		return X[1:,:], unit_labels
 

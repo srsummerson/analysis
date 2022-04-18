@@ -6506,7 +6506,7 @@ def TwoTargetTask_SpikeAnalysis_PSTH_FactorAnalysis(hdf_files, syncHDF_files, sp
 			elif np.any(X2):
 				X = X2
 
-			print(X.shape)
+			print('X shape:', X.shape)
 
 			####################
 			# Do factor analysis
