@@ -6507,16 +6507,13 @@ def TwoTargetTask_SpikeAnalysis_PSTH_FactorAnalysis(hdf_files, syncHDF_files, sp
 				X = X2
 
 			print('X shape:', X.shape)
+			#X = pd.DataFrame(X)
 
 			####################
 			# Do factor analysis
 			####################
-			if not spike2_good_channels:
-				fa = FactorAnalyzer(n_factors = len(spike1_good_channels)-1, rotation = None, method = 'ml')
-				fa.fit(spike1)
-			else:
-				fa = FactorAnalyzer(n_factors = len(spike2_good_channels)-1, rotation = None, method = 'ml')
-				fa.fit(spike2)
+			fa = FactorAnalyzer(n_factors = X.shape[0]-1, rotation = None, method = 'ml')
+			fa.fit(X)
 			
 			ev, v = fa.get_eigenvalues()
 			variance, proportionalVariance, cumulativeVariance = fa.get_factor_variance()
