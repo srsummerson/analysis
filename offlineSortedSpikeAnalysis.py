@@ -25,10 +25,10 @@ class OfflineSorted_CSVFile():
 		self.times = np.ravel(np.array(pd.DataFrame(self.df, columns = [u'TIME'])))
 		self.channel = np.ravel(np.array(pd.DataFrame(self.df, columns = [u'CHAN'])))
 		if 'GOODCHAN' in self.df.columns:
-			self.sorted_good_channels = np.ravel(np.array(pd.DataFrame(self.df, columns = [u'GOODCHAN'])))
-			self.sorted_good_channels = self.sorted_good_channels[~np.isnan(self.sorted_good_channels)]
+			self.sorted_good_chann = np.ravel(np.array(pd.DataFrame(self.df, columns = [u'GOODCHAN'])))
+			self.sorted_good_chann = self.sorted_good_chann[~np.isnan(self.sorted_good_chann)]
 			self.sorted_good_chans_sc, self.total_sorted_good_units = self.find_sorted_good_chan_sc()
-			self.sorted_good_channels = np.unique(self.sorted_good_channels)
+			self.sorted_good_channels = np.unique(self.sorted_good_chann)
 			
 		# Adjust the channel numbers if this is for channels 97 - 160 that are recorded on the second RZ2.
 		if self.event == 'eNe2':
@@ -54,8 +54,8 @@ class OfflineSorted_CSVFile():
 		sorted_good_sc = sorted_good_sc[~np.isnan(sorted_good_sc)]
 		sc = dict()
 		total_units = 0
-		for chan in np.unique(self.sorted_good_channels):
-			sc_chan = sorted_good_sc[self.sorted_good_channels==chan]
+		for chan in np.unique(self.sorted_good_chann):
+			sc_chan = sorted_good_sc[self.sorted_good_chann==chan]
 			total_units += len(sc_chan)
 			sc[chan] = sc_chan
 		return sc, total_units
@@ -379,6 +379,46 @@ class OfflineSorted_CSVFile():
 			smooth_psth[i,:] = filters.convolve1d(psth[i,:], b/b.sum())
 			
 		return psth, smooth_psth
+
+	def bin_data(self, t_resolution):
+		'''
+		Method to bin spike data of all good offline sorted neurons into a 2D array: spike-counts x num_neurons
+
+		Input:
+		- t_resolution: integer, temporal resolution of bins (s)
+
+		Output:
+
+		'''
+
+
+		data = np.array([])
+		good_channels = self.sorted_good_chans_sc
+
+		t_max = self.times[-1]
+		t_min = self.times[0]
+		t_bins = np.arange(t_min, t_max, 0.001)
+		t_bin_centers = (t_bins[1:] + t_bins[:-1])/2.
+		X = t_bin_centers
+
+
+		for chan in good_channels:
+			# First find number of units recorded on this channel
+			unit_chan = np.ravel(np.nonzero(np.equal(self.channel, chan)))
+			sc_chan = np.unique(self.sort_code[unit_chan])
+			sc_chan = np.array([sc for sc in sc_chan if ((sc != 31) and (sc != 0))])
+			
+			unit_rates = np.zeros(len(sc_chan))
+			for i, sc in enumerate(sc_chan):
+				#unit_name = 'Ch' + str(chan) + '_' + str(sc)
+				sc_unit = np.ravel(np.nonzero(np.equal(self.sort_code[unit_chan], sc)))
+				sc_times = self.times[unit_chan[sc_unit]]  	# times that this sort code on this channel was recorded
+				hist_spikes, bins = np.histogram(sc_times, t_bins)
+				unit_labels += ['Ch' + str(chan) + '_' + str(sc)]
+				X = np.vstack([X, hist_spikes])
+		print(size(X))
+
+		return X, unit_labels
 
 	def compute_raster(self,chann,sc,times_align,t_before,t_after):
 		'''
