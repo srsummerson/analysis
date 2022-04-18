@@ -6499,7 +6499,7 @@ def TwoTargetTask_SpikeAnalysis_PSTH_FactorAnalysis(hdf_files, syncHDF_files, sp
 				print(X2.shape)
 
 			# Combine arrays if necessary
-			if np.any(X1) && np.any(X2):
+			if (np.any(X1) & np.any(X2)):
 				X = np.vstack([X1, X2])
 			elif np.any(X1):
 				X = X1
