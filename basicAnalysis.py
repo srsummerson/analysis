@@ -42,6 +42,35 @@ def computeSTA(spike_file,tdt_signal,channel,t_start,t_stop):
 
 	return unit_sta
 
+def contSignalTrialAvg(data, times, window_before, window_after, binsize):
+	'''
+	Input:
+	- data: 2D array, contains data that is Time x Channels
+	- times: 1D array, time indices to align trial averages to
+	- window_before: float, amount of time (s) to include in time window
+	- window_after: float, amount of time (s) to include in time window
+	- binsize: float, time length (s) of data bins
+
+	Output: 
+	- data_trialavg: 2D array, contains the trial averaged signals that is Time x Channels
+
+	'''
+	num_chans = data.shape[1]
+	num_bins_before = int(window_before/binsize)
+	num_bins_after = int(window_after/binsize)
+
+	window_length = num_bins_before	+ num_bins_after
+	data_trialavg = np.empty([int(window_length), int(num_chans)])
+	epoch_data = np.empty([int(window_length), len(times)])
+
+	for i in range(num_chans):
+		for j,time in enumerate(times):
+			epoch_bins = np.arange(time-num_bins_before,time+num_bins_after,1) 
+			epoch_data[:,j] = data[epoch_bins,j]
+		data_trialavg[:,i] = np.mean(epoch_data, axis = 1)
+
+	return data_trialavg
+
 def computePSTH(spike_file1,spike_file2,times,window_before=1,window_after=2, binsize=1):
 	'''
 	Input:

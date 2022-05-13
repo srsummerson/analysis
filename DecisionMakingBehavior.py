@@ -26,6 +26,7 @@ from PulseMonitorData import findIBIs
 from offlineSortedSpikeAnalysis import OfflineSorted_CSVFile
 from logLikelihoodRLPerformance import logLikelihoodRLPerformance, RLPerformance
 from spectralAnalysis import computePowerFeatures
+from basicAnalysis import contSignalTrialAvg
 
 
 
@@ -5087,7 +5088,7 @@ def TwoTargetTask_SpikeAnalysis_SingleChannel_RPE(hdf_files, syncHDF_files, spik
 	smooth_psth = [smooth_psth_l, smooth_psth_h]
 	return reg_psth, smooth_psth, all_raster_l, all_raster_h
 
-def TwoTargetTask_RegressFiringRates_Value(hdf_files, syncHDF_files, spike_files, t_before, t_after, t_resolution, t_overlap, smoothed, align_to, trial_first, trial_last):
+def TwoTargetTask_RegressFiringRates_Value(hdf_files, syncHDF_files, spike_files, units, unit_label,t_before, t_after, t_resolution, t_overlap, smoothed, align_to, trial_first, trial_last):
 	'''
 	This method regresses the firing rate of all units as a function of value over time. 
 
@@ -5101,6 +5102,8 @@ def TwoTargetTask_RegressFiringRates_Value(hdf_files, syncHDF_files, spike_files
 					If spike data does not exist, an empty entry should strill be entered. I.e. if there is data for the first
 					epoch of recording but not the second, the hdf_files and syncHDF_files will both have 2 file names, and the 
 					spike_files entry should be of the form [[spike_file1.csv, spike_file2.csv], ''].
+	- units: list, spike units to include in analysis
+	- unit_label: str, indicator of what units were included, e.g. 'Cd', 'ACC', 'All'
 	- channel: integer value indicating what channel will be used to regress activity
 	- t_before: time before (s) the picture onset that should be included when computing the firing rate. t_before = 0 indicates
 					that we only look from the time of onset forward when considering the window of activity.
@@ -5164,8 +5167,10 @@ def TwoTargetTask_RegressFiringRates_Value(hdf_files, syncHDF_files, spike_files
 			if (spike_files[i][0] != ''):
 				spike1 = OfflineSorted_CSVFile(spike_files[i][0])
 				spike1_good_channels = spike1.sorted_good_chans_sc
+
+				spike1_chan_list = [val for val in spike1_good_channels.keys() if val in units]
 				
-				for chann in spike1_good_channels.keys():
+				for chann in spike1_chan_list:
 					for sc in spike1_good_channels[chann]:
 						psth, smooth_psth = spike1.compute_sliding_psth(chann, sc, times_row_ind,t_before,t_after,t_resolution,t_overlap)
 						# Normalize firing rates by z-scoring
@@ -5182,8 +5187,10 @@ def TwoTargetTask_RegressFiringRates_Value(hdf_files, syncHDF_files, spike_files
 			if (spike_files[i][1] != ''):
 				spike2 = OfflineSorted_CSVFile(spike_files[i][1])
 				spike2_good_channels = spike2.sorted_good_chans_sc
+
+				spike2_chan_list = [val for val in spike2_good_channels.keys() if val in units]
 				
-				for chann in spike2_good_channels.keys():
+				for chann in spike2_chan_list:
 					for sc in spike2_good_channels[chann]:
 						psth, smooth_psth = spike2.compute_sliding_psth(chann, sc, times_row_ind,t_before,t_after,t_resolution,t_overlap)
 						# Normalize firing rates by z-scoring
@@ -5197,14 +5204,15 @@ def TwoTargetTask_RegressFiringRates_Value(hdf_files, syncHDF_files, spike_files
 							avg_psth[str(chann)+'-'+str(sc)] = np.vstack([avg_psth[str(chann)+'-'+str(sc)], psth])
 							smooth_avg_psth[str(chann)+'-'+str(sc)] = np.vstack([smooth_avg_psth[str(chann)+'-'+str(sc)], smooth_psth])
 			
-			print('Number of units:',len(avg_psth))
-			print('Size of psth:',avg_psth[str(chann)+'-'+str(sc)].shape)
+			#print('Number of units:',len(avg_psth))
+			#print('Size of psth:',avg_psth[str(chann)+'-'+str(sc)].shape)
 			
 		
 	
 	# 4. Do regression for each unit in each time bin.
 	#    Current regression uses Q-values and constant.
 	num_units = len(avg_psth.keys())
+	
 	beta_Q_low = np.zeros((num_units, num_timebins))
 	beta_Q_high = np.zeros((num_units, num_timebins))
 	p_Q_low = np.zeros((num_units, num_timebins))
@@ -5213,8 +5221,7 @@ def TwoTargetTask_RegressFiringRates_Value(hdf_files, syncHDF_files, spike_files
 	for m, unit in enumerate(avg_psth.keys()):
 		psth = avg_psth[unit]
 		smooth_psth = smooth_avg_psth[unit]
-		print(psth.shape)
-
+		
 		for k in range(num_timebins):
 			unit_data = psth[:,k]
 			#trial_inds = np.array([index for index in ind_trial_case if unit_data[index]!=0], dtype = int)
@@ -5244,49 +5251,107 @@ def TwoTargetTask_RegressFiringRates_Value(hdf_files, syncHDF_files, spike_files
 	frac_Q_low = np.sum(Q_low_sig, axis = 0)/num_units
 	frac_Q_high = np.sum(Q_high_sig, axis = 0)/num_units
 
+	print('Frac Q low:', frac_Q_low)
+
 	sem_denom_low = np.sum(Q_low_sig, axis = 0)
 	sem_denom_high = np.sum(Q_high_sig, axis = 0)
 
 	beta_Q_low_sig = beta_Q_low
 	beta_Q_low_sig[np.nonzero(~Q_low_sig)] = np.nan # only keep significant values, replace non-significant value with nan
+
 	mean_beta_low = np.nanmean(beta_Q_low_sig,axis = 0)
 	sem_beta_low = np.nanstd(beta_Q_low_sig, axis = 0)/np.sqrt(sem_denom_low)
+	
+	beta_Q_low_sig_pos = beta_Q_low_sig
+	beta_Q_low_sig_neg = beta_Q_low_sig
+	beta_Q_low_sig_neg[np.nonzero(beta_Q_low_sig + abs(beta_Q_low_sig))] = np.nan
+	beta_Q_low_sig_pos[np.nonzero(-beta_Q_low_sig + abs(beta_Q_low_sig))] = np.nan
+	
+	sem_denom_low_pos = np.nonzero(beta_Q_low_sig + abs(beta_Q_low_sig))[0].shape[0]
+	print('sem_denom_low_pos:', sem_denom_low_pos)
+	sem_denom_low_neg = np.nonzero(-beta_Q_low_sig + abs(beta_Q_low_sig))[0].shape[0]
+	print('sem_denom_low_neg:', sem_denom_low_neg)
+	
+	mean_beta_low_pos = np.nanmean(beta_Q_low_sig_pos, axis = 0)
+	sem_beta_low_pos = np.nanstd(beta_Q_low_sig_pos, axis = 0)/np.sqrt(sem_denom_low_pos)
 
+	mean_beta_low_neg = np.nanmean(beta_Q_low_sig_neg, axis = 0)
+	sem_beta_low_neg = np.nanstd(beta_Q_low_sig_neg, axis = 0)/np.sqrt(sem_denom_low_neg)
+	
 	beta_Q_high_sig = beta_Q_high
 	beta_Q_high_sig[np.nonzero(~Q_high_sig)] = np.nan # only keep significant values, replace non-significant value with nan
+	"""
+	beta_Q_high_sig_pos = beta_Q_high_sig
+	beta_Q_high_sig_neg = beta_Q_high_sig
+	beta_Q_high_sig_neg[np.nonzero(beta_Q_high_sig + abs(beta_Q_high_sig))] = np.nan
+	beta_Q_high_sig_pos[np.nonzero(-beta_Q_high_sig + abs(beta_Q_high_sig))] = np.nan
+	"""
 	mean_beta_high = np.nanmean(beta_Q_high_sig,axis = 0)
 	sem_beta_high = np.nanstd(beta_Q_high_sig, axis = 0)/np.sqrt(sem_denom_high)
+	"""
+	sem_denom_high_pos = np.nonzero(beta_Q_high_sig + abs(beta_Q_high_sig))[0].shape[0]
+	sem_denom_high_neg = np.nonzero(-beta_Q_high_sig + abs(beta_Q_high_sig))[0].shape[0]
+
+	mean_beta_high_pos = np.nanmean(beta_Q_high_sig_pos, axis = 0)
+	sem_beta_high_pos = np.nanstd(beta_Q_high_sig_pos, axis = 0)/np.sqrt(sem_denom_high_pos)
+	mean_beta_high_neg = np.nanmean(beta_Q_high_sig_neg, axis = 0)
+	sem_beta_high_neg = np.nanstd(beta_Q_high_sig_neg, axis = 0)/np.sqrt(sem_denom_high_neg)
+	"""
+	print('mean beta low:', mean_beta_low)
+	print('mean pos beta low:', mean_beta_low_pos)
+	print('mean neg beta low:', mean_beta_low_neg)
+
 
 	time_values = np.arange(-t_before,t_after,float(t_after + t_before)/num_timebins)
 	print('block 1 trials')
 	plt.figure()
-	ax = plt.subplot(111)
+	ax1 = plt.subplot(131)
 	plt.plot(time_values, frac_Q_low, 'r', label = 'LV')
 	plt.plot(time_values, frac_Q_high, 'b', label = 'HV')
 	plt.xlabel('Time from Center Hold (s) ')
 	plt.ylabel('Fraction of Neurons')
 	plt.title('Encoding of Value over Time')
-	ax.get_yaxis().set_tick_params(direction='out')
-	ax.get_xaxis().set_tick_params(direction='out')
-	ax.get_xaxis().tick_bottom()
-	ax.get_yaxis().tick_left()
+	ax1.get_yaxis().set_tick_params(direction='out')
+	ax1.get_xaxis().set_tick_params(direction='out')
+	ax1.get_xaxis().tick_bottom()
+	ax1.get_yaxis().tick_left()
 	plt.legend()
-	ax = plt.subplot(121)
-	plt.plot(time_values, mean_beta_low, 'r', label = 'LV')
+	
+	ax2 = plt.subplot(132)
+	plt.plot(time_values, mean_beta_low, 'r', label = 'LV - all betas')
 	plt.fill_between(time_values,mean_beta_low - sem_beta_low, mean_beta_low + sem_beta_low, facecolor = 'r', alpha = 0.25)
-	plt.plot(time_values, mean_beta_high, 'b', label = 'HV')
-	plt.fill_between(time_values,mean_beta_high - sem_beta_high, mean_beta_high + sem_beta_high, facecolor = 'b', alpha = 0.25)
+	plt.plot(time_values, mean_beta_low_pos, 'm', label = 'LV - positive betas')
+	plt.fill_between(time_values,mean_beta_low_pos - sem_beta_low_pos, mean_beta_low_pos + sem_beta_low_pos, facecolor = 'm', alpha = 0.25)
+	plt.plot(time_values, mean_beta_low_neg, 'k', label = 'LV - negative betas')
+	plt.fill_between(time_values,mean_beta_low_neg - sem_beta_low_neg, mean_beta_low_neg + sem_beta_low_neg, facecolor = 'k', alpha = 0.25)
 	plt.xlabel('Time from Center Hold (s)')
 	plt.ylabel('Beta Coefficient')
 	plt.title('Significant Betas over Time')
-	ax.get_yaxis().set_tick_params(direction='out')
-	ax.get_xaxis().set_tick_params(direction='out')
-	ax.get_xaxis().tick_bottom()
-	ax.get_yaxis().tick_left()
+	ax2.get_yaxis().set_tick_params(direction='out')
+	ax2.get_xaxis().set_tick_params(direction='out')
+	ax2.get_xaxis().tick_bottom()
+	ax2.get_yaxis().tick_left()
 	plt.legend()
+
+	ax2 = plt.subplot(133)
+	plt.plot(time_values, mean_beta_high, 'b', label = 'HV - all betas')
+	plt.fill_between(time_values,mean_beta_high - sem_beta_high, mean_beta_high + sem_beta_high, facecolor = 'b', alpha = 0.25)
+	plt.plot(time_values, mean_beta_high_pos, 'c', label = 'HV - positive betas')
+	plt.fill_between(time_values,mean_beta_high_pos - sem_beta_high_pos, mean_beta_high_pos + sem_beta_high_pos, facecolor = 'c', alpha = 0.25)
+	plt.plot(time_values, mean_beta_high_neg, 'g', label = 'HV - negative betas')
+	plt.fill_between(time_values,mean_beta_high_neg - sem_beta_high_neg, mean_beta_high_neg + sem_beta_high_neg, facecolor = 'g', alpha = 0.25)
+	plt.xlabel('Time from Center Hold (s)')
+	plt.ylabel('Beta Coefficient')
+	plt.title('Significant Betas over Time')
+	ax2.get_yaxis().set_tick_params(direction='out')
+	ax2.get_xaxis().set_tick_params(direction='out')
+	ax2.get_xaxis().tick_bottom()
+	ax2.get_yaxis().tick_left()
+	plt.legend()
+	
 	plt_name = syncHDF_files[i][syncHDF_files[i].index('Luigi201'):-15]
-	plt.savefig(dir_figs +plt_name+ '_FractionEncodingValOverTimee_trials%i-%i.png' % (trial_first, trial_last))
-	plt.savefig(dir_figs +plt_name+ '_FractionEncodingValOverTimee_trials%i-%i.svg' % (trial_first, trial_last))
+	plt.savefig(dir_figs +plt_name+ '_Fraction' + unit_label +'EncodingValOverTime_trials%i-%i.png' % (trial_first, trial_last))
+	plt.savefig(dir_figs +plt_name+ '_Fraction' + unit_label +'EncodingValOverTime_trials%i-%i.svg' % (trial_first, trial_last))
 	plt.clf()
 	'''
 	plt.figure()
@@ -5306,7 +5371,7 @@ def TwoTargetTask_RegressFiringRates_Value(hdf_files, syncHDF_files, spike_files
 	
 	return time_values, beta_Q_low, beta_Q_high, p_Q_low, p_Q_high, fit_glm
 	'''
-	return time_values, frac_Q_low, frac_Q_high, Q_low_sig, Q_high_sig
+	return time_values, frac_Q_low, frac_Q_high, Q_low_sig, Q_high_sig, beta_Q_low_sig, beta_Q_high_sig
 
 def TwoTargetTask_FiringRates_OverTime(hdf_files, syncHDF_files, spike_files, channel, sc, t_before, t_after, align_to, bin_size, bin_overlap):
 	'''
@@ -6489,13 +6554,14 @@ def TwoTargetTask_SpikeAnalysis_PSTH_FactorAnalysis(hdf_files, syncHDF_files, sp
 				spike1 = OfflineSorted_CSVFile(spike_files[i][0])
 				spike1_good_channels = spike1.sorted_good_chans_sc
 				spike2_good_channels = []
-				X1, unit_labels1 = spike1.bin_data(0.1)
+				X1, unit_labels1 = spike1.bin_data(0.1, smoothed=False)
+				Xsmooth, unit_labels1 = spike1.bin_data(0.1, smoothed = True)
 				print(X1.shape)
 			elif (spike_files[i][1] != ''):
 				spike2 = OfflineSorted_CSVFile(spike_files[i][1])
 				spike2_good_channels = spike2.sorted_good_chans_sc
 				spike1_good_channels = []
-				X2, unit_labels2 = spike2.bin_data(0.1)
+				X2, unit_labels2 = spike2.bin_data(0.1, smoothed = False)
 				print(X2.shape)
 
 			# Combine arrays if necessary
@@ -6506,23 +6572,38 @@ def TwoTargetTask_SpikeAnalysis_PSTH_FactorAnalysis(hdf_files, syncHDF_files, sp
 			elif np.any(X2):
 				X = X2
 
-			print('X shape:', X.shape)
-			#X = pd.DataFrame(X)
+			X = X.T
 
 			####################
 			# Do factor analysis
 			####################
-			fa = FactorAnalyzer(n_factors = X.shape[0]-1, rotation = None, method = 'ml')
-			fa.fit(X)
-			
-			ev, v = fa.get_eigenvalues()
-			variance, proportionalVariance, cumulativeVariance = fa.get_factor_variance()
 
+			Xstart = X[:,:1000]
+			
+			fa = FactorAnalyzer(n_factors = 10, rotation = None, method = 'ml')
+			print('fa defined')
+			fa.fit(Xstart)
+			print('fa fit')
+
+			Xfactors = fa.transform(X)
+
+
+			
 			"""
+			ev, v = fa.get_eigenvalues()
+			print('done get_eigenvalues')
+			variance, proportionalVariance, cumulativeVariance = fa.get_factor_variance()
+			print('done get_factor_variance')
+			"""
+			
 			# 2. L chosen
 			L_ind = np.ravel(np.nonzero([np.array_equal(target_chosen[j,:], [1,0]) for j in range(int(num_successful_trials[i]))]))
-			
 
+			times = np.rint(times_row_ind[L_ind]/0.1)
+
+			Xfactor_trialavg = contSignalTrialAvg(Xfactors, times, t_before, t_after, 0.1)
+			"""
+			# Need to do trial averaging of factors
 			if not spike2_good_channels:
 				avg_psth_l, smooth_avg_psth_l = spike1.compute_psth(spike1_good_channels, sc, times_row_ind[L_ind],t_before,t_after,t_resolution)
 				raster_l = spike1.compute_raster(spike1_good_channels, sc, times_row_ind[L_ind],t_before,t_after)
@@ -6639,4 +6720,4 @@ def TwoTargetTask_SpikeAnalysis_PSTH_FactorAnalysis(hdf_files, syncHDF_files, sp
 	reg_psth = [psth_l, psth_h]
 	smooth_psth = [smooth_psth_l, smooth_psth_h]
 	"""
-	return spike1
+	return Xfactors, times, Xfactor_trialavg

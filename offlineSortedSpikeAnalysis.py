@@ -380,12 +380,13 @@ class OfflineSorted_CSVFile():
 			
 		return psth, smooth_psth
 
-	def bin_data(self, t_resolution):
+	def bin_data(self, t_resolution, smoothed):
 		'''
 		Method to bin spike data of all good offline sorted neurons into a 2D array: spike-counts x num_neurons
 
 		Input:
 		- t_resolution: integer, temporal resolution of bins (s)
+		- smoothed: Boolean, indicate if data should be smoothed or not
 
 		Output:
 		- X: ndarray, 2D array of spike counts with resolution of t_resolution, size is neurons x spike_counts
@@ -404,6 +405,9 @@ class OfflineSorted_CSVFile():
 		X = t_bin_centers
 		unit_labels = []
 
+		boxcar_length = 4
+		boxcar_window = signal.boxcar(boxcar_length)  # 2 bins before, 2 bins after for boxcar smoothing
+
 
 		for chan in good_channels:
 			# First find number of units recorded on this channel
@@ -417,6 +421,8 @@ class OfflineSorted_CSVFile():
 				sc_times = self.times[unit_chan[sc_unit]]  	# times that this sort code on this channel was recorded
 				hist_spikes, bins = np.histogram(sc_times, t_bins)
 				unit_labels += ['Ch' + str(chan) + '_' + str(sc)]
+				if smoothed:
+					hist_spikes	 = np.convolve(hist_spikes, boxcar_window, mode='same')/boxcar_length
 				X = np.vstack([X, hist_spikes])
 
 		return X[1:,:], unit_labels
