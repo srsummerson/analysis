@@ -76,7 +76,8 @@ class OneDimLFPBMI_Behavior():
 
 	def plot_power_for_targets(self, t_before,t_after):
 		'''
-		Plot the cursor leading up to the successful targets
+		Plot the cursor leading up to the successful targets. Data is aligned to reward.
+
 		Input:
 				- t_before: float, number of seconds to include before reward
 				- t_after: float, number of seconds to include after reward
@@ -113,7 +114,53 @@ class OneDimLFPBMI_Behavior():
 			plt.autoscale(enable=True, axis='x', tight=True)
 			plt.fill_between(time, targ_avg	-targ_sem,targ_avg+targ_sem, facecolor = c, alpha = 0.5)
 			plt.xlabel('Time (s)')
-			plt.ylabel('Norm. LFP Power')
+			plt.ylabel('Norm. LFP Power (aligned to reward begin)')
+			plt.legend()
+
+		return
+
+	def plot_power_for_targets_cue(self, t_before,t_after):
+		'''
+		Plot the cursor leading up to the successful targets. Data is aligned to end of center hold.
+		Only successful trials are included.
+		
+		Input:
+				- t_before: float, number of seconds to include before end of center hold
+				- t_after: float, number of seconds to include after end of center hold
+		'''
+		targs = np.unique(self.lfp_target)
+		num_targs = len(targs)
+		color = iter(cm.rainbow(np.linspace(0, 1, num_targs)))
+		time_samples = int(60*t_before) + int(60*t_after)		# number of time samples, sample rate is 60 samples/sec
+		time = np.linspace(-t_before, t_after, time_samples)
+
+		targ_per_trial = self.lfp_target[self.state_time[self.ind_reward_states]]
+
+		for k,targ in enumerate(targs):
+			trial_inds = [i for i in range(self.num_successful_trials) if targ_per_trial[i]==targ]
+
+			cue_times = self.state_time[self.ind_reward_states-2][trial_inds]
+			targ_data = np.empty([len(cue_times), time_samples])
+
+			for j in range(len(cue_times)):
+	
+				#print(self.lfp_cursor[reward_times[j] - int(60*t_before):reward_times[j] + int(60*t_after)])
+				if (cue_times[j] - int(60*t_before) < 0) | (cue_times[j] + int(60*t_after) > self.state_time[-1]):
+					targ_data[j,:] = np.nan
+				else:
+					targ_data[j,:] = self.lfp_cursor[cue_times[j] - int(60*t_before):cue_times[j] + int(60*t_after)]
+
+			targ_avg = np.nanmean(targ_data, axis = 0)
+			targ_sem = np.nanstd(targ_data, axis = 0)/np.sqrt(len(cue_times)-1)
+
+			c = next(color)
+
+			plt.figure(1)
+			plt.plot(time, targ_avg, c = c, label = ('Target %i' % k))
+			plt.autoscale(enable=True, axis='x', tight=True)
+			plt.fill_between(time, targ_avg	-targ_sem,targ_avg+targ_sem, facecolor = c, alpha = 0.5)
+			plt.xlabel('Time (s)')
+			plt.ylabel('Norm. LFP Power (aligned to modulation begin cue)')
 			plt.legend()
 
 		return
